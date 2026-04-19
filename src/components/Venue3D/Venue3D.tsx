@@ -277,7 +277,7 @@ export default function Venue3D() {
         </div>
       )}
 
-      <Canvas shadows>
+      <Canvas shadows gl={{ preserveDrawingBuffer: true }}>
         <PerspectiveCamera makeDefault position={[venue.widthM / 2, 15, venue.heightM + 10]} fov={50} />
         {!walkMode && (
           <OrbitControls ref={controlsRef} target={[venue.widthM / 2, 0, venue.heightM / 2]} />

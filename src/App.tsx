@@ -6,6 +6,7 @@ import Venue3D from './components/Venue3D/Venue3D';
 import CameraPreview from './components/Preview/CameraPreview';
 import Calculator from './components/Sidebar/Calculator';
 import TemplateSelector from './components/Templates/TemplateSelector';
+import ExportPanel from './components/Export/ExportPanel';
 import { Suspense, useState } from 'react';
 
 function LoadingFallback() {
@@ -54,13 +55,16 @@ export default function App() {
           )}
           {activeTab === '3d' && (
             <Suspense fallback={<LoadingFallback />}>
-              <Venue3D />
+              <div data-venue3d className="w-full h-full">
+                <Venue3D />
+              </div>
             </Suspense>
           )}
           {activeTab === 'preview' && <CameraPreview />}
           {activeTab === 'calculator' && <Calculator />}
         </div>
       </div>
+      <ExportPanel />
     </div>
   );
 }

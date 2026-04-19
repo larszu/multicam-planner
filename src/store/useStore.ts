@@ -1,8 +1,10 @@
 import { create } from 'zustand';
-import type { VenueCamera, Venue, ViewTab, ReferencePerson, BackgroundPlan, Stage } from '../types';
+import type { VenueCamera, Venue, ViewTab, ReferencePerson, BackgroundPlan, Stage, ProjectFile } from '../types';
 import { CAMERAS, CAMERA_COLORS } from '../data/cameras';
 import { LENSES } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
+
+export const APP_VERSION = '0.2.0';
 
 interface AppState {
   // Venue
@@ -47,6 +49,14 @@ interface AppState {
   // Templates
   loadTemplate: (templateId: string) => void;
   clearAll: () => void;
+
+  // Project versioning
+  projectVersion: number;
+  lastSavedVersion: number;
+  hasUnsavedChanges: () => boolean;
+  bumpVersion: () => void;
+  saveProject: () => void;
+  loadProject: (file: File) => Promise<void>;
 }
 
 let nextId = 1;
@@ -73,7 +83,7 @@ const defaultVenue: Venue = {
 
 export const useStore = create<AppState>((set, get) => ({
   venue: defaultVenue,
-  setVenue: (v) => set({ venue: v }),
+  setVenue: (v) => set((s) => ({ venue: v, projectVersion: s.projectVersion + 1 })),
 
   // ── Stages ──
   addStage: (partial) => {
@@ -86,27 +96,28 @@ export const useStore = create<AppState>((set, get) => ({
       height: partial?.height ?? 3,
       label: partial?.label ?? `Stage ${venue.stages.length + 1}`,
     };
-    set({ venue: { ...venue, stages: [...venue.stages, newStage] } });
+    set((s) => ({ venue: { ...venue, stages: [...venue.stages, newStage] }, projectVersion: s.projectVersion + 1 }));
   },
 
   removeStage: (id) => {
     const { venue } = get();
-    set({ venue: { ...venue, stages: venue.stages.filter((s) => s.id !== id) } });
+    set((s) => ({ venue: { ...venue, stages: venue.stages.filter((st) => st.id !== id) }, projectVersion: s.projectVersion + 1 }));
   },
 
   updateStage: (id, updates) => {
     const { venue } = get();
-    set({
+    set((s) => ({
       venue: {
         ...venue,
-        stages: venue.stages.map((s) => (s.id === id ? { ...s, ...updates } : s)),
+        stages: venue.stages.map((st) => (st.id === id ? { ...st, ...updates } : st)),
       },
-    });
+      projectVersion: s.projectVersion + 1,
+    }));
   },
 
   // ── Background plan ──
   backgroundPlan: null,
-  setBackgroundPlan: (plan) => set({ backgroundPlan: plan }),
+  setBackgroundPlan: (plan) => set((s) => ({ backgroundPlan: plan, projectVersion: s.projectVersion + 1 })),
 
   // ── Reference persons ──
   persons: [],
@@ -120,14 +131,15 @@ export const useStore = create<AppState>((set, get) => ({
       height: 1.8,
       label: `Person ${persons.length + 1}`,
     };
-    set({ persons: [...persons, newPerson] });
+    set((s) => ({ persons: [...s.persons, newPerson], projectVersion: s.projectVersion + 1 }));
   },
 
-  removePerson: (id) => set((s) => ({ persons: s.persons.filter((p) => p.id !== id) })),
+  removePerson: (id) => set((s) => ({ persons: s.persons.filter((p) => p.id !== id), projectVersion: s.projectVersion + 1 })),
 
   updatePerson: (id, updates) =>
     set((s) => ({
       persons: s.persons.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+      projectVersion: s.projectVersion + 1,
     })),
 
   // ── Cameras ──
@@ -161,23 +173,26 @@ export const useStore = create<AppState>((set, get) => ({
       extenderActive: 1,
       useSpeedbooster: false,
     };
-    set({ cameras: [...cameras, newCam], selectedCameraId: newCam.id });
+    set((s) => ({ cameras: [...s.cameras, newCam], selectedCameraId: newCam.id, projectVersion: s.projectVersion + 1 }));
   },
 
   removeCamera: (id) =>
     set((s) => ({
       cameras: s.cameras.filter((c) => c.id !== id),
       selectedCameraId: s.selectedCameraId === id ? null : s.selectedCameraId,
+      projectVersion: s.projectVersion + 1,
     })),
 
   updateCamera: (id, updates) =>
     set((s) => ({
       cameras: s.cameras.map((c) => (c.id === id ? { ...c, ...updates } : c)),
+      projectVersion: s.projectVersion + 1,
     })),
 
   moveCamera: (id, x, y) =>
     set((s) => ({
       cameras: s.cameras.map((c) => (c.id === id ? { ...c, x, y } : c)),
+      projectVersion: s.projectVersion + 1,
     })),
 
   duplicateCamera: (id) => {
@@ -193,7 +208,7 @@ export const useStore = create<AppState>((set, get) => ({
       y: src.y + 1,
       color: CAMERA_COLORS[idx % CAMERA_COLORS.length],
     };
-    set({ cameras: [...cameras, dup], selectedCameraId: dup.id });
+    set((s) => ({ cameras: [...s.cameras, dup], selectedCameraId: dup.id, projectVersion: s.projectVersion + 1 }));
   },
 
   activeTab: '2d',
@@ -222,6 +237,61 @@ export const useStore = create<AppState>((set, get) => ({
     nextId = 1;
     stageId = 1;
     personId = 1;
-    set({ venue: defaultVenue, cameras: [], selectedCameraId: null, persons: [], backgroundPlan: null });
+    set({ venue: defaultVenue, cameras: [], selectedCameraId: null, persons: [], backgroundPlan: null, projectVersion: 1, lastSavedVersion: 0 });
+  },
+
+  // ── Project versioning ──
+  projectVersion: 1,
+  lastSavedVersion: 0,
+  hasUnsavedChanges: () => {
+    const s = get();
+    return s.projectVersion !== s.lastSavedVersion;
+  },
+  bumpVersion: () => set((s) => ({ projectVersion: s.projectVersion + 1 })),
+
+  saveProject: () => {
+    const s = get();
+    const project: ProjectFile = {
+      formatVersion: 1,
+      appVersion: APP_VERSION,
+      projectVersion: s.projectVersion,
+      savedAt: new Date().toISOString(),
+      venue: s.venue,
+      cameras: s.cameras,
+      persons: s.persons,
+      backgroundPlan: s.backgroundPlan,
+    };
+    const json = JSON.stringify(project, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${s.venue.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_v${s.projectVersion}.mcplan`;
+    a.click();
+    URL.revokeObjectURL(url);
+    set({ lastSavedVersion: s.projectVersion });
+  },
+
+  loadProject: async (file: File) => {
+    const text = await file.text();
+    const project: ProjectFile = JSON.parse(text);
+    if (project.formatVersion !== 1) {
+      alert('Unsupported project file format.');
+      return;
+    }
+    nextId = 1;
+    stageId = 1;
+    personId = 1;
+    // Re-assign IDs to avoid conflicts
+    const cameras = project.cameras.map((c) => ({ ...c, id: uid(), useSpeedbooster: c.useSpeedbooster ?? false }));
+    set({
+      venue: project.venue,
+      cameras,
+      persons: project.persons,
+      backgroundPlan: project.backgroundPlan,
+      selectedCameraId: cameras[0]?.id ?? null,
+      projectVersion: project.projectVersion,
+      lastSavedVersion: project.projectVersion,
+    });
   },
 }));

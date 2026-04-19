@@ -128,3 +128,15 @@ export interface DofResult {
 
 // ── Tab views ──
 export type ViewTab = '2d' | '3d' | 'preview' | 'calculator';
+
+// ── Saved project ──
+export interface ProjectFile {
+  formatVersion: 1;
+  appVersion: string;
+  projectVersion: number; // auto-incremented on changes
+  savedAt: string; // ISO date
+  venue: Venue;
+  cameras: VenueCamera[];
+  persons: ReferencePerson[];
+  backgroundPlan: BackgroundPlan | null;
+}
