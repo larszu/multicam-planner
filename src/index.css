@@ -46,7 +46,7 @@ select {
   cursor: pointer;
 }
 
-/* ── FlexLayout dark theme overrides ── */
+/* ── FlexLayout modern dark theme ── */
 .flexlayout__layout {
   --color-text: #e5e7eb;
   --color-background: #0f1117;
@@ -61,42 +61,224 @@ select {
   --color-drag2: rgba(59,130,246,0.30);
   --color-drag1-background: rgba(59,130,246,0.10);
   --color-drag2-background: rgba(59,130,246,0.20);
-  --font-size: 11px;
+  --font-size: 12px;
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: #0f1117;
+  background-color: #0f1117 !important;
 }
+
+/* Tab content area */
 .flexlayout__tab {
   background-color: #0f1117;
   overflow: hidden;
 }
-.flexlayout__tabset-selected {
-  background-color: #1a1d27;
-}
-.flexlayout__tabset_header {
-  background-color: #1a1d27;
-  border-bottom: 1px solid #2a2d3a;
-}
-.flexlayout__tab_button--selected {
+
+/* Tabset (tab bar container) */
+.flexlayout__tabset {
   background-color: #0f1117;
-  color: #3b82f6;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+/* Tab strip header bar */
+.flexlayout__tabset_header,
+.flexlayout__tabset-selected .flexlayout__tabset_header {
+  background: #12141c !important;
+  border-bottom: 1px solid #1e2030 !important;
+  min-height: 32px;
+  padding: 0 2px;
+}
+.flexlayout__tabset_header_content {
+  padding: 0;
+}
+
+/* Tab strip area (where tab buttons sit) */
+.flexlayout__tabset_tabbar_outer {
+  background: #12141c !important;
+  border-bottom: 1px solid #1e2030 !important;
+}
+.flexlayout__tabset_tabbar_inner {
+  padding: 0 2px;
+}
+
+/* Individual tab buttons */
+.flexlayout__tab_button {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 6px 14px !important;
+  margin: 0 !important;
+  font-size: 11px !important;
+  font-weight: 500;
+  color: #6b7280 !important;
+  border-bottom: 2px solid transparent !important;
+  transition: color 0.15s, border-color 0.15s;
+  box-shadow: none !important;
+  outline: none !important;
 }
 .flexlayout__tab_button:hover {
-  background-color: #252a36;
+  color: #9ca3af !important;
+  background: transparent !important;
 }
-.flexlayout__splitter {
-  background-color: #2a2d3a;
+.flexlayout__tab_button--selected {
+  color: #e5e7eb !important;
+  background: transparent !important;
+  border-bottom: 2px solid #3b82f6 !important;
 }
-.flexlayout__splitter:hover {
-  background-color: #3b82f6;
+.flexlayout__tab_button_leading,
+.flexlayout__tab_button_trailing {
+  display: none; /* hide close X and drag handle for cleaner look */
 }
+
+/* Toolbar buttons (maximize, etc) in tab strip */
 .flexlayout__tab_toolbar_button {
-  color: #6b7280;
+  color: #4b5563 !important;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
 }
 .flexlayout__tab_toolbar_button:hover {
-  color: #e5e7eb;
-  background-color: #2a2d3a;
+  color: #e5e7eb !important;
+  background-color: #1e2030 !important;
 }
-.flexlayout__border_bar {
-  background-color: #1a1d27;
+
+.panel-toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: 4px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s, border-color 0.15s;
+}
+
+.panel-toolbar-button:hover {
+  color: #e5e7eb;
+  background-color: #1e2030;
   border-color: #2a2d3a;
+}
+
+.panel-toolbar-button-danger:hover {
+  color: #fca5a5;
+  background-color: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.28);
+}
+
+.panel-title-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #cbd5e1;
+  text-transform: uppercase;
+}
+
+.layout-mode-grid .flexlayout__tabset_header,
+.layout-mode-grid .flexlayout__tabset-selected .flexlayout__tabset_header,
+.layout-mode-grid .flexlayout__tabset_tabbar_outer {
+  background: #12141c !important;
+  border-bottom: 1px solid #1e2030 !important;
+  min-height: 34px;
+}
+
+.layout-mode-grid .flexlayout__tab_button,
+.layout-mode-grid .flexlayout__tab_button_overflow,
+.layout-mode-grid .flexlayout__tab_button_overflow_count,
+.layout-mode-grid .flexlayout__tab_button_content,
+.layout-mode-grid .flexlayout__tab_button_stretch {
+  display: none !important;
+}
+
+.layout-mode-grid .flexlayout__tab_toolbar,
+.layout-mode-grid .flexlayout__tab_toolbar_sticky_buttons_container {
+  margin-left: auto;
+}
+
+.layout-mode-focus .flexlayout__tabset_header,
+.layout-mode-focus .flexlayout__tabset-selected .flexlayout__tabset_header,
+.layout-mode-focus .flexlayout__tabset_tabbar_outer {
+  display: none !important;
+}
+
+/* Splitter between panels */
+.flexlayout__splitter {
+  background-color: #0f1117 !important;
+  opacity: 1;
+}
+.flexlayout__splitter:hover {
+  background-color: #3b82f6 !important;
+}
+.flexlayout__splitter_drag {
+  background-color: #3b82f6 !important;
+}
+
+/* Border bar (edge docking zone) */
+.flexlayout__border_bar {
+  background-color: #12141c !important;
+  border-color: #1e2030 !important;
+}
+
+/* Drag/drop outline */
+.flexlayout__outline_rect {
+  border: 2px solid #3b82f6 !important;
+  border-radius: 6px;
+}
+.flexlayout__outline_rect_inner {
+  border: none !important;
+}
+
+/* Edge indicators */
+.flexlayout__edge_rect {
+  background-color: rgba(59,130,246,0.15) !important;
+  border: 1px solid rgba(59,130,246,0.4) !important;
+  border-radius: 4px;
+}
+
+/* Popup menu (for overflow tabs) */
+.flexlayout__popup_menu {
+  background: #1a1d27 !important;
+  border: 1px solid #2a2d3a !important;
+  border-radius: 8px !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5) !important;
+  padding: 4px !important;
+}
+.flexlayout__popup_menu_item {
+  color: #e5e7eb !important;
+  padding: 6px 12px !important;
+  border-radius: 4px !important;
+  font-size: 12px !important;
+}
+.flexlayout__popup_menu_item:hover {
+  background: #252a36 !important;
+}
+
+/* Tab floating window */
+.flexlayout__floating_window_content {
+  background: #0f1117 !important;
+}
+
+/* Remove any remaining 3D borders / old-school effects */
+.flexlayout__tabset,
+.flexlayout__tab,
+.flexlayout__border_bar,
+.flexlayout__splitter {
+  box-shadow: none !important;
+}
+
+/* Maximize button overlay */
+.flexlayout__tab_toolbar_button-max svg,
+.flexlayout__tab_toolbar_button-float svg {
+  width: 14px;
+  height: 14px;
 }

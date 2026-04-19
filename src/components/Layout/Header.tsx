@@ -1,7 +1,6 @@
 import { useStore, APP_VERSION } from '../../store/useStore';
-import { FiCamera, FiLayout, FiBox, FiMonitor, FiSliders, FiSave, FiUpload, FiDownload, FiRefreshCw } from 'react-icons/fi';
-import { useRef, useCallback } from 'react';
-import { Model, Actions } from 'flexlayout-react';
+import { FiCamera, FiLayout, FiBox, FiMonitor, FiSliders, FiSave, FiUpload, FiDownload, FiRefreshCw, FiChevronDown, FiX } from 'react-icons/fi';
+import { useRef, useCallback, useState, useEffect } from 'react';
 
 const tabs: { id: string; label: string; icon: React.ReactNode }[] = [
   { id: 'tab-2d', label: '2D Plan', icon: <FiLayout size={16} /> },
@@ -10,24 +9,46 @@ const tabs: { id: string; label: string; icon: React.ReactNode }[] = [
   { id: 'tab-calc', label: 'Calculator', icon: <FiSliders size={16} /> },
 ];
 
-function selectFlexTab(tabId: string) {
-  const model = (window as any).__flexModel as Model | undefined;
-  if (!model) return;
-  try {
-    model.doAction(Actions.selectTab(tabId));
-  } catch { /* tab may not exist */ }
-}
+type HeaderProps = {
+  onSelectTab: (tabId: string) => void;
+  onSetLayoutMode: (mode: 'focus' | 'grid') => void;
+  onApplyPreset: (presetId: string) => void;
+  onSaveLayoutPreset: () => void;
+  onDeleteLayoutPreset: (presetId: string) => void;
+  onResetLayout: () => void;
+  onDragNewPanel: (tabId: string, event: DragEvent) => void;
+  layoutPresetOptions: { id: string; label: string }[];
+  layoutMode: 'focus' | 'grid' | 'custom';
+};
 
-function resetLayout() {
-  localStorage.removeItem('multicam-layout');
-  localStorage.removeItem('multicam-layout-version');
-  window.location.reload();
-}
-
-export default function Header() {
+export default function Header({
+  onSelectTab,
+  onSetLayoutMode,
+  onApplyPreset,
+  onSaveLayoutPreset,
+  onDeleteLayoutPreset,
+  onResetLayout,
+  onDragNewPanel,
+  layoutPresetOptions,
+  layoutMode,
+}: HeaderProps) {
   const { venue, projectVersion, lastSavedVersion, saveProject, loadProject } = useStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const unsaved = projectVersion !== lastSavedVersion;
+  const [presetMenuOpen, setPresetMenuOpen] = useState(false);
+  const presetMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close preset menu on outside click
+  useEffect(() => {
+    if (!presetMenuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (presetMenuRef.current && !presetMenuRef.current.contains(e.target as Node)) {
+        setPresetMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [presetMenuOpen]);
 
   const handleLoad = useCallback(() => {
     fileInputRef.current?.click();
@@ -47,8 +68,8 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="h-12 bg-bc-panel border-b border-bc-border flex items-center justify-between px-2 sm:px-4 shrink-0">
-      <div className="flex items-center gap-2 text-white min-w-0">
+    <header className="h-14 bg-bc-panel border-b border-bc-border flex items-center justify-between px-2 sm:px-4 shrink-0 gap-3">
+      <div className="flex items-center gap-2 text-white min-w-0 shrink-0">
         <FiCamera size={20} className="text-bc-accent shrink-0" />
         <span className="font-bold text-sm hidden sm:inline">MultiCam Planner</span>
         <span className="text-xs text-gray-500 ml-2 hidden lg:inline">— {venue.name}</span>
@@ -57,36 +78,114 @@ export default function Header() {
         </span>
       </div>
 
-      <nav className="flex gap-1">
+      <nav className="flex gap-2 min-w-0 flex-1 justify-center items-center">
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => selectFlexTab(tab.id)}
-            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded text-xs font-medium transition-colors text-gray-400 hover:text-white hover:bg-bc-border"
+            onClick={() => onSelectTab(tab.id)}
+            draggable={layoutMode === 'grid'}
+            onDragStart={(e) => {
+              onDragNewPanel(tab.id, e.nativeEvent);
+            }}
+            className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-gray-300 hover:text-white hover:bg-bc-border border border-transparent hover:border-bc-border ${
+              layoutMode === 'grid' ? 'cursor-grab active:cursor-grabbing' : ''
+            }`}
+            title={layoutMode === 'grid' ? `Drag ${tab.label} into the grid` : `${tab.label} in focus view`}
           >
             {tab.icon}
             <span className="hidden sm:inline">{tab.label}</span>
           </button>
         ))}
+        <div className="hidden md:flex items-center rounded-lg border border-bc-border bg-bc-dark p-0.5 ml-2">
+          <button
+            type="button"
+            onClick={() => onSetLayoutMode('focus')}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${layoutMode === 'focus' ? 'bg-bc-accent text-white' : 'text-gray-400 hover:text-white'}`}
+            title="Show a single focused panel"
+          >
+            Focus
+          </button>
+          <button
+            type="button"
+            onClick={() => onSetLayoutMode('grid')}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${layoutMode === 'grid' ? 'bg-bc-accent text-white' : 'text-gray-400 hover:text-white'}`}
+            title="Show the grid workspace"
+          >
+            Grid
+          </button>
+        </div>
+        <div className="relative" ref={presetMenuRef}>
+          <button
+            type="button"
+            onClick={() => setPresetMenuOpen((open) => !open)}
+            className="flex items-center gap-1 px-2 py-1.5 rounded-md text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors"
+            title="Layout presets"
+          >
+            <span>Presets</span>
+            <FiChevronDown size={12} />
+          </button>
+          {presetMenuOpen && (
+            <div className="absolute right-0 top-full mt-2 min-w-[200px] rounded-lg border border-bc-border bg-bc-panel shadow-2xl overflow-hidden z-30">
+              <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-500 border-b border-bc-border">Built-in</div>
+              <button
+                type="button"
+                onClick={() => { onApplyPreset('focus'); setPresetMenuOpen(false); }}
+                className={`w-full text-left px-3 py-2 text-xs transition-colors ${layoutMode === 'focus' ? 'text-bc-accent' : 'text-gray-300 hover:text-white hover:bg-bc-border'}`}
+              >Focus</button>
+              <button
+                type="button"
+                onClick={() => { onApplyPreset('grid'); setPresetMenuOpen(false); }}
+                className={`w-full text-left px-3 py-2 text-xs transition-colors ${layoutMode === 'grid' ? 'text-bc-accent' : 'text-gray-300 hover:text-white hover:bg-bc-border'}`}
+              >Grid</button>
+              {layoutPresetOptions.length > 0 && (
+                <>
+                  <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-500 border-t border-b border-bc-border">Saved</div>
+                  {layoutPresetOptions.map((preset) => (
+                    <div key={preset.id} className="flex items-center group">
+                      <button
+                        type="button"
+                        onClick={() => { onApplyPreset(preset.id); setPresetMenuOpen(false); }}
+                        className="flex-1 text-left px-3 py-2 text-xs text-gray-300 hover:text-white hover:bg-bc-border transition-colors"
+                      >{preset.label}</button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onDeleteLayoutPreset(preset.id); }}
+                        className="px-2 py-2 text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                        title={`Delete preset "${preset.label}"`}
+                      ><FiX size={12} /></button>
+                    </div>
+                  ))}
+                </>
+              )}
+              <div className="border-t border-bc-border">
+                <button
+                  type="button"
+                  onClick={() => { onSaveLayoutPreset(); setPresetMenuOpen(false); }}
+                  className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors flex items-center gap-1.5"
+                ><FiSave size={12} /> Save current as preset…</button>
+              </div>
+            </div>
+          )}
+        </div>
         <button
-          onClick={resetLayout}
-          className="flex items-center gap-1 px-2 py-1.5 rounded text-xs text-gray-500 hover:text-gray-300 hover:bg-bc-border transition-colors"
+          onClick={onResetLayout}
+          className="flex items-center gap-1 px-2 py-1.5 rounded-md text-xs text-gray-500 hover:text-gray-300 hover:bg-bc-border transition-colors"
           title="Reset panel layout to default"
         >
           <FiRefreshCw size={12} />
         </button>
       </nav>
 
-      <div className="flex items-center gap-1 sm:gap-2">
-        <button onClick={saveProject} className="flex items-center gap-1 px-2 py-1 rounded text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors" title="Save project (.mcplan)">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        <button onClick={saveProject} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors" title="Save project (.mcplan)">
           <FiSave size={14} />
           <span className="hidden sm:inline">Save</span>
         </button>
-        <button onClick={handleLoad} className="flex items-center gap-1 px-2 py-1 rounded text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors" title="Open project file">
+        <button onClick={handleLoad} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors" title="Open project file">
           <FiUpload size={14} />
           <span className="hidden sm:inline">Open</span>
         </button>
-        <button onClick={handleExport} className="flex items-center gap-1 px-2 py-1 rounded text-xs text-bc-accent hover:text-white hover:bg-bc-accent/20 transition-colors" title="Export all views as PNG">
+        <button onClick={handleExport} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-bc-accent hover:text-white hover:bg-bc-accent/20 transition-colors" title="Export all views as PNG">
           <FiDownload size={14} />
           <span className="hidden sm:inline">Export</span>
         </button>

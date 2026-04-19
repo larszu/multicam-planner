@@ -152,12 +152,12 @@ function FPSControls({ mouseLookEnabled }: { mouseLookEnabled: boolean }) {
   const isLooking = useRef(false);
   const speed = 6; // m/s base
 
-  // Sync yaw/pitch from initial camera orientation
+  // Sync yaw from initial camera orientation, keep pitch tilted down
   useEffect(() => {
     const dir = new THREE.Vector3();
     camera.getWorldDirection(dir);
     yaw.current = Math.atan2(-dir.x, -dir.z);
-    pitch.current = Math.asin(Math.max(-1, Math.min(1, dir.y)));
+    pitch.current = -0.35; // ~20° downward so the venue floor is always visible
   }, [camera]);
 
   // Listen for reset event
@@ -295,7 +295,7 @@ function StageMesh({ x, y, w, h, label }: { x: number; y: number; w: number; h: 
         {label}
       </Text>
       {/* Stage dimensions */}
-      <Text position={[0, 0.15, h / 2 + 0.3]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.25} color="#60a5fa88" anchorX="center">
+      <Text position={[0, 0.15, h / 2 + 0.3]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.25} color="#60a5fa" anchorX="center" fillOpacity={0.53}>
         {w}×{h}m
       </Text>
     </group>

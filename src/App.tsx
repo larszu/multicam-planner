@@ -8,74 +8,134 @@ import Calculator from './components/Sidebar/Calculator';
 import TemplateSelector from './components/Templates/TemplateSelector';
 import ExportPanel from './components/Export/ExportPanel';
 import { Suspense, useState, useRef, useCallback, useEffect } from 'react';
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import { Layout, Model, TabNode, Actions, DockLocation } from 'flexlayout-react';
-import type { IJsonModel } from 'flexlayout-react';
+import { FiChevronLeft, FiChevronRight, FiMaximize2, FiMinimize2, FiMinus, FiX } from 'react-icons/fi';
+import { Layout, Model, TabNode, Actions } from 'flexlayout-react';
+import type { IJsonModel, ITabSetRenderValues, TabSetNode, BorderNode } from 'flexlayout-react';
 import 'flexlayout-react/style/dark.css';
 
 const LAYOUT_STORAGE_KEY = 'multicam-layout';
 const LAYOUT_VERSION_KEY = 'multicam-layout-version';
-const CURRENT_LAYOUT_VERSION = 2;
+const LAYOUT_PRESETS_KEY = 'multicam-layout-presets';
+const CURRENT_LAYOUT_VERSION = 4;
 
-/* ── FlexLayout model definition ── */
-const defaultLayoutJson: IJsonModel = {
-  global: {
-    tabEnableClose: false,
-    tabEnableRenderOnDemand: false, // keep 3D view alive
-    splitterSize: 4,
-    tabSetEnableMaximize: true,
-  },
-  layout: {
-    type: 'row',
-    weight: 100,
-    children: [
-      {
-        type: 'row',
-        weight: 60,
-        children: [
-          {
-            type: 'tabset',
-            weight: 62,
-            id: 'ts-left-2d',
-            children: [
-              { type: 'tab', name: '2D Plan', component: 'venue2d', id: 'tab-2d' },
-            ],
-          },
-          {
-            type: 'tabset',
-            weight: 38,
-            id: 'ts-left-3d',
-            children: [
-              { type: 'tab', name: '3D View', component: 'venue3d', id: 'tab-3d' },
-            ],
-          },
-        ],
-      },
-      {
-        type: 'row',
-        weight: 40,
-        children: [
-          {
-            type: 'tabset',
-            weight: 60,
-            id: 'ts-right-top',
-            children: [
-              { type: 'tab', name: 'Preview', component: 'preview', id: 'tab-preview' },
-            ],
-          },
-          {
-            type: 'tabset',
-            weight: 40,
-            id: 'ts-right-bottom',
-            children: [
-              { type: 'tab', name: 'Calculator', component: 'calculator', id: 'tab-calc' },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-};
+type LayoutMode = 'focus' | 'grid' | 'custom';
+type LayoutPresetOption = { id: string; label: string };
+
+function getSelectedIndexForTab(tabId: string) {
+  switch (tabId) {
+    case 'tab-3d':
+      return 1;
+    case 'tab-preview':
+      return 2;
+    case 'tab-calc':
+      return 3;
+    case 'tab-2d':
+    default:
+      return 0;
+  }
+}
+
+function createFocusLayoutJson(selectedTabId = 'tab-2d'): IJsonModel {
+  return {
+    global: {
+      tabEnableClose: false,
+      tabEnableRenderOnDemand: false,
+      splitterSize: 4,
+      tabSetEnableMaximize: false,
+    },
+    layout: {
+      type: 'row',
+      weight: 100,
+      children: [
+        {
+          type: 'tabset',
+          id: 'ts-main',
+          selected: getSelectedIndexForTab(selectedTabId),
+          weight: 100,
+          children: [
+            { type: 'tab', name: '2D Plan', component: 'venue2d', id: 'tab-2d' },
+            { type: 'tab', name: '3D View', component: 'venue3d', id: 'tab-3d' },
+            { type: 'tab', name: 'Preview', component: 'preview', id: 'tab-preview' },
+            { type: 'tab', name: 'Calculator', component: 'calculator', id: 'tab-calc' },
+          ],
+        },
+      ],
+    },
+  };
+}
+
+function createGridLayoutJson(): IJsonModel {
+  return {
+    global: {
+      tabEnableClose: false,
+      tabEnableRenderOnDemand: false,
+      splitterSize: 4,
+      tabSetEnableMaximize: false,
+    },
+    layout: {
+      type: 'row',
+      weight: 100,
+      children: [
+        {
+          type: 'row',
+          weight: 60,
+          children: [
+            {
+              type: 'tabset',
+              weight: 62,
+              id: 'ts-left-2d',
+              selected: 0,
+              children: [
+                { type: 'tab', name: '2D Plan', component: 'venue2d', id: 'tab-2d' },
+              ],
+            },
+            {
+              type: 'tabset',
+              weight: 38,
+              id: 'ts-left-3d',
+              selected: 0,
+              children: [
+                { type: 'tab', name: '3D View', component: 'venue3d', id: 'tab-3d' },
+              ],
+            },
+          ],
+        },
+        {
+          type: 'row',
+          weight: 40,
+          children: [
+            {
+              type: 'tabset',
+              weight: 60,
+              id: 'ts-right-top',
+              selected: 0,
+              children: [
+                { type: 'tab', name: 'Preview', component: 'preview', id: 'tab-preview' },
+              ],
+            },
+            {
+              type: 'tabset',
+              weight: 40,
+              id: 'ts-right-bottom',
+              selected: 0,
+              children: [
+                { type: 'tab', name: 'Calculator', component: 'calculator', id: 'tab-calc' },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  };
+}
+
+function loadUserLayoutPresets(): Record<string, IJsonModel> {
+  try {
+    return JSON.parse(localStorage.getItem(LAYOUT_PRESETS_KEY) ?? '{}') as Record<string, IJsonModel>;
+  } catch {
+    return {};
+  }
+}
 
 function LoadingFallback() {
   return (
@@ -87,30 +147,214 @@ function LoadingFallback() {
 
 /** Persist layout model across re-renders but not component remounts */
 function useLayoutModel() {
-  const [model] = useState(() => {
+  return useState(() => {
     try {
       const saved = localStorage.getItem(LAYOUT_STORAGE_KEY);
       const savedVersion = Number(localStorage.getItem(LAYOUT_VERSION_KEY) ?? '0');
       if (saved && savedVersion === CURRENT_LAYOUT_VERSION) return Model.fromJson(JSON.parse(saved));
     } catch { /* ignore corrupt data */ }
-    return Model.fromJson(defaultLayoutJson);
+    return Model.fromJson(createFocusLayoutJson());
   });
-  return model;
 }
 
 export default function App() {
   const { sidebarCollapsed, setSidebarCollapsed } = useStore();
   const [sidebarTab, setSidebarTab] = useState<'cameras' | 'templates'>('cameras');
-  const model = useLayoutModel();
+  const [model, setModel] = useLayoutModel();
+  const [layoutEpoch, setLayoutEpoch] = useState(0);
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>('focus');
+  const [focusTabId, setFocusTabId] = useState('tab-2d');
+  const [userLayoutPresets, setUserLayoutPresets] = useState<Record<string, IJsonModel>>(() => loadUserLayoutPresets());
   const layoutRef = useRef<Layout>(null);
+
+  const persistLayout = useCallback((nextModel: Model) => {
+    try {
+      localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(nextModel.toJson()));
+      localStorage.setItem(LAYOUT_VERSION_KEY, String(CURRENT_LAYOUT_VERSION));
+    } catch { /* quota exceeded etc */ }
+  }, []);
+
+  const applyLayoutJson = useCallback((json: IJsonModel) => {
+    const nextModel = Model.fromJson(json);
+    setModel(nextModel);
+    persistLayout(nextModel);
+    setLayoutEpoch((current) => current + 1);
+  }, [persistLayout]);
 
   // Save layout to localStorage on change
   const handleModelChange = useCallback(() => {
+    persistLayout(model);
+  }, [model, persistLayout]);
+
+  const handleSelectTab = useCallback((tabId: string) => {
+    setFocusTabId(tabId);
+    setLayoutMode('focus');
+    applyLayoutJson(createFocusLayoutJson(tabId));
+  }, [applyLayoutJson]);
+
+  const handleSetLayoutMode = useCallback((nextMode: 'focus' | 'grid') => {
+    if (nextMode === 'focus') {
+      setLayoutMode('focus');
+      applyLayoutJson(createFocusLayoutJson(focusTabId));
+      return;
+    }
+
+    setLayoutMode('grid');
+    applyLayoutJson(createGridLayoutJson());
+  }, [applyLayoutJson, focusTabId]);
+
+  const handleApplyPreset = useCallback((presetId: string) => {
+    if (presetId === 'focus') {
+      setLayoutMode('focus');
+      applyLayoutJson(createFocusLayoutJson(focusTabId));
+      return;
+    }
+    if (presetId === 'grid') {
+      setLayoutMode('grid');
+      applyLayoutJson(createGridLayoutJson());
+      return;
+    }
+    const userPreset = userLayoutPresets[presetId];
+    if (userPreset) {
+      setLayoutMode('custom');
+      applyLayoutJson(userPreset);
+    }
+  }, [applyLayoutJson, focusTabId, userLayoutPresets]);
+
+  const handleSaveLayoutPreset = useCallback(() => {
+    const name = window.prompt('Preset name for the current layout:');
+    const trimmedName = name?.trim();
+    if (!trimmedName) return;
+
+    const nextPresets = {
+      ...userLayoutPresets,
+      [trimmedName]: model.toJson(),
+    };
+
+    setUserLayoutPresets(nextPresets);
     try {
-      localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(model.toJson()));
-      localStorage.setItem(LAYOUT_VERSION_KEY, String(CURRENT_LAYOUT_VERSION));
+      localStorage.setItem(LAYOUT_PRESETS_KEY, JSON.stringify(nextPresets));
     } catch { /* quota exceeded etc */ }
+  }, [model, userLayoutPresets]);
+
+  const handleDeleteLayoutPreset = useCallback((presetId: string) => {
+    const nextPresets = { ...userLayoutPresets };
+    delete nextPresets[presetId];
+    setUserLayoutPresets(nextPresets);
+    try {
+      localStorage.setItem(LAYOUT_PRESETS_KEY, JSON.stringify(nextPresets));
+    } catch { /* quota exceeded etc */ }
+  }, [userLayoutPresets]);
+
+  const handleResetLayout = useCallback(() => {
+    localStorage.removeItem(LAYOUT_STORAGE_KEY);
+    localStorage.removeItem(LAYOUT_VERSION_KEY);
+    setLayoutMode('focus');
+    setFocusTabId('tab-2d');
+    applyLayoutJson(createFocusLayoutJson('tab-2d'));
+  }, [applyLayoutJson]);
+
+  const handleMinimizeToFocus = useCallback((tabId: string) => {
+    setFocusTabId(tabId);
+    setLayoutMode('focus');
+    applyLayoutJson(createFocusLayoutJson(tabId));
+  }, [applyLayoutJson]);
+
+  const TAB_CONFIGS: Record<string, { component: string; name: string }> = {
+    'tab-2d': { component: 'venue2d', name: '2D Plan' },
+    'tab-3d': { component: 'venue3d', name: '3D View' },
+    'tab-preview': { component: 'preview', name: 'Preview' },
+    'tab-calc': { component: 'calculator', name: 'Calculator' },
+  };
+
+  const handleDragNewPanel = useCallback((tabId: string, event: DragEvent) => {
+    const config = TAB_CONFIGS[tabId];
+    if (!config || !layoutRef.current) return;
+    // Check if tab already exists in the model – if so, just select it
+    try {
+      const existing = model.getNodeById(tabId);
+      if (existing) {
+        model.doAction(Actions.selectTab(tabId));
+        return;
+      }
+    } catch { /* node not found, proceed with drag */ }
+    layoutRef.current.addTabWithDragAndDrop(event, {
+      component: config.component,
+      name: config.name,
+      id: tabId,
+    });
   }, [model]);
+
+  const handleRenderTabSet = useCallback((node: TabSetNode | BorderNode, renderValues: ITabSetRenderValues) => {
+    if (node.getType() !== 'tabset') return;
+    if (layoutMode !== 'grid') return;
+
+    const tabSetNode = node as TabSetNode;
+    const selectedNode = tabSetNode.getSelectedNode();
+    const isMaximized = tabSetNode.isMaximized();
+
+    const selectedTab = selectedNode && selectedNode.getType() === 'tab' ? selectedNode as TabNode : null;
+
+    renderValues.leading = selectedTab
+      ? <div className="panel-title-label">{selectedTab.getName()}</div>
+      : null;
+
+    if (selectedTab) {
+      renderValues.stickyButtons.push(
+        <button
+          key={`${tabSetNode.getId()}-minimize`}
+          type="button"
+          className="panel-toolbar-button"
+          title="Minimize this panel into focus view"
+          onClick={(event) => {
+            event.stopPropagation();
+            handleMinimizeToFocus(selectedTab.getId());
+          }}
+        >
+          <FiMinus size={13} />
+        </button>,
+      );
+    }
+
+    renderValues.stickyButtons.push(
+      <button
+        key={`${tabSetNode.getId()}-maximize`}
+        type="button"
+        className="panel-toolbar-button"
+        title={isMaximized ? 'Restore panel' : 'Fullscreen panel'}
+        onClick={(event) => {
+          event.stopPropagation();
+          model.doAction(Actions.maximizeToggle(tabSetNode.getId(), tabSetNode.getWindowId()));
+        }}
+      >
+        {isMaximized ? <FiMinimize2 size={13} /> : <FiMaximize2 size={13} />}
+      </button>,
+    );
+
+    if (selectedNode && selectedNode.getType() === 'tab') {
+      renderValues.stickyButtons.push(
+        <button
+          key={`${tabSetNode.getId()}-close`}
+          type="button"
+          className="panel-toolbar-button panel-toolbar-button-danger"
+          title="Close current panel"
+          onClick={(event) => {
+            event.stopPropagation();
+            model.doAction(Actions.deleteTab(selectedNode.getId()));
+          }}
+        >
+          <FiX size={13} />
+        </button>,
+      );
+    }
+  }, [handleMinimizeToFocus, layoutMode, model]);
+
+  const layoutPresetOptions: LayoutPresetOption[] = Object.keys(userLayoutPresets)
+    .sort((left, right) => left.localeCompare(right))
+    .map((presetName) => ({
+      id: presetName,
+      label: presetName,
+    }));
 
   // ── Factory: renders panel content for each tab ──
   const factory = useCallback((node: TabNode) => {
@@ -135,12 +379,6 @@ export default function App() {
     }
   }, []);
 
-  // Expose model to Header for tab selection
-  useEffect(() => {
-    (window as any).__flexModel = model;
-    return () => { delete (window as any).__flexModel; };
-  }, [model]);
-
   // ── Responsive: auto-collapse sidebar on small screens ──
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 768px)');
@@ -152,7 +390,17 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col bg-bc-dark text-gray-200">
-      <Header />
+      <Header
+        onSelectTab={handleSelectTab}
+        onSetLayoutMode={handleSetLayoutMode}
+        onApplyPreset={handleApplyPreset}
+        onSaveLayoutPreset={handleSaveLayoutPreset}
+        onDeleteLayoutPreset={handleDeleteLayoutPreset}
+        onResetLayout={handleResetLayout}
+        onDragNewPanel={handleDragNewPanel}
+        layoutPresetOptions={layoutPresetOptions}
+        layoutMode={layoutMode}
+      />
 
       <div className="flex flex-1 overflow-hidden">
         {/* ── Left sidebar ── */}
@@ -187,12 +435,14 @@ export default function App() {
         </button>
 
         {/* ── Main docking area (FlexLayout) ── */}
-        <div className="flex-1 overflow-hidden relative flexlayout-custom-theme">
+        <div className={`flex-1 overflow-hidden relative flexlayout-custom-theme layout-mode-${layoutMode}`}>
           <Layout
+            key={layoutEpoch}
             ref={layoutRef}
             model={model}
             factory={factory}
             onModelChange={handleModelChange}
+            onRenderTabSet={handleRenderTabSet}
             realtimeResize
           />
         </div>

@@ -341,14 +341,10 @@ export default function Venue2D() {
         onMouseMove={handleStageMouseMove}
         style={{ cursor: calibActive || drawingWall ? 'crosshair' : 'grab' }}
       >
-      {/* Venue area background */}
-      <Layer>
-        <Rect x={0} y={0} width={W} height={H} fill="#111318" listening={false} />
-      </Layer>
-
-      {/* Background plan image */}
-      {bgImage && backgroundPlan && (
-        <Layer>
+      {/* ── Layer 1: Static background (venue, image, grid, scale bar) ── */}
+      <Layer listening={false}>
+        <Rect x={0} y={0} width={W} height={H} fill="#111318" />
+        {bgImage && backgroundPlan && (
           <KImage
             image={bgImage}
             x={(backgroundPlan.offsetX) * ppm}
@@ -356,89 +352,31 @@ export default function Venue2D() {
             width={backgroundPlan.widthPx * backgroundPlan.scaleX * ppm}
             height={backgroundPlan.heightPx * backgroundPlan.scaleY * ppm}
             opacity={backgroundPlan.opacity}
-            listening={false}
           />
-        </Layer>
-      )}
-
-      {/* Grid + rulers */}
-      <Layer>
+        )}
         {Array.from({ length: Math.floor(venue.widthM) + 1 }).map((_, i) => (
           <Group key={`vg-${i}`}>
             <Line points={[i * ppm, 0, i * ppm, H]} stroke="#1e2030" strokeWidth={1} />
-            {/* Horizontal ruler text */}
             <Text x={i * ppm + 2} y={2} text={`${i}m`} fontSize={9} fill="#555" />
           </Group>
         ))}
         {Array.from({ length: Math.floor(venue.heightM) + 1 }).map((_, i) => (
           <Group key={`hg-${i}`}>
             <Line points={[0, i * ppm, W, i * ppm]} stroke="#1e2030" strokeWidth={1} />
-            {/* Vertical ruler text */}
             <Text x={2} y={i * ppm + 2} text={`${i}m`} fontSize={9} fill="#555" />
           </Group>
         ))}
-        {/* Venue border */}
         <Rect x={0} y={0} width={W} height={H} stroke="#2a2d3a" strokeWidth={2} />
+        {/* Scale bar */}
+        <Line points={[10, H - 20, 10 + 5 * ppm, H - 20]} stroke="#666" strokeWidth={2} />
+        <Line points={[10, H - 25, 10, H - 15]} stroke="#666" strokeWidth={2} />
+        <Line points={[10 + 5 * ppm, H - 25, 10 + 5 * ppm, H - 15]} stroke="#666" strokeWidth={2} />
+        <Text x={10} y={H - 38} text="5m" fontSize={11} fill="#666" />
       </Layer>
 
-      {/* Stages (draggable) */}
+      {/* ── Layer 2: Interactive objects (FOV, stages, walls, persons, cameras) ── */}
       <Layer>
-        {venue.stages.map((s) => (
-          <Group
-            key={s.id}
-            x={s.x * ppm}
-            y={s.y * ppm}
-            draggable={!drawingWall}
-            onDragEnd={(e) => handleStageDragEnd(s.id, e)}
-          >
-            <Rect
-              width={s.width * ppm}
-              height={s.height * ppm}
-              fill="rgba(59,130,246,0.15)"
-              stroke="#3b82f6"
-              strokeWidth={2}
-              cornerRadius={4}
-            />
-            <Text
-              x={4}
-              y={4}
-              text={s.label}
-              fontSize={12}
-              fill="#3b82f6"
-              fontStyle="bold"
-            />
-            {/* Stage dimensions */}
-            <Text
-              x={4}
-              y={s.height * ppm - 16}
-              text={`${s.width}×${s.height}m`}
-              fontSize={9}
-              fill="#3b82f688"
-            />
-          </Group>
-        ))}
-      </Layer>
-
-      {/* Reference persons (draggable) */}
-      <Layer>
-        {persons.map((p) => (
-          <Group
-            key={p.id}
-            x={p.x * ppm}
-            y={p.y * ppm}
-            draggable
-            onDragEnd={(e) => handlePersonDragEnd(p.id, e)}
-          >
-            {/* Person circle */}
-            <Circle radius={6} fill="#f59e0b" stroke="#fff" strokeWidth={1} opacity={0.8} />
-            {/* Label */}
-            <Text x={-20} y={8} text={`${p.label} (${p.height}m)`} fontSize={9} fill="#f59e0b" align="center" width={40} />
-          </Group>
-        ))}
-      </Layer>
-
-      {/* FOV cones */}
-      <Layer>
+        {/* FOV cones (non-interactive, rendered first = behind everything) */}
         {cameras.map((cam) => {
           if (!showAllFov && cam.id !== selectedCameraId) return null;
           const camDef = getCameraById(cam.cameraId);
@@ -447,69 +385,53 @@ export default function Venue2D() {
 
           const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster);
           const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
-          const fovMin = computeFov(sensor, lensDef.focalLengthMax, cam.focusDistance, cam.extenderActive); // max FL = narrowest
-          const fovMax = computeFov(sensor, lensDef.focalLengthMin, cam.focusDistance, cam.extenderActive); // min FL = widest
+          const fovMin = computeFov(sensor, lensDef.focalLengthMax, cam.focusDistance, cam.extenderActive);
+          const fovMax = computeFov(sensor, lensDef.focalLengthMin, cam.focusDistance, cam.extenderActive);
           const range = cam.focusDistance * ppm;
           const isSelected = cam.id === selectedCameraId;
 
           return (
             <React.Fragment key={`fov-group-${cam.id}`}>
-              {/* Max FOV (widest, at min focal length) – green */}
               {isSelected && lensDef.focalLengthMin !== lensDef.focalLengthMax && (
                 <Wedge
-                  x={cam.x * ppm}
-                  y={cam.y * ppm}
-                  radius={range}
-                  angle={fovMax.horizontalDeg}
-                  rotation={cam.pan - fovMax.horizontalDeg / 2}
-                  fill={'#22c55e10'}
-                  stroke={'#22c55e55'}
-                  strokeWidth={1}
-                  dash={[4, 4]}
-                  listening={false}
+                  x={cam.x * ppm} y={cam.y * ppm} radius={range}
+                  angle={fovMax.horizontalDeg} rotation={cam.pan - fovMax.horizontalDeg / 2}
+                  fill={'#22c55e10'} stroke={'#22c55e55'} strokeWidth={1} dash={[4, 4]} listening={false}
                 />
               )}
-              {/* Min FOV (narrowest, at max focal length) – red */}
               {isSelected && lensDef.focalLengthMin !== lensDef.focalLengthMax && (
                 <Wedge
-                  x={cam.x * ppm}
-                  y={cam.y * ppm}
-                  radius={range}
-                  angle={fovMin.horizontalDeg}
-                  rotation={cam.pan - fovMin.horizontalDeg / 2}
-                  fill={'#ef444410'}
-                  stroke={'#ef444455'}
-                  strokeWidth={1}
-                  dash={[4, 4]}
-                  listening={false}
+                  x={cam.x * ppm} y={cam.y * ppm} radius={range}
+                  angle={fovMin.horizontalDeg} rotation={cam.pan - fovMin.horizontalDeg / 2}
+                  fill={'#ef444410'} stroke={'#ef444455'} strokeWidth={1} dash={[4, 4]} listening={false}
                 />
               )}
-              {/* Current FOV */}
               <Wedge
-                x={cam.x * ppm}
-                y={cam.y * ppm}
-                radius={range}
-                angle={fov.horizontalDeg}
-                rotation={cam.pan - fov.horizontalDeg / 2}
+                x={cam.x * ppm} y={cam.y * ppm} radius={range}
+                angle={fov.horizontalDeg} rotation={cam.pan - fov.horizontalDeg / 2}
                 fill={cam.color + (isSelected ? '30' : '15')}
                 stroke={cam.color + (isSelected ? 'cc' : '66')}
-                strokeWidth={isSelected ? 2 : 1}
-                listening={false}
+                strokeWidth={isSelected ? 2 : 1} listening={false}
               />
             </React.Fragment>
           );
         })}
-      </Layer>
 
-      {/* Walls */}
-      <Layer>
+        {/* Stages */}
+        {venue.stages.map((s) => (
+          <Group key={s.id} x={s.x * ppm} y={s.y * ppm} draggable={!drawingWall} onDragEnd={(e) => handleStageDragEnd(s.id, e)}>
+            <Rect width={s.width * ppm} height={s.height * ppm} fill="rgba(59,130,246,0.15)" stroke="#3b82f6" strokeWidth={2} cornerRadius={4} />
+            <Text x={4} y={4} text={s.label} fontSize={12} fill="#3b82f6" fontStyle="bold" />
+            <Text x={4} y={s.height * ppm - 16} text={`${s.width}×${s.height}m`} fontSize={9} fill="#3b82f688" />
+          </Group>
+        ))}
+
+        {/* Walls */}
         {walls.map((w) => (
           <React.Fragment key={`wall-${w.id}`}>
             <Line
               points={[w.x1 * ppm, w.y1 * ppm, w.x2 * ppm, w.y2 * ppm]}
-              stroke="#9ca3af"
-              strokeWidth={3}
-              hitStrokeWidth={10}
+              stroke="#9ca3af" strokeWidth={3} hitStrokeWidth={10}
               draggable={!drawingWall}
               onDragEnd={(e) => {
                 const dx = e.target.x() / ppm;
@@ -518,124 +440,50 @@ export default function Venue2D() {
                 updateWall(w.id, { x1: w.x1 + dx, y1: w.y1 + dy, x2: w.x2 + dx, y2: w.y2 + dy });
               }}
             />
-            <Circle
-              x={w.x1 * ppm}
-              y={w.y1 * ppm}
-              radius={5}
-              fill="#0f1117"
-              stroke="#f59e0b"
-              strokeWidth={2}
-              draggable={!drawingWall}
-              onDragMove={(e) => handleWallEndpointDragMove(w, 'start', e)}
-            />
-            <Circle
-              x={w.x2 * ppm}
-              y={w.y2 * ppm}
-              radius={5}
-              fill="#0f1117"
-              stroke="#f59e0b"
-              strokeWidth={2}
-              draggable={!drawingWall}
-              onDragMove={(e) => handleWallEndpointDragMove(w, 'end', e)}
-            />
-            <Text
-              x={((w.x1 + w.x2) / 2) * ppm - 20}
-              y={((w.y1 + w.y2) / 2) * ppm - 14}
-              text={w.label}
-              fontSize={9}
-              fill="#9ca3af"
-              align="center"
-              width={40}
-            />
+            <Circle x={w.x1 * ppm} y={w.y1 * ppm} radius={5} fill="#0f1117" stroke="#f59e0b" strokeWidth={2} draggable={!drawingWall} onDragMove={(e) => handleWallEndpointDragMove(w, 'start', e)} />
+            <Circle x={w.x2 * ppm} y={w.y2 * ppm} radius={5} fill="#0f1117" stroke="#f59e0b" strokeWidth={2} draggable={!drawingWall} onDragMove={(e) => handleWallEndpointDragMove(w, 'end', e)} />
+            <Text x={((w.x1 + w.x2) / 2) * ppm - 20} y={((w.y1 + w.y2) / 2) * ppm - 14} text={w.label} fontSize={9} fill="#9ca3af" align="center" width={40} />
           </React.Fragment>
         ))}
         {drawingWall && wallStart && wallCursor && (
           <>
-            <Line
-              points={[wallStart.x * ppm, wallStart.y * ppm, wallCursor.x * ppm, wallCursor.y * ppm]}
-              stroke="#f59e0b"
-              strokeWidth={2}
-              dash={[6, 4]}
-              listening={false}
-            />
-            <Circle
-              x={wallStart.x * ppm}
-              y={wallStart.y * ppm}
-              radius={4}
-              fill="#f59e0b"
-              listening={false}
-            />
+            <Line points={[wallStart.x * ppm, wallStart.y * ppm, wallCursor.x * ppm, wallCursor.y * ppm]} stroke="#f59e0b" strokeWidth={2} dash={[6, 4]} listening={false} />
+            <Circle x={wallStart.x * ppm} y={wallStart.y * ppm} radius={4} fill="#f59e0b" listening={false} />
           </>
         )}
-      </Layer>
 
-      {/* Camera icons */}
-      <Layer>
+        {/* Persons */}
+        {persons.map((p) => (
+          <Group key={p.id} x={p.x * ppm} y={p.y * ppm} draggable onDragEnd={(e) => handlePersonDragEnd(p.id, e)}>
+            <Circle radius={6} fill="#f59e0b" stroke="#fff" strokeWidth={1} opacity={0.8} />
+            <Text x={-20} y={8} text={`${p.label} (${p.height}m)`} fontSize={9} fill="#f59e0b" align="center" width={40} />
+          </Group>
+        ))}
+
+        {/* Camera icons (on top) */}
         {cameras.map((cam) => {
           const isSelected = cam.id === selectedCameraId;
           return (
-            <Group
-              key={`cam-${cam.id}`}
-              x={cam.x * ppm}
-              y={cam.y * ppm}
-              draggable={!drawingWall}
-              onDragEnd={(e) => handleCamDragEnd(cam, e)}
-              onClick={() => selectCamera(cam.id)}
-              onTap={() => selectCamera(cam.id)}
-            >
-              {/* Camera body */}
-              <Circle
-                radius={isSelected ? 10 : 8}
-                fill={cam.color}
-                stroke={isSelected ? '#fff' : cam.color}
-                strokeWidth={isSelected ? 3 : 1}
-                shadowColor={cam.color}
-                shadowBlur={isSelected ? 12 : 0}
-              />
-              {/* Direction indicator */}
-              <Line
-                points={[0, 0, 14 * Math.cos((cam.pan * Math.PI) / 180), 14 * Math.sin((cam.pan * Math.PI) / 180)]}
-                stroke={cam.color}
-                strokeWidth={2}
-              />
-              {/* Label */}
-              <Text
-                x={-16}
-                y={12}
-                text={cam.label}
-                fontSize={11}
-                fill="#fff"
-                fontStyle="bold"
-                align="center"
-                width={32}
-              />
+            <Group key={`cam-${cam.id}`} x={cam.x * ppm} y={cam.y * ppm} draggable={!drawingWall} onDragEnd={(e) => handleCamDragEnd(cam, e)} onClick={() => selectCamera(cam.id)} onTap={() => selectCamera(cam.id)}>
+              <Circle radius={isSelected ? 10 : 8} fill={cam.color} stroke={isSelected ? '#fff' : cam.color} strokeWidth={isSelected ? 3 : 1} shadowColor={cam.color} shadowBlur={isSelected ? 12 : 0} />
+              <Line points={[0, 0, 14 * Math.cos((cam.pan * Math.PI) / 180), 14 * Math.sin((cam.pan * Math.PI) / 180)]} stroke={cam.color} strokeWidth={2} />
+              <Text x={-16} y={12} text={cam.label} fontSize={11} fill="#fff" fontStyle="bold" align="center" width={32} />
             </Group>
           );
         })}
       </Layer>
-              draggable={!drawingWall}
-      {/* Scale bar */}
-      <Layer>
-        <Line points={[10, H - 20, 10 + 5 * ppm, H - 20]} stroke="#666" strokeWidth={2} />
-        <Line points={[10, H - 25, 10, H - 15]} stroke="#666" strokeWidth={2} />
-        <Line points={[10 + 5 * ppm, H - 25, 10 + 5 * ppm, H - 15]} stroke="#666" strokeWidth={2} />
-        <Text x={10} y={H - 38} text="5m" fontSize={11} fill="#666" />
-      </Layer>
 
-      {/* Calibration overlay */}
+      {/* ── Layer 3: Calibration overlay (conditional) ── */}
       {calibActive && (
         <Layer>
-          {/* Dim overlay with instructions */}
           <Rect x={0} y={0} width={W} height={30} fill="#000000" opacity={0.7} listening={false} />
           <Text x={W / 2 - 140} y={8} text={calibPoints.length === 0 ? `Click first point (${calibAxis.toUpperCase()} axis, ${calibDistM}m)` : `Click second point (${calibAxis.toUpperCase()} axis)`} fontSize={14} fill="#22c55e" fontStyle="bold" listening={false} />
-          {/* Calibration points */}
           {calibPoints.map((p, i) => (
             <Group key={`cp-${i}`}>
               <Circle x={p.x} y={p.y} radius={6} fill="#22c55e" stroke="#fff" strokeWidth={2} listening={false} />
               <Text x={p.x + 8} y={p.y - 6} text={`P${i + 1}`} fontSize={11} fill="#22c55e" fontStyle="bold" listening={false} />
             </Group>
           ))}
-          {/* Line between points */}
           {calibPoints.length === 1 && (
             <Line points={[calibPoints[0].x, calibPoints[0].y, calibPoints[0].x, calibPoints[0].y]} stroke="#22c55e" strokeWidth={2} dash={[6, 4]} listening={false} />
           )}
