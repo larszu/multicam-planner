@@ -103,8 +103,8 @@ export default function CameraPreview() {
       const dy = wy - c.y;
 
       // Rotate by -pan to get camera-local coords (forward = +Z_cam)
-      const localX = dx * cosP + dy * sinP;   // right
-      const localZ = -dx * sinP + dy * cosP;  // forward (into scene)
+      const localZ = dx * cosP + dy * sinP;   // forward (into scene)
+      const localX = -dx * sinP + dy * cosP;  // right
 
       if (localZ <= 0.1) return { sx: -999, sy: -999, dist: 0, behindCamera: true };
 
