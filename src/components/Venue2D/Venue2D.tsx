@@ -322,7 +322,7 @@ export default function Venue2D() {
         {cameras.map((cam) => {
           if (!showAllFov && cam.id !== selectedCameraId) return null;
           const camDef = getCameraById(cam.cameraId);
-          const lensDef = getLensById(cam.lensId);
+          const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
           if (!camDef || !lensDef) return null;
 
           const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster);

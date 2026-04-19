@@ -63,7 +63,7 @@ export default function ExportPanel() {
 
     try {
       const camDef = getCameraById(cam.cameraId);
-      const lensDef = getLensById(cam.lensId);
+      const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
       if (!camDef || !lensDef) return;
 
       const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster);
@@ -232,7 +232,7 @@ export default function ExportPanel() {
       let col = 0;
       cameras.forEach((c, i) => {
         const cd = getCameraById(c.cameraId);
-        const ld = getLensById(c.lensId);
+        const ld = getLensById(c.lensId, useStore.getState().customLenses);
         if (!cd || !ld) return;
         const sx = padding + 16 + col * colW;
         const sy = summaryY + 46 + row * 18;

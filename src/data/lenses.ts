@@ -248,8 +248,8 @@ export const LENSES: Lens[] = [
   { id: 'ptz-sony-fr7', manufacturer: 'Sony', model: 'FR7 (no integrated lens)', focalLengthMin: 28, focalLengthMax: 135, maxApertureWide: 4, mount: 'E', type: 'zoom', notes: 'Use E-mount lens' },
 ];
 
-export function getLensById(id: string): Lens | undefined {
-  return LENSES.find((l) => l.id === id);
+export function getLensById(id: string, customLenses?: Lens[]): Lens | undefined {
+  return LENSES.find((l) => l.id === id) ?? customLenses?.find((l) => l.id === id);
 }
 
 export function getLensesByMount(mount: string): Lens[] {

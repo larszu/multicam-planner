@@ -104,6 +104,8 @@ function FPSControls() {
     const canvas = gl.domElement;
 
     const onKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       const k = e.key.toLowerCase();
       if (['w', 'a', 's', 'd'].includes(k) || e.code === 'Space' || e.key === 'Shift' || e.key === 'Control') {
         e.preventDefault();
@@ -111,6 +113,8 @@ function FPSControls() {
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
       const k = e.key.toLowerCase();
       keys.current.delete(e.code === 'Space' ? ' ' : k === 'control' ? 'ctrl' : k);
     };
@@ -228,7 +232,7 @@ function StageMesh({ x, y, w, h, label }: { x: number; y: number; w: number; h: 
 function FovPyramid({ cam }: { cam: ReturnType<typeof useStore.getState>['cameras'][0] }) {
   const { selectedCameraId } = useStore();
   const camDef = getCameraById(cam.cameraId);
-  const lensDef = getLensById(cam.lensId);
+  const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
   if (!camDef || !lensDef) return null;
 
   const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster);

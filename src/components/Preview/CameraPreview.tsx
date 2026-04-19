@@ -34,7 +34,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     if (!ctx) return;
 
     const camDef = getCameraById(cam.cameraId);
-    const lensDef = getLensById(cam.lensId);
+    const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
     if (!camDef || !lensDef) return;
 
     const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster);
@@ -612,7 +612,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (!cam) return;
     e.preventDefault();
-    const ld = getLensById(cam.lensId) ?? useStore.getState().customLenses.find((l: any) => l.id === cam.lensId);
+    const ld = getLensById(cam.lensId, useStore.getState().customLenses);
     if (!ld) return;
     const range = ld.focalLengthMax - ld.focalLengthMin;
     const step = Math.max(0.1, range * 0.02);
@@ -630,7 +630,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
 
   // Computed data for readout (outside canvas)
   const camDef = getCameraById(cam.cameraId);
-  const lensDef = getLensById(cam.lensId);
+  const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
   const sensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster) : undefined;
   const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, cam.useSpeedbooster) : null;
   const fov = sensor ? computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive) : null;
