@@ -170,35 +170,53 @@ export default function CameraPreview() {
       const head = worldToScreen(person.x, person.y, person.height);
       if (feet.behindCamera) return;
 
-      const pxH = Math.abs(head.sy - feet.sy);
-      if (pxH < 1) return; // too small to draw
+      const rawPxH = Math.abs(head.sy - feet.sy);
+      if (rawPxH < 1) return; // too small to draw
+
+      // Clamp pixel height to prevent canvas rendering issues with extreme values
+      const maxPx = W * 10;
+      const pxH = Math.min(rawPxH, maxPx);
       const pxW = pxH * 0.3;
+      const headR = pxW * 0.4;
+
+      // Compute person bounding box
+      const personTop = Math.min(head.sy, head.sy - headR * 1.3);
+      const personBottom = feet.sy;
+      const personLeft = feet.sx - pxW / 2 - headR;
+      const personRight = feet.sx + pxW / 2 + headR;
 
       // Skip if entirely off-screen
-      const left = feet.sx - pxW;
-      const right = feet.sx + pxW;
-      const top = head.sy - pxW * 0.5;
-      const bottom = feet.sy;
-      if (right < 0 || left > W || bottom < 0 || top > H) return;
+      if (personRight < 0 || personLeft > W || personBottom < 0 || personTop > H) return;
+
+      // Recompute head position using clamped height (keeps proportions correct)
+      const clampedHeadY = feet.sy - pxH; // head relative to feet, using clamped height
 
       // Body
       ctx.fillStyle = '#22c55e44';
       ctx.strokeStyle = '#22c55e';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.roundRect(feet.sx - pxW / 2, head.sy, pxW, pxH * 0.75, 3);
+      const bodyX = feet.sx - pxW / 2;
+      const bodyY = clampedHeadY;
+      const bodyW = pxW;
+      const bodyH = pxH * 0.75;
+      // Use rect instead of roundRect for large sizes (roundRect can fail with extreme coords)
+      if (pxH > H * 3) {
+        ctx.rect(bodyX, bodyY, bodyW, bodyH);
+      } else {
+        ctx.roundRect(bodyX, bodyY, bodyW, bodyH, 3);
+      }
       ctx.fill();
       ctx.stroke();
 
       // Head
-      const headR = pxW * 0.4;
       ctx.beginPath();
-      ctx.arc(feet.sx, head.sy - headR * 0.3, headR, 0, Math.PI * 2);
+      ctx.arc(feet.sx, clampedHeadY - headR * 0.3, headR, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
-      // Label (only if it fits on screen)
-      if (feet.sy > 0 && feet.sy < H - 5) {
+      // Label (only if feet are on screen)
+      if (feet.sy > 0 && feet.sy < H - 5 && feet.sx > -50 && feet.sx < W + 50) {
         const fontSize = Math.max(7, Math.min(11, 120 / feet.dist));
         ctx.fillStyle = '#22c55e';
         ctx.font = `${fontSize}px monospace`;
