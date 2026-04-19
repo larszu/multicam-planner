@@ -2,7 +2,7 @@ import { useStore } from '../../store/useStore';
 import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor } from '../../data/cameras';
 import { LENSES, getLensById, getCompatibleLenses } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
-import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiMusic } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { BackgroundPlan, StageObjectType } from '../../types';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -19,10 +19,12 @@ function groupByMount(lenses: typeof LENSES) {
 }
 
 function CameraCard({ camId }: { camId: string }) {
-  const { cameras, selectedCameraId, selectCamera, updateCamera, removeCamera, duplicateCamera, customLenses } = useStore();
+  const { cameras, selectedCameraId, selectCamera, updateCamera, removeCamera, duplicateCamera, customLenses, addCustomLens, removeCustomLens } = useStore();
   const cam = cameras.find((c) => c.id === camId)!;
   const isSelected = cam.id === selectedCameraId;
   const [expanded, setExpanded] = useState(false);
+  const [showNewLens, setShowNewLens] = useState(false);
+  const [newLens, setNewLens] = useState({ manufacturer: '', model: '', focalMin: '10', focalMax: '100', aperture: '2.8', mount: 'B4', type: 'zoom' as 'zoom' | 'prime' });
 
   const camDef = getCameraById(cam.cameraId);
   const lensDef = getLensById(cam.lensId) ?? customLenses.find((l) => l.id === cam.lensId);
@@ -135,7 +137,8 @@ function CameraCard({ camId }: { camId: string }) {
               className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
               value={cam.lensId}
               onChange={(e) => {
-                const lens = getLensById(e.target.value);
+                if (e.target.value === '__new__') { setShowNewLens(true); return; }
+                const lens = getLensById(e.target.value) ?? customLenses.find((l) => l.id === e.target.value);
                 updateCamera(cam.id, {
                   lensId: e.target.value,
                   focalLength: lens?.focalLengthMin ?? cam.focalLength,
@@ -146,12 +149,83 @@ function CameraCard({ camId }: { camId: string }) {
               {Object.entries(grouped).map(([mount, lenses]) => (
                 <optgroup key={mount} label={`── ${mount} mount ──`}>
                   {lenses.map((l) => (
-                    <option key={l.id} value={l.id}>{l.manufacturer} {l.model}</option>
+                    <option key={l.id} value={l.id}>{l.manufacturer} {l.model}{l.isCustom ? ' ✦' : ''}</option>
                   ))}
                 </optgroup>
               ))}
+              <option value="__new__">＋ Add custom lens…</option>
             </select>
           </label>
+          {/* Custom lens: delete button for active custom lens */}
+          {lensDef?.isCustom && (
+            <button
+              onClick={() => { removeCustomLens(cam.lensId); const first = compatDeduped.find(l => !l.isCustom); if (first) updateCamera(cam.id, { lensId: first.id, focalLength: first.focalLengthMin }); }}
+              className="text-[10px] text-bc-red hover:text-red-400 mt-0.5"
+            >Remove custom lens "{lensDef.manufacturer} {lensDef.model}"</button>
+          )}
+          {/* Inline custom lens creation form */}
+          {showNewLens && (
+            <div className="bg-bc-dark rounded p-2 border border-bc-border space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300 font-medium text-[11px]">New Custom Lens</span>
+                <button onClick={() => setShowNewLens(false)} className="text-gray-500 hover:text-white text-xs">✕</button>
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                <input placeholder="Manufacturer" className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                  value={newLens.manufacturer} onChange={(e) => setNewLens({ ...newLens, manufacturer: e.target.value })} />
+                <input placeholder="Model" className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                  value={newLens.model} onChange={(e) => setNewLens({ ...newLens, model: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-3 gap-1">
+                <label><span className="text-gray-500 text-[10px]">Min mm</span>
+                  <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                    value={newLens.focalMin} onChange={(e) => setNewLens({ ...newLens, focalMin: e.target.value })} /></label>
+                <label><span className="text-gray-500 text-[10px]">Max mm</span>
+                  <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                    value={newLens.focalMax} onChange={(e) => setNewLens({ ...newLens, focalMax: e.target.value })} /></label>
+                <label><span className="text-gray-500 text-[10px]">f/</span>
+                  <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                    value={newLens.aperture} onChange={(e) => setNewLens({ ...newLens, aperture: e.target.value })} /></label>
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                <select className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                  value={newLens.mount} onChange={(e) => setNewLens({ ...newLens, mount: e.target.value })}>
+                  {['B4', 'EF', 'PL', 'E', 'MFT', 'RF', 'L', 'FZ', 'universal'].map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+                <select className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                  value={newLens.type} onChange={(e) => setNewLens({ ...newLens, type: e.target.value as 'zoom' | 'prime' })}>
+                  <option value="zoom">Zoom</option>
+                  <option value="prime">Prime</option>
+                </select>
+              </div>
+              <button
+                onClick={() => {
+                  if (!newLens.manufacturer || !newLens.model) return;
+                  const newId = addCustomLens({
+                    manufacturer: newLens.manufacturer,
+                    model: newLens.model,
+                    focalLengthMin: parseFloat(newLens.focalMin) || 10,
+                    focalLengthMax: parseFloat(newLens.focalMax) || 100,
+                    maxApertureWide: parseFloat(newLens.aperture) || 2.8,
+                    mount: newLens.mount,
+                    type: newLens.type,
+                  });
+                  updateCamera(cam.id, {
+                    lensId: newId,
+                    focalLength: parseFloat(newLens.focalMin) || 10,
+                    aperture: parseFloat(newLens.aperture) || 2.8,
+                  });
+                  setNewLens({ manufacturer: '', model: '', focalMin: '10', focalMax: '100', aperture: '2.8', mount: 'B4', type: 'zoom' });
+                  setShowNewLens(false);
+                }}
+                className="flex items-center gap-1 px-2 py-1 rounded bg-bc-green/20 text-bc-green text-xs hover:bg-bc-green/30 w-full justify-center"
+              >
+                <FiPlus size={12} /> Create & Select
+              </button>
+            </div>
+          )}
 
           {/* Focal length slider */}
           <label className="block">
@@ -306,14 +380,11 @@ export default function Sidebar() {
     addStage, removeStage, updateStage,
     persons, addPerson, addStageObject, removePerson,
     backgroundPlan, setBackgroundPlan,
-    customLenses, addCustomLens, removeCustomLens,
   } = useStore();
   const [venueOpen, setVenueOpen] = useState(false);
   const [stagesOpen, setStagesOpen] = useState(false);
   const [personsOpen, setPersonsOpen] = useState(false);
   const [bgOpen, setBgOpen] = useState(false);
-  const [lensOpen, setLensOpen] = useState(false);
-  const [newLens, setNewLens] = useState({ manufacturer: '', model: '', focalMin: '10', focalMax: '100', aperture: '2.8', mount: 'B4', type: 'zoom' as 'zoom' | 'prime' });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [calibAxis, setCalibAxis] = useState<'x' | 'y' | null>(null);
   const [calibDistX, setCalibDistX] = useState('10');
@@ -710,83 +781,6 @@ export default function Sidebar() {
                 </button>
               </>
             )}
-          </div>
-        )}
-      </div>
-
-      {/* Custom Lenses */}
-      <div className="p-3 border-b border-bc-border">
-        <button
-          className="flex items-center justify-between w-full text-sm text-white font-semibold"
-          onClick={() => setLensOpen(!lensOpen)}
-        >
-          <span><FiMusic className="inline mr-1" size={13} />Custom Lenses ({customLenses.length})</span>
-          {lensOpen ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-        </button>
-        {lensOpen && (
-          <div className="mt-2 space-y-2 text-xs">
-            {customLenses.map((l) => (
-              <div key={l.id} className="flex items-center gap-2 bg-bc-dark rounded p-1.5 border border-bc-border">
-                <span className="text-white text-xs truncate flex-1">{l.manufacturer} {l.model}</span>
-                <span className="text-gray-500 text-[10px]">{l.focalLengthMin}-{l.focalLengthMax}mm</span>
-                <span className="text-gray-500 text-[10px]">{l.mount}</span>
-                <button onClick={() => removeCustomLens(l.id)} className="p-0.5 hover:text-bc-red"><FiTrash2 size={11} /></button>
-              </div>
-            ))}
-            <div className="bg-bc-dark rounded p-2 border border-bc-border space-y-1.5">
-              <span className="text-gray-300 font-medium text-[11px]">Add Custom Lens</span>
-              <div className="grid grid-cols-2 gap-1">
-                <input placeholder="Manufacturer" className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
-                  value={newLens.manufacturer} onChange={(e) => setNewLens({ ...newLens, manufacturer: e.target.value })} />
-                <input placeholder="Model" className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
-                  value={newLens.model} onChange={(e) => setNewLens({ ...newLens, model: e.target.value })} />
-              </div>
-              <div className="grid grid-cols-3 gap-1">
-                <label><span className="text-gray-500 text-[10px]">Min mm</span>
-                  <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
-                    value={newLens.focalMin} onChange={(e) => setNewLens({ ...newLens, focalMin: e.target.value })} />
-                </label>
-                <label><span className="text-gray-500 text-[10px]">Max mm</span>
-                  <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
-                    value={newLens.focalMax} onChange={(e) => setNewLens({ ...newLens, focalMax: e.target.value })} />
-                </label>
-                <label><span className="text-gray-500 text-[10px]">f/</span>
-                  <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
-                    value={newLens.aperture} onChange={(e) => setNewLens({ ...newLens, aperture: e.target.value })} />
-                </label>
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <select className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
-                  value={newLens.mount} onChange={(e) => setNewLens({ ...newLens, mount: e.target.value })}>
-                  {['B4', 'EF', 'PL', 'E', 'MFT', 'RF', 'L', 'FZ', 'universal'].map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-                <select className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
-                  value={newLens.type} onChange={(e) => setNewLens({ ...newLens, type: e.target.value as 'zoom' | 'prime' })}>
-                  <option value="zoom">Zoom</option>
-                  <option value="prime">Prime</option>
-                </select>
-              </div>
-              <button
-                onClick={() => {
-                  if (!newLens.manufacturer || !newLens.model) return;
-                  addCustomLens({
-                    manufacturer: newLens.manufacturer,
-                    model: newLens.model,
-                    focalLengthMin: parseFloat(newLens.focalMin) || 10,
-                    focalLengthMax: parseFloat(newLens.focalMax) || 100,
-                    maxApertureWide: parseFloat(newLens.aperture) || 2.8,
-                    mount: newLens.mount,
-                    type: newLens.type,
-                  });
-                  setNewLens({ manufacturer: '', model: '', focalMin: '10', focalMax: '100', aperture: '2.8', mount: 'B4', type: 'zoom' });
-                }}
-                className="flex items-center gap-1 px-2 py-1 rounded bg-bc-green/20 text-bc-green text-xs hover:bg-bc-green/30 w-full justify-center"
-              >
-                <FiPlus size={12} /> Create Lens
-              </button>
-            </div>
           </div>
         )}
       </div>

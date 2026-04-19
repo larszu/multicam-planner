@@ -29,7 +29,7 @@ interface AppState {
 
   // Custom lenses
   customLenses: Lens[];
-  addCustomLens: (lens: Omit<Lens, 'id' | 'isCustom'>) => void;
+  addCustomLens: (lens: Omit<Lens, 'id' | 'isCustom'>) => string;
   removeCustomLens: (id: string) => void;
 
   // Cameras placed in venue
@@ -214,6 +214,7 @@ export const useStore = create<AppState>((set, get) => ({
       saveCustomLensesStorage(updated);
       return { customLenses: updated, projectVersion: s.projectVersion + 1 };
     });
+    return id;
   },
 
   removeCustomLens: (id) => {
