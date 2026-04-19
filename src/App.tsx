@@ -221,9 +221,8 @@ export default function App() {
     }
   }, [applyLayoutJson, focusTabId, userLayoutPresets]);
 
-  const handleSaveLayoutPreset = useCallback(() => {
-    const name = window.prompt('Preset name for the current layout:');
-    const trimmedName = name?.trim();
+  const handleSaveLayoutPreset = useCallback((name: string) => {
+    const trimmedName = name.trim();
     if (!trimmedName) return;
 
     const nextPresets = {
@@ -246,13 +245,6 @@ export default function App() {
     } catch { /* quota exceeded etc */ }
   }, [userLayoutPresets]);
 
-  const handleResetLayout = useCallback(() => {
-    localStorage.removeItem(LAYOUT_STORAGE_KEY);
-    localStorage.removeItem(LAYOUT_VERSION_KEY);
-    setLayoutMode('focus');
-    setFocusTabId('tab-2d');
-    applyLayoutJson(createFocusLayoutJson('tab-2d'));
-  }, [applyLayoutJson]);
 
   const handleMinimizeToFocus = useCallback((tabId: string) => {
     setFocusTabId(tabId);
@@ -396,7 +388,6 @@ export default function App() {
         onApplyPreset={handleApplyPreset}
         onSaveLayoutPreset={handleSaveLayoutPreset}
         onDeleteLayoutPreset={handleDeleteLayoutPreset}
-        onResetLayout={handleResetLayout}
         onDragNewPanel={handleDragNewPanel}
         layoutPresetOptions={layoutPresetOptions}
         layoutMode={layoutMode}

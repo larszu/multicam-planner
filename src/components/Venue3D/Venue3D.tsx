@@ -267,13 +267,9 @@ function FPSControls({ mouseLookEnabled }: { mouseLookEnabled: boolean }) {
       camera.position.add(move);
     }
 
-    // Apply look direction
-    const dir = new THREE.Vector3(
-      -Math.sin(yaw.current) * Math.cos(pitch.current),
-      Math.sin(pitch.current),
-      -Math.cos(yaw.current) * Math.cos(pitch.current),
-    );
-    camera.lookAt(camera.position.clone().add(dir));
+    // Apply look direction – use Euler directly so roll is always 0
+    camera.rotation.order = 'YXZ';
+    camera.rotation.set(pitch.current, yaw.current, 0);
   });
 
   return null;

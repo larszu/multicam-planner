@@ -1,5 +1,5 @@
 import { useStore, APP_VERSION } from '../../store/useStore';
-import { FiCamera, FiLayout, FiBox, FiMonitor, FiSliders, FiSave, FiUpload, FiDownload, FiRefreshCw, FiChevronDown, FiX } from 'react-icons/fi';
+import { FiCamera, FiLayout, FiBox, FiMonitor, FiSliders, FiSave, FiUpload, FiDownload, FiChevronDown, FiX, FiCheck } from 'react-icons/fi';
 import { useRef, useCallback, useState, useEffect } from 'react';
 
 const tabs: { id: string; label: string; icon: React.ReactNode }[] = [
@@ -13,9 +13,8 @@ type HeaderProps = {
   onSelectTab: (tabId: string) => void;
   onSetLayoutMode: (mode: 'focus' | 'grid') => void;
   onApplyPreset: (presetId: string) => void;
-  onSaveLayoutPreset: () => void;
+  onSaveLayoutPreset: (name: string) => void;
   onDeleteLayoutPreset: (presetId: string) => void;
-  onResetLayout: () => void;
   onDragNewPanel: (tabId: string, event: DragEvent) => void;
   layoutPresetOptions: { id: string; label: string }[];
   layoutMode: 'focus' | 'grid' | 'custom';
@@ -27,7 +26,6 @@ export default function Header({
   onApplyPreset,
   onSaveLayoutPreset,
   onDeleteLayoutPreset,
-  onResetLayout,
   onDragNewPanel,
   layoutPresetOptions,
   layoutMode,
@@ -36,7 +34,10 @@ export default function Header({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const unsaved = projectVersion !== lastSavedVersion;
   const [presetMenuOpen, setPresetMenuOpen] = useState(false);
+  const [savePresetName, setSavePresetName] = useState('');
+  const [showSaveInput, setShowSaveInput] = useState(false);
   const presetMenuRef = useRef<HTMLDivElement>(null);
+  const saveInputRef = useRef<HTMLInputElement>(null);
 
   // Close preset menu on outside click
   useEffect(() => {
@@ -44,11 +45,26 @@ export default function Header({
     const handleClick = (e: MouseEvent) => {
       if (presetMenuRef.current && !presetMenuRef.current.contains(e.target as Node)) {
         setPresetMenuOpen(false);
+        setShowSaveInput(false);
+        setSavePresetName('');
       }
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [presetMenuOpen]);
+
+  // Auto-focus the save input when shown
+  useEffect(() => {
+    if (showSaveInput) saveInputRef.current?.focus();
+  }, [showSaveInput]);
+
+  const handleSavePresetSubmit = useCallback(() => {
+    if (!savePresetName.trim()) return;
+    onSaveLayoutPreset(savePresetName.trim());
+    setSavePresetName('');
+    setShowSaveInput(false);
+    setPresetMenuOpen(false);
+  }, [onSaveLayoutPreset, savePresetName]);
 
   const handleLoad = useCallback(() => {
     fileInputRef.current?.click();
@@ -125,7 +141,7 @@ export default function Header({
             <FiChevronDown size={12} />
           </button>
           {presetMenuOpen && (
-            <div className="absolute right-0 top-full mt-2 min-w-[200px] rounded-lg border border-bc-border bg-bc-panel shadow-2xl overflow-hidden z-30">
+            <div className="absolute right-0 top-full mt-2 min-w-[220px] rounded-lg border border-bc-border bg-bc-panel shadow-2xl overflow-hidden z-30">
               <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-500 border-b border-bc-border">Built-in</div>
               <button
                 type="button"
@@ -136,7 +152,7 @@ export default function Header({
                 type="button"
                 onClick={() => { onApplyPreset('grid'); setPresetMenuOpen(false); }}
                 className={`w-full text-left px-3 py-2 text-xs transition-colors ${layoutMode === 'grid' ? 'text-bc-accent' : 'text-gray-300 hover:text-white hover:bg-bc-border'}`}
-              >Grid</button>
+              >Default Grid</button>
               {layoutPresetOptions.length > 0 && (
                 <>
                   <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-500 border-t border-b border-bc-border">Saved</div>
@@ -157,23 +173,46 @@ export default function Header({
                   ))}
                 </>
               )}
-              <div className="border-t border-bc-border">
-                <button
-                  type="button"
-                  onClick={() => { onSaveLayoutPreset(); setPresetMenuOpen(false); }}
-                  className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors flex items-center gap-1.5"
-                ><FiSave size={12} /> Save current as preset…</button>
-              </div>
+              {layoutMode === 'grid' && (
+                <div className="border-t border-bc-border">
+                  {!showSaveInput ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowSaveInput(true)}
+                      className="w-full text-left px-3 py-2 text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors flex items-center gap-1.5"
+                    ><FiSave size={12} /> Save current grid as preset…</button>
+                  ) : (
+                    <form
+                      className="flex items-center gap-1 px-2 py-1.5"
+                      onSubmit={(e) => { e.preventDefault(); handleSavePresetSubmit(); }}
+                    >
+                      <input
+                        ref={saveInputRef}
+                        type="text"
+                        value={savePresetName}
+                        onChange={(e) => setSavePresetName(e.target.value)}
+                        placeholder="Preset name…"
+                        className="flex-1 bg-bc-dark border border-bc-border rounded px-2 py-1 text-xs text-gray-200 placeholder-gray-600 outline-none focus:border-bc-accent"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!savePresetName.trim()}
+                        className="p-1 rounded text-gray-400 hover:text-bc-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        title="Save preset"
+                      ><FiCheck size={14} /></button>
+                      <button
+                        type="button"
+                        onClick={() => { setShowSaveInput(false); setSavePresetName(''); }}
+                        className="p-1 rounded text-gray-400 hover:text-red-400 transition-colors"
+                        title="Cancel"
+                      ><FiX size={14} /></button>
+                    </form>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
-        <button
-          onClick={onResetLayout}
-          className="flex items-center gap-1 px-2 py-1.5 rounded-md text-xs text-gray-500 hover:text-gray-300 hover:bg-bc-border transition-colors"
-          title="Reset panel layout to default"
-        >
-          <FiRefreshCw size={12} />
-        </button>
       </nav>
 
       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
