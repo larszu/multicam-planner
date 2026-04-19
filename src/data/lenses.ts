@@ -42,6 +42,15 @@ export const LENSES: Lens[] = [
   { id: 'fuj-xs13x3.3', manufacturer: 'Fujinon', model: 'XS13x3.3BRM', focalLengthMin: 3.3, focalLengthMax: 43, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Super wide 13x' },
 
   // ┌─────────────────────────────────────────────┐
+  // │  FUJINON B4 – ZA Series (HD Economy/Std)    │
+  // └─────────────────────────────────────────────┘
+  { id: 'fuj-za12x4.5', manufacturer: 'Fujinon', model: 'ZA12x4.5BERM', focalLengthMin: 4.5, focalLengthMax: 54, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD economy wide 12x' },
+  { id: 'fuj-za17x7.6', manufacturer: 'Fujinon', model: 'ZA17x7.6BERM', focalLengthMin: 7.6, focalLengthMax: 129, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD economy standard 17x' },
+  { id: 'fuj-za17x7.6rd', manufacturer: 'Fujinon', model: 'ZA17x7.6BERD', focalLengthMin: 7.6, focalLengthMax: 129, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD economy 17x, digital servo' },
+  { id: 'fuj-za22x7.6rm', manufacturer: 'Fujinon', model: 'ZA22x7.6BERM', focalLengthMin: 7.6, focalLengthMax: 167, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD economy 22x' },
+  { id: 'fuj-za22x7.6rd', manufacturer: 'Fujinon', model: 'ZA22x7.6BERD', focalLengthMin: 7.6, focalLengthMax: 167, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD economy 22x, digital servo' },
+
+  // ┌─────────────────────────────────────────────┐
   // │  FUJINON B4 – Box Lenses (XA/HA/UA)         │
   // └─────────────────────────────────────────────┘
   { id: 'fuj-xa101x8.9', manufacturer: 'Fujinon', model: 'XA101x8.9BESM', focalLengthMin: 8.9, focalLengthMax: 899, maxApertureWide: 1.7, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD box lens 101x' },

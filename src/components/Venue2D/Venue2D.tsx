@@ -28,6 +28,7 @@ export default function Venue2D() {
   const [calibDistM, setCalibDistM] = useState(10);
   const [calibAxis, setCalibAxis] = useState<'x' | 'y'>('x');
   const [calibAutoResize, setCalibAutoResize] = useState(true);
+  const [calibScaleLocked, setCalibScaleLocked] = useState(true);
   const [calibPoints, setCalibPoints] = useState<{ x: number; y: number }[]>([]);
 
   const ppm = pixelsPerMeter;
@@ -102,11 +103,12 @@ export default function Venue2D() {
   // Listen for calibration start/cancel from Sidebar
   useEffect(() => {
     const handler = (e: Event) => {
-      const { active, distanceM, axis, autoResize } = (e as CustomEvent).detail;
+      const { active, distanceM, axis, autoResize, scaleLocked } = (e as CustomEvent).detail;
       setCalibActive(active);
       setCalibDistM(distanceM);
       setCalibAxis(axis || 'x');
       setCalibAutoResize(autoResize ?? true);
+      setCalibScaleLocked(scaleLocked ?? false);
       setCalibPoints([]);
     };
     window.addEventListener('multicam-calibrate', handler);
@@ -136,12 +138,14 @@ export default function Venue2D() {
         if (dx > 1) {
           const dxImage = dx / (backgroundPlan.scaleX * ppm);
           updatedPlan.scaleX = calibDistM / dxImage;
+          if (calibScaleLocked) updatedPlan.scaleY = updatedPlan.scaleX;
         }
       } else {
         const dy = Math.abs(newPoints[1].y - newPoints[0].y);
         if (dy > 1) {
           const dyImage = dy / (backgroundPlan.scaleY * ppm);
           updatedPlan.scaleY = calibDistM / dyImage;
+          if (calibScaleLocked) updatedPlan.scaleX = updatedPlan.scaleY;
         }
       }
 
@@ -164,7 +168,7 @@ export default function Venue2D() {
       setCalibPoints([]);
       window.dispatchEvent(new CustomEvent('multicam-calibrate-done'));
     }
-  }, [calibActive, calibPoints, backgroundPlan, ppm, calibDistM, calibAxis, calibAutoResize, setBackgroundPlan, zoom, stagePos, venue, setVenue]);
+  }, [calibActive, calibPoints, backgroundPlan, ppm, calibDistM, calibAxis, calibAutoResize, calibScaleLocked, setBackgroundPlan, zoom, stagePos, venue, setVenue]);
 
   const handleCamDragEnd = useCallback(
     (cam: VenueCamera, e: Konva.KonvaEventObject<DragEvent>) => {

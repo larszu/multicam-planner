@@ -159,13 +159,27 @@ export default function CameraPreview() {
     });
 
     // ── Draw persons ──
+    // Use a clip region so partially off-screen persons are cropped, not hidden
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, W, H);
+    ctx.clip();
+
     persons.forEach((person) => {
       const feet = worldToScreen(person.x, person.y, 0);
       const head = worldToScreen(person.x, person.y, person.height);
       if (feet.behindCamera) return;
 
       const pxH = Math.abs(head.sy - feet.sy);
+      if (pxH < 1) return; // too small to draw
       const pxW = pxH * 0.3;
+
+      // Skip if entirely off-screen
+      const left = feet.sx - pxW;
+      const right = feet.sx + pxW;
+      const top = head.sy - pxW * 0.5;
+      const bottom = feet.sy;
+      if (right < 0 || left > W || bottom < 0 || top > H) return;
 
       // Body
       ctx.fillStyle = '#22c55e44';
@@ -183,13 +197,17 @@ export default function CameraPreview() {
       ctx.fill();
       ctx.stroke();
 
-      // Label
-      const fontSize = Math.max(7, Math.min(11, 120 / feet.dist));
-      ctx.fillStyle = '#22c55e';
-      ctx.font = `${fontSize}px monospace`;
-      ctx.textAlign = 'center';
-      ctx.fillText(`${person.label} (${person.height.toFixed(1)}m)`, feet.sx, feet.sy + fontSize + 2);
+      // Label (only if it fits on screen)
+      if (feet.sy > 0 && feet.sy < H - 5) {
+        const fontSize = Math.max(7, Math.min(11, 120 / feet.dist));
+        ctx.fillStyle = '#22c55e';
+        ctx.font = `${fontSize}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.fillText(`${person.label} (${person.height.toFixed(1)}m)`, feet.sx, feet.sy + fontSize + 2);
+      }
     });
+
+    ctx.restore();
 
     // ── Draw other cameras ──
     cameras.forEach((otherCam) => {

@@ -2,7 +2,7 @@ import { useStore } from '../../store/useStore';
 import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor } from '../../data/cameras';
 import { LENSES, getLensById, getCompatibleLenses } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
-import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2 } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { BackgroundPlan } from '../../types';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -308,6 +308,7 @@ export default function Sidebar() {
   const [calibDistX, setCalibDistX] = useState('10');
   const [calibDistY, setCalibDistY] = useState('10');
   const [autoResize, setAutoResize] = useState(true);
+  const [scaleLocked, setScaleLocked] = useState(true);
 
   /** Convert a PDF first page to a data URL at 2× DPI */
   const pdfToDataUrl = useCallback(async (file: File): Promise<{ dataUrl: string; width: number; height: number }> => {
@@ -387,9 +388,9 @@ export default function Sidebar() {
     } else {
       const dist = axis === 'x' ? parseFloat(calibDistX) || 10 : parseFloat(calibDistY) || 10;
       setCalibAxis(axis);
-      window.dispatchEvent(new CustomEvent('multicam-calibrate', { detail: { active: true, distanceM: dist, axis, autoResize } }));
+      window.dispatchEvent(new CustomEvent('multicam-calibrate', { detail: { active: true, distanceM: dist, axis, autoResize, scaleLocked } }));
     }
-  }, [calibAxis, calibDistX, calibDistY, autoResize]);
+  }, [calibAxis, calibDistX, calibDistY, autoResize, scaleLocked]);
 
   // Listen for calibration-done event from Venue2D to reset button state
   useEffect(() => {
@@ -572,9 +573,19 @@ export default function Sidebar() {
                   <input type="range" className="w-full accent-bc-accent"
                     min={0.001} max={0.5} step={0.001}
                     value={backgroundPlan.scaleX}
-                    onChange={(e) => setBackgroundPlan({ ...backgroundPlan, scaleX: parseFloat(e.target.value) })} />
+                    onChange={(e) => { const v = parseFloat(e.target.value); setBackgroundPlan({ ...backgroundPlan, scaleX: v, ...(scaleLocked ? { scaleY: v } : {}) }); }} />
                 </label>
-                <label className="block">
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setScaleLocked(!scaleLocked)}
+                    className={`p-1 rounded border ${scaleLocked ? 'border-bc-accent text-bc-accent' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
+                    title={scaleLocked ? 'Unlock Y scale for independent adjustment' : 'Lock Y scale to X'}
+                  >
+                    {scaleLocked ? <FiLock size={11} /> : <FiUnlock size={11} />}
+                  </button>
+                  <span className="text-[10px] text-gray-500">{scaleLocked ? 'X/Y linked' : 'X/Y independent'}</span>
+                </div>
+                <label className={`block ${scaleLocked ? 'opacity-40 pointer-events-none' : ''}`}>
                   <span className="text-gray-400">Scale Y: {(backgroundPlan.scaleY * 1000).toFixed(1)} mm/px ({(backgroundPlan.heightPx * backgroundPlan.scaleY).toFixed(1)}m tall)</span>
                   <input type="range" className="w-full accent-bc-accent"
                     min={0.001} max={0.5} step={0.001}
@@ -584,14 +595,14 @@ export default function Sidebar() {
                 {/* Quick fit buttons */}
                 <div className="flex gap-1">
                   <button
-                    onClick={() => setBackgroundPlan({ ...backgroundPlan, scaleX: venue.widthM / backgroundPlan.widthPx })}
+                    onClick={() => { const s = venue.widthM / backgroundPlan.widthPx; setBackgroundPlan({ ...backgroundPlan, scaleX: s, ...(scaleLocked ? { scaleY: s } : {}) }); }}
                     className="flex-1 px-1 py-0.5 rounded bg-bc-dark border border-bc-border text-gray-400 hover:text-white text-[10px]"
                   >
                     Fit Width
                   </button>
                   <button
-                    onClick={() => setBackgroundPlan({ ...backgroundPlan, scaleY: venue.heightM / backgroundPlan.heightPx })}
-                    className="flex-1 px-1 py-0.5 rounded bg-bc-dark border border-bc-border text-gray-400 hover:text-white text-[10px]"
+                    onClick={() => { const s = venue.heightM / backgroundPlan.heightPx; setBackgroundPlan({ ...backgroundPlan, scaleY: s, ...(scaleLocked ? { scaleX: s } : {}) }); }}
+                    className={`flex-1 px-1 py-0.5 rounded bg-bc-dark border border-bc-border text-gray-400 hover:text-white text-[10px] ${scaleLocked ? 'opacity-40 pointer-events-none' : ''}`}
                   >
                     Fit Height
                   </button>
@@ -602,17 +613,19 @@ export default function Sidebar() {
                     Fit Both
                   </button>
                 </div>
-                {/* Two-axis calibration */}
+                {/* Calibration */}
                 <div className="p-2 rounded bg-bc-dark border border-bc-border space-y-1.5">
                   <div className="flex items-center gap-1 text-gray-300 font-medium">
-                    <FiMaximize2 size={11} /> Calibrate Scale (X / Y)
+                    <FiMaximize2 size={11} /> Calibrate Scale{scaleLocked ? '' : ' (X / Y)'}
                   </div>
                   <p className="text-gray-500 text-[10px] leading-tight">
-                    Measure a known horizontal distance (X) and vertical distance (Y) separately. Click two points on the 2D plan for each axis.
+                    {scaleLocked
+                      ? 'Click two points on the 2D plan to measure a known distance. Both X and Y scale will be set equally.'
+                      : 'Measure a known horizontal (X) and vertical (Y) distance separately. Click two points on the 2D plan for each axis.'}
                   </p>
                   <div className="flex gap-1 items-end">
                     <label className="flex-1">
-                      <span className="text-gray-500">Known X distance (m)</span>
+                      <span className="text-gray-500">{scaleLocked ? 'Known distance (m)' : 'Known X distance (m)'}</span>
                       <input type="number" min={0.1} step={0.1}
                         className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white"
                         value={calibDistX}
@@ -622,24 +635,26 @@ export default function Sidebar() {
                       onClick={() => startCalibration('x')}
                       className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${calibAxis === 'x' ? 'bg-bc-red text-white' : 'bg-bc-green/20 text-bc-green hover:bg-bc-green/30'}`}
                     >
-                      {calibAxis === 'x' ? 'Cancel' : 'Cal X'}
+                      {calibAxis === 'x' ? 'Cancel' : (scaleLocked ? 'Calibrate' : 'Cal X')}
                     </button>
                   </div>
-                  <div className="flex gap-1 items-end">
-                    <label className="flex-1">
-                      <span className="text-gray-500">Known Y distance (m)</span>
-                      <input type="number" min={0.1} step={0.1}
-                        className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white"
-                        value={calibDistY}
-                        onChange={(e) => setCalibDistY(e.target.value)} />
-                    </label>
-                    <button
-                      onClick={() => startCalibration('y')}
-                      className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${calibAxis === 'y' ? 'bg-bc-red text-white' : 'bg-bc-green/20 text-bc-green hover:bg-bc-green/30'}`}
-                    >
-                      {calibAxis === 'y' ? 'Cancel' : 'Cal Y'}
-                    </button>
-                  </div>
+                  {!scaleLocked && (
+                    <div className="flex gap-1 items-end">
+                      <label className="flex-1">
+                        <span className="text-gray-500">Known Y distance (m)</span>
+                        <input type="number" min={0.1} step={0.1}
+                          className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white"
+                          value={calibDistY}
+                          onChange={(e) => setCalibDistY(e.target.value)} />
+                      </label>
+                      <button
+                        onClick={() => startCalibration('y')}
+                        className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${calibAxis === 'y' ? 'bg-bc-red text-white' : 'bg-bc-green/20 text-bc-green hover:bg-bc-green/30'}`}
+                      >
+                        {calibAxis === 'y' ? 'Cancel' : 'Cal Y'}
+                      </button>
+                    </div>
+                  )}
                   <label className="flex items-center gap-1.5 text-[10px] text-gray-400 cursor-pointer">
                     <input type="checkbox" checked={autoResize} onChange={(e) => setAutoResize(e.target.checked)} className="accent-bc-accent" />
                     Auto-resize venue to match floor plan
