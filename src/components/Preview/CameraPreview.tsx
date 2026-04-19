@@ -165,42 +165,43 @@ export default function CameraPreview() {
     ctx.rect(0, 0, W, H);
     ctx.clip();
 
+    // Clamp a screen coordinate to a safe finite range for drawing
+    const SAFE = 1e4;
+    function clampScreen(v: number, fallbackSign: number): number {
+      if (!isFinite(v)) return fallbackSign * SAFE;
+      return Math.max(-SAFE, Math.min(SAFE, v));
+    }
+
     persons.forEach((person) => {
       const feet = worldToScreen(person.x, person.y, 0);
       const head = worldToScreen(person.x, person.y, person.height);
       if (feet.behindCamera) return;
 
-      const rawPxH = Math.abs(head.sy - feet.sy);
-      if (rawPxH < 1) return; // too small to draw
+      // Clamp projected positions to finite safe range
+      const feetSx = clampScreen(feet.sx, 1);
+      const feetSy = clampScreen(feet.sy, 1);
+      const headSy = clampScreen(head.sy, -1);
 
-      // Clamp pixel height to prevent canvas rendering issues with extreme values
-      const maxPx = W * 10;
-      const pxH = Math.min(rawPxH, maxPx);
+      const pxH = Math.abs(headSy - feetSy);
+      if (pxH < 1) return; // too small to draw
       const pxW = pxH * 0.3;
       const headR = pxW * 0.4;
 
-      // Compute person bounding box
-      const personTop = Math.min(head.sy, head.sy - headR * 1.3);
-      const personBottom = feet.sy;
-      const personLeft = feet.sx - pxW / 2 - headR;
-      const personRight = feet.sx + pxW / 2 + headR;
-
-      // Skip if entirely off-screen
-      if (personRight < 0 || personLeft > W || personBottom < 0 || personTop > H) return;
-
-      // Recompute head position using clamped height (keeps proportions correct)
-      const clampedHeadY = feet.sy - pxH; // head relative to feet, using clamped height
+      // Skip if entirely off-screen (use generous bounds since clip handles the rest)
+      if (feetSx + pxW / 2 + headR < 0) return;
+      if (feetSx - pxW / 2 - headR > W) return;
+      if (feetSy < 0 && headSy < 0) return; // entirely above canvas
+      if (feetSy > H && headSy > H) return; // entirely below canvas
 
       // Body
       ctx.fillStyle = '#22c55e44';
       ctx.strokeStyle = '#22c55e';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      const bodyX = feet.sx - pxW / 2;
-      const bodyY = clampedHeadY;
+      const bodyX = feetSx - pxW / 2;
+      const bodyY = headSy;
       const bodyW = pxW;
       const bodyH = pxH * 0.75;
-      // Use rect instead of roundRect for large sizes (roundRect can fail with extreme coords)
       if (pxH > H * 3) {
         ctx.rect(bodyX, bodyY, bodyW, bodyH);
       } else {
@@ -211,17 +212,17 @@ export default function CameraPreview() {
 
       // Head
       ctx.beginPath();
-      ctx.arc(feet.sx, clampedHeadY - headR * 0.3, headR, 0, Math.PI * 2);
+      ctx.arc(feetSx, headSy - headR * 0.3, headR, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
       // Label (only if feet are on screen)
-      if (feet.sy > 0 && feet.sy < H - 5 && feet.sx > -50 && feet.sx < W + 50) {
+      if (feetSy > 0 && feetSy < H - 5 && feetSx > -50 && feetSx < W + 50) {
         const fontSize = Math.max(7, Math.min(11, 120 / feet.dist));
         ctx.fillStyle = '#22c55e';
         ctx.font = `${fontSize}px monospace`;
         ctx.textAlign = 'center';
-        ctx.fillText(`${person.label} (${person.height.toFixed(1)}m)`, feet.sx, feet.sy + fontSize + 2);
+        ctx.fillText(`${person.label} (${person.height.toFixed(1)}m)`, feetSx, feetSy + fontSize + 2);
       }
     });
 
