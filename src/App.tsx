@@ -48,10 +48,8 @@ export default function App() {
 
         {/* Main content area — all tabs always mounted, hidden via CSS so export can capture */}
         <div className="flex-1 overflow-hidden relative">
-          <div className={`absolute inset-0 p-4 ${activeTab === '2d' ? '' : 'pointer-events-none invisible'}`}>
-            <div className="flex items-start justify-center h-full overflow-auto">
-              <Venue2D />
-            </div>
+          <div className={`absolute inset-0 ${activeTab === '2d' ? '' : 'pointer-events-none invisible'}`}>
+            <Venue2D />
           </div>
           <div className={`absolute inset-0 ${activeTab === '3d' ? '' : 'pointer-events-none invisible'}`}>
             <Suspense fallback={<LoadingFallback />}>

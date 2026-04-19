@@ -10,12 +10,17 @@ import type Konva from 'konva';
 export default function Venue2D() {
   const { venue, cameras, selectedCameraId, selectCamera, moveCamera, showAllFov, pixelsPerMeter, persons, updatePerson, updateStage, backgroundPlan, setBackgroundPlan } = useStore();
   const stageRef = useRef<Konva.Stage>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
+  const [containerSize, setContainerSize] = useState({ w: 800, h: 600 });
+  const [zoom, setZoom] = useState(1);
+  const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
 
-  // Expose stage ref for export capture
+  // Expose stage ref and venue pixel dims for export capture
   useEffect(() => {
     (window as any).__konvaStage = stageRef.current;
-    return () => { (window as any).__konvaStage = null; };
+    (window as any).__konvaVenueSize = { w: W, h: H };
+    return () => { (window as any).__konvaStage = null; (window as any).__konvaVenueSize = null; };
   });
 
   // Calibration state
@@ -26,6 +31,57 @@ export default function Venue2D() {
   const ppm = pixelsPerMeter;
   const W = venue.widthM * ppm;
   const H = venue.heightM * ppm;
+
+  // Measure container and auto-fit zoom
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      if (width > 0 && height > 0) setContainerSize({ w: width, h: height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Auto-fit when venue or container changes
+  useEffect(() => {
+    const scaleX = containerSize.w / W;
+    const scaleY = containerSize.h / H;
+    const fitZoom = Math.min(scaleX, scaleY, 1) * 0.95; // 95% to leave margin
+    setZoom(fitZoom);
+    // Center the stage
+    setStagePos({
+      x: (containerSize.w - W * fitZoom) / 2,
+      y: (containerSize.h - H * fitZoom) / 2,
+    });
+  }, [containerSize.w, containerSize.h, W, H]);
+
+  // Wheel zoom around pointer
+  const handleWheel = useCallback((e: Konva.KonvaEventObject<WheelEvent>) => {
+    e.evt.preventDefault();
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const oldZoom = zoom;
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return;
+
+    const direction = e.evt.deltaY < 0 ? 1 : -1;
+    const factor = 1.08;
+    const newZoom = Math.max(0.1, Math.min(10, direction > 0 ? oldZoom * factor : oldZoom / factor));
+
+    // Zoom towards pointer position
+    const mousePointTo = {
+      x: (pointer.x - stagePos.x) / oldZoom,
+      y: (pointer.y - stagePos.y) / oldZoom,
+    };
+    setZoom(newZoom);
+    setStagePos({
+      x: pointer.x - mousePointTo.x * newZoom,
+      y: pointer.y - mousePointTo.y * newZoom,
+    });
+  }, [zoom, stagePos]);
 
   // Load background image when plan changes
   useEffect(() => {
@@ -52,26 +108,27 @@ export default function Venue2D() {
     if (!calibActive || !backgroundPlan) return;
     const stage = stageRef.current;
     if (!stage) return;
-    const pos = stage.getPointerPosition();
-    if (!pos) return;
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return;
 
-    const newPoints = [...calibPoints, { x: pos.x, y: pos.y }];
+    // Convert screen coords to stage-local coords (accounting for zoom & pan)
+    const localX = (pointer.x - stagePos.x) / zoom;
+    const localY = (pointer.y - stagePos.y) / zoom;
+
+    const newPoints = [...calibPoints, { x: localX, y: localY }];
     setCalibPoints(newPoints);
 
     if (newPoints.length >= 2) {
-      // Calculate pixel distance between the two points on the image
       const dx = newPoints[1].x - newPoints[0].x;
       const dy = newPoints[1].y - newPoints[0].y;
       const pixelDistOnCanvas = Math.sqrt(dx * dx + dy * dy);
-      // pixelDistOnCanvas is in canvas pixels (ppm-scaled), convert to image pixels
       const pixelDistOnImage = pixelDistOnCanvas / (backgroundPlan.scale * ppm);
-      // New scale = known real distance / pixel distance on image
       const newScale = calibDistM / pixelDistOnImage;
       setBackgroundPlan({ ...backgroundPlan, scale: newScale });
       setCalibActive(false);
       setCalibPoints([]);
     }
-  }, [calibActive, calibPoints, backgroundPlan, ppm, calibDistM, setBackgroundPlan]);
+  }, [calibActive, calibPoints, backgroundPlan, ppm, calibDistM, setBackgroundPlan, zoom, stagePos]);
 
   const handleCamDragEnd = useCallback(
     (cam: VenueCamera, e: Konva.KonvaEventObject<DragEvent>) => {
@@ -101,7 +158,34 @@ export default function Venue2D() {
   );
 
   return (
-    <Stage ref={stageRef} width={W} height={H} style={{ background: '#111318', borderRadius: 8, cursor: calibActive ? 'crosshair' : 'default' }} onClick={handleStageClick}>
+    <div ref={containerRef} style={{ width: '100%', height: '100%', background: '#0a0b0f', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+      {/* Zoom indicator */}
+      <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 10, background: '#000000aa', padding: '4px 10px', borderRadius: 4, fontSize: 11, color: '#9ca3af', pointerEvents: 'none', backdropFilter: 'blur(4px)' }}>
+        {(zoom * 100).toFixed(0)}%
+      </div>
+      <Stage
+        ref={stageRef}
+        width={containerSize.w}
+        height={containerSize.h}
+        scaleX={zoom}
+        scaleY={zoom}
+        x={stagePos.x}
+        y={stagePos.y}
+        draggable={!calibActive}
+        onDragEnd={(e) => {
+          if (e.target === stageRef.current) {
+            setStagePos({ x: e.target.x(), y: e.target.y() });
+          }
+        }}
+        onWheel={handleWheel}
+        onClick={handleStageClick}
+        style={{ cursor: calibActive ? 'crosshair' : 'grab' }}
+      >
+      {/* Venue area background */}
+      <Layer>
+        <Rect x={0} y={0} width={W} height={H} fill="#111318" listening={false} />
+      </Layer>
+
       {/* Background plan image */}
       {bgImage && backgroundPlan && (
         <Layer>
@@ -296,5 +380,6 @@ export default function Venue2D() {
         </Layer>
       )}
     </Stage>
+    </div>
   );
 }

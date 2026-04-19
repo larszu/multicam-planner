@@ -24,7 +24,15 @@ export default function ExportPanel() {
     const konvaStage = (window as any).__konvaStage;
     if (konvaStage && typeof konvaStage.toCanvas === 'function') {
       try {
-        return konvaStage.toCanvas({ pixelRatio: 2 }) as HTMLCanvasElement;
+        const vs = (window as any).__konvaVenueSize;
+        // Export just the venue area at 1:1 scale (ignore current zoom/pan)
+        return konvaStage.toCanvas({
+          pixelRatio: 2,
+          x: 0,
+          y: 0,
+          width: vs ? vs.w : konvaStage.width(),
+          height: vs ? vs.h : konvaStage.height(),
+        }) as HTMLCanvasElement;
       } catch { /* fall through */ }
     }
     // Fallback: grab DOM canvas
