@@ -53,7 +53,8 @@ export interface ReferencePerson {
 // ── Background floor plan ──
 export interface BackgroundPlan {
   dataUrl: string;
-  scale: number; // metres per image pixel
+  scaleX: number; // metres per image pixel (horizontal)
+  scaleY: number; // metres per image pixel (vertical)
   offsetX: number; // metres
   offsetY: number; // metres
   opacity: number; // 0-1

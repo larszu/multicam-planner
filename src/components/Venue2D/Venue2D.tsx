@@ -8,7 +8,7 @@ import { useRef, useCallback, useEffect, useState } from 'react';
 import type Konva from 'konva';
 
 export default function Venue2D() {
-  const { venue, cameras, selectedCameraId, selectCamera, moveCamera, showAllFov, pixelsPerMeter, persons, updatePerson, updateStage, backgroundPlan, setBackgroundPlan } = useStore();
+  const { venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, showAllFov, pixelsPerMeter, persons, updatePerson, updateStage, backgroundPlan, setBackgroundPlan } = useStore();
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
@@ -19,18 +19,26 @@ export default function Venue2D() {
   // Expose stage ref and venue pixel dims for export capture
   useEffect(() => {
     (window as any).__konvaStage = stageRef.current;
-    (window as any).__konvaVenueSize = { w: W, h: H };
+    (window as any).__konvaVenueSize = { w: worldW, h: worldH };
     return () => { (window as any).__konvaStage = null; (window as any).__konvaVenueSize = null; };
   });
 
   // Calibration state
   const [calibActive, setCalibActive] = useState(false);
   const [calibDistM, setCalibDistM] = useState(10);
+  const [calibAxis, setCalibAxis] = useState<'x' | 'y'>('x');
+  const [calibAutoResize, setCalibAutoResize] = useState(true);
   const [calibPoints, setCalibPoints] = useState<{ x: number; y: number }[]>([]);
 
   const ppm = pixelsPerMeter;
   const W = venue.widthM * ppm;
   const H = venue.heightM * ppm;
+
+  // Compute world extent including background image
+  const bgExtentW = backgroundPlan ? (backgroundPlan.offsetX + backgroundPlan.widthPx * backgroundPlan.scaleX) * ppm : 0;
+  const bgExtentH = backgroundPlan ? (backgroundPlan.offsetY + backgroundPlan.heightPx * backgroundPlan.scaleY) * ppm : 0;
+  const worldW = Math.max(W, bgExtentW);
+  const worldH = Math.max(H, bgExtentH);
 
   // Measure container and auto-fit zoom
   useEffect(() => {
@@ -44,18 +52,18 @@ export default function Venue2D() {
     return () => ro.disconnect();
   }, []);
 
-  // Auto-fit when venue or container changes
+  // Auto-fit when venue or container changes (fit full extent)
   useEffect(() => {
-    const scaleX = containerSize.w / W;
-    const scaleY = containerSize.h / H;
+    const scaleX = containerSize.w / worldW;
+    const scaleY = containerSize.h / worldH;
     const fitZoom = Math.min(scaleX, scaleY, 1) * 0.95; // 95% to leave margin
     setZoom(fitZoom);
     // Center the stage
     setStagePos({
-      x: (containerSize.w - W * fitZoom) / 2,
-      y: (containerSize.h - H * fitZoom) / 2,
+      x: (containerSize.w - worldW * fitZoom) / 2,
+      y: (containerSize.h - worldH * fitZoom) / 2,
     });
-  }, [containerSize.w, containerSize.h, W, H]);
+  }, [containerSize.w, containerSize.h, worldW, worldH]);
 
   // Wheel zoom around pointer
   const handleWheel = useCallback((e: Konva.KonvaEventObject<WheelEvent>) => {
@@ -94,9 +102,11 @@ export default function Venue2D() {
   // Listen for calibration start/cancel from Sidebar
   useEffect(() => {
     const handler = (e: Event) => {
-      const { active, distanceM } = (e as CustomEvent).detail;
+      const { active, distanceM, axis, autoResize } = (e as CustomEvent).detail;
       setCalibActive(active);
       setCalibDistM(distanceM);
+      setCalibAxis(axis || 'x');
+      setCalibAutoResize(autoResize ?? true);
       setCalibPoints([]);
     };
     window.addEventListener('multicam-calibrate', handler);
@@ -119,16 +129,42 @@ export default function Venue2D() {
     setCalibPoints(newPoints);
 
     if (newPoints.length >= 2) {
-      const dx = newPoints[1].x - newPoints[0].x;
-      const dy = newPoints[1].y - newPoints[0].y;
-      const pixelDistOnCanvas = Math.sqrt(dx * dx + dy * dy);
-      const pixelDistOnImage = pixelDistOnCanvas / (backgroundPlan.scale * ppm);
-      const newScale = calibDistM / pixelDistOnImage;
-      setBackgroundPlan({ ...backgroundPlan, scale: newScale });
+      const updatedPlan = { ...backgroundPlan };
+
+      if (calibAxis === 'x') {
+        const dx = Math.abs(newPoints[1].x - newPoints[0].x);
+        if (dx > 1) {
+          const dxImage = dx / (backgroundPlan.scaleX * ppm);
+          updatedPlan.scaleX = calibDistM / dxImage;
+        }
+      } else {
+        const dy = Math.abs(newPoints[1].y - newPoints[0].y);
+        if (dy > 1) {
+          const dyImage = dy / (backgroundPlan.scaleY * ppm);
+          updatedPlan.scaleY = calibDistM / dyImage;
+        }
+      }
+
+      setBackgroundPlan(updatedPlan);
+
+      // Auto-resize venue to encompass full floor plan
+      if (calibAutoResize) {
+        const imgW = updatedPlan.widthPx * updatedPlan.scaleX + updatedPlan.offsetX;
+        const imgH = updatedPlan.heightPx * updatedPlan.scaleY + updatedPlan.offsetY;
+        if (imgW > venue.widthM || imgH > venue.heightM) {
+          setVenue({
+            ...venue,
+            widthM: Math.max(venue.widthM, Math.ceil(imgW)),
+            heightM: Math.max(venue.heightM, Math.ceil(imgH)),
+          });
+        }
+      }
+
       setCalibActive(false);
       setCalibPoints([]);
+      window.dispatchEvent(new CustomEvent('multicam-calibrate-done'));
     }
-  }, [calibActive, calibPoints, backgroundPlan, ppm, calibDistM, setBackgroundPlan, zoom, stagePos]);
+  }, [calibActive, calibPoints, backgroundPlan, ppm, calibDistM, calibAxis, calibAutoResize, setBackgroundPlan, zoom, stagePos, venue, setVenue]);
 
   const handleCamDragEnd = useCallback(
     (cam: VenueCamera, e: Konva.KonvaEventObject<DragEvent>) => {
@@ -193,8 +229,8 @@ export default function Venue2D() {
             image={bgImage}
             x={(backgroundPlan.offsetX) * ppm}
             y={(backgroundPlan.offsetY) * ppm}
-            width={backgroundPlan.widthPx * backgroundPlan.scale * ppm}
-            height={backgroundPlan.heightPx * backgroundPlan.scale * ppm}
+            width={backgroundPlan.widthPx * backgroundPlan.scaleX * ppm}
+            height={backgroundPlan.heightPx * backgroundPlan.scaleY * ppm}
             opacity={backgroundPlan.opacity}
             listening={false}
           />
@@ -365,7 +401,7 @@ export default function Venue2D() {
         <Layer>
           {/* Dim overlay with instructions */}
           <Rect x={0} y={0} width={W} height={30} fill="#000000" opacity={0.7} listening={false} />
-          <Text x={W / 2 - 120} y={8} text={calibPoints.length === 0 ? `Click first point (known ${calibDistM}m)` : 'Click second point'} fontSize={14} fill="#22c55e" fontStyle="bold" listening={false} />
+          <Text x={W / 2 - 140} y={8} text={calibPoints.length === 0 ? `Click first point (${calibAxis.toUpperCase()} axis, ${calibDistM}m)` : `Click second point (${calibAxis.toUpperCase()} axis)`} fontSize={14} fill="#22c55e" fontStyle="bold" listening={false} />
           {/* Calibration points */}
           {calibPoints.map((p, i) => (
             <Group key={`cp-${i}`}>

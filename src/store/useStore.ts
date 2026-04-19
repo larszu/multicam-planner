@@ -340,11 +340,19 @@ export const useStore = create<AppState>((set, get) => ({
     personId = 1;
     // Re-assign IDs to avoid conflicts
     const cameras = project.cameras.map((c) => ({ ...c, id: uid(), useSpeedbooster: c.useSpeedbooster ?? false }));
+    // Migrate old single-scale background plans to scaleX/scaleY
+    let bgPlan = project.backgroundPlan;
+    if (bgPlan && 'scale' in bgPlan && !('scaleX' in bgPlan)) {
+      const s = (bgPlan as any).scale as number;
+      const { ...rest } = bgPlan as any;
+      delete rest.scale;
+      bgPlan = { ...rest, scaleX: s, scaleY: s } as BackgroundPlan;
+    }
     set({
       venue: project.venue,
       cameras,
       persons: project.persons,
-      backgroundPlan: project.backgroundPlan,
+      backgroundPlan: bgPlan,
       selectedCameraId: cameras[0]?.id ?? null,
       projectVersion: project.projectVersion,
       lastSavedVersion: project.projectVersion,

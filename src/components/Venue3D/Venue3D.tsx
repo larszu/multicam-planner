@@ -290,8 +290,8 @@ function FloorPlanOverlay({ plan }: { plan: BackgroundPlan }) {
 
   if (!texture) return null;
 
-  const w = plan.widthPx * plan.scale;
-  const h = plan.heightPx * plan.scale;
+  const w = plan.widthPx * plan.scaleX;
+  const h = plan.heightPx * plan.scaleY;
 
   return (
     <mesh

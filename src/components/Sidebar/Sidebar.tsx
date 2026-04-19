@@ -3,7 +3,7 @@ import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor } from '../.
 import { LENSES, getLensById, getCompatibleLenses } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
 import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2 } from 'react-icons/fi';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import type { BackgroundPlan } from '../../types';
 import * as pdfjsLib from 'pdfjs-dist';
 
@@ -304,8 +304,10 @@ export default function Sidebar() {
   const [personsOpen, setPersonsOpen] = useState(false);
   const [bgOpen, setBgOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [calibrating, setCalibrating] = useState(false);
-  const [calibDist, setCalibDist] = useState('10');
+  const [calibAxis, setCalibAxis] = useState<'x' | 'y' | null>(null);
+  const [calibDistX, setCalibDistX] = useState('10');
+  const [calibDistY, setCalibDistY] = useState('10');
+  const [autoResize, setAutoResize] = useState(true);
 
   /** Convert a PDF first page to a data URL at 2× DPI */
   const pdfToDataUrl = useCallback(async (file: File): Promise<{ dataUrl: string; width: number; height: number }> => {
@@ -333,9 +335,11 @@ export default function Sidebar() {
     if (isPdf) {
       try {
         const { dataUrl, width, height } = await pdfToDataUrl(file);
+        const s = venue.widthM / width;
         const plan: BackgroundPlan = {
           dataUrl,
-          scale: venue.widthM / width,
+          scaleX: s,
+          scaleY: s,
           offsetX: 0,
           offsetY: 0,
           opacity: 0.3,
@@ -353,9 +357,11 @@ export default function Sidebar() {
         const dataUrl = ev.target?.result as string;
         const img = new Image();
         img.onload = () => {
+          const s = venue.widthM / img.width;
           const plan: BackgroundPlan = {
             dataUrl,
-            scale: venue.widthM / img.width,
+            scaleX: s,
+            scaleY: s,
             offsetX: 0,
             offsetY: 0,
             opacity: 0.3,
@@ -373,11 +379,24 @@ export default function Sidebar() {
   }, [venue.widthM, setBackgroundPlan, pdfToDataUrl]);
 
   /** Start/stop calibration mode — dispatches custom event to Venue2D */
-  const toggleCalibration = useCallback(() => {
-    const next = !calibrating;
-    setCalibrating(next);
-    window.dispatchEvent(new CustomEvent('multicam-calibrate', { detail: { active: next, distanceM: parseFloat(calibDist) || 10 } }));
-  }, [calibrating, calibDist]);
+  const startCalibration = useCallback((axis: 'x' | 'y') => {
+    if (calibAxis === axis) {
+      // Cancel
+      setCalibAxis(null);
+      window.dispatchEvent(new CustomEvent('multicam-calibrate', { detail: { active: false, distanceM: 0, axis } }));
+    } else {
+      const dist = axis === 'x' ? parseFloat(calibDistX) || 10 : parseFloat(calibDistY) || 10;
+      setCalibAxis(axis);
+      window.dispatchEvent(new CustomEvent('multicam-calibrate', { detail: { active: true, distanceM: dist, axis, autoResize } }));
+    }
+  }, [calibAxis, calibDistX, calibDistY, autoResize]);
+
+  // Listen for calibration-done event from Venue2D to reset button state
+  useEffect(() => {
+    const handler = () => setCalibAxis(null);
+    window.addEventListener('multicam-calibrate-done', handler);
+    return () => window.removeEventListener('multicam-calibrate-done', handler);
+  }, []);
 
   return (
     <div className="w-80 bg-bc-panel border-r border-bc-border h-full flex flex-col overflow-y-auto">
@@ -549,50 +568,82 @@ export default function Sidebar() {
                     onChange={(e) => setBackgroundPlan({ ...backgroundPlan, opacity: parseFloat(e.target.value) })} />
                 </label>
                 <label className="block">
-                  <span className="text-gray-400">Scale: {(backgroundPlan.scale * 1000).toFixed(1)} mm/px ({(backgroundPlan.widthPx * backgroundPlan.scale).toFixed(1)}×{(backgroundPlan.heightPx * backgroundPlan.scale).toFixed(1)}m)</span>
+                  <span className="text-gray-400">Scale X: {(backgroundPlan.scaleX * 1000).toFixed(1)} mm/px ({(backgroundPlan.widthPx * backgroundPlan.scaleX).toFixed(1)}m wide)</span>
                   <input type="range" className="w-full accent-bc-accent"
                     min={0.001} max={0.5} step={0.001}
-                    value={backgroundPlan.scale}
-                    onChange={(e) => setBackgroundPlan({ ...backgroundPlan, scale: parseFloat(e.target.value) })} />
+                    value={backgroundPlan.scaleX}
+                    onChange={(e) => setBackgroundPlan({ ...backgroundPlan, scaleX: parseFloat(e.target.value) })} />
+                </label>
+                <label className="block">
+                  <span className="text-gray-400">Scale Y: {(backgroundPlan.scaleY * 1000).toFixed(1)} mm/px ({(backgroundPlan.heightPx * backgroundPlan.scaleY).toFixed(1)}m tall)</span>
+                  <input type="range" className="w-full accent-bc-accent"
+                    min={0.001} max={0.5} step={0.001}
+                    value={backgroundPlan.scaleY}
+                    onChange={(e) => setBackgroundPlan({ ...backgroundPlan, scaleY: parseFloat(e.target.value) })} />
                 </label>
                 {/* Quick fit buttons */}
                 <div className="flex gap-1">
                   <button
-                    onClick={() => setBackgroundPlan({ ...backgroundPlan, scale: venue.widthM / backgroundPlan.widthPx })}
+                    onClick={() => setBackgroundPlan({ ...backgroundPlan, scaleX: venue.widthM / backgroundPlan.widthPx })}
                     className="flex-1 px-1 py-0.5 rounded bg-bc-dark border border-bc-border text-gray-400 hover:text-white text-[10px]"
                   >
                     Fit Width
                   </button>
                   <button
-                    onClick={() => setBackgroundPlan({ ...backgroundPlan, scale: venue.heightM / backgroundPlan.heightPx })}
+                    onClick={() => setBackgroundPlan({ ...backgroundPlan, scaleY: venue.heightM / backgroundPlan.heightPx })}
                     className="flex-1 px-1 py-0.5 rounded bg-bc-dark border border-bc-border text-gray-400 hover:text-white text-[10px]"
                   >
                     Fit Height
                   </button>
+                  <button
+                    onClick={() => { const s = venue.widthM / backgroundPlan.widthPx; setBackgroundPlan({ ...backgroundPlan, scaleX: s, scaleY: s }); }}
+                    className="flex-1 px-1 py-0.5 rounded bg-bc-dark border border-bc-border text-gray-400 hover:text-white text-[10px]"
+                  >
+                    Fit Both
+                  </button>
                 </div>
-                {/* Two-point calibration */}
+                {/* Two-axis calibration */}
                 <div className="p-2 rounded bg-bc-dark border border-bc-border space-y-1.5">
                   <div className="flex items-center gap-1 text-gray-300 font-medium">
-                    <FiMaximize2 size={11} /> Calibrate Scale
+                    <FiMaximize2 size={11} /> Calibrate Scale (X / Y)
                   </div>
                   <p className="text-gray-500 text-[10px] leading-tight">
-                    Click two points on the 2D plan that represent a known distance. Enter the real distance below, then click "Calibrate".
+                    Measure a known horizontal distance (X) and vertical distance (Y) separately. Click two points on the 2D plan for each axis.
                   </p>
                   <div className="flex gap-1 items-end">
                     <label className="flex-1">
-                      <span className="text-gray-500">Known distance (m)</span>
+                      <span className="text-gray-500">Known X distance (m)</span>
                       <input type="number" min={0.1} step={0.1}
                         className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white"
-                        value={calibDist}
-                        onChange={(e) => setCalibDist(e.target.value)} />
+                        value={calibDistX}
+                        onChange={(e) => setCalibDistX(e.target.value)} />
                     </label>
                     <button
-                      onClick={toggleCalibration}
-                      className={`px-2 py-1 rounded text-xs font-medium ${calibrating ? 'bg-bc-red text-white' : 'bg-bc-green/20 text-bc-green hover:bg-bc-green/30'}`}
+                      onClick={() => startCalibration('x')}
+                      className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${calibAxis === 'x' ? 'bg-bc-red text-white' : 'bg-bc-green/20 text-bc-green hover:bg-bc-green/30'}`}
                     >
-                      {calibrating ? 'Cancel' : 'Calibrate'}
+                      {calibAxis === 'x' ? 'Cancel' : 'Cal X'}
                     </button>
                   </div>
+                  <div className="flex gap-1 items-end">
+                    <label className="flex-1">
+                      <span className="text-gray-500">Known Y distance (m)</span>
+                      <input type="number" min={0.1} step={0.1}
+                        className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white"
+                        value={calibDistY}
+                        onChange={(e) => setCalibDistY(e.target.value)} />
+                    </label>
+                    <button
+                      onClick={() => startCalibration('y')}
+                      className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${calibAxis === 'y' ? 'bg-bc-red text-white' : 'bg-bc-green/20 text-bc-green hover:bg-bc-green/30'}`}
+                    >
+                      {calibAxis === 'y' ? 'Cancel' : 'Cal Y'}
+                    </button>
+                  </div>
+                  <label className="flex items-center gap-1.5 text-[10px] text-gray-400 cursor-pointer">
+                    <input type="checkbox" checked={autoResize} onChange={(e) => setAutoResize(e.target.checked)} className="accent-bc-accent" />
+                    Auto-resize venue to match floor plan
+                  </label>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <label>
