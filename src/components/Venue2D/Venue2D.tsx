@@ -8,9 +8,20 @@ import { useRef, useCallback, useEffect, useState } from 'react';
 import type Konva from 'konva';
 
 export default function Venue2D() {
-  const { venue, cameras, selectedCameraId, selectCamera, moveCamera, showAllFov, pixelsPerMeter, persons, updatePerson, updateStage, backgroundPlan } = useStore();
+  const { venue, cameras, selectedCameraId, selectCamera, moveCamera, showAllFov, pixelsPerMeter, persons, updatePerson, updateStage, backgroundPlan, setBackgroundPlan } = useStore();
   const stageRef = useRef<Konva.Stage>(null);
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
+
+  // Expose stage ref for export capture
+  useEffect(() => {
+    (window as any).__konvaStage = stageRef.current;
+    return () => { (window as any).__konvaStage = null; };
+  });
+
+  // Calibration state
+  const [calibActive, setCalibActive] = useState(false);
+  const [calibDistM, setCalibDistM] = useState(10);
+  const [calibPoints, setCalibPoints] = useState<{ x: number; y: number }[]>([]);
 
   const ppm = pixelsPerMeter;
   const W = venue.widthM * ppm;
@@ -23,6 +34,44 @@ export default function Venue2D() {
     img.onload = () => setBgImage(img);
     img.src = backgroundPlan.dataUrl;
   }, [backgroundPlan?.dataUrl]);
+
+  // Listen for calibration start/cancel from Sidebar
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { active, distanceM } = (e as CustomEvent).detail;
+      setCalibActive(active);
+      setCalibDistM(distanceM);
+      setCalibPoints([]);
+    };
+    window.addEventListener('multicam-calibrate', handler);
+    return () => window.removeEventListener('multicam-calibrate', handler);
+  }, []);
+
+  // Handle calibration clicks on the stage
+  const handleStageClick = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (!calibActive || !backgroundPlan) return;
+    const stage = stageRef.current;
+    if (!stage) return;
+    const pos = stage.getPointerPosition();
+    if (!pos) return;
+
+    const newPoints = [...calibPoints, { x: pos.x, y: pos.y }];
+    setCalibPoints(newPoints);
+
+    if (newPoints.length >= 2) {
+      // Calculate pixel distance between the two points on the image
+      const dx = newPoints[1].x - newPoints[0].x;
+      const dy = newPoints[1].y - newPoints[0].y;
+      const pixelDistOnCanvas = Math.sqrt(dx * dx + dy * dy);
+      // pixelDistOnCanvas is in canvas pixels (ppm-scaled), convert to image pixels
+      const pixelDistOnImage = pixelDistOnCanvas / (backgroundPlan.scale * ppm);
+      // New scale = known real distance / pixel distance on image
+      const newScale = calibDistM / pixelDistOnImage;
+      setBackgroundPlan({ ...backgroundPlan, scale: newScale });
+      setCalibActive(false);
+      setCalibPoints([]);
+    }
+  }, [calibActive, calibPoints, backgroundPlan, ppm, calibDistM, setBackgroundPlan]);
 
   const handleCamDragEnd = useCallback(
     (cam: VenueCamera, e: Konva.KonvaEventObject<DragEvent>) => {
@@ -52,7 +101,7 @@ export default function Venue2D() {
   );
 
   return (
-    <Stage ref={stageRef} width={W} height={H} style={{ background: '#111318', borderRadius: 8 }}>
+    <Stage ref={stageRef} width={W} height={H} style={{ background: '#111318', borderRadius: 8, cursor: calibActive ? 'crosshair' : 'default' }} onClick={handleStageClick}>
       {/* Background plan image */}
       {bgImage && backgroundPlan && (
         <Layer>
@@ -226,6 +275,26 @@ export default function Venue2D() {
         <Line points={[10 + 5 * ppm, H - 25, 10 + 5 * ppm, H - 15]} stroke="#666" strokeWidth={2} />
         <Text x={10} y={H - 38} text="5m" fontSize={11} fill="#666" />
       </Layer>
+
+      {/* Calibration overlay */}
+      {calibActive && (
+        <Layer>
+          {/* Dim overlay with instructions */}
+          <Rect x={0} y={0} width={W} height={30} fill="#000000" opacity={0.7} listening={false} />
+          <Text x={W / 2 - 120} y={8} text={calibPoints.length === 0 ? `Click first point (known ${calibDistM}m)` : 'Click second point'} fontSize={14} fill="#22c55e" fontStyle="bold" listening={false} />
+          {/* Calibration points */}
+          {calibPoints.map((p, i) => (
+            <Group key={`cp-${i}`}>
+              <Circle x={p.x} y={p.y} radius={6} fill="#22c55e" stroke="#fff" strokeWidth={2} listening={false} />
+              <Text x={p.x + 8} y={p.y - 6} text={`P${i + 1}`} fontSize={11} fill="#22c55e" fontStyle="bold" listening={false} />
+            </Group>
+          ))}
+          {/* Line between points */}
+          {calibPoints.length === 1 && (
+            <Line points={[calibPoints[0].x, calibPoints[0].y, calibPoints[0].x, calibPoints[0].y]} stroke="#22c55e" strokeWidth={2} dash={[6, 4]} listening={false} />
+          )}
+        </Layer>
+      )}
     </Stage>
   );
 }

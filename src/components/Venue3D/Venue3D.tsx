@@ -5,7 +5,8 @@ import { getCameraById, getEffectiveSensor } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov } from '../../utils/fov';
 import * as THREE from 'three';
-import { useMemo, useRef, useEffect } from 'react';
+import { useMemo, useRef, useEffect, useState } from 'react';
+import type { BackgroundPlan } from '../../types';
 
 /* ── Floor grid with visible metre labels ── */
 function FloorLabels({ widthM, heightM }: { widthM: number; heightM: number }) {
@@ -271,6 +272,38 @@ function FovPyramid({ cam }: { cam: ReturnType<typeof useStore.getState>['camera
   );
 }
 
+/* ── Floor plan image texture overlay on ground ── */
+function FloorPlanOverlay({ plan }: { plan: BackgroundPlan }) {
+  const [texture, setTexture] = useState<THREE.Texture | null>(null);
+
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      const tex = new THREE.Texture(img);
+      tex.needsUpdate = true;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      setTexture(tex);
+    };
+    img.src = plan.dataUrl;
+    return () => { texture?.dispose(); };
+  }, [plan.dataUrl]);
+
+  if (!texture) return null;
+
+  const w = plan.widthPx * plan.scale;
+  const h = plan.heightPx * plan.scale;
+
+  return (
+    <mesh
+      rotation={[-Math.PI / 2, 0, 0]}
+      position={[plan.offsetX + w / 2, 0.02, plan.offsetY + h / 2]}
+    >
+      <planeGeometry args={[w, h]} />
+      <meshBasicMaterial map={texture} transparent opacity={plan.opacity} depthWrite={false} />
+    </mesh>
+  );
+}
+
 function PersonMesh({ x, z, height, label }: { x: number; z: number; height: number; label: string }) {
   return (
     <group position={[x, height / 2, z]}>
@@ -294,7 +327,7 @@ function PersonMesh({ x, z, height, label }: { x: number; z: number; height: num
 }
 
 export default function Venue3D() {
-  const { venue, cameras, persons } = useStore();
+  const { venue, cameras, persons, backgroundPlan } = useStore();
 
   return (
     <div style={{ width: '100%', height: '100%', minHeight: 500, position: 'relative' }}>
@@ -329,6 +362,9 @@ export default function Venue3D() {
           <planeGeometry args={[venue.widthM, venue.heightM]} />
           <meshStandardMaterial color="#252a36" />
         </mesh>
+
+        {/* Floor plan overlay */}
+        {backgroundPlan && <FloorPlanOverlay plan={backgroundPlan} />}
 
         {/* Grid — brighter lines */}
         <Grid

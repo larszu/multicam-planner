@@ -20,9 +20,15 @@ export default function ExportPanel() {
   }, []);
 
   const capture2DCanvas = useCallback((): HTMLCanvasElement | null => {
-    // Konva renders to a canvas inside .konvajs-content
-    const container = document.querySelector('.konvajs-content canvas') as HTMLCanvasElement | null;
-    return container;
+    // Use Konva's stage.toCanvas() for reliable capture even when tab is hidden
+    const konvaStage = (window as any).__konvaStage;
+    if (konvaStage && typeof konvaStage.toCanvas === 'function') {
+      try {
+        return konvaStage.toCanvas({ pixelRatio: 2 }) as HTMLCanvasElement;
+      } catch { /* fall through */ }
+    }
+    // Fallback: grab DOM canvas
+    return document.querySelector('.konvajs-content canvas') as HTMLCanvasElement | null;
   }, []);
 
   const capture3DCanvas = useCallback((): HTMLCanvasElement | null => {

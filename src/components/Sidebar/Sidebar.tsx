@@ -2,9 +2,10 @@ import { useStore } from '../../store/useStore';
 import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor } from '../../data/cameras';
 import { LENSES, getLensById, getCompatibleLenses } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
-import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2 } from 'react-icons/fi';
 import { useState, useRef, useCallback } from 'react';
 import type { BackgroundPlan } from '../../types';
+import * as pdfjsLib from 'pdfjs-dist';
 
 /** Group lenses by mount for the dropdown */
 function groupByMount(lenses: typeof LENSES) {
@@ -303,32 +304,80 @@ export default function Sidebar() {
   const [personsOpen, setPersonsOpen] = useState(false);
   const [bgOpen, setBgOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [calibrating, setCalibrating] = useState(false);
+  const [calibDist, setCalibDist] = useState('10');
 
-  const handleBgUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  /** Convert a PDF first page to a data URL at 2× DPI */
+  const pdfToDataUrl = useCallback(async (file: File): Promise<{ dataUrl: string; width: number; height: number }> => {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+    const arrayBuf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuf }).promise;
+    const page = await pdf.getPage(1);
+    const scale = 2; // 2× for crisp rendering
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvas, viewport }).promise;
+    return { dataUrl: canvas.toDataURL('image/png'), width: viewport.width, height: viewport.height };
+  }, []);
+
+  const handleBgUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Validate file type
-    if (!file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string;
-      const img = new Image();
-      img.onload = () => {
+
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isImage = file.type.startsWith('image/');
+    if (!isPdf && !isImage) return;
+
+    if (isPdf) {
+      try {
+        const { dataUrl, width, height } = await pdfToDataUrl(file);
         const plan: BackgroundPlan = {
           dataUrl,
-          scale: venue.widthM / img.width, // initial: fit image to venue width
+          scale: venue.widthM / width,
           offsetX: 0,
           offsetY: 0,
           opacity: 0.3,
-          widthPx: img.width,
-          heightPx: img.height,
+          widthPx: width,
+          heightPx: height,
         };
         setBackgroundPlan(plan);
+      } catch (err) {
+        alert('Failed to render PDF. Make sure it is a valid PDF file.');
+        console.error(err);
+      }
+    } else {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        const img = new Image();
+        img.onload = () => {
+          const plan: BackgroundPlan = {
+            dataUrl,
+            scale: venue.widthM / img.width,
+            offsetX: 0,
+            offsetY: 0,
+            opacity: 0.3,
+            widthPx: img.width,
+            heightPx: img.height,
+          };
+          setBackgroundPlan(plan);
+        };
+        img.src = dataUrl;
       };
-      img.src = dataUrl;
-    };
-    reader.readAsDataURL(file);
-  }, [venue.widthM, setBackgroundPlan]);
+      reader.readAsDataURL(file);
+    }
+    // Reset input so same file can be re-uploaded
+    e.target.value = '';
+  }, [venue.widthM, setBackgroundPlan, pdfToDataUrl]);
+
+  /** Start/stop calibration mode — dispatches custom event to Venue2D */
+  const toggleCalibration = useCallback(() => {
+    const next = !calibrating;
+    setCalibrating(next);
+    window.dispatchEvent(new CustomEvent('multicam-calibrate', { detail: { active: next, distanceM: parseFloat(calibDist) || 10 } }));
+  }, [calibrating, calibDist]);
 
   return (
     <div className="w-80 bg-bc-panel border-r border-bc-border h-full flex flex-col overflow-y-auto">
@@ -484,12 +533,12 @@ export default function Sidebar() {
         </button>
         {bgOpen && (
           <div className="mt-2 space-y-2 text-xs">
-            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgUpload} />
+            <input ref={fileInputRef} type="file" accept="image/*,.pdf,application/pdf" className="hidden" onChange={handleBgUpload} />
             <button
               onClick={() => fileInputRef.current?.click()}
               className="flex items-center gap-1 px-2 py-1 rounded bg-bc-accent/20 text-bc-accent text-xs hover:bg-bc-accent/30 w-full justify-center"
             >
-              <FiUpload size={12} /> {backgroundPlan ? 'Replace Image' : 'Upload Image'}
+              <FiUpload size={12} /> {backgroundPlan ? 'Replace Image/PDF' : 'Upload Image or PDF'}
             </button>
             {backgroundPlan && (
               <>
@@ -500,12 +549,51 @@ export default function Sidebar() {
                     onChange={(e) => setBackgroundPlan({ ...backgroundPlan, opacity: parseFloat(e.target.value) })} />
                 </label>
                 <label className="block">
-                  <span className="text-gray-400">Scale: {(backgroundPlan.scale * 1000).toFixed(1)} mm/px</span>
+                  <span className="text-gray-400">Scale: {(backgroundPlan.scale * 1000).toFixed(1)} mm/px ({(backgroundPlan.widthPx * backgroundPlan.scale).toFixed(1)}×{(backgroundPlan.heightPx * backgroundPlan.scale).toFixed(1)}m)</span>
                   <input type="range" className="w-full accent-bc-accent"
                     min={0.001} max={0.5} step={0.001}
                     value={backgroundPlan.scale}
                     onChange={(e) => setBackgroundPlan({ ...backgroundPlan, scale: parseFloat(e.target.value) })} />
                 </label>
+                {/* Quick fit buttons */}
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setBackgroundPlan({ ...backgroundPlan, scale: venue.widthM / backgroundPlan.widthPx })}
+                    className="flex-1 px-1 py-0.5 rounded bg-bc-dark border border-bc-border text-gray-400 hover:text-white text-[10px]"
+                  >
+                    Fit Width
+                  </button>
+                  <button
+                    onClick={() => setBackgroundPlan({ ...backgroundPlan, scale: venue.heightM / backgroundPlan.heightPx })}
+                    className="flex-1 px-1 py-0.5 rounded bg-bc-dark border border-bc-border text-gray-400 hover:text-white text-[10px]"
+                  >
+                    Fit Height
+                  </button>
+                </div>
+                {/* Two-point calibration */}
+                <div className="p-2 rounded bg-bc-dark border border-bc-border space-y-1.5">
+                  <div className="flex items-center gap-1 text-gray-300 font-medium">
+                    <FiMaximize2 size={11} /> Calibrate Scale
+                  </div>
+                  <p className="text-gray-500 text-[10px] leading-tight">
+                    Click two points on the 2D plan that represent a known distance. Enter the real distance below, then click "Calibrate".
+                  </p>
+                  <div className="flex gap-1 items-end">
+                    <label className="flex-1">
+                      <span className="text-gray-500">Known distance (m)</span>
+                      <input type="number" min={0.1} step={0.1}
+                        className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white"
+                        value={calibDist}
+                        onChange={(e) => setCalibDist(e.target.value)} />
+                    </label>
+                    <button
+                      onClick={toggleCalibration}
+                      className={`px-2 py-1 rounded text-xs font-medium ${calibrating ? 'bg-bc-red text-white' : 'bg-bc-green/20 text-bc-green hover:bg-bc-green/30'}`}
+                    >
+                      {calibrating ? 'Cancel' : 'Calibrate'}
+                    </button>
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   <label>
                     <span className="text-gray-400">Offset X (m)</span>
