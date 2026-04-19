@@ -4,7 +4,8 @@ import { LENSES, getLensById, getCompatibleLenses } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
 import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { BackgroundPlan, StageObjectType } from '../../types';
+import type { BackgroundPlan, StageObjectType, CameraMountType } from '../../types';
+import { MOUNT_TYPE_LABELS } from '../../types';
 import * as pdfjsLib from 'pdfjs-dist';
 
 /** Group lenses by mount for the dropdown */
@@ -348,6 +349,20 @@ function CameraCard({ camId }: { camId: string }) {
             </label>
           </div>
 
+          {/* Mount / Support type */}
+          <label className="block">
+            <span className="text-gray-400">Mount Type</span>
+            <select
+              className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
+              value={cam.mountType ?? 'tripod'}
+              onChange={(e) => updateCamera(cam.id, { mountType: e.target.value as CameraMountType })}
+            >
+              {Object.entries(MOUNT_TYPE_LABELS).map(([k, v]) => (
+                <option key={k} value={k}>{v}</option>
+              ))}
+            </select>
+          </label>
+
           {/* DoF readout */}
           {dof && (
             <div className="bg-bc-dark rounded p-2 mt-2 border border-bc-border">
@@ -380,10 +395,12 @@ export default function Sidebar() {
     addStage, removeStage, updateStage,
     persons, addPerson, addStageObject, removePerson,
     backgroundPlan, setBackgroundPlan,
+    walls, addWall, removeWall, updateWall,
   } = useStore();
   const [venueOpen, setVenueOpen] = useState(false);
   const [stagesOpen, setStagesOpen] = useState(false);
   const [personsOpen, setPersonsOpen] = useState(false);
+  const [wallsOpen, setWallsOpen] = useState(false);
   const [bgOpen, setBgOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [calibAxis, setCalibAxis] = useState<'x' | 'y' | null>(null);
@@ -641,6 +658,38 @@ export default function Sidebar() {
         )}
       </div>
 
+      {/* Walls */}
+      <div className="p-3 border-b border-bc-border">
+        <button
+          className="flex items-center justify-between w-full text-sm text-white font-semibold"
+          onClick={() => setWallsOpen(!wallsOpen)}
+        >
+          <span>▇ Walls ({walls.length})</span>
+          {wallsOpen ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
+        </button>
+        {wallsOpen && (
+          <div className="mt-2 space-y-2 text-xs">
+            {walls.map((w) => (
+              <div key={w.id} className="flex items-center gap-2 bg-bc-dark rounded p-1.5 border border-bc-border">
+                <input
+                  className="bg-transparent text-white text-xs w-16 outline-none"
+                  value={w.label}
+                  onChange={(e) => updateWall(w.id, { label: e.target.value })}
+                />
+                <span className="text-gray-500 text-[10px]">{w.height}m h</span>
+                <button onClick={() => removeWall(w.id)} className="ml-auto p-0.5 hover:text-bc-red"><FiTrash2 size={11} /></button>
+              </div>
+            ))}
+            <button
+              onClick={() => addWall()}
+              className="flex items-center gap-1 px-2 py-1 rounded bg-bc-accent/20 text-bc-accent text-xs hover:bg-bc-accent/30 w-full justify-center"
+            >
+              <FiPlus size={12} /> Add Wall
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Background plan */}
       <div className="p-3 border-b border-bc-border">
         <button
@@ -818,7 +867,9 @@ export default function Sidebar() {
       {/* Bottom actions */}
       <div className="p-3 border-t border-bc-border">
         <button
-          onClick={clearAll}
+          onClick={() => {
+            if (window.confirm('Are you sure you want to clear everything? This cannot be undone.')) clearAll();
+          }}
           className="w-full py-1.5 rounded bg-bc-red/20 text-bc-red text-xs font-semibold hover:bg-bc-red/30"
         >
           Clear All

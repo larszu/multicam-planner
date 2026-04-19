@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { VenueCamera, Venue, ViewTab, ReferencePerson, BackgroundPlan, Stage, ProjectFile, VenueTemplate, StageObjectType, Lens } from '../types';
+import type { VenueCamera, Venue, ViewTab, ReferencePerson, BackgroundPlan, Stage, ProjectFile, VenueTemplate, StageObjectType, Lens, Wall } from '../types';
 import { CAMERAS, CAMERA_COLORS } from '../data/cameras';
 import { LENSES } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
@@ -36,11 +36,19 @@ interface AppState {
   cameras: VenueCamera[];
   selectedCameraId: string | null;
   selectCamera: (id: string | null) => void;
+  selectNextCamera: () => void;
+  selectPrevCamera: () => void;
   addCamera: (cameraId?: string, lensId?: string) => void;
   removeCamera: (id: string) => void;
   updateCamera: (id: string, updates: Partial<VenueCamera>) => void;
   moveCamera: (id: string, x: number, y: number) => void;
   duplicateCamera: (id: string) => void;
+
+  // Walls
+  walls: Wall[];
+  addWall: (wall?: Partial<Wall>) => void;
+  removeWall: (id: string) => void;
+  updateWall: (id: string, updates: Partial<Wall>) => void;
 
   // View
   activeTab: ViewTab;
@@ -234,6 +242,22 @@ export const useStore = create<AppState>((set, get) => ({
   selectedCameraId: null,
   selectCamera: (id) => set({ selectedCameraId: id }),
 
+  selectNextCamera: () => {
+    const { cameras, selectedCameraId } = get();
+    if (cameras.length === 0) return;
+    const idx = cameras.findIndex((c) => c.id === selectedCameraId);
+    const next = cameras[(idx + 1) % cameras.length];
+    set({ selectedCameraId: next.id });
+  },
+
+  selectPrevCamera: () => {
+    const { cameras, selectedCameraId } = get();
+    if (cameras.length === 0) return;
+    const idx = cameras.findIndex((c) => c.id === selectedCameraId);
+    const prev = cameras[(idx - 1 + cameras.length) % cameras.length];
+    set({ selectedCameraId: prev.id });
+  },
+
   addCamera: (cameraId, lensId) => {
     const cam = cameraId ? CAMERAS.find((c) => c.id === cameraId) : CAMERAS[0];
     const camDef = cam ?? CAMERAS[0];
@@ -260,6 +284,7 @@ export const useStore = create<AppState>((set, get) => ({
       color: CAMERA_COLORS[idx % CAMERA_COLORS.length],
       extenderActive: 1,
       useSpeedbooster: false,
+      mountType: 'tripod',
     };
     set((s) => ({ cameras: [...s.cameras, newCam], selectedCameraId: newCam.id, projectVersion: s.projectVersion + 1 }));
   },
@@ -298,6 +323,24 @@ export const useStore = create<AppState>((set, get) => ({
     };
     set((s) => ({ cameras: [...s.cameras, dup], selectedCameraId: dup.id, projectVersion: s.projectVersion + 1 }));
   },
+
+  // ── Walls ──
+  walls: [],
+  addWall: (wall) => {
+    const { venue } = get();
+    const w: Wall = {
+      id: uid('wall'),
+      x1: wall?.x1 ?? 0,
+      y1: wall?.y1 ?? venue.heightM / 2,
+      x2: wall?.x2 ?? venue.widthM,
+      y2: wall?.y2 ?? venue.heightM / 2,
+      height: wall?.height ?? 3,
+      label: wall?.label ?? 'Wall',
+    };
+    set((s) => ({ walls: [...s.walls, w], projectVersion: s.projectVersion + 1 }));
+  },
+  removeWall: (id) => set((s) => ({ walls: s.walls.filter((w) => w.id !== id), projectVersion: s.projectVersion + 1 })),
+  updateWall: (id, updates) => set((s) => ({ walls: s.walls.map((w) => (w.id === id ? { ...w, ...updates } : w)), projectVersion: s.projectVersion + 1 })),
 
   activeTab: '2d',
   setActiveTab: (tab) => set({ activeTab: tab }),
@@ -368,7 +411,7 @@ export const useStore = create<AppState>((set, get) => ({
     nextId = 1;
     stageId = 1;
     personId = 1;
-    set({ venue: defaultVenue, cameras: [], selectedCameraId: null, persons: [], backgroundPlan: null, projectVersion: 1, lastSavedVersion: 0 });
+    set({ venue: defaultVenue, cameras: [], selectedCameraId: null, persons: [], walls: [], backgroundPlan: null, projectVersion: 1, lastSavedVersion: 0 });
   },
 
   // ── Project versioning ──
@@ -390,6 +433,7 @@ export const useStore = create<AppState>((set, get) => ({
       venue: s.venue,
       cameras: s.cameras,
       persons: s.persons,
+      walls: s.walls ?? [],
       backgroundPlan: s.backgroundPlan,
     };
     const json = JSON.stringify(project, null, 2);
@@ -414,7 +458,7 @@ export const useStore = create<AppState>((set, get) => ({
     stageId = 1;
     personId = 1;
     // Re-assign IDs to avoid conflicts
-    const cameras = project.cameras.map((c) => ({ ...c, id: uid(), useSpeedbooster: c.useSpeedbooster ?? false }));
+    const cameras = project.cameras.map((c) => ({ ...c, id: uid(), useSpeedbooster: c.useSpeedbooster ?? false, mountType: (c as any).mountType ?? 'tripod' }));
     // Migrate old single-scale background plans to scaleX/scaleY
     let bgPlan = project.backgroundPlan;
     if (bgPlan && 'scale' in bgPlan && !('scaleX' in bgPlan)) {
@@ -433,6 +477,7 @@ export const useStore = create<AppState>((set, get) => ({
       })),
       backgroundPlan: bgPlan,
       selectedCameraId: cameras[0]?.id ?? null,
+      walls: project.walls ?? [],
       projectVersion: project.projectVersion,
       lastSavedVersion: project.projectVersion,
     });

@@ -237,7 +237,10 @@ function FovPyramid({ cam }: { cam: ReturnType<typeof useStore.getState>['camera
 
   const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster);
   const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
+  const fovMin = computeFov(sensor, lensDef.focalLengthMax, cam.focusDistance, cam.extenderActive);
+  const fovMax = computeFov(sensor, lensDef.focalLengthMin, cam.focusDistance, cam.extenderActive);
   const isSelected = cam.id === selectedCameraId;
+  const isZoom = lensDef.focalLengthMin !== lensDef.focalLengthMax;
 
   const geometry = useMemo(() => {
     const halfH = Math.tan(((fov.horizontalDeg / 2) * Math.PI) / 180) * cam.focusDistance;
@@ -258,6 +261,32 @@ function FovPyramid({ cam }: { cam: ReturnType<typeof useStore.getState>['camera
     geo.computeVertexNormals();
     return geo;
   }, [fov.horizontalDeg, fov.verticalDeg, cam.focusDistance]);
+
+  const geoMin = useMemo(() => {
+    if (!isZoom) return null;
+    const halfH = Math.tan(((fovMin.horizontalDeg / 2) * Math.PI) / 180) * cam.focusDistance;
+    const halfV = Math.tan(((fovMin.verticalDeg / 2) * Math.PI) / 180) * cam.focusDistance;
+    const d = cam.focusDistance;
+    const vertices = new Float32Array([0,0,0, -halfH,halfV,-d, halfH,halfV,-d, halfH,-halfV,-d, -halfH,-halfV,-d]);
+    const indices = [0,1,2, 0,2,3, 0,3,4, 0,4,1, 1,2,3, 1,3,4];
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+    geo.setIndex(indices);
+    return geo;
+  }, [isZoom, fovMin.horizontalDeg, fovMin.verticalDeg, cam.focusDistance]);
+
+  const geoMax = useMemo(() => {
+    if (!isZoom) return null;
+    const halfH = Math.tan(((fovMax.horizontalDeg / 2) * Math.PI) / 180) * cam.focusDistance;
+    const halfV = Math.tan(((fovMax.verticalDeg / 2) * Math.PI) / 180) * cam.focusDistance;
+    const d = cam.focusDistance;
+    const vertices = new Float32Array([0,0,0, -halfH,halfV,-d, halfH,halfV,-d, halfH,-halfV,-d, -halfH,-halfV,-d]);
+    const indices = [0,1,2, 0,2,3, 0,3,4, 0,4,1, 1,2,3, 1,3,4];
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+    geo.setIndex(indices);
+    return geo;
+  }, [isZoom, fovMax.horizontalDeg, fovMax.verticalDeg, cam.focusDistance]);
 
   const panRad = (cam.pan * Math.PI) / 180;
   const tiltRad = (cam.tilt * Math.PI) / 180;
@@ -283,6 +312,18 @@ function FovPyramid({ cam }: { cam: ReturnType<typeof useStore.getState>['camera
       <lineSegments geometry={geometry}>
         <lineBasicMaterial color={cam.color} opacity={isSelected ? 0.8 : 0.3} transparent />
       </lineSegments>
+      {/* Min FOV wireframe (red) */}
+      {isSelected && geoMin && (
+        <lineSegments geometry={geoMin}>
+          <lineBasicMaterial color="#ef4444" opacity={0.4} transparent />
+        </lineSegments>
+      )}
+      {/* Max FOV wireframe (green) */}
+      {isSelected && geoMax && (
+        <lineSegments geometry={geoMax}>
+          <lineBasicMaterial color="#22c55e" opacity={0.4} transparent />
+        </lineSegments>
+      )}
       {/* Label */}
       <Text position={[0, 0.5, 0]} fontSize={0.35} color="#ffffff" anchorX="center" fontWeight="bold"
         outlineWidth={0.02} outlineColor="#000000">
@@ -399,7 +440,7 @@ function PersonMesh({ x, z, height, label, objectType }: { x: number; z: number;
 }
 
 export default function Venue3D() {
-  const { venue, cameras, persons, backgroundPlan } = useStore();
+  const { venue, cameras, persons, backgroundPlan, walls } = useStore();
 
   const handleReset = useCallback(() => {
     window.dispatchEvent(new CustomEvent('multicam-3d-reset', {
@@ -491,6 +532,22 @@ export default function Venue3D() {
         {persons.map((p) => (
           <PersonMesh key={p.id} x={p.x} z={p.y} height={p.height} label={p.label} objectType={p.objectType} />
         ))}
+
+        {/* Walls */}
+        {walls.map((w) => {
+          const dx = w.x2 - w.x1;
+          const dy = w.y2 - w.y1;
+          const len = Math.sqrt(dx * dx + dy * dy);
+          const cx = (w.x1 + w.x2) / 2;
+          const cy = (w.y1 + w.y2) / 2;
+          const angle = Math.atan2(dy, dx);
+          return (
+            <mesh key={w.id} position={[cx, w.height / 2, cy]} rotation={[0, -angle, 0]}>
+              <boxGeometry args={[len, w.height, 0.15]} />
+              <meshStandardMaterial color="#6b7280" opacity={0.6} transparent />
+            </mesh>
+          );
+        })}
       </Canvas>
     </div>
   );

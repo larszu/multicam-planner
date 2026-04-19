@@ -4,11 +4,11 @@ import { getCameraById, getEffectiveSensor } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov } from '../../utils/fov';
 import type { VenueCamera } from '../../types';
-import { useRef, useCallback, useEffect, useState } from 'react';
+import React, { useRef, useCallback, useEffect, useState } from 'react';
 import type Konva from 'konva';
 
 export default function Venue2D() {
-  const { venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, showAllFov, pixelsPerMeter, persons, updatePerson, updateStage, backgroundPlan, setBackgroundPlan } = useStore();
+  const { venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, showAllFov, pixelsPerMeter, persons, updatePerson, updateStage, backgroundPlan, setBackgroundPlan, walls, updateWall } = useStore();
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
@@ -327,24 +327,88 @@ export default function Venue2D() {
 
           const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster);
           const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
+          const fovMin = computeFov(sensor, lensDef.focalLengthMax, cam.focusDistance, cam.extenderActive); // max FL = narrowest
+          const fovMax = computeFov(sensor, lensDef.focalLengthMin, cam.focusDistance, cam.extenderActive); // min FL = widest
           const range = cam.focusDistance * ppm;
           const isSelected = cam.id === selectedCameraId;
 
           return (
-            <Wedge
-              key={`fov-${cam.id}`}
-              x={cam.x * ppm}
-              y={cam.y * ppm}
-              radius={range}
-              angle={fov.horizontalDeg}
-              rotation={cam.pan - fov.horizontalDeg / 2}
-              fill={cam.color + (isSelected ? '30' : '15')}
-              stroke={cam.color + (isSelected ? 'cc' : '66')}
-              strokeWidth={isSelected ? 2 : 1}
-              listening={false}
-            />
+            <React.Fragment key={`fov-group-${cam.id}`}>
+              {/* Max FOV (widest, at min focal length) – green */}
+              {isSelected && lensDef.focalLengthMin !== lensDef.focalLengthMax && (
+                <Wedge
+                  x={cam.x * ppm}
+                  y={cam.y * ppm}
+                  radius={range}
+                  angle={fovMax.horizontalDeg}
+                  rotation={cam.pan - fovMax.horizontalDeg / 2}
+                  fill={'#22c55e10'}
+                  stroke={'#22c55e55'}
+                  strokeWidth={1}
+                  dash={[4, 4]}
+                  listening={false}
+                />
+              )}
+              {/* Min FOV (narrowest, at max focal length) – red */}
+              {isSelected && lensDef.focalLengthMin !== lensDef.focalLengthMax && (
+                <Wedge
+                  x={cam.x * ppm}
+                  y={cam.y * ppm}
+                  radius={range}
+                  angle={fovMin.horizontalDeg}
+                  rotation={cam.pan - fovMin.horizontalDeg / 2}
+                  fill={'#ef444410'}
+                  stroke={'#ef444455'}
+                  strokeWidth={1}
+                  dash={[4, 4]}
+                  listening={false}
+                />
+              )}
+              {/* Current FOV */}
+              <Wedge
+                x={cam.x * ppm}
+                y={cam.y * ppm}
+                radius={range}
+                angle={fov.horizontalDeg}
+                rotation={cam.pan - fov.horizontalDeg / 2}
+                fill={cam.color + (isSelected ? '30' : '15')}
+                stroke={cam.color + (isSelected ? 'cc' : '66')}
+                strokeWidth={isSelected ? 2 : 1}
+                listening={false}
+              />
+            </React.Fragment>
           );
         })}
+      </Layer>
+
+      {/* Walls */}
+      <Layer>
+        {walls.map((w) => (
+          <React.Fragment key={`wall-${w.id}`}>
+            <Line
+              points={[w.x1 * ppm, w.y1 * ppm, w.x2 * ppm, w.y2 * ppm]}
+              stroke="#9ca3af"
+              strokeWidth={3}
+              hitStrokeWidth={10}
+              draggable
+              onDragEnd={(e) => {
+                const dx = e.target.x() / ppm;
+                const dy = e.target.y() / ppm;
+                e.target.position({ x: 0, y: 0 });
+                updateWall(w.id, { x1: w.x1 + dx, y1: w.y1 + dy, x2: w.x2 + dx, y2: w.y2 + dy });
+              }}
+            />
+            <Text
+              x={((w.x1 + w.x2) / 2) * ppm - 20}
+              y={((w.y1 + w.y2) / 2) * ppm - 14}
+              text={w.label}
+              fontSize={9}
+              fill="#9ca3af"
+              align="center"
+              width={40}
+            />
+          </React.Fragment>
+        ))}
       </Layer>
 
       {/* Camera icons */}

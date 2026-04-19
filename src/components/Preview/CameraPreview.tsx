@@ -4,7 +4,9 @@ import { getLensById } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
 import { useRef, useEffect, useCallback, useState } from 'react';
 import type { StageObjectType } from '../../types';
-import { FiChevronDown, FiChevronUp, FiExternalLink } from 'react-icons/fi';
+import { FiChevronDown, FiChevronUp, FiExternalLink, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { MOUNT_TYPE_LABELS } from '../../types';
+import type { CameraMountType } from '../../types';
 
 interface PreviewProps {
   undocked: boolean;
@@ -637,93 +639,105 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   const dof = sensor ? computeDof(sensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive) : null;
   const lightLoss = adapterInfo ? (adapterInfo.lightLossStops > 0 ? ` (−${adapterInfo.lightLossStops}T)` : adapterInfo.lightLossStops < 0 ? ` (+${Math.abs(adapterInfo.lightLossStops)}T)` : '') : '';
 
+  const { selectNextCamera, selectPrevCamera } = useStore();
+  const camIdx = cameras.findIndex((c) => c.id === cam.id);
+
   return (
-    <div className="relative w-full h-full flex flex-col gap-2 overflow-y-auto">
-      {/* Canvas container */}
-      <div ref={wrapRef} className="relative w-full">
-        <canvas
-          ref={canvasRef}
-          className="w-full rounded-lg"
-          style={{ cursor: 'grab', display: 'block' }}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          onWheel={handleWheel}
-        />
+    <div className="relative w-full h-full flex gap-2 overflow-hidden">
+      {/* Left: Canvas + controls */}
+      <div className="flex-1 flex flex-col gap-2 min-w-0 overflow-y-auto">
+        {/* Camera switcher bar */}
+        <div className="flex items-center gap-2 px-2">
+          <button onClick={selectPrevCamera} className="p-1 rounded hover:bg-bc-border text-gray-400 hover:text-white" title="Previous camera"><FiChevronLeft size={16} /></button>
+          <span className="text-white font-bold text-sm flex-1 text-center">{cam.label}</span>
+          <button onClick={selectNextCamera} className="p-1 rounded hover:bg-bc-border text-gray-400 hover:text-white" title="Next camera"><FiChevronRight size={16} /></button>
+          <span className="text-gray-500 text-[10px]">{camIdx + 1}/{cameras.length}</span>
+        </div>
+
+        {/* Canvas container */}
+        <div ref={wrapRef} className="relative w-full">
+          <canvas
+            ref={canvasRef}
+            className="w-full rounded-lg"
+            style={{ cursor: 'grab', display: 'block' }}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onWheel={handleWheel}
+          />
+        </div>
+
+        {/* Overlay toggle bar */}
+        <div className="flex items-center gap-2 px-2 flex-wrap">
+          {([
+            ['Grid', showGrid, setShowGrid],
+            ['Safe Areas', showSafeAreas, setShowSafeAreas],
+            ['Thirds', showThirds, setShowThirds],
+            ['Crosshair', showCrosshair, setShowCrosshair],
+            ['Data', showData, setShowData],
+          ] as [string, boolean, (v: boolean) => void][]).map(([label, on, set]) => (
+            <button
+              key={label}
+              onClick={() => set(!on)}
+              className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${on ? 'border-bc-accent text-bc-accent bg-bc-accent/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
+            >
+              {label}
+            </button>
+          ))}
+          {!undocked && (
+            <button
+              onClick={onUndock}
+              className="px-2 py-0.5 rounded text-[10px] font-medium border border-bc-border text-gray-500 hover:text-gray-300 hover:border-gray-400 flex items-center gap-1"
+              title="Undock preview into floating window"
+            >
+              <FiExternalLink size={10} /> Float
+            </button>
+          )}
+          <span className="text-[10px] text-gray-600 ml-auto">Drag: Pan/Tilt · Scroll: Zoom</span>
+        </div>
+
+        {/* Zoom slider */}
+        <div className="flex items-center gap-3 px-2">
+          <span className="text-xs text-gray-400 w-16 font-mono">{cam.focalLength.toFixed(0)}mm</span>
+          <input
+            type="range"
+            min={lensDef?.focalLengthMin ?? 4}
+            max={lensDef?.focalLengthMax ?? 300}
+            step={0.1}
+            value={cam.focalLength}
+            onChange={(e) => useStore.getState().updateCamera(cam.id, { focalLength: parseFloat(e.target.value) })}
+            className="flex-1 accent-bc-accent"
+          />
+          <span className="text-xs text-gray-400 w-16 text-right font-mono">{lensDef?.focalLengthMax ?? '?'}mm</span>
+        </div>
       </div>
 
-      {/* Overlay toggle bar */}
-      <div className="flex items-center gap-2 px-2 flex-wrap">
-        {([
-          ['Grid', showGrid, setShowGrid],
-          ['Safe Areas', showSafeAreas, setShowSafeAreas],
-          ['Thirds', showThirds, setShowThirds],
-          ['Crosshair', showCrosshair, setShowCrosshair],
-          ['Data', showData, setShowData],
-        ] as [string, boolean, (v: boolean) => void][]).map(([label, on, set]) => (
-          <button
-            key={label}
-            onClick={() => set(!on)}
-            className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${on ? 'border-bc-accent text-bc-accent bg-bc-accent/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
-          >
-            {label}
-          </button>
-        ))}
-        {!undocked && (
-          <button
-            onClick={onUndock}
-            className="px-2 py-0.5 rounded text-[10px] font-medium border border-bc-border text-gray-500 hover:text-gray-300 hover:border-gray-400 flex items-center gap-1"
-            title="Undock preview into floating window"
-          >
-            <FiExternalLink size={10} /> Float
-          </button>
-        )}
-        <span className="text-[10px] text-gray-600 ml-auto">Drag: Pan/Tilt · Scroll: Zoom</span>
-      </div>
-
-      {/* Zoom slider */}
-      <div className="flex items-center gap-3 px-2">
-        <span className="text-xs text-gray-400 w-16 font-mono">{cam.focalLength.toFixed(0)}mm</span>
-        <input
-          type="range"
-          min={lensDef?.focalLengthMin ?? 4}
-          max={lensDef?.focalLengthMax ?? 300}
-          step={0.1}
-          value={cam.focalLength}
-          onChange={(e) => useStore.getState().updateCamera(cam.id, { focalLength: parseFloat(e.target.value) })}
-          className="flex-1 accent-bc-accent"
-        />
-        <span className="text-xs text-gray-400 w-16 text-right font-mono">{lensDef?.focalLengthMax ?? '?'}mm</span>
-      </div>
-
-      {/* ═══ DATA READOUT (HTML) ═══ */}
+      {/* Right: Data readout panel */}
       {camDef && lensDef && fov && dof && showData && (
-        <div className="px-2 pb-2 space-y-1.5">
+        <div className="w-56 shrink-0 overflow-y-auto space-y-1.5 pr-1">
           {/* Camera + Lens header */}
-          <div className="bg-bc-dark rounded-lg border border-bc-border p-2.5">
-            <div className="flex items-baseline justify-between">
-              <span className="text-white font-semibold text-sm">{cam.label}</span>
-              <span className="text-gray-500 text-[10px]">{camDef.sensor.name} · {camDef.mount}</span>
-            </div>
-            <div className="text-gray-400 text-xs mt-0.5">{camDef.manufacturer} {camDef.model} — {lensDef.manufacturer} {lensDef.model}</div>
+          <div className="bg-bc-dark rounded-lg border border-bc-border p-2">
+            <span className="text-white font-semibold text-xs">{cam.label}</span>
+            <div className="text-gray-500 text-[10px]">{camDef.sensor.name} · {camDef.mount}</div>
+            <div className="text-gray-400 text-[10px] mt-0.5">{camDef.manufacturer} {camDef.model}</div>
+            <div className="text-gray-400 text-[10px]">{lensDef.manufacturer} {lensDef.model}</div>
+            <div className="text-gray-500 text-[10px] mt-0.5">{MOUNT_TYPE_LABELS[(cam.mountType ?? 'tripod') as CameraMountType]}</div>
             {adapterInfo && (
-              <div className="text-yellow-400 text-[11px] mt-0.5">⚡ {adapterInfo.name}{lightLoss}</div>
+              <div className="text-yellow-400 text-[10px] mt-0.5">⚡ {adapterInfo.name}{lightLoss}</div>
             )}
           </div>
 
-          {/* Data grid */}
-          <div className="grid grid-cols-3 gap-1.5">
-            <DataCell label="Focal Length" value={`${cam.focalLength.toFixed(1)}mm`} sub={cam.extenderActive > 1 ? `eff. ${(cam.focalLength * cam.extenderActive).toFixed(0)}mm` : `eq. ${fov.equivalentFocalLength.toFixed(0)}mm`} />
-            <DataCell label="Aperture" value={`f/${cam.aperture.toFixed(1)}`} sub={adapterInfo && adapterInfo.lightLossStops !== 0 ? `eff. T${(cam.aperture * Math.pow(2, adapterInfo.lightLossStops / 2)).toFixed(1)}` : undefined} />
-            <DataCell label="Distance" value={`${cam.focusDistance.toFixed(1)}m`} />
-            <DataCell label="FOV H" value={`${fov.horizontalDeg.toFixed(1)}°`} />
-            <DataCell label="FOV V" value={`${fov.verticalDeg.toFixed(1)}°`} />
-            <DataCell label="Image Width" value={`${fov.imageWidthAtDistance.toFixed(1)}m`} sub={`@ ${cam.focusDistance.toFixed(0)}m`} />
-            <DataCell label="DoF Near" value={dof.nearLimit < 0.01 ? '0m' : `${dof.nearLimit.toFixed(2)}m`} />
-            <DataCell label="DoF Far" value={dof.farLimit === Infinity ? '∞' : `${dof.farLimit.toFixed(2)}m`} />
-            <DataCell label="DoF Total" value={dof.totalDof === Infinity ? '∞' : `${dof.totalDof.toFixed(2)}m`} />
-          </div>
+          {/* Data cells */}
+          <DataCell label="Focal Length" value={`${cam.focalLength.toFixed(1)}mm`} sub={cam.extenderActive > 1 ? `eff. ${(cam.focalLength * cam.extenderActive).toFixed(0)}mm` : `eq. ${fov.equivalentFocalLength.toFixed(0)}mm`} />
+          <DataCell label="Aperture" value={`f/${cam.aperture.toFixed(1)}`} sub={adapterInfo && adapterInfo.lightLossStops !== 0 ? `eff. T${(cam.aperture * Math.pow(2, adapterInfo.lightLossStops / 2)).toFixed(1)}` : undefined} />
+          <DataCell label="Distance" value={`${cam.focusDistance.toFixed(1)}m`} />
+          <DataCell label="FOV H" value={`${fov.horizontalDeg.toFixed(1)}°`} />
+          <DataCell label="FOV V" value={`${fov.verticalDeg.toFixed(1)}°`} />
+          <DataCell label="Image Width" value={`${fov.imageWidthAtDistance.toFixed(1)}m`} sub={`@ ${cam.focusDistance.toFixed(0)}m`} />
+          <DataCell label="DoF Near" value={dof.nearLimit < 0.01 ? '0m' : `${dof.nearLimit.toFixed(2)}m`} />
+          <DataCell label="DoF Far" value={dof.farLimit === Infinity ? '∞' : `${dof.farLimit.toFixed(2)}m`} />
+          <DataCell label="DoF Total" value={dof.totalDof === Infinity ? '∞' : `${dof.totalDof.toFixed(2)}m`} />
         </div>
       )}
     </div>

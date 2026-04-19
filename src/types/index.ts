@@ -45,6 +45,29 @@ export interface Lens {
 // ── Object type presets ──
 export type StageObjectType = 'person' | 'person-guitar' | 'drums' | 'keys' | 'mic-stand' | 'custom';
 
+// ── Camera mount/support type ──
+export type CameraMountType = 'tripod' | 'pedestal' | 'jib' | 'dolly' | 'gimbal' | 'handheld' | 'steadicam' | 'fixed';
+
+export const MOUNT_TYPE_LABELS: Record<CameraMountType, string> = {
+  tripod: 'Stativ',
+  pedestal: 'Studio Pedestal',
+  jib: 'Jib / Crane',
+  dolly: 'Dolly',
+  gimbal: 'Gimbal',
+  handheld: 'Handheld',
+  steadicam: 'Steadicam',
+  fixed: 'Fixed Mount',
+};
+
+// ── Venue wall ──
+export interface Wall {
+  id: string;
+  x1: number; y1: number; // start point in metres
+  x2: number; y2: number; // end point in metres
+  height: number; // metres
+  label: string;
+}
+
 // ── Reference person / object in venue ──
 export interface ReferencePerson {
   id: string;
@@ -85,6 +108,7 @@ export interface VenueCamera {
   color: string;
   extenderActive: number; // 1 = none, 1.5, 2
   useSpeedbooster?: boolean; // EF Speedbooster on MFT cameras
+  mountType?: CameraMountType;
 }
 
 // ── Stage / target zone ──
@@ -146,4 +170,5 @@ export interface ProjectFile {
   cameras: VenueCamera[];
   persons: ReferencePerson[];
   backgroundPlan: BackgroundPlan | null;
+  walls?: Wall[];
 }
