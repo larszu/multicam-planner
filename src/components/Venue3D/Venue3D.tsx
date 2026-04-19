@@ -1,11 +1,11 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Grid, Text, PerspectiveCamera } from '@react-three/drei';
+import { Grid, Text, PerspectiveCamera } from '@react-three/drei';
 import { useStore } from '../../store/useStore';
 import { getCameraById, getEffectiveSensor } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov } from '../../utils/fov';
 import * as THREE from 'three';
-import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 
 /* ── Floor grid with visible metre labels ── */
 function FloorLabels({ widthM, heightM }: { widthM: number; heightM: number }) {
@@ -63,60 +63,116 @@ function VenueWalls({ widthM, heightM }: { widthM: number; heightM: number }) {
   );
 }
 
-/* ── WASD First-person walk controller ── */
-function WASDControls({ enabled }: { enabled: boolean }) {
-  const { camera } = useThree();
+/* ── FPS-style controller (always active) ──
+ * WASD      = move forward/back/strafe
+ * Space     = up
+ * Shift     = down
+ * Mouse     = look (hold left-click or right-click)
+ * Scroll    = move forward/back (dolly)
+ * Ctrl      = sprint (2×)
+ */
+function FPSControls() {
+  const { camera, gl } = useThree();
   const keys = useRef<Set<string>>(new Set());
   const yaw = useRef(0);
   const pitch = useRef(-0.3);
-  const speed = 8; // m/s
+  const isLooking = useRef(false);
+  const speed = 6; // m/s base
+
+  // Sync yaw/pitch from initial camera orientation
+  useEffect(() => {
+    const dir = new THREE.Vector3();
+    camera.getWorldDirection(dir);
+    yaw.current = Math.atan2(-dir.x, -dir.z);
+    pitch.current = Math.asin(Math.max(-1, Math.min(1, dir.y)));
+  }, [camera]);
 
   useEffect(() => {
-    if (!enabled) return;
-    const onKey = (e: KeyboardEvent, down: boolean) => {
+    const canvas = gl.domElement;
+
+    const onKeyDown = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
-      if (['w', 'a', 's', 'd', 'q', 'e'].includes(k)) {
+      if (['w', 'a', 's', 'd'].includes(k) || e.code === 'Space' || e.key === 'Shift' || e.key === 'Control') {
         e.preventDefault();
-        if (down) keys.current.add(k); else keys.current.delete(k);
+        keys.current.add(e.code === 'Space' ? ' ' : k === 'control' ? 'ctrl' : k);
       }
     };
-    const onDown = (e: KeyboardEvent) => onKey(e, true);
-    const onUp = (e: KeyboardEvent) => onKey(e, false);
-    const onMouse = (e: MouseEvent) => {
-      if (!(e.buttons & 2)) return; // right-click drag for look
-      yaw.current -= e.movementX * 0.003;
-      pitch.current -= e.movementY * 0.003;
-      pitch.current = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, pitch.current));
+    const onKeyUp = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase();
+      keys.current.delete(e.code === 'Space' ? ' ' : k === 'control' ? 'ctrl' : k);
     };
+
+    const onMouseDown = (e: MouseEvent) => {
+      isLooking.current = true;
+      canvas.style.cursor = 'grabbing';
+      // Try pointer lock for smoother FPS look
+      if (e.button === 2) {
+        canvas.requestPointerLock?.();
+      }
+    };
+    const onMouseUp = () => {
+      isLooking.current = false;
+      canvas.style.cursor = 'grab';
+      if (document.pointerLockElement === canvas) {
+        document.exitPointerLock?.();
+      }
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isLooking.current && document.pointerLockElement !== canvas) return;
+      yaw.current -= e.movementX * 0.002;
+      pitch.current -= e.movementY * 0.002;
+      pitch.current = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, pitch.current));
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      // Scroll = dolly forward/back
+      const forward = new THREE.Vector3(-Math.sin(yaw.current), 0, -Math.cos(yaw.current));
+      const dolly = forward.multiplyScalar(-e.deltaY * 0.01);
+      camera.position.add(dolly);
+    };
+
     const onContext = (e: Event) => e.preventDefault();
 
-    window.addEventListener('keydown', onDown);
-    window.addEventListener('keyup', onUp);
-    window.addEventListener('mousemove', onMouse);
-    window.addEventListener('contextmenu', onContext);
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    canvas.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+    canvas.addEventListener('contextmenu', onContext);
+    canvas.style.cursor = 'grab';
+
     return () => {
-      window.removeEventListener('keydown', onDown);
-      window.removeEventListener('keyup', onUp);
-      window.removeEventListener('mousemove', onMouse);
-      window.removeEventListener('contextmenu', onContext);
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      canvas.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('mousemove', onMouseMove);
+      canvas.removeEventListener('wheel', onWheel);
+      canvas.removeEventListener('contextmenu', onContext);
     };
-  }, [enabled]);
+  }, [camera, gl]);
 
   useFrame((_, delta) => {
-    if (!enabled) return;
     const forward = new THREE.Vector3(-Math.sin(yaw.current), 0, -Math.cos(yaw.current));
     const right = new THREE.Vector3(forward.z, 0, -forward.x);
     const move = new THREE.Vector3();
+
     if (keys.current.has('w')) move.add(forward);
     if (keys.current.has('s')) move.sub(forward);
     if (keys.current.has('d')) move.add(right);
     if (keys.current.has('a')) move.sub(right);
-    if (keys.current.has('e')) move.y += 1;
-    if (keys.current.has('q')) move.y -= 1;
+    if (keys.current.has(' ')) move.y += 1;
+    if (keys.current.has('shift')) move.y -= 1;
+
     if (move.length() > 0) {
-      move.normalize().multiplyScalar(speed * delta);
+      const sprint = keys.current.has('ctrl') ? 2.5 : 1;
+      move.normalize().multiplyScalar(speed * sprint * delta);
       camera.position.add(move);
     }
+
     // Apply look direction
     const dir = new THREE.Vector3(
       -Math.sin(yaw.current) * Math.cos(pitch.current),
@@ -239,50 +295,28 @@ function PersonMesh({ x, z, height, label }: { x: number; z: number; height: num
 
 export default function Venue3D() {
   const { venue, cameras, persons } = useStore();
-  const [walkMode, setWalkMode] = useState(false);
-  const controlsRef = useRef<any>(null);
-
-  const toggleWalk = useCallback(() => setWalkMode((v) => !v), []);
 
   return (
     <div style={{ width: '100%', height: '100%', minHeight: 500, position: 'relative' }}>
-      {/* Mode indicator overlay */}
-      <div style={{ position: 'absolute', top: 8, left: 8, zIndex: 10, display: 'flex', gap: 6 }}>
-        <button
-          onClick={toggleWalk}
-          style={{
-            padding: '6px 12px',
-            borderRadius: 6,
-            border: `1px solid ${walkMode ? '#3b82f6' : '#4a5568'}`,
-            background: walkMode ? '#3b82f620' : '#1a1d2799',
-            color: walkMode ? '#60a5fa' : '#9ca3af',
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: 'pointer',
-            backdropFilter: 'blur(4px)',
-          }}
-        >
-          {walkMode ? '🚶 WASD Walk (active)' : '🎥 Orbit Mode'}
-        </button>
+      {/* Controls hint */}
+      <div style={{
+        position: 'absolute', bottom: 8, left: 8, zIndex: 10,
+        background: '#000000aa', padding: '8px 12px', borderRadius: 6,
+        fontSize: 11, color: '#9ca3af', lineHeight: 1.6, backdropFilter: 'blur(4px)',
+        pointerEvents: 'none',
+      }}>
+        <b style={{ color: '#60a5fa' }}>WASD</b> Move &nbsp;|&nbsp;
+        <b style={{ color: '#60a5fa' }}>Space</b> Up &nbsp;|&nbsp;
+        <b style={{ color: '#60a5fa' }}>Shift</b> Down &nbsp;|&nbsp;
+        <b style={{ color: '#60a5fa' }}>Ctrl</b> Sprint<br/>
+        <b style={{ color: '#60a5fa' }}>Mouse drag</b> Look &nbsp;|&nbsp;
+        <b style={{ color: '#60a5fa' }}>Scroll</b> Dolly &nbsp;|&nbsp;
+        <b style={{ color: '#60a5fa' }}>Right-click</b> Pointer lock
       </div>
-      {walkMode && (
-        <div style={{
-          position: 'absolute', bottom: 8, left: 8, zIndex: 10,
-          background: '#000000aa', padding: '8px 12px', borderRadius: 6,
-          fontSize: 11, color: '#9ca3af', lineHeight: 1.5, backdropFilter: 'blur(4px)',
-        }}>
-          <b style={{ color: '#60a5fa' }}>WASD</b> Move &nbsp;|&nbsp;
-          <b style={{ color: '#60a5fa' }}>Q/E</b> Down/Up &nbsp;|&nbsp;
-          <b style={{ color: '#60a5fa' }}>Right-click drag</b> Look
-        </div>
-      )}
 
       <Canvas shadows gl={{ preserveDrawingBuffer: true }}>
         <PerspectiveCamera makeDefault position={[venue.widthM / 2, 15, venue.heightM + 10]} fov={50} />
-        {!walkMode && (
-          <OrbitControls ref={controlsRef} target={[venue.widthM / 2, 0, venue.heightM / 2]} />
-        )}
-        <WASDControls enabled={walkMode} />
+        <FPSControls />
 
         {/* Improved lighting */}
         <ambientLight intensity={0.7} color="#e8eaf0" />
