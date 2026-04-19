@@ -12,11 +12,18 @@ export interface Camera {
   manufacturer: string;
   model: string;
   sensor: SensorSize;
-  mount: string; // B4, EF, E, PL, MFT, M12, integrated
+  mount: string; // B4, EF, E, PL, MFT, M12, FZ, integrated
   adaptedMounts?: string[]; // mounts usable via adapter (e.g. B4 via LAFZ-B1 on FZ-mount)
   resolutions: string[];
   type: 'broadcast' | 'cinema' | 'ptz' | 'mirrorless' | 'camcorder' | 'eng';
   notes?: string;
+}
+
+// ── Adapter result ──
+export interface AdapterInfo {
+  name: string;
+  lightLossStops: number; // T-stop loss (0 = no loss, 1 = ~1 stop)
+  cropSensor?: SensorSize; // forced sensor crop (e.g. 2/3" when using B4 adapter)
 }
 
 // ── Lens ──
@@ -34,6 +41,26 @@ export interface Lens {
   notes?: string;
 }
 
+// ── Reference person / object in venue ──
+export interface ReferencePerson {
+  id: string;
+  x: number; // metres from left
+  y: number; // metres from top
+  height: number; // metres
+  label: string;
+}
+
+// ── Background floor plan ──
+export interface BackgroundPlan {
+  dataUrl: string;
+  scale: number; // metres per image pixel
+  offsetX: number; // metres
+  offsetY: number; // metres
+  opacity: number; // 0-1
+  widthPx: number;
+  heightPx: number;
+}
+
 // ── Placed camera in the venue ──
 export interface VenueCamera {
   id: string;
@@ -43,7 +70,8 @@ export interface VenueCamera {
   x: number; // metres from left
   y: number; // metres from top (2D)
   z: number; // height in metres
-  rotation: number; // degrees, 0 = pointing right
+  pan: number; // degrees, 0 = pointing right (horizontal rotation)
+  tilt: number; // degrees, 0 = level, negative = looking down
   focalLength: number; // current focal length in mm
   aperture: number; // current f-stop
   focusDistance: number; // metres
@@ -53,6 +81,7 @@ export interface VenueCamera {
 
 // ── Stage / target zone ──
 export interface Stage {
+  id: string;
   x: number;
   y: number;
   width: number;

@@ -1,4 +1,4 @@
-import type { Camera, SensorSize } from '../types';
+import type { Camera, SensorSize, AdapterInfo, Lens } from '../types';
 
 // ── Standard sensor sizes ──
 export const SENSORS: Record<string, SensorSize> = {
@@ -7,7 +7,7 @@ export const SENSORS: Record<string, SensorSize> = {
   APSC:      { name: 'APS-C (23.5×15.6)',      widthMm: 23.5,  heightMm: 15.6,  cropFactor: 1.53 },
   MFT:       { name: 'Micro Four Thirds',      widthMm: 17.3,  heightMm: 13,    cropFactor: 2.0 },
   ONE_INCH:  { name: '1" (13.2×8.8)',          widthMm: 13.2,  heightMm: 8.8,   cropFactor: 2.73 },
-  TWO_THIRD: { name: '2/3" (8.8×6.6)',         widthMm: 8.8,   heightMm: 6.6,   cropFactor: 4.09 },
+  TWO_THIRD: { name: '2/3" (9.6×5.4)',         widthMm: 9.6,   heightMm: 5.4,   cropFactor: 3.93 },
   HALF_INCH: { name: '1/2" (6.4×4.8)',         widthMm: 6.4,   heightMm: 4.8,   cropFactor: 5.63 },
   THIRD_INCH:{ name: '1/3" (4.8×3.6)',         widthMm: 4.8,   heightMm: 3.6,   cropFactor: 7.5 },
   QUARTER:   { name: '1/2.3" (6.17×4.55)',     widthMm: 6.17,  heightMm: 4.55,  cropFactor: 5.64 },
@@ -89,6 +89,69 @@ export function getCameraById(id: string): Camera | undefined {
 
 export function getCamerasByType(type: Camera['type']): Camera[] {
   return CAMERAS.filter((c) => c.type === type);
+}
+
+/**
+ * Determine if an adapter is needed and its effects.
+ * B4 lenses on non-B4 cameras → relay optics, crop to 2/3", ~1 stop loss.
+ * PL/EF → FZ/E are simple spacers with no optical penalty.
+ */
+export function getAdapterInfo(camera: Camera, lens: Lens): AdapterInfo | null {
+  if (lens.mount === camera.mount) return null; // native
+  if (lens.mount === 'integrated') return null;
+
+  // B4 → any larger-sensor camera: relay optics needed, crop to 2/3"
+  if (lens.mount === 'B4') {
+    if (camera.mount === 'FZ') return { name: 'Sony LA-FZB1/FZB2', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
+    if (camera.mount === 'E') return { name: 'B4 → E-mount Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
+    if (camera.mount === 'PL') return { name: 'B4 → PL Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
+    if (camera.mount === 'EF') return { name: 'B4 → EF Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
+    return null;
+  }
+
+  // PL → shorter flange mounts (spacer adapters, no optics)
+  if (lens.mount === 'PL') {
+    if (camera.mount === 'FZ') return { name: 'PL → FZ Adapter', lightLossStops: 0 };
+    if (camera.mount === 'E') return { name: 'PL → E-mount Adapter', lightLossStops: 0 };
+    if (camera.mount === 'RF') return { name: 'PL → RF Adapter', lightLossStops: 0 };
+    return null;
+  }
+
+  // EF → shorter flange mounts
+  if (lens.mount === 'EF') {
+    if (camera.mount === 'E') return { name: 'EF → E-mount Adapter', lightLossStops: 0 };
+    if (camera.mount === 'RF') return { name: 'Canon EF → RF Adapter', lightLossStops: 0 };
+    if (camera.mount === 'MFT') return { name: 'EF → MFT Adapter', lightLossStops: 0 };
+    return null;
+  }
+
+  // Nikon F → shorter flange mounts
+  if (lens.mount === 'NF') {
+    if (camera.mount === 'E') return { name: 'Nikon F → E-mount Adapter', lightLossStops: 0 };
+    return null;
+  }
+
+  return null;
+}
+
+/**
+ * Get the effective sensor size, accounting for adapter crop.
+ * B4 lenses always project 2/3" image circle regardless of camera sensor.
+ */
+export function getEffectiveSensor(camera: Camera, lens: Lens): SensorSize {
+  const adapter = getAdapterInfo(camera, lens);
+  if (adapter?.cropSensor) return adapter.cropSensor;
+  return camera.sensor;
+}
+
+/**
+ * Get effective aperture accounting for adapter light loss.
+ */
+export function getEffectiveAperture(camera: Camera, lens: Lens, aperture: number): number {
+  const adapter = getAdapterInfo(camera, lens);
+  if (!adapter || adapter.lightLossStops === 0) return aperture;
+  // Each stop doubles the area, so T-number increases by 2^(stops/2)
+  return aperture * Math.pow(2, adapter.lightLossStops / 2);
 }
 
 export const CAMERA_COLORS = [

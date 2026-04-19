@@ -1,5 +1,5 @@
 import { useStore } from '../../store/useStore';
-import { getCameraById } from '../../data/cameras';
+import { getCameraById, getEffectiveSensor, getAdapterInfo } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov, computeDof, personHeightInFrame } from '../../utils/fov';
 import { useRef, useEffect, useCallback } from 'react';
@@ -19,16 +19,19 @@ export default function CameraPreview() {
     const lensDef = getLensById(cam.lensId);
     if (!camDef || !lensDef) return;
 
+    const sensor = getEffectiveSensor(camDef, lensDef);
+    const adapterInfo = getAdapterInfo(camDef, lensDef);
+
     const W = canvas.width;
     const H = canvas.height;
-    const fov = computeFov(camDef.sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
-    const dof = computeDof(camDef.sensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive);
+    const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
+    const dof = computeDof(sensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive);
 
     // Clear
     ctx.fillStyle = '#111318';
     ctx.fillRect(0, 0, W, H);
 
-    // Image dimensions
+    // Image dimensions at focus distance
     const imgW = fov.imageWidthAtDistance;
     const imgH = fov.imageHeightAtDistance;
 
@@ -47,6 +50,79 @@ export default function CameraPreview() {
     ctx.moveTo(0, groundY);
     ctx.lineTo(W, groundY);
     ctx.stroke();
+
+    // === HORIZONTAL RULER (bottom) ===
+    const rulerH = 24;
+    const rulerY = H - rulerH;
+    ctx.fillStyle = '#000000bb';
+    ctx.fillRect(0, rulerY, W, rulerH);
+
+    // Calculate metre-per-pixel in preview
+    const mPerPx = imgW / W;
+    // Find nice step: 0.5m, 1m, 2m, 5m, 10m...
+    const rawStep = imgW / 8;
+    const niceSteps = [0.25, 0.5, 1, 2, 5, 10, 20, 50, 100];
+    const step = niceSteps.find((s) => s >= rawStep) ?? rawStep;
+    const halfImgW = imgW / 2;
+
+    ctx.strokeStyle = '#888';
+    ctx.fillStyle = '#aaa';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'center';
+    ctx.lineWidth = 1;
+
+    // Ticks from centre outward
+    for (let m = 0; m <= halfImgW; m += step) {
+      const pxR = W / 2 + (m / imgW) * W;
+      const pxL = W / 2 - (m / imgW) * W;
+      // Right tick
+      if (pxR <= W) {
+        ctx.beginPath();
+        ctx.moveTo(pxR, rulerY);
+        ctx.lineTo(pxR, rulerY + 8);
+        ctx.stroke();
+        ctx.fillText(`${m.toFixed(m < 1 ? 2 : 1)}m`, pxR, rulerY + 18);
+      }
+      // Left tick (skip centre duplicate)
+      if (m > 0 && pxL >= 0) {
+        ctx.beginPath();
+        ctx.moveTo(pxL, rulerY);
+        ctx.lineTo(pxL, rulerY + 8);
+        ctx.stroke();
+        ctx.fillText(`${m.toFixed(m < 1 ? 2 : 1)}m`, pxL, rulerY + 18);
+      }
+    }
+    // Centre marker
+    ctx.strokeStyle = '#fff';
+    ctx.beginPath();
+    ctx.moveTo(W / 2, rulerY);
+    ctx.lineTo(W / 2, rulerY + 10);
+    ctx.stroke();
+
+    // === VERTICAL RULER (right side) ===
+    const vRulerW = 28;
+    const vRulerX = W - vRulerW;
+    ctx.fillStyle = '#000000bb';
+    ctx.fillRect(vRulerX, 0, vRulerW, H - rulerH);
+
+    const mPerPxV = imgH / H;
+    const rawStepV = imgH / 6;
+    const stepV = niceSteps.find((s) => s >= rawStepV) ?? rawStepV;
+
+    ctx.strokeStyle = '#888';
+    ctx.fillStyle = '#aaa';
+    ctx.textAlign = 'right';
+
+    // Ticks from ground up
+    for (let m = 0; m <= imgH; m += stepV) {
+      const py = groundY - (m / imgH) * (H * 0.6);
+      if (py < 0 || py > H - rulerH) continue;
+      ctx.beginPath();
+      ctx.moveTo(vRulerX, py);
+      ctx.lineTo(vRulerX + 6, py);
+      ctx.stroke();
+      ctx.fillText(`${m.toFixed(m < 1 ? 2 : 1)}m`, W - 4, py + 3);
+    }
 
     // Reference person (1.8m)
     const personH = 1.8;
@@ -87,6 +163,20 @@ export default function CameraPreview() {
     ctx.stroke();
     ctx.setLineDash([]);
 
+    // === DISTANCE ANNOTATIONS ===
+    // Horizontal width at focus distance
+    ctx.fillStyle = '#ffffff88';
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`← ${imgW.toFixed(1)}m →`, W / 2, rulerY - 4);
+
+    // Vertical height
+    ctx.save();
+    ctx.translate(vRulerX - 6, groundY / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText(`${imgH.toFixed(1)}m ↕`, 0, 0);
+    ctx.restore();
+
     // Safe areas (16:9 action safe / title safe)
     ctx.strokeStyle = '#ffffff22';
     ctx.lineWidth = 1;
@@ -114,8 +204,9 @@ export default function CameraPreview() {
     }
 
     // Info overlay
+    const infoH = adapterInfo ? 148 : 130;
     ctx.fillStyle = '#000000aa';
-    ctx.fillRect(8, 8, 260, 130);
+    ctx.fillRect(8, 8, 270, infoH);
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 13px monospace';
     ctx.textAlign = 'left';
@@ -129,6 +220,10 @@ export default function CameraPreview() {
     const farStr = dof.farLimit === Infinity ? '∞' : dof.farLimit.toFixed(1) + 'm';
     ctx.fillText(`DoF: ${nearStr} – ${farStr}`, 16, 110);
     ctx.fillText(`f/${cam.aperture} | eq.FL: ${fov.equivalentFocalLength.toFixed(0)}mm`, 16, 126);
+    if (adapterInfo) {
+      ctx.fillStyle = '#f59e0b';
+      ctx.fillText(`Adapter: ${adapterInfo.name} (−${adapterInfo.lightLossStops}T)`, 16, 142);
+    }
   }, [cam]);
 
   useEffect(() => {

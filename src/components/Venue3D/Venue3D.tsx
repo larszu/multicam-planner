@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Grid, Text, PerspectiveCamera } from '@react-three/drei';
 import { useStore } from '../../store/useStore';
-import { getCameraById } from '../../data/cameras';
+import { getCameraById, getEffectiveSensor } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov } from '../../utils/fov';
 import * as THREE from 'three';
@@ -27,7 +27,8 @@ function FovPyramid({ cam }: { cam: ReturnType<typeof useStore.getState>['camera
   const lensDef = getLensById(cam.lensId);
   if (!camDef || !lensDef) return null;
 
-  const fov = computeFov(camDef.sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
+  const sensor = getEffectiveSensor(camDef, lensDef);
+  const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
   const isSelected = cam.id === selectedCameraId;
 
   const geometry = useMemo(() => {
@@ -50,10 +51,11 @@ function FovPyramid({ cam }: { cam: ReturnType<typeof useStore.getState>['camera
     return geo;
   }, [fov.horizontalDeg, fov.verticalDeg, cam.focusDistance]);
 
-  const rotRad = (cam.rotation * Math.PI) / 180;
+  const panRad = (cam.pan * Math.PI) / 180;
+  const tiltRad = (cam.tilt * Math.PI) / 180;
 
   return (
-    <group position={[cam.x, cam.z, cam.y]} rotation={[0, -rotRad - Math.PI / 2, 0]}>
+    <group position={[cam.x, cam.z, cam.y]} rotation={[tiltRad, -panRad - Math.PI / 2, 0]}>
       {/* Camera body */}
       <mesh>
         <boxGeometry args={[0.3, 0.2, 0.4]} />
@@ -81,25 +83,29 @@ function FovPyramid({ cam }: { cam: ReturnType<typeof useStore.getState>['camera
   );
 }
 
-function ReferencePerson({ x, z }: { x: number; z: number }) {
+function PersonMesh({ x, z, height, label }: { x: number; z: number; height: number; label: string }) {
   return (
-    <group position={[x, 0.9, z]}>
+    <group position={[x, height / 2, z]}>
       {/* Body */}
-      <mesh position={[0, -0.2, 0]}>
-        <cylinderGeometry args={[0.15, 0.15, 1.0, 8]} />
+      <mesh position={[0, -height * 0.1, 0]}>
+        <cylinderGeometry args={[0.15, 0.15, height * 0.65, 8]} />
         <meshStandardMaterial color="#f59e0b" opacity={0.5} transparent />
       </mesh>
       {/* Head */}
-      <mesh position={[0, 0.45, 0]}>
+      <mesh position={[0, height * 0.3, 0]}>
         <sphereGeometry args={[0.15, 8, 8]} />
         <meshStandardMaterial color="#f59e0b" opacity={0.5} transparent />
       </mesh>
+      {/* Label */}
+      <Text position={[0, height * 0.45, 0]} fontSize={0.2} color="#f59e0b" anchorX="center">
+        {label}
+      </Text>
     </group>
   );
 }
 
 export default function Venue3D() {
-  const { venue, cameras } = useStore();
+  const { venue, cameras, persons } = useStore();
 
   return (
     <div style={{ width: '100%', height: '100%', minHeight: 500 }}>
@@ -127,8 +133,8 @@ export default function Venue3D() {
         />
 
         {/* Stages */}
-        {venue.stages.map((s, i) => (
-          <StageMesh key={i} x={s.x} y={s.y} w={s.width} h={s.height} label={s.label} />
+        {venue.stages.map((s) => (
+          <StageMesh key={s.id} x={s.x} y={s.y} w={s.width} h={s.height} label={s.label} />
         ))}
 
         {/* Cameras with FOV */}
@@ -136,9 +142,9 @@ export default function Venue3D() {
           <FovPyramid key={cam.id} cam={cam} />
         ))}
 
-        {/* Reference persons on stages */}
-        {venue.stages.map((s, i) => (
-          <ReferencePerson key={`person-${i}`} x={s.x + s.width / 2} z={s.y + s.height / 2} />
+        {/* Reference persons from store */}
+        {persons.map((p) => (
+          <PersonMesh key={p.id} x={p.x} z={p.y} height={p.height} label={p.label} />
         ))}
       </Canvas>
     </div>

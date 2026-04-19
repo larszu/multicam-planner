@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { VenueCamera, Venue, ViewTab } from '../types';
+import type { VenueCamera, Venue, ViewTab, ReferencePerson, BackgroundPlan, Stage } from '../types';
 import { CAMERAS, CAMERA_COLORS } from '../data/cameras';
 import { LENSES } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
@@ -8,6 +8,21 @@ interface AppState {
   // Venue
   venue: Venue;
   setVenue: (v: Venue) => void;
+
+  // Stages
+  addStage: (stage?: Partial<Stage>) => void;
+  removeStage: (id: string) => void;
+  updateStage: (id: string, updates: Partial<Stage>) => void;
+
+  // Background plan
+  backgroundPlan: BackgroundPlan | null;
+  setBackgroundPlan: (plan: BackgroundPlan | null) => void;
+
+  // Reference persons
+  persons: ReferencePerson[];
+  addPerson: (x?: number, y?: number) => void;
+  removePerson: (id: string) => void;
+  updatePerson: (id: string, updates: Partial<ReferencePerson>) => void;
 
   // Cameras placed in venue
   cameras: VenueCamera[];
@@ -35,21 +50,87 @@ interface AppState {
 }
 
 let nextId = 1;
-function uid(): string {
-  return `cam-${nextId++}`;
+function uid(prefix = 'cam'): string {
+  return `${prefix}-${nextId++}`;
+}
+
+let stageId = 1;
+function stageUid(): string {
+  return `stage-${stageId++}`;
+}
+
+let personId = 1;
+function personUid(): string {
+  return `person-${personId++}`;
 }
 
 const defaultVenue: Venue = {
   name: 'New Venue',
   widthM: 20,
   heightM: 15,
-  stages: [{ x: 7, y: 0.5, width: 6, height: 3, label: 'Stage' }],
+  stages: [{ id: 'stage-0', x: 7, y: 0.5, width: 6, height: 3, label: 'Stage' }],
 };
 
 export const useStore = create<AppState>((set, get) => ({
   venue: defaultVenue,
   setVenue: (v) => set({ venue: v }),
 
+  // ── Stages ──
+  addStage: (partial) => {
+    const { venue } = get();
+    const newStage: Stage = {
+      id: stageUid(),
+      x: partial?.x ?? venue.widthM / 2 - 3,
+      y: partial?.y ?? 0.5,
+      width: partial?.width ?? 6,
+      height: partial?.height ?? 3,
+      label: partial?.label ?? `Stage ${venue.stages.length + 1}`,
+    };
+    set({ venue: { ...venue, stages: [...venue.stages, newStage] } });
+  },
+
+  removeStage: (id) => {
+    const { venue } = get();
+    set({ venue: { ...venue, stages: venue.stages.filter((s) => s.id !== id) } });
+  },
+
+  updateStage: (id, updates) => {
+    const { venue } = get();
+    set({
+      venue: {
+        ...venue,
+        stages: venue.stages.map((s) => (s.id === id ? { ...s, ...updates } : s)),
+      },
+    });
+  },
+
+  // ── Background plan ──
+  backgroundPlan: null,
+  setBackgroundPlan: (plan) => set({ backgroundPlan: plan }),
+
+  // ── Reference persons ──
+  persons: [],
+
+  addPerson: (x, y) => {
+    const { venue, persons } = get();
+    const newPerson: ReferencePerson = {
+      id: personUid(),
+      x: x ?? venue.widthM / 2,
+      y: y ?? venue.heightM / 2,
+      height: 1.8,
+      label: `Person ${persons.length + 1}`,
+    };
+    set({ persons: [...persons, newPerson] });
+  },
+
+  removePerson: (id) => set((s) => ({ persons: s.persons.filter((p) => p.id !== id) })),
+
+  updatePerson: (id, updates) =>
+    set((s) => ({
+      persons: s.persons.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+    })),
+
+  // ── Cameras ──
   cameras: [],
   selectedCameraId: null,
   selectCamera: (id) => set({ selectedCameraId: id }),
@@ -71,7 +152,8 @@ export const useStore = create<AppState>((set, get) => ({
       x: venue.widthM / 2,
       y: venue.heightM * 0.75,
       z: 1.5,
-      rotation: -90,
+      pan: -90,
+      tilt: 0,
       focalLength: lensDef.focalLengthMin,
       aperture: lensDef.maxApertureWide,
       focusDistance: venue.heightM * 0.5,
@@ -130,11 +212,15 @@ export const useStore = create<AppState>((set, get) => ({
       venue: { ...tmpl.venue },
       cameras: cams,
       selectedCameraId: cams[0]?.id ?? null,
+      persons: [],
+      backgroundPlan: null,
     });
   },
 
   clearAll: () => {
     nextId = 1;
-    set({ venue: defaultVenue, cameras: [], selectedCameraId: null });
+    stageId = 1;
+    personId = 1;
+    set({ venue: defaultVenue, cameras: [], selectedCameraId: null, persons: [], backgroundPlan: null });
   },
 }));
