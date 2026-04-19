@@ -140,9 +140,13 @@ function FPSControls() {
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      // Scroll = dolly forward/back
-      const forward = new THREE.Vector3(-Math.sin(yaw.current), 0, -Math.cos(yaw.current));
-      const dolly = forward.multiplyScalar(-e.deltaY * 0.01);
+      // Scroll = zoom in/out along look direction (including vertical)
+      const dir = new THREE.Vector3(
+        -Math.sin(yaw.current) * Math.cos(pitch.current),
+        Math.sin(pitch.current),
+        -Math.cos(yaw.current) * Math.cos(pitch.current),
+      );
+      const dolly = dir.multiplyScalar(-e.deltaY * 0.02);
       camera.position.add(dolly);
     };
 
