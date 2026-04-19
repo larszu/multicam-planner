@@ -9,6 +9,73 @@ import TemplateSelector from './components/Templates/TemplateSelector';
 import ExportPanel from './components/Export/ExportPanel';
 import { Suspense, useState, useRef, useCallback, useEffect } from 'react';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { Layout, Model, TabNode, Actions, DockLocation } from 'flexlayout-react';
+import type { IJsonModel } from 'flexlayout-react';
+import 'flexlayout-react/style/dark.css';
+
+const LAYOUT_STORAGE_KEY = 'multicam-layout';
+const LAYOUT_VERSION_KEY = 'multicam-layout-version';
+const CURRENT_LAYOUT_VERSION = 2;
+
+/* ── FlexLayout model definition ── */
+const defaultLayoutJson: IJsonModel = {
+  global: {
+    tabEnableClose: false,
+    tabEnableRenderOnDemand: false, // keep 3D view alive
+    splitterSize: 4,
+    tabSetEnableMaximize: true,
+  },
+  layout: {
+    type: 'row',
+    weight: 100,
+    children: [
+      {
+        type: 'row',
+        weight: 60,
+        children: [
+          {
+            type: 'tabset',
+            weight: 62,
+            id: 'ts-left-2d',
+            children: [
+              { type: 'tab', name: '2D Plan', component: 'venue2d', id: 'tab-2d' },
+            ],
+          },
+          {
+            type: 'tabset',
+            weight: 38,
+            id: 'ts-left-3d',
+            children: [
+              { type: 'tab', name: '3D View', component: 'venue3d', id: 'tab-3d' },
+            ],
+          },
+        ],
+      },
+      {
+        type: 'row',
+        weight: 40,
+        children: [
+          {
+            type: 'tabset',
+            weight: 60,
+            id: 'ts-right-top',
+            children: [
+              { type: 'tab', name: 'Preview', component: 'preview', id: 'tab-preview' },
+            ],
+          },
+          {
+            type: 'tabset',
+            weight: 40,
+            id: 'ts-right-bottom',
+            children: [
+              { type: 'tab', name: 'Calculator', component: 'calculator', id: 'tab-calc' },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+};
 
 function LoadingFallback() {
   return (
@@ -18,51 +85,61 @@ function LoadingFallback() {
   );
 }
 
+/** Persist layout model across re-renders but not component remounts */
+function useLayoutModel() {
+  const [model] = useState(() => {
+    try {
+      const saved = localStorage.getItem(LAYOUT_STORAGE_KEY);
+      const savedVersion = Number(localStorage.getItem(LAYOUT_VERSION_KEY) ?? '0');
+      if (saved && savedVersion === CURRENT_LAYOUT_VERSION) return Model.fromJson(JSON.parse(saved));
+    } catch { /* ignore corrupt data */ }
+    return Model.fromJson(defaultLayoutJson);
+  });
+  return model;
+}
+
 export default function App() {
-  const { activeTab, sidebarCollapsed, setSidebarCollapsed } = useStore();
+  const { sidebarCollapsed, setSidebarCollapsed } = useStore();
   const [sidebarTab, setSidebarTab] = useState<'cameras' | 'templates'>('cameras');
+  const model = useLayoutModel();
+  const layoutRef = useRef<Layout>(null);
 
-  // ── Floating preview window state ──
-  const [previewUndocked, setPreviewUndocked] = useState(false);
-  const [previewPos, setPreviewPos] = useState({ x: 100, y: 80 });
-  const [previewSize, setPreviewSize] = useState({ w: 560, h: 480 });
-  const [isDraggingWin, setIsDraggingWin] = useState(false);
-  const [isResizingWin, setIsResizingWin] = useState(false);
-  const dragOffset = useRef({ x: 0, y: 0 });
-  const resizeStart = useRef({ x: 0, y: 0, w: 0, h: 0 });
+  // Save layout to localStorage on change
+  const handleModelChange = useCallback(() => {
+    try {
+      localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(model.toJson()));
+      localStorage.setItem(LAYOUT_VERSION_KEY, String(CURRENT_LAYOUT_VERSION));
+    } catch { /* quota exceeded etc */ }
+  }, [model]);
 
-  // Titlebar drag
-  const onTitleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDraggingWin(true);
-    dragOffset.current = { x: e.clientX - previewPos.x, y: e.clientY - previewPos.y };
-  }, [previewPos]);
+  // ── Factory: renders panel content for each tab ──
+  const factory = useCallback((node: TabNode) => {
+    const component = node.getComponent();
+    switch (component) {
+      case 'venue2d':
+        return <Venue2D />;
+      case 'venue3d':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <div data-venue3d className="w-full h-full">
+              <Venue3D />
+            </div>
+          </Suspense>
+        );
+      case 'preview':
+        return <CameraPreview undocked={false} onUndock={() => {}} />;
+      case 'calculator':
+        return <Calculator />;
+      default:
+        return <div className="p-4 text-gray-500">Unknown panel: {component}</div>;
+    }
+  }, []);
 
-  // Resize handle drag
-  const onResizeMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsResizingWin(true);
-    resizeStart.current = { x: e.clientX, y: e.clientY, w: previewSize.w, h: previewSize.h };
-  }, [previewSize]);
-
+  // Expose model to Header for tab selection
   useEffect(() => {
-    if (!isDraggingWin && !isResizingWin) return;
-    const onMove = (e: MouseEvent) => {
-      if (isDraggingWin) {
-        setPreviewPos({ x: e.clientX - dragOffset.current.x, y: e.clientY - dragOffset.current.y });
-      }
-      if (isResizingWin) {
-        const dx = e.clientX - resizeStart.current.x;
-        const dy = e.clientY - resizeStart.current.y;
-        setPreviewSize({ w: Math.max(340, resizeStart.current.w + dx), h: Math.max(260, resizeStart.current.h + dy) });
-      }
-    };
-    const onUp = () => { setIsDraggingWin(false); setIsResizingWin(false); };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
-  }, [isDraggingWin, isResizingWin]);
+    (window as any).__flexModel = model;
+    return () => { delete (window as any).__flexModel; };
+  }, [model]);
 
   // ── Responsive: auto-collapse sidebar on small screens ──
   useEffect(() => {
@@ -109,64 +186,17 @@ export default function App() {
           {sidebarCollapsed ? <FiChevronRight size={14} /> : <FiChevronLeft size={14} />}
         </button>
 
-        {/* ── Main content area ── */}
-        <div className="flex-1 overflow-hidden relative">
-          <div className={`absolute inset-0 ${activeTab === '2d' ? '' : 'pointer-events-none invisible'}`}>
-            <Venue2D />
-          </div>
-          <div className={`absolute inset-0 ${activeTab === '3d' ? '' : 'pointer-events-none invisible'}`}>
-            <Suspense fallback={<LoadingFallback />}>
-              <div data-venue3d className="w-full h-full">
-                <Venue3D />
-              </div>
-            </Suspense>
-          </div>
-          {/* Preview: inline or undocked floating */}
-          {!previewUndocked && (
-            <div className={`absolute inset-0 p-4 ${activeTab === 'preview' ? '' : 'pointer-events-none invisible'}`}>
-              <CameraPreview undocked={false} onUndock={() => setPreviewUndocked(true)} />
-            </div>
-          )}
-          <div className={`absolute inset-0 p-4 overflow-auto ${activeTab === 'calculator' ? '' : 'pointer-events-none invisible'}`}>
-            <Calculator />
-          </div>
+        {/* ── Main docking area (FlexLayout) ── */}
+        <div className="flex-1 overflow-hidden relative flexlayout-custom-theme">
+          <Layout
+            ref={layoutRef}
+            model={model}
+            factory={factory}
+            onModelChange={handleModelChange}
+            realtimeResize
+          />
         </div>
       </div>
-
-      {/* ── Floating preview window (undocked) ── */}
-      {previewUndocked && (
-        <div
-          className="fixed z-50 flex flex-col bg-bc-dark border border-bc-border rounded-lg shadow-2xl overflow-hidden"
-          style={{ left: previewPos.x, top: previewPos.y, width: previewSize.w, height: previewSize.h }}
-        >
-          {/* Titlebar */}
-          <div
-            className="h-8 bg-bc-panel border-b border-bc-border flex items-center justify-between px-2 shrink-0 select-none"
-            style={{ cursor: isDraggingWin ? 'grabbing' : 'grab' }}
-            onMouseDown={onTitleMouseDown}
-          >
-            <span className="text-xs text-gray-400 font-medium">Camera Preview</span>
-            <button
-              onClick={() => setPreviewUndocked(false)}
-              className="text-gray-500 hover:text-white text-xs px-1.5 py-0.5 rounded hover:bg-bc-border"
-              title="Dock back"
-            >
-              ✕
-            </button>
-          </div>
-          {/* Content */}
-          <div className="flex-1 overflow-auto p-2">
-            <CameraPreview undocked onUndock={() => setPreviewUndocked(false)} />
-          </div>
-          {/* Resize handle */}
-          <div
-            className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
-            onMouseDown={onResizeMouseDown}
-          >
-            <svg viewBox="0 0 16 16" className="w-full h-full text-gray-600"><path d="M14 14L14 8M14 14L8 14" stroke="currentColor" strokeWidth="1.5" fill="none" /></svg>
-          </div>
-        </div>
-      )}
 
       <ExportPanel />
     </div>

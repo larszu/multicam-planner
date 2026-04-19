@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Grid, Text, PerspectiveCamera } from '@react-three/drei';
+import { Grid, Text, PerspectiveCamera, Html, TransformControls } from '@react-three/drei';
 import { useStore } from '../../store/useStore';
 import { getCameraById, getEffectiveSensor } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
@@ -7,6 +7,78 @@ import { computeFov } from '../../utils/fov';
 import * as THREE from 'three';
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import type { BackgroundPlan, StageObjectType } from '../../types';
+
+/* ── Draggable group that moves on the XZ ground plane ── */
+function DraggableOnFloor({ children, x, z, onDragEnd, onClick }: {
+  children: React.ReactNode;
+  x: number; z: number;
+  onDragEnd?: (newX: number, newZ: number) => void;
+  onClick?: () => void;
+}) {
+  const groupRef = useRef<THREE.Group>(null!);
+  const isDragging = useRef(false);
+  const floorPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
+  const intersection = useMemo(() => new THREE.Vector3(), []);
+  const offset = useRef(new THREE.Vector3());
+
+  const handlePointerDown = useCallback((e: any) => {
+    e.stopPropagation();
+    (e.target as any).setPointerCapture?.(e.pointerId);
+    isDragging.current = true;
+    // Calculate offset between pointer hit and group position
+    const raycaster = e.ray ? new THREE.Raycaster(e.ray.origin, e.ray.direction) : null;
+    if (raycaster) {
+      raycaster.ray.intersectPlane(floorPlane, intersection);
+      offset.current.set(intersection.x - x, 0, intersection.z - z);
+    }
+  }, [floorPlane, x, z, intersection]);
+
+  const handlePointerMove = useCallback((e: any) => {
+    if (!isDragging.current) return;
+    e.stopPropagation();
+    const raycaster = e.ray ? new THREE.Raycaster(e.ray.origin, e.ray.direction) : null;
+    if (raycaster && groupRef.current) {
+      raycaster.ray.intersectPlane(floorPlane, intersection);
+      groupRef.current.position.x = intersection.x - offset.current.x;
+      groupRef.current.position.z = intersection.z - offset.current.z;
+    }
+  }, [floorPlane, intersection]);
+
+  const handlePointerUp = useCallback((e: any) => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    (e.target as any).releasePointerCapture?.(e.pointerId);
+    if (groupRef.current && onDragEnd) {
+      onDragEnd(groupRef.current.position.x, groupRef.current.position.z);
+    }
+  }, [onDragEnd]);
+
+  const handleClick = useCallback((e: any) => {
+    e.stopPropagation();
+    onClick?.();
+  }, [onClick]);
+
+  // Reset position when props change (external update)
+  useEffect(() => {
+    if (groupRef.current && !isDragging.current) {
+      groupRef.current.position.x = x;
+      groupRef.current.position.z = z;
+    }
+  }, [x, z]);
+
+  return (
+    <group
+      ref={groupRef}
+      position={[x, 0, z]}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onClick={handleClick}
+    >
+      {children}
+    </group>
+  );
+}
 
 /* ── Floor grid with visible metre labels ── */
 function FloorLabels({ widthM, heightM }: { widthM: number; heightM: number }) {
@@ -72,7 +144,7 @@ function VenueWalls({ widthM, heightM }: { widthM: number; heightM: number }) {
  * Scroll    = move forward/back (dolly)
  * Ctrl      = sprint (2×)
  */
-function FPSControls() {
+function FPSControls({ mouseLookEnabled }: { mouseLookEnabled: boolean }) {
   const { camera, gl } = useThree();
   const keys = useRef<Set<string>>(new Set());
   const yaw = useRef(0);
@@ -120,6 +192,7 @@ function FPSControls() {
     };
 
     const onMouseDown = (e: MouseEvent) => {
+      if (!mouseLookEnabled) return;
       isLooking.current = true;
       canvas.style.cursor = 'grabbing';
       // Try pointer lock for smoother FPS look
@@ -129,7 +202,7 @@ function FPSControls() {
     };
     const onMouseUp = () => {
       isLooking.current = false;
-      canvas.style.cursor = 'grab';
+      canvas.style.cursor = mouseLookEnabled ? 'grab' : 'default';
       if (document.pointerLockElement === canvas) {
         document.exitPointerLock?.();
       }
@@ -163,7 +236,7 @@ function FPSControls() {
     window.addEventListener('mousemove', onMouseMove);
     canvas.addEventListener('wheel', onWheel, { passive: false });
     canvas.addEventListener('contextmenu', onContext);
-    canvas.style.cursor = 'grab';
+    canvas.style.cursor = mouseLookEnabled ? 'grab' : 'default';
 
     return () => {
       window.removeEventListener('keydown', onKeyDown);
@@ -174,7 +247,7 @@ function FPSControls() {
       canvas.removeEventListener('wheel', onWheel);
       canvas.removeEventListener('contextmenu', onContext);
     };
-  }, [camera, gl]);
+  }, [camera, gl, mouseLookEnabled]);
 
   useFrame((_, delta) => {
     const forward = new THREE.Vector3(-Math.sin(yaw.current), 0, -Math.cos(yaw.current));
@@ -229,8 +302,7 @@ function StageMesh({ x, y, w, h, label }: { x: number; y: number; w: number; h: 
   );
 }
 
-function FovPyramid({ cam }: { cam: ReturnType<typeof useStore.getState>['cameras'][0] }) {
-  const { selectedCameraId } = useStore();
+function FovPyramid({ cam, isSelected }: { cam: ReturnType<typeof useStore.getState>['cameras'][0]; isSelected: boolean }) {
   const camDef = getCameraById(cam.cameraId);
   const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
   if (!camDef || !lensDef) return null;
@@ -239,7 +311,6 @@ function FovPyramid({ cam }: { cam: ReturnType<typeof useStore.getState>['camera
   const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
   const fovMin = computeFov(sensor, lensDef.focalLengthMax, cam.focusDistance, cam.extenderActive);
   const fovMax = computeFov(sensor, lensDef.focalLengthMin, cam.focusDistance, cam.extenderActive);
-  const isSelected = cam.id === selectedCameraId;
   const isZoom = lensDef.focalLengthMin !== lensDef.focalLengthMax;
 
   const geometry = useMemo(() => {
@@ -288,11 +359,10 @@ function FovPyramid({ cam }: { cam: ReturnType<typeof useStore.getState>['camera
     return geo;
   }, [isZoom, fovMax.horizontalDeg, fovMax.verticalDeg, cam.focusDistance]);
 
-  const panRad = (cam.pan * Math.PI) / 180;
   const tiltRad = (cam.tilt * Math.PI) / 180;
 
   return (
-    <group position={[cam.x, cam.z, cam.y]} rotation={[tiltRad, -panRad - Math.PI / 2, 0]}>
+    <group rotation={[tiltRad, -Math.PI / 2, 0]}>
       {/* Camera body */}
       <mesh>
         <boxGeometry args={[0.3, 0.2, 0.4]} />
@@ -329,6 +399,160 @@ function FovPyramid({ cam }: { cam: ReturnType<typeof useStore.getState>['camera
         outlineWidth={0.02} outlineColor="#000000">
         {cam.label}
       </Text>
+    </group>
+  );
+}
+
+type CameraEditMode = 'move' | 'height' | 'pan' | 'tilt';
+
+function normalizeDegrees(angle: number) {
+  let normalized = angle;
+  while (normalized > 180) normalized -= 360;
+  while (normalized <= -180) normalized += 360;
+  return normalized;
+}
+
+function CameraRig({
+  cam,
+  isSelected,
+  isUnlocked,
+  editMode,
+  onSelect,
+  onToggleLock,
+  onEditModeChange,
+  venueWidth,
+  venueHeight,
+}: {
+  cam: ReturnType<typeof useStore.getState>['cameras'][0];
+  isSelected: boolean;
+  isUnlocked: boolean;
+  editMode: CameraEditMode;
+  onSelect: (cameraId: string) => void;
+  onToggleLock: (cameraId: string) => void;
+  onEditModeChange: (mode: CameraEditMode) => void;
+  venueWidth: number;
+  venueHeight: number;
+}) {
+  const { moveCamera, updateCamera } = useStore();
+  const baseRef = useRef<THREE.Group>(null);
+  const liftRef = useRef<THREE.Group>(null);
+  const pitchRef = useRef<THREE.Group>(null);
+
+  useEffect(() => {
+    if (baseRef.current) {
+      baseRef.current.position.set(cam.x, 0, cam.y);
+      baseRef.current.rotation.set(0, THREE.MathUtils.degToRad(-cam.pan), 0);
+    }
+    if (liftRef.current) {
+      liftRef.current.position.set(0, cam.z, 0);
+    }
+    if (pitchRef.current) {
+      pitchRef.current.rotation.set(THREE.MathUtils.degToRad(cam.tilt), 0, 0);
+    }
+  }, [cam.pan, cam.tilt, cam.x, cam.y, cam.z]);
+
+  const commitMove = useCallback(() => {
+    if (!baseRef.current) return;
+    const nextX = Math.max(0, Math.min(venueWidth, baseRef.current.position.x));
+    const nextY = Math.max(0, Math.min(venueHeight, baseRef.current.position.z));
+    baseRef.current.position.set(nextX, 0, nextY);
+    moveCamera(cam.id, nextX, nextY);
+  }, [cam.id, moveCamera, venueHeight, venueWidth]);
+
+  const commitHeight = useCallback(() => {
+    if (!liftRef.current) return;
+    const nextZ = Math.max(0, liftRef.current.position.y);
+    liftRef.current.position.set(0, nextZ, 0);
+    updateCamera(cam.id, { z: nextZ });
+  }, [cam.id, updateCamera]);
+
+  const commitPan = useCallback(() => {
+    if (!baseRef.current) return;
+    const nextPan = normalizeDegrees(-THREE.MathUtils.radToDeg(baseRef.current.rotation.y));
+    baseRef.current.rotation.set(0, THREE.MathUtils.degToRad(-nextPan), 0);
+    updateCamera(cam.id, { pan: nextPan });
+  }, [cam.id, updateCamera]);
+
+  const commitTilt = useCallback(() => {
+    if (!pitchRef.current) return;
+    const nextTilt = Math.max(-90, Math.min(45, THREE.MathUtils.radToDeg(pitchRef.current.rotation.x)));
+    pitchRef.current.rotation.set(THREE.MathUtils.degToRad(nextTilt), 0, 0);
+    updateCamera(cam.id, { tilt: nextTilt });
+  }, [cam.id, updateCamera]);
+
+  const buttonStyle = (active = false) => ({
+    background: active ? '#3b82f6' : '#111827',
+    border: `1px solid ${active ? '#60a5fa' : '#334155'}`,
+    color: active ? '#ffffff' : '#94a3b8',
+    borderRadius: 4,
+    padding: '3px 6px',
+    fontSize: 10,
+    cursor: 'pointer',
+  } as const);
+
+  return (
+    <group
+      ref={baseRef}
+      position={[cam.x, 0, cam.y]}
+      rotation={[0, THREE.MathUtils.degToRad(-cam.pan), 0]}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect(cam.id);
+      }}
+    >
+      {isSelected && isUnlocked && editMode === 'move' && baseRef.current && (
+        <TransformControls object={baseRef.current} mode="translate" showX showY={false} showZ size={0.9} onMouseUp={commitMove} />
+      )}
+      {isSelected && isUnlocked && editMode === 'pan' && baseRef.current && (
+        <TransformControls object={baseRef.current} mode="rotate" showX={false} showY showZ={false} size={0.9} onMouseUp={commitPan} />
+      )}
+
+      <group ref={liftRef} position={[0, cam.z, 0]}>
+        {isSelected && (
+          <Html position={[0, 1.15, 0]} center style={{ pointerEvents: 'auto' }}>
+            <div
+              style={{
+                display: 'flex',
+                gap: 4,
+                alignItems: 'center',
+                background: 'rgba(15, 23, 42, 0.92)',
+                border: '1px solid #334155',
+                borderRadius: 8,
+                padding: '6px 8px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <button type="button" onClick={() => onToggleLock(cam.id)} style={buttonStyle(isUnlocked)}>
+                {isUnlocked ? 'Lock' : 'Unlock'}
+              </button>
+              <button type="button" disabled={!isUnlocked} onClick={() => onEditModeChange('move')} style={buttonStyle(editMode === 'move' && isUnlocked)}>
+                XY
+              </button>
+              <button type="button" disabled={!isUnlocked} onClick={() => onEditModeChange('height')} style={buttonStyle(editMode === 'height' && isUnlocked)}>
+                Z
+              </button>
+              <button type="button" disabled={!isUnlocked} onClick={() => onEditModeChange('pan')} style={buttonStyle(editMode === 'pan' && isUnlocked)}>
+                Pan
+              </button>
+              <button type="button" disabled={!isUnlocked} onClick={() => onEditModeChange('tilt')} style={buttonStyle(editMode === 'tilt' && isUnlocked)}>
+                Tilt
+              </button>
+            </div>
+          </Html>
+        )}
+
+        {isSelected && isUnlocked && editMode === 'height' && liftRef.current && (
+          <TransformControls object={liftRef.current} mode="translate" showX={false} showY showZ={false} size={0.9} onMouseUp={commitHeight} />
+        )}
+
+        <group ref={pitchRef} rotation={[THREE.MathUtils.degToRad(cam.tilt), 0, 0]}>
+          {isSelected && isUnlocked && editMode === 'tilt' && pitchRef.current && (
+            <TransformControls object={pitchRef.current} mode="rotate" showX showY={false} showZ={false} size={0.9} onMouseUp={commitTilt} />
+          )}
+          <FovPyramid cam={cam} isSelected={isSelected} />
+        </group>
+      </group>
     </group>
   );
 }
@@ -440,7 +664,15 @@ function PersonMesh({ x, z, height, label, objectType }: { x: number; z: number;
 }
 
 export default function Venue3D() {
-  const { venue, cameras, persons, backgroundPlan, walls } = useStore();
+  const { venue, cameras, persons, backgroundPlan, walls, moveCamera, updatePerson, selectCamera, selectedCameraId } = useStore();
+  const [unlockedCameraId, setUnlockedCameraId] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState<CameraEditMode>('move');
+
+  useEffect(() => {
+    if (unlockedCameraId && !cameras.some((camera) => camera.id === unlockedCameraId)) {
+      setUnlockedCameraId(null);
+    }
+  }, [cameras, unlockedCameraId]);
 
   const handleReset = useCallback(() => {
     window.dispatchEvent(new CustomEvent('multicam-3d-reset', {
@@ -457,13 +689,13 @@ export default function Venue3D() {
         fontSize: 11, color: '#9ca3af', lineHeight: 1.6, backdropFilter: 'blur(4px)',
         pointerEvents: 'none',
       }}>
+        <b style={{ color: '#60a5fa' }}>Select camera</b> → unlock to edit<br/>
+        <b style={{ color: '#60a5fa' }}>XY</b> floor move &nbsp;|&nbsp;
+        <b style={{ color: '#60a5fa' }}>Z</b> height &nbsp;|&nbsp;
+        <b style={{ color: '#60a5fa' }}>Pan/Tilt</b> rotate axes<br/>
         <b style={{ color: '#60a5fa' }}>WASD</b> Move &nbsp;|&nbsp;
-        <b style={{ color: '#60a5fa' }}>Space</b> Up &nbsp;|&nbsp;
-        <b style={{ color: '#60a5fa' }}>Shift</b> Down &nbsp;|&nbsp;
-        <b style={{ color: '#60a5fa' }}>Ctrl</b> Sprint<br/>
-        <b style={{ color: '#60a5fa' }}>Mouse drag</b> Look &nbsp;|&nbsp;
-        <b style={{ color: '#60a5fa' }}>Scroll</b> Dolly &nbsp;|&nbsp;
-        <b style={{ color: '#60a5fa' }}>Right-click</b> Pointer lock
+        <b style={{ color: '#60a5fa' }}>Space/Shift</b> vertical &nbsp;|&nbsp;
+        <b style={{ color: '#60a5fa' }}>Scroll</b> Dolly
       </div>
 
       {/* Reset View button */}
@@ -483,7 +715,7 @@ export default function Venue3D() {
 
       <Canvas shadows gl={{ preserveDrawingBuffer: true }}>
         <PerspectiveCamera makeDefault position={[venue.widthM / 2, 15, venue.heightM + 10]} fov={50} />
-        <FPSControls />
+        <FPSControls mouseLookEnabled={unlockedCameraId === null} />
 
         {/* Improved lighting */}
         <ambientLight intensity={0.7} color="#e8eaf0" />
@@ -523,14 +755,38 @@ export default function Venue3D() {
           <StageMesh key={s.id} x={s.x} y={s.y} w={s.width} h={s.height} label={s.label} />
         ))}
 
-        {/* Cameras with FOV */}
+        {/* Cameras with explicit unlock + gizmo editing */}
         {cameras.map((cam) => (
-          <FovPyramid key={cam.id} cam={cam} />
+          <CameraRig
+            key={cam.id}
+            cam={cam}
+            isSelected={cam.id === selectedCameraId}
+            isUnlocked={cam.id === unlockedCameraId}
+            editMode={editMode}
+            onSelect={selectCamera}
+            onToggleLock={(cameraId) => {
+              setUnlockedCameraId((current) => {
+                if (current === cameraId) return null;
+                setEditMode('move');
+                return cameraId;
+              });
+            }}
+            onEditModeChange={setEditMode}
+            venueWidth={venue.widthM}
+            venueHeight={venue.heightM}
+          />
         ))}
 
-        {/* Reference persons from store */}
+        {/* Reference persons from store – draggable */}
         {persons.map((p) => (
-          <PersonMesh key={p.id} x={p.x} z={p.y} height={p.height} label={p.label} objectType={p.objectType} />
+          <DraggableOnFloor
+            key={p.id}
+            x={p.x}
+            z={p.y}
+            onDragEnd={(nx, nz) => updatePerson(p.id, { x: nx, y: nz })}
+          >
+            <PersonMesh x={0} z={0} height={p.height} label={p.label} objectType={p.objectType} />
+          </DraggableOnFloor>
         ))}
 
         {/* Walls */}

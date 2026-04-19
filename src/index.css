@@ -45,3 +45,58 @@ select {
   -webkit-appearance: none;
   cursor: pointer;
 }
+
+/* ── FlexLayout dark theme overrides ── */
+.flexlayout__layout {
+  --color-text: #e5e7eb;
+  --color-background: #0f1117;
+  --color-base: #0f1117;
+  --color-1: #1a1d27;
+  --color-2: #252a36;
+  --color-3: #2a2d3a;
+  --color-4: #3b82f6;
+  --color-5: #6b7280;
+  --color-6: #3b82f6;
+  --color-drag1: rgba(59,130,246,0.15);
+  --color-drag2: rgba(59,130,246,0.30);
+  --color-drag1-background: rgba(59,130,246,0.10);
+  --color-drag2-background: rgba(59,130,246,0.20);
+  --font-size: 11px;
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #0f1117;
+}
+.flexlayout__tab {
+  background-color: #0f1117;
+  overflow: hidden;
+}
+.flexlayout__tabset-selected {
+  background-color: #1a1d27;
+}
+.flexlayout__tabset_header {
+  background-color: #1a1d27;
+  border-bottom: 1px solid #2a2d3a;
+}
+.flexlayout__tab_button--selected {
+  background-color: #0f1117;
+  color: #3b82f6;
+}
+.flexlayout__tab_button:hover {
+  background-color: #252a36;
+}
+.flexlayout__splitter {
+  background-color: #2a2d3a;
+}
+.flexlayout__splitter:hover {
+  background-color: #3b82f6;
+}
+.flexlayout__tab_toolbar_button {
+  color: #6b7280;
+}
+.flexlayout__tab_toolbar_button:hover {
+  color: #e5e7eb;
+  background-color: #2a2d3a;
+}
+.flexlayout__border_bar {
+  background-color: #1a1d27;
+  border-color: #2a2d3a;
+}

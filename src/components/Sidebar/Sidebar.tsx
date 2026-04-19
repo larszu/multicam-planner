@@ -2,7 +2,7 @@ import { useStore } from '../../store/useStore';
 import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor } from '../../data/cameras';
 import { LENSES, getLensById, getCompatibleLenses } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
-import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { BackgroundPlan, StageObjectType, CameraMountType } from '../../types';
 import { MOUNT_TYPE_LABELS } from '../../types';
@@ -19,8 +19,35 @@ function groupByMount(lenses: typeof LENSES) {
   return groups;
 }
 
+function sortFavoritesFirst<T extends { id: string; manufacturer?: string; model?: string }>(items: T[], favoriteIds: string[]) {
+  const favorites = new Set(favoriteIds);
+  return [...items].sort((left, right) => {
+    const leftFavorite = favorites.has(left.id) ? 1 : 0;
+    const rightFavorite = favorites.has(right.id) ? 1 : 0;
+    if (leftFavorite !== rightFavorite) return rightFavorite - leftFavorite;
+
+    const leftLabel = `${left.manufacturer ?? ''} ${left.model ?? ''}`.trim();
+    const rightLabel = `${right.manufacturer ?? ''} ${right.model ?? ''}`.trim();
+    return leftLabel.localeCompare(rightLabel);
+  });
+}
+
 function CameraCard({ camId }: { camId: string }) {
-  const { cameras, selectedCameraId, selectCamera, updateCamera, removeCamera, duplicateCamera, customLenses, addCustomLens, removeCustomLens } = useStore();
+  const {
+    cameras,
+    selectedCameraId,
+    selectCamera,
+    updateCamera,
+    removeCamera,
+    duplicateCamera,
+    customLenses,
+    addCustomLens,
+    removeCustomLens,
+    favoriteCameraIds,
+    favoriteLensIds,
+    toggleFavoriteCameraId,
+    toggleFavoriteLensId,
+  } = useStore();
   const cam = cameras.find((c) => c.id === camId)!;
   const isSelected = cam.id === selectedCameraId;
   const [expanded, setExpanded] = useState(false);
@@ -38,7 +65,8 @@ function CameraCard({ camId }: { camId: string }) {
   })];
   // Deduplicate by id
   const compatDeduped = [...new Map(allCompat.map((l) => [l.id, l])).values()];
-  const grouped = groupByMount(compatDeduped);
+  const grouped = groupByMount(sortFavoritesFirst(compatDeduped, favoriteLensIds));
+  const sortedCameras = sortFavoritesFirst(CAMERAS, favoriteCameraIds);
 
   // Adapter & effective sensor
   const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, cam.useSpeedbooster) : null;
@@ -110,7 +138,19 @@ function CameraCard({ camId }: { camId: string }) {
         <div className="mt-3 space-y-2 text-xs" onClick={(e) => e.stopPropagation()}>
           {/* Camera selector grouped by type */}
           <label className="block">
-            <span className="text-gray-400">Camera ({camDef?.mount} mount, {camDef?.sensor.name})</span>
+            <span className="flex items-center justify-between gap-2 text-gray-400">
+              <span>Camera ({camDef?.mount} mount, {camDef?.sensor.name})</span>
+              {camDef && (
+                <button
+                  type="button"
+                  onClick={() => toggleFavoriteCameraId(camDef.id)}
+                  className={`p-1 rounded ${favoriteCameraIds.includes(camDef.id) ? 'text-bc-yellow' : 'text-gray-500 hover:text-bc-yellow'}`}
+                  title={favoriteCameraIds.includes(camDef.id) ? 'Remove camera favorite' : 'Favorite camera'}
+                >
+                  <FiStar size={12} fill={favoriteCameraIds.includes(camDef.id) ? 'currentColor' : 'none'} />
+                </button>
+              )}
+            </span>
             <select
               className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
               value={cam.cameraId}
@@ -125,15 +165,27 @@ function CameraCard({ camId }: { camId: string }) {
                 });
               }}
             >
-              {CAMERAS.map((c) => (
-                <option key={c.id} value={c.id}>{c.manufacturer} {c.model} [{c.mount}]</option>
+              {sortedCameras.map((c) => (
+                <option key={c.id} value={c.id}>{favoriteCameraIds.includes(c.id) ? '* ' : ''}{c.manufacturer} {c.model} [{c.mount}]</option>
               ))}
             </select>
           </label>
 
           {/* Lens selector grouped by mount */}
           <label className="block">
-            <span className="text-gray-400">Lens</span>
+            <span className="flex items-center justify-between gap-2 text-gray-400">
+              <span>Lens</span>
+              {lensDef && (
+                <button
+                  type="button"
+                  onClick={() => toggleFavoriteLensId(lensDef.id)}
+                  className={`p-1 rounded ${favoriteLensIds.includes(lensDef.id) ? 'text-bc-yellow' : 'text-gray-500 hover:text-bc-yellow'}`}
+                  title={favoriteLensIds.includes(lensDef.id) ? 'Remove lens favorite' : 'Favorite lens'}
+                >
+                  <FiStar size={12} fill={favoriteLensIds.includes(lensDef.id) ? 'currentColor' : 'none'} />
+                </button>
+              )}
+            </span>
             <select
               className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
               value={cam.lensId}
@@ -150,7 +202,7 @@ function CameraCard({ camId }: { camId: string }) {
               {Object.entries(grouped).map(([mount, lenses]) => (
                 <optgroup key={mount} label={`── ${mount} mount ──`}>
                   {lenses.map((l) => (
-                    <option key={l.id} value={l.id}>{l.manufacturer} {l.model}{l.isCustom ? ' ✦' : ''}</option>
+                    <option key={l.id} value={l.id}>{favoriteLensIds.includes(l.id) ? '* ' : ''}{l.manufacturer} {l.model}{l.isCustom ? ' +custom' : ''}</option>
                   ))}
                 </optgroup>
               ))}
@@ -402,6 +454,7 @@ export default function Sidebar() {
   const [personsOpen, setPersonsOpen] = useState(false);
   const [wallsOpen, setWallsOpen] = useState(false);
   const [bgOpen, setBgOpen] = useState(false);
+  const [wallDrawMode, setWallDrawMode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [calibAxis, setCalibAxis] = useState<'x' | 'y' | null>(null);
   const [calibDistX, setCalibDistX] = useState('10');
@@ -497,6 +550,10 @@ export default function Sidebar() {
     window.addEventListener('multicam-calibrate-done', handler);
     return () => window.removeEventListener('multicam-calibrate-done', handler);
   }, []);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('multicam-wall-draw', { detail: { active: wallDrawMode } }));
+  }, [wallDrawMode]);
 
   return (
     <div className="w-80 bg-bc-panel border-r border-bc-border h-full flex flex-col overflow-y-auto">
@@ -669,6 +726,17 @@ export default function Sidebar() {
         </button>
         {wallsOpen && (
           <div className="mt-2 space-y-2 text-xs">
+            <button
+              onClick={() => setWallDrawMode((active) => !active)}
+              className={`flex items-center gap-1 px-2 py-1 rounded text-xs w-full justify-center ${wallDrawMode ? 'bg-bc-yellow/20 text-bc-yellow hover:bg-bc-yellow/30' : 'bg-bc-dark text-gray-300 hover:text-white border border-bc-border'}`}
+            >
+              {wallDrawMode ? 'Stop Drawing' : 'Draw Walls'}
+            </button>
+            {wallDrawMode && (
+              <div className="rounded border border-bc-border bg-bc-dark px-2 py-1.5 text-[10px] text-gray-400 leading-relaxed">
+                Click once to place the start point, click again to finish. Hold Shift to snap the angle.
+              </div>
+            )}
             {walls.map((w) => (
               <div key={w.id} className="flex items-center gap-2 bg-bc-dark rounded p-1.5 border border-bc-border">
                 <input

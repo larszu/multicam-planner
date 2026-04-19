@@ -3,12 +3,12 @@ import { useStore } from '../../store/useStore';
 import { getCameraById, getEffectiveSensor } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov } from '../../utils/fov';
-import type { VenueCamera } from '../../types';
+import type { VenueCamera, Wall } from '../../types';
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import type Konva from 'konva';
 
 export default function Venue2D() {
-  const { venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, showAllFov, pixelsPerMeter, persons, updatePerson, updateStage, backgroundPlan, setBackgroundPlan, walls, updateWall } = useStore();
+  const { venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, showAllFov, pixelsPerMeter, persons, updatePerson, updateStage, backgroundPlan, setBackgroundPlan, walls, updateWall, addWall } = useStore();
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
@@ -16,12 +16,47 @@ export default function Venue2D() {
   const [zoom, setZoom] = useState(1);
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
 
-  // Expose stage ref and venue pixel dims for export capture
+  // ── Wall drawing mode ──
+  const [drawingWall, setDrawingWall] = useState(false);
+  const [wallStart, setWallStart] = useState<{ x: number; y: number } | null>(null);
+  const [wallCursor, setWallCursor] = useState<{ x: number; y: number } | null>(null);
+  const shiftHeld = useRef(false);
+
   useEffect(() => {
-    (window as any).__konvaStage = stageRef.current;
-    (window as any).__konvaVenueSize = { w: worldW, h: worldH };
-    return () => { (window as any).__konvaStage = null; (window as any).__konvaVenueSize = null; };
-  });
+    const down = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') shiftHeld.current = true;
+      if (e.key === 'Escape') {
+        setWallStart(null);
+        setWallCursor(null);
+      }
+    };
+    const up = (e: KeyboardEvent) => { if (e.key === 'Shift') shiftHeld.current = false; };
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); };
+  }, []);
+
+  // Listen for wall-draw-mode toggle from sidebar or toolbar
+  useEffect(() => {
+    const handler = (e: Event) => {
+      setDrawingWall((e as CustomEvent).detail?.active ?? true);
+      setWallStart(null);
+      setWallCursor(null);
+    };
+    window.addEventListener('multicam-wall-draw', handler);
+    return () => window.removeEventListener('multicam-wall-draw', handler);
+  }, []);
+
+  /** Snap endpoint when shift is held: 0, 45, 90° increments */
+  const snapPoint = useCallback((start: { x: number; y: number }, end: { x: number; y: number }) => {
+    if (!shiftHeld.current) return end;
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const angle = Math.atan2(dy, dx);
+    const snapAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    return { x: start.x + Math.cos(snapAngle) * dist, y: start.y + Math.sin(snapAngle) * dist };
+  }, []);
 
   // Calibration state
   const [calibActive, setCalibActive] = useState(false);
@@ -40,6 +75,32 @@ export default function Venue2D() {
   const bgExtentH = backgroundPlan ? (backgroundPlan.offsetY + backgroundPlan.heightPx * backgroundPlan.scaleY) * ppm : 0;
   const worldW = Math.max(W, bgExtentW);
   const worldH = Math.max(H, bgExtentH);
+
+  // Expose stage ref and venue pixel dims for export capture
+  useEffect(() => {
+    (window as any).__konvaStage = stageRef.current;
+    (window as any).__konvaVenueSize = { w: worldW, h: worldH };
+    (window as any).__capture2DExport = () => {
+      const stage = stageRef.current;
+      if (!stage) return null;
+      try {
+        return stage.toCanvas({
+          x: 0,
+          y: 0,
+          width: worldW,
+          height: worldH,
+          pixelRatio: 2,
+        }) as HTMLCanvasElement;
+      } catch {
+        return null;
+      }
+    };
+    return () => {
+      (window as any).__konvaStage = null;
+      (window as any).__konvaVenueSize = null;
+      delete (window as any).__capture2DExport;
+    };
+  }, [worldW, worldH]);
 
   // Measure container and auto-fit zoom
   useEffect(() => {
@@ -92,6 +153,21 @@ export default function Venue2D() {
     });
   }, [zoom, stagePos]);
 
+  const getPointerWorldPoint = useCallback(() => {
+    const stage = stageRef.current;
+    if (!stage) return null;
+
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return null;
+
+    const localX = (pointer.x - stagePos.x) / zoom;
+    const localY = (pointer.y - stagePos.y) / zoom;
+    return {
+      xPx: Math.max(0, Math.min(worldW, localX)),
+      yPx: Math.max(0, Math.min(worldH, localY)),
+    };
+  }, [stagePos.x, stagePos.y, zoom, worldW, worldH]);
+
   // Load background image when plan changes
   useEffect(() => {
     if (!backgroundPlan) { setBgImage(null); return; }
@@ -117,15 +193,37 @@ export default function Venue2D() {
 
   // Handle calibration clicks on the stage
   const handleStageClick = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (!calibActive || !backgroundPlan) return;
-    const stage = stageRef.current;
-    if (!stage) return;
-    const pointer = stage.getPointerPosition();
-    if (!pointer) return;
+    const point = getPointerWorldPoint();
+    if (!point) return;
 
-    // Convert screen coords to stage-local coords (accounting for zoom & pan)
-    const localX = (pointer.x - stagePos.x) / zoom;
-    const localY = (pointer.y - stagePos.y) / zoom;
+    if (drawingWall) {
+      const worldPoint = { x: point.xPx / ppm, y: point.yPx / ppm };
+      if (!wallStart) {
+        setWallStart(worldPoint);
+        setWallCursor(worldPoint);
+        return;
+      }
+
+      const snappedEnd = snapPoint(wallStart, worldPoint);
+      const length = Math.hypot(snappedEnd.x - wallStart.x, snappedEnd.y - wallStart.y);
+      if (length >= 0.1) {
+        addWall({
+          x1: wallStart.x,
+          y1: wallStart.y,
+          x2: snappedEnd.x,
+          y2: snappedEnd.y,
+          label: `Wall ${walls.length + 1}`,
+        });
+      }
+      setWallStart(null);
+      setWallCursor(null);
+      return;
+    }
+
+    if (!calibActive || !backgroundPlan) return;
+
+    const localX = point.xPx;
+    const localY = point.yPx;
 
     const newPoints = [...calibPoints, { x: localX, y: localY }];
     setCalibPoints(newPoints);
@@ -168,7 +266,28 @@ export default function Venue2D() {
       setCalibPoints([]);
       window.dispatchEvent(new CustomEvent('multicam-calibrate-done'));
     }
-  }, [calibActive, calibPoints, backgroundPlan, ppm, calibDistM, calibAxis, calibAutoResize, calibScaleLocked, setBackgroundPlan, zoom, stagePos, venue, setVenue]);
+  }, [addWall, backgroundPlan, calibActive, calibAutoResize, calibAxis, calibDistM, calibPoints, calibScaleLocked, drawingWall, getPointerWorldPoint, ppm, setBackgroundPlan, setVenue, snapPoint, venue, wallStart, walls.length]);
+
+  const handleStageMouseMove = useCallback(() => {
+    if (!drawingWall || !wallStart) return;
+    const point = getPointerWorldPoint();
+    if (!point) return;
+    setWallCursor(snapPoint(wallStart, { x: point.xPx / ppm, y: point.yPx / ppm }));
+  }, [drawingWall, getPointerWorldPoint, ppm, snapPoint, wallStart]);
+
+  const handleWallEndpointDragMove = useCallback((wall: Wall, end: 'start' | 'end', e: Konva.KonvaEventObject<DragEvent>) => {
+    const node = e.target;
+    const rawPoint = { x: node.x() / ppm, y: node.y() / ppm };
+
+    if (end === 'start') {
+      const snapped = snapPoint({ x: wall.x2, y: wall.y2 }, rawPoint);
+      updateWall(wall.id, { x1: snapped.x, y1: snapped.y });
+      return;
+    }
+
+    const snapped = snapPoint({ x: wall.x1, y: wall.y1 }, rawPoint);
+    updateWall(wall.id, { x2: snapped.x, y2: snapped.y });
+  }, [ppm, snapPoint, updateWall]);
 
   const handleCamDragEnd = useCallback(
     (cam: VenueCamera, e: Konva.KonvaEventObject<DragEvent>) => {
@@ -211,7 +330,7 @@ export default function Venue2D() {
         scaleY={zoom}
         x={stagePos.x}
         y={stagePos.y}
-        draggable={!calibActive}
+        draggable={!calibActive && !drawingWall}
         onDragEnd={(e) => {
           if (e.target === stageRef.current) {
             setStagePos({ x: e.target.x(), y: e.target.y() });
@@ -219,7 +338,8 @@ export default function Venue2D() {
         }}
         onWheel={handleWheel}
         onClick={handleStageClick}
-        style={{ cursor: calibActive ? 'crosshair' : 'grab' }}
+        onMouseMove={handleStageMouseMove}
+        style={{ cursor: calibActive || drawingWall ? 'crosshair' : 'grab' }}
       >
       {/* Venue area background */}
       <Layer>
@@ -268,7 +388,7 @@ export default function Venue2D() {
             key={s.id}
             x={s.x * ppm}
             y={s.y * ppm}
-            draggable
+            draggable={!drawingWall}
             onDragEnd={(e) => handleStageDragEnd(s.id, e)}
           >
             <Rect
@@ -390,13 +510,33 @@ export default function Venue2D() {
               stroke="#9ca3af"
               strokeWidth={3}
               hitStrokeWidth={10}
-              draggable
+              draggable={!drawingWall}
               onDragEnd={(e) => {
                 const dx = e.target.x() / ppm;
                 const dy = e.target.y() / ppm;
                 e.target.position({ x: 0, y: 0 });
                 updateWall(w.id, { x1: w.x1 + dx, y1: w.y1 + dy, x2: w.x2 + dx, y2: w.y2 + dy });
               }}
+            />
+            <Circle
+              x={w.x1 * ppm}
+              y={w.y1 * ppm}
+              radius={5}
+              fill="#0f1117"
+              stroke="#f59e0b"
+              strokeWidth={2}
+              draggable={!drawingWall}
+              onDragMove={(e) => handleWallEndpointDragMove(w, 'start', e)}
+            />
+            <Circle
+              x={w.x2 * ppm}
+              y={w.y2 * ppm}
+              radius={5}
+              fill="#0f1117"
+              stroke="#f59e0b"
+              strokeWidth={2}
+              draggable={!drawingWall}
+              onDragMove={(e) => handleWallEndpointDragMove(w, 'end', e)}
             />
             <Text
               x={((w.x1 + w.x2) / 2) * ppm - 20}
@@ -409,6 +549,24 @@ export default function Venue2D() {
             />
           </React.Fragment>
         ))}
+        {drawingWall && wallStart && wallCursor && (
+          <>
+            <Line
+              points={[wallStart.x * ppm, wallStart.y * ppm, wallCursor.x * ppm, wallCursor.y * ppm]}
+              stroke="#f59e0b"
+              strokeWidth={2}
+              dash={[6, 4]}
+              listening={false}
+            />
+            <Circle
+              x={wallStart.x * ppm}
+              y={wallStart.y * ppm}
+              radius={4}
+              fill="#f59e0b"
+              listening={false}
+            />
+          </>
+        )}
       </Layer>
 
       {/* Camera icons */}
@@ -420,7 +578,7 @@ export default function Venue2D() {
               key={`cam-${cam.id}`}
               x={cam.x * ppm}
               y={cam.y * ppm}
-              draggable
+              draggable={!drawingWall}
               onDragEnd={(e) => handleCamDragEnd(cam, e)}
               onClick={() => selectCamera(cam.id)}
               onTap={() => selectCamera(cam.id)}
@@ -455,7 +613,7 @@ export default function Venue2D() {
           );
         })}
       </Layer>
-
+              draggable={!drawingWall}
       {/* Scale bar */}
       <Layer>
         <Line points={[10, H - 20, 10 + 5 * ppm, H - 20]} stroke="#666" strokeWidth={2} />

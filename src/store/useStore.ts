@@ -34,10 +34,14 @@ interface AppState {
 
   // Cameras placed in venue
   cameras: VenueCamera[];
+  favoriteCameraIds: string[];
+  favoriteLensIds: string[];
   selectedCameraId: string | null;
   selectCamera: (id: string | null) => void;
   selectNextCamera: () => void;
   selectPrevCamera: () => void;
+  toggleFavoriteCameraId: (id: string) => void;
+  toggleFavoriteLensId: (id: string) => void;
   addCamera: (cameraId?: string, lensId?: string) => void;
   removeCamera: (id: string) => void;
   updateCamera: (id: string, updates: Partial<VenueCamera>) => void;
@@ -107,6 +111,23 @@ function loadCustomLenses(): Lens[] {
 }
 function saveCustomLensesStorage(lenses: Lens[]) {
   localStorage.setItem(CUSTOM_LENSES_KEY, JSON.stringify(lenses));
+}
+
+const FAVORITE_CAMERAS_KEY = 'multicam-favorite-cameras';
+const FAVORITE_LENSES_KEY = 'multicam-favorite-lenses';
+
+function loadFavoriteIds(key: string): string[] {
+  try {
+    const raw = localStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveFavoriteIds(key: string, ids: string[]) {
+  localStorage.setItem(key, JSON.stringify(ids));
 }
 
 let stageId = 1;
@@ -239,6 +260,8 @@ export const useStore = create<AppState>((set, get) => ({
 
   // ── Cameras ──
   cameras: [],
+  favoriteCameraIds: loadFavoriteIds(FAVORITE_CAMERAS_KEY),
+  favoriteLensIds: loadFavoriteIds(FAVORITE_LENSES_KEY),
   selectedCameraId: null,
   selectCamera: (id) => set({ selectedCameraId: id }),
 
@@ -256,6 +279,26 @@ export const useStore = create<AppState>((set, get) => ({
     const idx = cameras.findIndex((c) => c.id === selectedCameraId);
     const prev = cameras[(idx - 1 + cameras.length) % cameras.length];
     set({ selectedCameraId: prev.id });
+  },
+
+  toggleFavoriteCameraId: (id) => {
+    set((s) => {
+      const favoriteCameraIds = s.favoriteCameraIds.includes(id)
+        ? s.favoriteCameraIds.filter((favoriteId) => favoriteId !== id)
+        : [...s.favoriteCameraIds, id];
+      saveFavoriteIds(FAVORITE_CAMERAS_KEY, favoriteCameraIds);
+      return { favoriteCameraIds };
+    });
+  },
+
+  toggleFavoriteLensId: (id) => {
+    set((s) => {
+      const favoriteLensIds = s.favoriteLensIds.includes(id)
+        ? s.favoriteLensIds.filter((favoriteId) => favoriteId !== id)
+        : [...s.favoriteLensIds, id];
+      saveFavoriteIds(FAVORITE_LENSES_KEY, favoriteLensIds);
+      return { favoriteLensIds };
+    });
   },
 
   addCamera: (cameraId, lensId) => {

@@ -1,17 +1,31 @@
 import { useStore, APP_VERSION } from '../../store/useStore';
-import { FiCamera, FiLayout, FiBox, FiMonitor, FiSliders, FiSave, FiUpload, FiDownload } from 'react-icons/fi';
-import type { ViewTab } from '../../types';
+import { FiCamera, FiLayout, FiBox, FiMonitor, FiSliders, FiSave, FiUpload, FiDownload, FiRefreshCw } from 'react-icons/fi';
 import { useRef, useCallback } from 'react';
+import { Model, Actions } from 'flexlayout-react';
 
-const tabs: { id: ViewTab; label: string; icon: React.ReactNode }[] = [
-  { id: '2d', label: '2D Plan', icon: <FiLayout size={16} /> },
-  { id: '3d', label: '3D View', icon: <FiBox size={16} /> },
-  { id: 'preview', label: 'Preview', icon: <FiMonitor size={16} /> },
-  { id: 'calculator', label: 'Calculator', icon: <FiSliders size={16} /> },
+const tabs: { id: string; label: string; icon: React.ReactNode }[] = [
+  { id: 'tab-2d', label: '2D Plan', icon: <FiLayout size={16} /> },
+  { id: 'tab-3d', label: '3D View', icon: <FiBox size={16} /> },
+  { id: 'tab-preview', label: 'Preview', icon: <FiMonitor size={16} /> },
+  { id: 'tab-calc', label: 'Calculator', icon: <FiSliders size={16} /> },
 ];
 
+function selectFlexTab(tabId: string) {
+  const model = (window as any).__flexModel as Model | undefined;
+  if (!model) return;
+  try {
+    model.doAction(Actions.selectTab(tabId));
+  } catch { /* tab may not exist */ }
+}
+
+function resetLayout() {
+  localStorage.removeItem('multicam-layout');
+  localStorage.removeItem('multicam-layout-version');
+  window.location.reload();
+}
+
 export default function Header() {
-  const { activeTab, setActiveTab, venue, projectVersion, lastSavedVersion, saveProject, loadProject } = useStore();
+  const { venue, projectVersion, lastSavedVersion, saveProject, loadProject } = useStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const unsaved = projectVersion !== lastSavedVersion;
 
@@ -47,17 +61,20 @@ export default function Header() {
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-              activeTab === tab.id
-                ? 'bg-bc-accent text-white'
-                : 'text-gray-400 hover:text-white hover:bg-bc-border'
-            }`}
+            onClick={() => selectFlexTab(tab.id)}
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded text-xs font-medium transition-colors text-gray-400 hover:text-white hover:bg-bc-border"
           >
             {tab.icon}
             <span className="hidden sm:inline">{tab.label}</span>
           </button>
         ))}
+        <button
+          onClick={resetLayout}
+          className="flex items-center gap-1 px-2 py-1.5 rounded text-xs text-gray-500 hover:text-gray-300 hover:bg-bc-border transition-colors"
+          title="Reset panel layout to default"
+        >
+          <FiRefreshCw size={12} />
+        </button>
       </nav>
 
       <div className="flex items-center gap-1 sm:gap-2">

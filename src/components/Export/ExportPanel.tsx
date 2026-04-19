@@ -20,19 +20,10 @@ export default function ExportPanel() {
   }, []);
 
   const capture2DCanvas = useCallback((): HTMLCanvasElement | null => {
-    // Use Konva's stage.toCanvas() for reliable capture even when tab is hidden
-    const konvaStage = (window as any).__konvaStage;
-    if (konvaStage && typeof konvaStage.toCanvas === 'function') {
+    const capture = (window as any).__capture2DExport;
+    if (typeof capture === 'function') {
       try {
-        const vs = (window as any).__konvaVenueSize;
-        // Export just the venue area at 1:1 scale (ignore current zoom/pan)
-        return konvaStage.toCanvas({
-          pixelRatio: 2,
-          x: 0,
-          y: 0,
-          width: vs ? vs.w : konvaStage.width(),
-          height: vs ? vs.h : konvaStage.height(),
-        }) as HTMLCanvasElement;
+        return capture() as HTMLCanvasElement | null;
       } catch { /* fall through */ }
     }
     // Fallback: grab DOM canvas
@@ -140,7 +131,9 @@ export default function ExportPanel() {
       // ── Capture views ──
       const plan2D = capture2DCanvas();
       const view3D = capture3DCanvas();
-      const previewCanvas = captureCanvas('canvas[width="640"]');
+      const previewCanvas = typeof (window as any).__capturePreviewCanvas === 'function'
+        ? (window as any).__capturePreviewCanvas()
+        : captureCanvas('canvas[width="640"]');
 
       // Row 1: 2D Plan + 3D View
       drawTile(plan2D, padding, headerH + padding, '2D Plan');

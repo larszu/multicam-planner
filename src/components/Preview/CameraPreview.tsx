@@ -14,7 +14,7 @@ interface PreviewProps {
 }
 
 export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
-  const { cameras, selectedCameraId, venue, persons } = useStore();
+  const { cameras, selectedCameraId, venue, persons, selectNextCamera, selectPrevCamera } = useStore();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const cam = cameras.find((c) => c.id === selectedCameraId);
@@ -587,6 +587,25 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     return () => ro.disconnect();
   }, [draw]);
 
+  useEffect(() => {
+    (window as any).__capturePreviewCanvas = () => {
+      const source = canvasRef.current;
+      if (!source || source.width === 0 || source.height === 0) return null;
+
+      const copy = document.createElement('canvas');
+      copy.width = source.width;
+      copy.height = source.height;
+      const copyCtx = copy.getContext('2d');
+      if (!copyCtx) return null;
+      copyCtx.drawImage(source, 0, 0);
+      return copy;
+    };
+
+    return () => {
+      delete (window as any).__capturePreviewCanvas;
+    };
+  }, []);
+
   // ── PTZ Mouse Controls ──
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     isDragging.current = true;
@@ -639,7 +658,6 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   const dof = sensor ? computeDof(sensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive) : null;
   const lightLoss = adapterInfo ? (adapterInfo.lightLossStops > 0 ? ` (−${adapterInfo.lightLossStops}T)` : adapterInfo.lightLossStops < 0 ? ` (+${Math.abs(adapterInfo.lightLossStops)}T)` : '') : '';
 
-  const { selectNextCamera, selectPrevCamera } = useStore();
   const camIdx = cameras.findIndex((c) => c.id === cam.id);
 
   return (
@@ -735,6 +753,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           <DataCell label="FOV H" value={`${fov.horizontalDeg.toFixed(1)}°`} />
           <DataCell label="FOV V" value={`${fov.verticalDeg.toFixed(1)}°`} />
           <DataCell label="Image Width" value={`${fov.imageWidthAtDistance.toFixed(1)}m`} sub={`@ ${cam.focusDistance.toFixed(0)}m`} />
+          <DataCell label="Image Height" value={`${fov.imageHeightAtDistance.toFixed(1)}m`} sub={`@ ${cam.focusDistance.toFixed(0)}m`} />
           <DataCell label="DoF Near" value={dof.nearLimit < 0.01 ? '0m' : `${dof.nearLimit.toFixed(2)}m`} />
           <DataCell label="DoF Far" value={dof.farLimit === Infinity ? '∞' : `${dof.farLimit.toFixed(2)}m`} />
           <DataCell label="DoF Total" value={dof.totalDof === Infinity ? '∞' : `${dof.totalDof.toFixed(2)}m`} />
