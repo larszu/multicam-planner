@@ -13,8 +13,9 @@ export interface Camera {
   model: string;
   sensor: SensorSize;
   mount: string; // B4, EF, E, PL, MFT, M12, integrated
+  adaptedMounts?: string[]; // mounts usable via adapter (e.g. B4 via LAFZ-B1 on FZ-mount)
   resolutions: string[];
-  type: 'broadcast' | 'cinema' | 'ptz' | 'mirrorless' | 'camcorder';
+  type: 'broadcast' | 'cinema' | 'ptz' | 'mirrorless' | 'camcorder' | 'eng';
   notes?: string;
 }
 

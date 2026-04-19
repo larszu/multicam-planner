@@ -13,7 +13,7 @@ function CameraCard({ camId }: { camId: string }) {
 
   const camDef = getCameraById(cam.cameraId);
   const lensDef = getLensById(cam.lensId);
-  const compatLenses = camDef ? getCompatibleLenses(camDef.mount) : LENSES;
+  const compatLenses = camDef ? getCompatibleLenses(camDef.mount, camDef.adaptedMounts) : LENSES;
   const fov = camDef && lensDef ? computeFov(camDef.sensor, cam.focalLength, cam.focusDistance, cam.extenderActive) : null;
   const dof = camDef && lensDef ? computeDof(camDef.sensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive) : null;
 
@@ -70,7 +70,7 @@ function CameraCard({ camId }: { camId: string }) {
               onChange={(e) => {
                 const newCam = getCameraById(e.target.value);
                 if (!newCam) return;
-                const lens = getCompatibleLenses(newCam.mount)[0];
+                const lens = getCompatibleLenses(newCam.mount, newCam.adaptedMounts)[0];
                 updateCamera(cam.id, {
                   cameraId: e.target.value,
                   lensId: lens?.id ?? cam.lensId,
