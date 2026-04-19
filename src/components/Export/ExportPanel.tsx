@@ -104,7 +104,7 @@ export default function ExportPanel() {
         ctx.lineWidth = 2;
         ctx.strokeRect(x, y, tileW, tileH);
 
-        if (srcCanvas) {
+        if (srcCanvas && srcCanvas.width > 0 && srcCanvas.height > 0) {
           ctx.drawImage(srcCanvas, x, y, tileW, tileH);
         } else {
           ctx.fillStyle = '#1a1d27';
@@ -112,7 +112,7 @@ export default function ExportPanel() {
           ctx.fillStyle = '#6b7280';
           ctx.font = '14px sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText(`${label} — switch to this tab to capture`, x + tileW / 2, y + tileH / 2);
+          ctx.fillText(`${label} — not available`, x + tileW / 2, y + tileH / 2);
         }
         // Label
         ctx.fillStyle = '#000000aa';

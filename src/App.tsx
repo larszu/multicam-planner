@@ -46,22 +46,26 @@ export default function App() {
           {sidebarTab === 'cameras' ? <Sidebar /> : <TemplateSelector />}
         </div>
 
-        {/* Main content area */}
-        <div className="flex-1 overflow-auto p-4">
-          {activeTab === '2d' && (
+        {/* Main content area — all tabs always mounted, hidden via CSS so export can capture */}
+        <div className="flex-1 overflow-hidden relative">
+          <div className={`absolute inset-0 p-4 ${activeTab === '2d' ? '' : 'pointer-events-none invisible'}`}>
             <div className="flex items-start justify-center h-full overflow-auto">
               <Venue2D />
             </div>
-          )}
-          {activeTab === '3d' && (
+          </div>
+          <div className={`absolute inset-0 ${activeTab === '3d' ? '' : 'pointer-events-none invisible'}`}>
             <Suspense fallback={<LoadingFallback />}>
               <div data-venue3d className="w-full h-full">
                 <Venue3D />
               </div>
             </Suspense>
-          )}
-          {activeTab === 'preview' && <CameraPreview />}
-          {activeTab === 'calculator' && <Calculator />}
+          </div>
+          <div className={`absolute inset-0 p-4 ${activeTab === 'preview' ? '' : 'pointer-events-none invisible'}`}>
+            <CameraPreview />
+          </div>
+          <div className={`absolute inset-0 p-4 overflow-auto ${activeTab === 'calculator' ? '' : 'pointer-events-none invisible'}`}>
+            <Calculator />
+          </div>
         </div>
       </div>
       <ExportPanel />
