@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { VenueCamera, Venue, ViewTab, ReferencePerson, BackgroundPlan, Stage, ProjectFile } from '../types';
+import type { VenueCamera, Venue, ViewTab, ReferencePerson, BackgroundPlan, Stage, ProjectFile, VenueTemplate } from '../types';
 import { CAMERAS, CAMERA_COLORS } from '../data/cameras';
 import { LENSES } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
@@ -47,7 +47,12 @@ interface AppState {
   setPixelsPerMeter: (ppm: number) => void;
 
   // Templates
+  customTemplates: VenueTemplate[];
   loadTemplate: (templateId: string) => void;
+  saveAsTemplate: (name: string, category: VenueTemplate['category']) => void;
+  updateTemplate: (id: string, updates: Partial<Pick<VenueTemplate, 'name' | 'category'>>) => void;
+  overwriteTemplate: (id: string) => void;
+  deleteTemplate: (id: string) => void;
   clearAll: () => void;
 
   // Project versioning
@@ -62,6 +67,17 @@ interface AppState {
 let nextId = 1;
 function uid(prefix = 'cam'): string {
   return `${prefix}-${nextId++}`;
+}
+
+const CUSTOM_TEMPLATES_KEY = 'multicam-custom-templates';
+function loadCustomTemplates(): VenueTemplate[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_TEMPLATES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+function saveCustomTemplates(templates: VenueTemplate[]) {
+  localStorage.setItem(CUSTOM_TEMPLATES_KEY, JSON.stringify(templates));
 }
 
 let stageId = 1;
@@ -219,8 +235,11 @@ export const useStore = create<AppState>((set, get) => ({
   pixelsPerMeter: 30,
   setPixelsPerMeter: (ppm) => set({ pixelsPerMeter: ppm }),
 
+  customTemplates: loadCustomTemplates(),
+
   loadTemplate: (templateId) => {
-    const tmpl = TEMPLATES.find((t) => t.id === templateId);
+    const all = [...TEMPLATES, ...get().customTemplates];
+    const tmpl = all.find((t) => t.id === templateId);
     if (!tmpl) return;
     nextId = 1;
     const cams: VenueCamera[] = tmpl.cameras.map((c) => ({ ...c, id: uid(), useSpeedbooster: c.useSpeedbooster ?? false }));
@@ -231,6 +250,43 @@ export const useStore = create<AppState>((set, get) => ({
       persons: [],
       backgroundPlan: null,
     });
+  },
+
+  saveAsTemplate: (name, category) => {
+    const { venue, cameras, customTemplates } = get();
+    const tmpl: VenueTemplate = {
+      id: `custom-${Date.now()}`,
+      name,
+      category,
+      venue: { ...venue },
+      cameras: cameras.map(({ id, ...rest }) => rest),
+    };
+    const updated = [...customTemplates, tmpl];
+    saveCustomTemplates(updated);
+    set({ customTemplates: updated });
+  },
+
+  updateTemplate: (id, updates) => {
+    const { customTemplates } = get();
+    const updated = customTemplates.map((t) => (t.id === id ? { ...t, ...updates } : t));
+    saveCustomTemplates(updated);
+    set({ customTemplates: updated });
+  },
+
+  overwriteTemplate: (id) => {
+    const { venue, cameras, customTemplates } = get();
+    const updated = customTemplates.map((t) =>
+      t.id === id ? { ...t, venue: { ...venue }, cameras: cameras.map(({ id: _id, ...rest }) => rest) } : t,
+    );
+    saveCustomTemplates(updated);
+    set({ customTemplates: updated });
+  },
+
+  deleteTemplate: (id) => {
+    const { customTemplates } = get();
+    const updated = customTemplates.filter((t) => t.id !== id);
+    saveCustomTemplates(updated);
+    set({ customTemplates: updated });
   },
 
   clearAll: () => {
