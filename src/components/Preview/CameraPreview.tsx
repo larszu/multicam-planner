@@ -2,12 +2,15 @@ import { useStore } from '../../store/useStore';
 import { getCameraById, getEffectiveSensor, getAdapterInfo } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov, computeDof, personHeightInFrame } from '../../utils/fov';
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
+import type { StageObjectType } from '../../types';
 
 export default function CameraPreview() {
   const { cameras, selectedCameraId, venue, persons } = useStore();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cam = cameras.find((c) => c.id === selectedCameraId);
+  const isDragging = useRef(false);
+  const lastMouse = useRef({ x: 0, y: 0 });
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -96,7 +99,7 @@ export default function CameraPreview() {
     const cosP = Math.cos(panRad);
     const sinP = Math.sin(panRad);
 
-    function worldToScreen(wx: number, wy: number, wz: number): { sx: number; sy: number; dist: number; behindCamera: boolean } {
+    const worldToScreen = (wx: number, wy: number, wz: number): { sx: number; sy: number; dist: number; behindCamera: boolean } => {
       // Translate relative to camera (cam is guaranteed non-null here by the guard at top of draw())
       const c = cam!;
       const dx = wx - c.x;
@@ -158,8 +161,8 @@ export default function CameraPreview() {
       }
     });
 
-    // ── Draw persons ──
-    // Use a clip region so partially off-screen persons are cropped, not hidden
+    // ── Draw persons / stage objects ──
+    // Use a clip region so partially off-screen objects are cropped, not hidden
     ctx.save();
     ctx.beginPath();
     ctx.rect(0, 0, W, H);
@@ -167,9 +170,185 @@ export default function CameraPreview() {
 
     // Clamp a screen coordinate to a safe finite range for drawing
     const SAFE = 1e4;
-    function clampScreen(v: number, fallbackSign: number): number {
+    const clampScreen = (v: number, fallbackSign: number): number => {
       if (!isFinite(v)) return fallbackSign * SAFE;
       return Math.max(-SAFE, Math.min(SAFE, v));
+    }
+
+    const drawPerson = (cx: number, feetY: number, headY: number, dist: number, objectType?: StageObjectType, label?: string) => {
+      const pxH = Math.abs(headY - feetY);
+      if (pxH < 1) return;
+      const type = objectType ?? 'person';
+
+      if (type === 'drums') {
+        // Drum kit: wider, shorter, with cymbals
+        const kitW = pxH * 0.8;
+        const kitH = pxH * 0.6;
+        const kitY = feetY - kitH;
+        // Base drum
+        ctx.fillStyle = '#ef444466';
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.ellipse(cx, feetY - kitH * 0.3, kitW * 0.3, kitH * 0.3, 0, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        // Snare
+        ctx.fillStyle = '#fbbf2444';
+        ctx.strokeStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.ellipse(cx - kitW * 0.25, kitY + kitH * 0.5, kitW * 0.15, kitH * 0.12, 0, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        // Hi-hat
+        ctx.strokeStyle = '#d4d4d8';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(cx + kitW * 0.35, feetY); ctx.lineTo(cx + kitW * 0.35, kitY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(cx + kitW * 0.35, kitY + kitH * 0.1, kitW * 0.12, kitH * 0.04, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = '#fbbf24'; ctx.stroke();
+      } else if (type === 'keys') {
+        // Keyboard on stand
+        const kbW = pxH * 0.8;
+        const kbH = pxH * 0.12;
+        const kbY = headY + pxH * 0.35;
+        // Stand
+        ctx.strokeStyle = '#6b728099';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(cx - kbW * 0.3, kbY + kbH); ctx.lineTo(cx - kbW * 0.3, feetY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + kbW * 0.3, kbY + kbH); ctx.lineTo(cx + kbW * 0.3, feetY); ctx.stroke();
+        // Keyboard body
+        ctx.fillStyle = '#8b5cf644';
+        ctx.strokeStyle = '#8b5cf6';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        if (pxH > 10) ctx.roundRect(cx - kbW / 2, kbY, kbW, kbH, 2);
+        else ctx.rect(cx - kbW / 2, kbY, kbW, kbH);
+        ctx.fill(); ctx.stroke();
+        // White keys
+        if (pxH > 20) {
+          ctx.strokeStyle = '#c4b5fd44';
+          ctx.lineWidth = 0.5;
+          const nKeys = Math.min(24, Math.floor(kbW / 4));
+          for (let i = 0; i < nKeys; i++) {
+            const kx = cx - kbW / 2 + (i / nKeys) * kbW;
+            ctx.beginPath(); ctx.moveTo(kx, kbY); ctx.lineTo(kx, kbY + kbH); ctx.stroke();
+          }
+        }
+      } else if (type === 'mic-stand') {
+        // Mic stand: thin pole with mic head
+        ctx.strokeStyle = '#6b7280';
+        ctx.lineWidth = Math.max(1, pxH * 0.02);
+        ctx.beginPath(); ctx.moveTo(cx, feetY); ctx.lineTo(cx, headY + pxH * 0.1); ctx.stroke();
+        // Base
+        ctx.beginPath();
+        ctx.ellipse(cx, feetY, pxH * 0.08, pxH * 0.03, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = '#9ca3af'; ctx.stroke();
+        // Mic head
+        ctx.fillStyle = '#4b556366';
+        ctx.strokeStyle = '#9ca3af';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.ellipse(cx, headY + pxH * 0.05, pxH * 0.04, pxH * 0.06, 0, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+      } else {
+        // Person (or person-guitar) - realistic silhouette
+        const pxW = pxH * 0.28;
+        const headR = pxH * 0.09;
+        const neckY = headY + headR * 2.2;
+        const shoulderY = neckY + pxH * 0.03;
+        const shoulderW = pxW * 0.55;
+        const waistY = feetY - pxH * 0.42;
+        const hipW = pxW * 0.4;
+
+        const bodyColor = type === 'person-guitar' ? '#f97316' : '#22c55e';
+        const bodyFill = type === 'person-guitar' ? '#f9731644' : '#22c55e44';
+        const skinColor = '#d4a574';
+
+        // Head (skin-colored circle)
+        ctx.fillStyle = skinColor + '88';
+        ctx.strokeStyle = bodyColor;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(cx, headY + headR, headR, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+
+        // Hair
+        ctx.fillStyle = '#44403c88';
+        ctx.beginPath();
+        ctx.arc(cx, headY + headR * 0.8, headR * 0.95, Math.PI, Math.PI * 2);
+        ctx.fill();
+
+        // Neck
+        ctx.fillStyle = skinColor + '66';
+        ctx.fillRect(cx - headR * 0.3, neckY - pxH * 0.01, headR * 0.6, pxH * 0.04);
+
+        // Torso
+        ctx.fillStyle = bodyFill;
+        ctx.strokeStyle = bodyColor;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(cx - shoulderW, shoulderY);
+        ctx.lineTo(cx + shoulderW, shoulderY);
+        ctx.lineTo(cx + hipW, waistY);
+        ctx.lineTo(cx - hipW, waistY);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Arms
+        ctx.strokeStyle = bodyColor + 'aa';
+        ctx.lineWidth = Math.max(1, pxH * 0.025);
+        // Left arm
+        ctx.beginPath();
+        ctx.moveTo(cx - shoulderW, shoulderY);
+        ctx.quadraticCurveTo(cx - shoulderW - pxW * 0.15, shoulderY + pxH * 0.15, cx - shoulderW + pxW * 0.05, waistY + pxH * 0.05);
+        ctx.stroke();
+        // Right arm
+        ctx.beginPath();
+        ctx.moveTo(cx + shoulderW, shoulderY);
+        if (type === 'person-guitar') {
+          ctx.quadraticCurveTo(cx + shoulderW + pxW * 0.1, shoulderY + pxH * 0.1, cx + pxW * 0.2, waistY - pxH * 0.05);
+        } else {
+          ctx.quadraticCurveTo(cx + shoulderW + pxW * 0.15, shoulderY + pxH * 0.15, cx + shoulderW - pxW * 0.05, waistY + pxH * 0.05);
+        }
+        ctx.stroke();
+
+        // Legs
+        ctx.strokeStyle = bodyColor + '88';
+        ctx.lineWidth = Math.max(1, pxH * 0.03);
+        ctx.beginPath(); ctx.moveTo(cx - hipW * 0.5, waistY); ctx.lineTo(cx - hipW * 0.3, feetY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + hipW * 0.5, waistY); ctx.lineTo(cx + hipW * 0.3, feetY); ctx.stroke();
+
+        // Guitar body (for guitarist)
+        if (type === 'person-guitar') {
+          const gx = cx + pxW * 0.15;
+          const gy = waistY - pxH * 0.08;
+          const gw = pxH * 0.12;
+          ctx.fillStyle = '#92400e66';
+          ctx.strokeStyle = '#b45309';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.ellipse(gx, gy, gw, gw * 0.7, 0.2, 0, Math.PI * 2);
+          ctx.fill(); ctx.stroke();
+          // Neck of guitar
+          ctx.strokeStyle = '#92400e';
+          ctx.lineWidth = Math.max(1, pxH * 0.015);
+          ctx.beginPath();
+          ctx.moveTo(gx - gw * 0.3, gy - gw * 0.5);
+          ctx.lineTo(cx + shoulderW * 0.3, shoulderY + pxH * 0.03);
+          ctx.stroke();
+        }
+      }
+
+      // Label
+      if (label && feetY > 0 && feetY < H - 5 && cx > -50 && cx < W + 50 && dist > 0) {
+        const fontSize = Math.max(7, Math.min(11, 120 / dist));
+        const labelColor = type === 'drums' ? '#ef4444' : type === 'keys' ? '#8b5cf6' : type === 'person-guitar' ? '#f97316' : type === 'mic-stand' ? '#9ca3af' : '#22c55e';
+        ctx.fillStyle = labelColor;
+        ctx.font = `${fontSize}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.fillText(label, cx, feetY + fontSize + 2);
+      }
     }
 
     persons.forEach((person) => {
@@ -183,47 +362,16 @@ export default function CameraPreview() {
       const headSy = clampScreen(head.sy, -1);
 
       const pxH = Math.abs(headSy - feetSy);
-      if (pxH < 1) return; // too small to draw
-      const pxW = pxH * 0.3;
-      const headR = pxW * 0.4;
+      if (pxH < 1) return;
 
-      // Skip if entirely off-screen (use generous bounds since clip handles the rest)
-      if (feetSx + pxW / 2 + headR < 0) return;
-      if (feetSx - pxW / 2 - headR > W) return;
-      if (feetSy < 0 && headSy < 0) return; // entirely above canvas
-      if (feetSy > H && headSy > H) return; // entirely below canvas
+      // Skip if entirely off-screen
+      const objW = pxH * 0.5;
+      if (feetSx + objW < 0) return;
+      if (feetSx - objW > W) return;
+      if (feetSy < 0 && headSy < 0) return;
+      if (feetSy > H && headSy > H) return;
 
-      // Body
-      ctx.fillStyle = '#22c55e44';
-      ctx.strokeStyle = '#22c55e';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      const bodyX = feetSx - pxW / 2;
-      const bodyY = headSy;
-      const bodyW = pxW;
-      const bodyH = pxH * 0.75;
-      if (pxH > H * 3) {
-        ctx.rect(bodyX, bodyY, bodyW, bodyH);
-      } else {
-        ctx.roundRect(bodyX, bodyY, bodyW, bodyH, 3);
-      }
-      ctx.fill();
-      ctx.stroke();
-
-      // Head
-      ctx.beginPath();
-      ctx.arc(feetSx, headSy - headR * 0.3, headR, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      // Label (only if feet are on screen)
-      if (feetSy > 0 && feetSy < H - 5 && feetSx > -50 && feetSx < W + 50) {
-        const fontSize = Math.max(7, Math.min(11, 120 / feet.dist));
-        ctx.fillStyle = '#22c55e';
-        ctx.font = `${fontSize}px monospace`;
-        ctx.textAlign = 'center';
-        ctx.fillText(`${person.label} (${person.height.toFixed(1)}m)`, feetSx, feetSy + fontSize + 2);
-      }
+      drawPerson(feetSx, feetSy, headSy, feet.dist, person.objectType, `${person.label} (${person.height.toFixed(1)}m)`);
     });
 
     ctx.restore();
@@ -408,6 +556,43 @@ export default function CameraPreview() {
     draw();
   }, [draw]);
 
+  // ── PTZ Mouse Controls ──
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    isDragging.current = true;
+    lastMouse.current = { x: e.clientX, y: e.clientY };
+    (e.target as HTMLElement).style.cursor = 'grabbing';
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging.current || !cam) return;
+    const dx = e.clientX - lastMouse.current.x;
+    const dy = e.clientY - lastMouse.current.y;
+    lastMouse.current = { x: e.clientX, y: e.clientY };
+
+    // Pan: horizontal drag, scale by sensitivity
+    const panSens = 0.3;
+    const tiltSens = 0.2;
+    const newPan = Math.max(-180, Math.min(180, cam.pan - dx * panSens));
+    const newTilt = Math.max(-90, Math.min(45, cam.tilt + dy * tiltSens));
+    useStore.getState().updateCamera(cam.id, { pan: newPan, tilt: newTilt });
+  }, [cam]);
+
+  const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    isDragging.current = false;
+    (e.target as HTMLElement).style.cursor = 'grab';
+  }, []);
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (!cam) return;
+    e.preventDefault();
+    const lensDef = getLensById(cam.lensId) ?? useStore.getState().customLenses.find((l: any) => l.id === cam.lensId);
+    if (!lensDef) return;
+    const range = lensDef.focalLengthMax - lensDef.focalLengthMin;
+    const step = Math.max(0.1, range * 0.02);
+    const newFL = Math.max(lensDef.focalLengthMin, Math.min(lensDef.focalLengthMax, cam.focalLength + (e.deltaY > 0 ? step : -step)));
+    useStore.getState().updateCamera(cam.id, { focalLength: newFL });
+  }, [cam]);
+
   if (!cam) {
     return (
       <div className="flex items-center justify-center h-full text-gray-500">
@@ -423,10 +608,19 @@ export default function CameraPreview() {
         width={640}
         height={360}
         className="w-full rounded-lg"
-        style={{ aspectRatio: '16/9' }}
+        style={{ aspectRatio: '16/9', cursor: 'grab' }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
       />
+      {/* PTZ hint */}
+      <div className="flex items-center gap-4 mt-1 px-2">
+        <span className="text-[10px] text-gray-500">Drag: Pan/Tilt | Scroll: Zoom</span>
+      </div>
       {/* Zoom slider */}
-      <div className="flex items-center gap-3 mt-3 px-2">
+      <div className="flex items-center gap-3 mt-1 px-2">
         <span className="text-xs text-gray-400 w-20">
           {cam.focalLength.toFixed(0)}mm
         </span>

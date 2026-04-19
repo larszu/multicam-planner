@@ -38,8 +38,12 @@ export interface Lens {
   mount: string;
   extenderFactors?: number[];
   type: 'zoom' | 'prime' | 'integrated';
+  isCustom?: boolean;
   notes?: string;
 }
+
+// ── Object type presets ──
+export type StageObjectType = 'person' | 'person-guitar' | 'drums' | 'keys' | 'mic-stand' | 'custom';
 
 // ── Reference person / object in venue ──
 export interface ReferencePerson {
@@ -47,7 +51,9 @@ export interface ReferencePerson {
   x: number; // metres from left
   y: number; // metres from top
   height: number; // metres
+  width: number; // metres (footprint width)
   label: string;
+  objectType: StageObjectType;
 }
 
 // ── Background floor plan ──

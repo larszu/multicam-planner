@@ -5,8 +5,8 @@ import { getCameraById, getEffectiveSensor } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov } from '../../utils/fov';
 import * as THREE from 'three';
-import { useMemo, useRef, useEffect, useState } from 'react';
-import type { BackgroundPlan } from '../../types';
+import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
+import type { BackgroundPlan, StageObjectType } from '../../types';
 
 /* ── Floor grid with visible metre labels ── */
 function FloorLabels({ widthM, heightM }: { widthM: number; heightM: number }) {
@@ -88,6 +88,18 @@ function FPSControls() {
     pitch.current = Math.asin(Math.max(-1, Math.min(1, dir.y)));
   }, [camera]);
 
+  // Listen for reset event
+  useEffect(() => {
+    const handleReset = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      camera.position.set(detail.x, detail.y, detail.z);
+      yaw.current = 0;
+      pitch.current = -0.3;
+    };
+    window.addEventListener('multicam-3d-reset', handleReset);
+    return () => window.removeEventListener('multicam-3d-reset', handleReset);
+  }, [camera]);
+
   useEffect(() => {
     const canvas = gl.domElement;
 
@@ -163,8 +175,8 @@ function FPSControls() {
 
     if (keys.current.has('w')) move.add(forward);
     if (keys.current.has('s')) move.sub(forward);
-    if (keys.current.has('d')) move.add(right);
-    if (keys.current.has('a')) move.sub(right);
+    if (keys.current.has('a')) move.add(right);
+    if (keys.current.has('d')) move.sub(right);
     if (keys.current.has(' ')) move.y += 1;
     if (keys.current.has('shift')) move.y -= 1;
 
@@ -304,21 +316,73 @@ function FloorPlanOverlay({ plan }: { plan: BackgroundPlan }) {
   );
 }
 
-function PersonMesh({ x, z, height, label }: { x: number; z: number; height: number; label: string }) {
+function PersonMesh({ x, z, height, label, objectType }: { x: number; z: number; height: number; label: string; objectType?: StageObjectType }) {
+  const type = objectType ?? 'person';
+  const color = type === 'drums' ? '#ef4444' : type === 'keys' ? '#8b5cf6' : type === 'person-guitar' ? '#f97316' : type === 'mic-stand' ? '#6b7280' : '#f59e0b';
+
   return (
     <group position={[x, height / 2, z]}>
-      {/* Body */}
-      <mesh position={[0, -height * 0.1, 0]}>
-        <cylinderGeometry args={[0.15, 0.15, height * 0.65, 8]} />
-        <meshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.2} opacity={0.6} transparent />
-      </mesh>
-      {/* Head */}
-      <mesh position={[0, height * 0.3, 0]}>
-        <sphereGeometry args={[0.15, 8, 8]} />
-        <meshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.2} opacity={0.6} transparent />
-      </mesh>
+      {type === 'drums' ? (
+        <>
+          {/* Drum kit - wider base, shorter */}
+          <mesh position={[0, -height * 0.15, 0]}>
+            <cylinderGeometry args={[0.5, 0.6, height * 0.5, 12]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.2} opacity={0.6} transparent />
+          </mesh>
+          <mesh position={[-0.3, height * 0.1, 0]}>
+            <cylinderGeometry args={[0.2, 0.2, 0.05, 12]} />
+            <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={0.3} opacity={0.7} transparent />
+          </mesh>
+          <mesh position={[0.3, height * 0.15, 0]}>
+            <cylinderGeometry args={[0.15, 0.15, 0.05, 12]} />
+            <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={0.3} opacity={0.7} transparent />
+          </mesh>
+        </>
+      ) : type === 'keys' ? (
+        <>
+          {/* Keyboard on stand */}
+          <mesh position={[0, -height * 0.1, 0]}>
+            <boxGeometry args={[1.2, height * 0.15, 0.4]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.2} opacity={0.6} transparent />
+          </mesh>
+          {/* Stand legs */}
+          <mesh position={[-0.4, -height * 0.35, 0]}>
+            <cylinderGeometry args={[0.03, 0.03, height * 0.5, 6]} />
+            <meshStandardMaterial color="#9ca3af" opacity={0.5} transparent />
+          </mesh>
+          <mesh position={[0.4, -height * 0.35, 0]}>
+            <cylinderGeometry args={[0.03, 0.03, height * 0.5, 6]} />
+            <meshStandardMaterial color="#9ca3af" opacity={0.5} transparent />
+          </mesh>
+        </>
+      ) : (
+        <>
+          {/* Body */}
+          <mesh position={[0, -height * 0.1, 0]}>
+            <cylinderGeometry args={[0.15, 0.15, height * 0.65, 8]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.2} opacity={0.6} transparent />
+          </mesh>
+          {/* Head */}
+          <mesh position={[0, height * 0.3, 0]}>
+            <sphereGeometry args={[0.15, 8, 8]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.2} opacity={0.6} transparent />
+          </mesh>
+          {type === 'person-guitar' && (
+            <mesh position={[0.2, -height * 0.05, 0.15]} rotation={[0, 0, 0.3]}>
+              <boxGeometry args={[0.12, height * 0.4, 0.06]} />
+              <meshStandardMaterial color="#92400e" emissive="#92400e" emissiveIntensity={0.15} opacity={0.7} transparent />
+            </mesh>
+          )}
+          {type === 'mic-stand' && (
+            <mesh position={[0, height * 0.15, 0]}>
+              <cylinderGeometry args={[0.015, 0.015, height * 0.8, 6]} />
+              <meshStandardMaterial color="#9ca3af" opacity={0.7} transparent />
+            </mesh>
+          )}
+        </>
+      )}
       {/* Label */}
-      <Text position={[0, height * 0.5, 0]} fontSize={0.22} color="#fbbf24" anchorX="center"
+      <Text position={[0, height * 0.5, 0]} fontSize={0.22} color={color} anchorX="center"
         outlineWidth={0.015} outlineColor="#000000">
         {label} ({height}m)
       </Text>
@@ -328,6 +392,12 @@ function PersonMesh({ x, z, height, label }: { x: number; z: number; height: num
 
 export default function Venue3D() {
   const { venue, cameras, persons, backgroundPlan } = useStore();
+
+  const handleReset = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('multicam-3d-reset', {
+      detail: { x: venue.widthM / 2, y: 15, z: venue.heightM + 10 },
+    }));
+  }, [venue.widthM, venue.heightM]);
 
   return (
     <div style={{ width: '100%', height: '100%', minHeight: 500, position: 'relative' }}>
@@ -346,6 +416,21 @@ export default function Venue3D() {
         <b style={{ color: '#60a5fa' }}>Scroll</b> Dolly &nbsp;|&nbsp;
         <b style={{ color: '#60a5fa' }}>Right-click</b> Pointer lock
       </div>
+
+      {/* Reset View button */}
+      <button
+        onClick={handleReset}
+        style={{
+          position: 'absolute', top: 8, right: 8, zIndex: 10,
+          background: '#1e293bcc', border: '1px solid #334155', color: '#94a3b8',
+          padding: '6px 14px', borderRadius: 6, fontSize: 12, cursor: 'pointer',
+          backdropFilter: 'blur(4px)',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#60a5fa'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = '#334155'; }}
+      >
+        ↻ Reset View
+      </button>
 
       <Canvas shadows gl={{ preserveDrawingBuffer: true }}>
         <PerspectiveCamera makeDefault position={[venue.widthM / 2, 15, venue.heightM + 10]} fov={50} />
@@ -396,7 +481,7 @@ export default function Venue3D() {
 
         {/* Reference persons from store */}
         {persons.map((p) => (
-          <PersonMesh key={p.id} x={p.x} z={p.y} height={p.height} label={p.label} />
+          <PersonMesh key={p.id} x={p.x} z={p.y} height={p.height} label={p.label} objectType={p.objectType} />
         ))}
       </Canvas>
     </div>

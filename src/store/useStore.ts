@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { VenueCamera, Venue, ViewTab, ReferencePerson, BackgroundPlan, Stage, ProjectFile, VenueTemplate } from '../types';
+import type { VenueCamera, Venue, ViewTab, ReferencePerson, BackgroundPlan, Stage, ProjectFile, VenueTemplate, StageObjectType, Lens } from '../types';
 import { CAMERAS, CAMERA_COLORS } from '../data/cameras';
 import { LENSES } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
@@ -20,11 +20,17 @@ interface AppState {
   backgroundPlan: BackgroundPlan | null;
   setBackgroundPlan: (plan: BackgroundPlan | null) => void;
 
-  // Reference persons
+  // Reference persons / stage objects
   persons: ReferencePerson[];
   addPerson: (x?: number, y?: number) => void;
+  addStageObject: (objectType: StageObjectType, x?: number, y?: number) => void;
   removePerson: (id: string) => void;
   updatePerson: (id: string, updates: Partial<ReferencePerson>) => void;
+
+  // Custom lenses
+  customLenses: Lens[];
+  addCustomLens: (lens: Omit<Lens, 'id' | 'isCustom'>) => void;
+  removeCustomLens: (id: string) => void;
 
   // Cameras placed in venue
   cameras: VenueCamera[];
@@ -80,6 +86,17 @@ function saveCustomTemplates(templates: VenueTemplate[]) {
   localStorage.setItem(CUSTOM_TEMPLATES_KEY, JSON.stringify(templates));
 }
 
+const CUSTOM_LENSES_KEY = 'multicam-custom-lenses';
+function loadCustomLenses(): Lens[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_LENSES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+function saveCustomLensesStorage(lenses: Lens[]) {
+  localStorage.setItem(CUSTOM_LENSES_KEY, JSON.stringify(lenses));
+}
+
 let stageId = 1;
 function stageUid(): string {
   return `stage-${stageId++}`;
@@ -89,6 +106,16 @@ let personId = 1;
 function personUid(): string {
   return `person-${personId++}`;
 }
+
+// Object type presets: { height, width, defaultLabel }
+const OBJECT_PRESETS: Record<string, { height: number; width: number; label: string }> = {
+  'person': { height: 1.8, width: 0.5, label: 'Person' },
+  'person-guitar': { height: 1.8, width: 0.8, label: 'Guitarist' },
+  'drums': { height: 1.2, width: 1.5, label: 'Drums' },
+  'keys': { height: 1.0, width: 1.5, label: 'Keys' },
+  'mic-stand': { height: 1.6, width: 0.3, label: 'Mic Stand' },
+  'custom': { height: 1.0, width: 0.5, label: 'Object' },
+};
 
 const defaultVenue: Venue = {
   name: 'New Venue',
@@ -145,9 +172,27 @@ export const useStore = create<AppState>((set, get) => ({
       x: x ?? venue.widthM / 2,
       y: y ?? venue.heightM / 2,
       height: 1.8,
+      width: 0.5,
       label: `Person ${persons.length + 1}`,
+      objectType: 'person',
     };
     set((s) => ({ persons: [...s.persons, newPerson], projectVersion: s.projectVersion + 1 }));
+  },
+
+  addStageObject: (objectType, x, y) => {
+    const { venue, persons } = get();
+    const preset = OBJECT_PRESETS[objectType] ?? OBJECT_PRESETS['custom'];
+    const count = persons.filter((p) => p.objectType === objectType).length;
+    const newObj: ReferencePerson = {
+      id: personUid(),
+      x: x ?? venue.widthM / 2,
+      y: y ?? venue.heightM / 2,
+      height: preset.height,
+      width: preset.width,
+      label: `${preset.label} ${count + 1}`,
+      objectType,
+    };
+    set((s) => ({ persons: [...s.persons, newObj], projectVersion: s.projectVersion + 1 }));
   },
 
   removePerson: (id) => set((s) => ({ persons: s.persons.filter((p) => p.id !== id), projectVersion: s.projectVersion + 1 })),
@@ -158,6 +203,27 @@ export const useStore = create<AppState>((set, get) => ({
       projectVersion: s.projectVersion + 1,
     })),
 
+  // ── Custom Lenses ──
+  customLenses: loadCustomLenses(),
+
+  addCustomLens: (lens) => {
+    const id = `custom-lens-${Date.now()}`;
+    const full: Lens = { ...lens, id, isCustom: true };
+    set((s) => {
+      const updated = [...s.customLenses, full];
+      saveCustomLensesStorage(updated);
+      return { customLenses: updated, projectVersion: s.projectVersion + 1 };
+    });
+  },
+
+  removeCustomLens: (id) => {
+    set((s) => {
+      const updated = s.customLenses.filter((l) => l.id !== id);
+      saveCustomLensesStorage(updated);
+      return { customLenses: updated, projectVersion: s.projectVersion + 1 };
+    });
+  },
+
   // ── Cameras ──
   cameras: [],
   selectedCameraId: null,
@@ -166,10 +232,11 @@ export const useStore = create<AppState>((set, get) => ({
   addCamera: (cameraId, lensId) => {
     const cam = cameraId ? CAMERAS.find((c) => c.id === cameraId) : CAMERAS[0];
     const camDef = cam ?? CAMERAS[0];
+    const allLenses = [...LENSES, ...get().customLenses];
     const lens = lensId
-      ? LENSES.find((l) => l.id === lensId)
-      : LENSES.find((l) => l.mount === camDef.mount) ?? LENSES[0];
-    const lensDef = lens ?? LENSES[0];
+      ? allLenses.find((l) => l.id === lensId)
+      : allLenses.find((l) => l.mount === camDef.mount) ?? allLenses[0];
+    const lensDef = lens ?? allLenses[0];
     const { venue, cameras } = get();
     const idx = cameras.length;
     const newCam: VenueCamera = {
@@ -351,7 +418,11 @@ export const useStore = create<AppState>((set, get) => ({
     set({
       venue: project.venue,
       cameras,
-      persons: project.persons,
+      persons: project.persons.map((p) => ({
+        ...p,
+        objectType: p.objectType ?? 'person',
+        width: p.width ?? 0.5,
+      })),
       backgroundPlan: bgPlan,
       selectedCameraId: cameras[0]?.id ?? null,
       projectVersion: project.projectVersion,
