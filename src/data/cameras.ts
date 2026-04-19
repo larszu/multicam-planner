@@ -39,6 +39,7 @@ export const CAMERAS: Camera[] = [
   // ── Sony PTZ ──
   { id: 'sony-brc-x400', manufacturer: 'Sony', model: 'BRC-X400', sensor: SENSORS.HALF_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
   { id: 'sony-srg-x120', manufacturer: 'Sony', model: 'SRG-X120', sensor: SENSORS.HALF_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
+  { id: 'sony-brc-h800', manufacturer: 'Sony', model: 'BRC-H800', sensor: SENSORS.HALF_INCH, mount: 'integrated', resolutions: ['HD'], type: 'ptz', notes: '1/2.5" Exmor R CMOS, 12x optical zoom PTZ' },
 
   // ── Canon Broadcast / Cinema ──
   { id: 'canon-c500ii', manufacturer: 'Canon', model: 'C500 Mark II', sensor: SENSORS.FF, mount: 'EF', resolutions: ['5.9K', '4K', 'HD'], type: 'cinema' },
@@ -63,6 +64,7 @@ export const CAMERAS: Camera[] = [
   { id: 'bmd-pocket4k', manufacturer: 'Blackmagic', model: 'Pocket Cinema 4K', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'cinema' },
   { id: 'bmd-studio4kplus', manufacturer: 'Blackmagic', model: 'Studio Camera 4K Plus', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'broadcast' },
   { id: 'bmd-studio4kpro', manufacturer: 'Blackmagic', model: 'Studio Camera 4K Pro G2', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'broadcast' },
+  { id: 'bmd-micro-studio-4k-g2', manufacturer: 'Blackmagic', model: 'Micro Studio Camera 4K G2', sensor: SENSORS.MFT, mount: 'MFT', adaptedMounts: ['EF'], resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'Micro form factor, MFT native, EF via adapter or EF Speedbooster' },
 
   // ── Grass Valley ──
   { id: 'gv-ldx-100', manufacturer: 'Grass Valley', model: 'LDX 100', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
@@ -95,8 +97,9 @@ export function getCamerasByType(type: Camera['type']): Camera[] {
  * Determine if an adapter is needed and its effects.
  * B4 lenses on non-B4 cameras → relay optics, crop to 2/3", ~1 stop loss.
  * PL/EF → FZ/E are simple spacers with no optical penalty.
+ * EF → MFT with speedbooster: 0.71x focal reducer, +1 stop gain.
  */
-export function getAdapterInfo(camera: Camera, lens: Lens): AdapterInfo | null {
+export function getAdapterInfo(camera: Camera, lens: Lens, useSpeedbooster = false): AdapterInfo | null {
   if (lens.mount === camera.mount) return null; // native
   if (lens.mount === 'integrated') return null;
 
@@ -121,7 +124,17 @@ export function getAdapterInfo(camera: Camera, lens: Lens): AdapterInfo | null {
   if (lens.mount === 'EF') {
     if (camera.mount === 'E') return { name: 'EF → E-mount Adapter', lightLossStops: 0 };
     if (camera.mount === 'RF') return { name: 'Canon EF → RF Adapter', lightLossStops: 0 };
-    if (camera.mount === 'MFT') return { name: 'EF → MFT Adapter', lightLossStops: 0 };
+    if (camera.mount === 'MFT') {
+      if (useSpeedbooster) {
+        // Metabones Speed Booster Ultra 0.71x: widens FOV by 0.71x, gains ~1 stop
+        return {
+          name: 'Metabones EF→MFT Speed Booster 0.71×',
+          lightLossStops: -1.0, // gain
+          cropSensor: { name: 'MFT + Speed Booster (S35 equiv)', widthMm: 17.3 / 0.71, heightMm: 13 / 0.71, cropFactor: 2.0 * 0.71 },
+        };
+      }
+      return { name: 'EF → MFT Adapter', lightLossStops: 0 };
+    }
     return null;
   }
 
@@ -137,9 +150,10 @@ export function getAdapterInfo(camera: Camera, lens: Lens): AdapterInfo | null {
 /**
  * Get the effective sensor size, accounting for adapter crop.
  * B4 lenses always project 2/3" image circle regardless of camera sensor.
+ * Speedbooster widens the effective sensor area.
  */
-export function getEffectiveSensor(camera: Camera, lens: Lens): SensorSize {
-  const adapter = getAdapterInfo(camera, lens);
+export function getEffectiveSensor(camera: Camera, lens: Lens, useSpeedbooster = false): SensorSize {
+  const adapter = getAdapterInfo(camera, lens, useSpeedbooster);
   if (adapter?.cropSensor) return adapter.cropSensor;
   return camera.sensor;
 }
@@ -147,10 +161,11 @@ export function getEffectiveSensor(camera: Camera, lens: Lens): SensorSize {
 /**
  * Get effective aperture accounting for adapter light loss.
  */
-export function getEffectiveAperture(camera: Camera, lens: Lens, aperture: number): number {
-  const adapter = getAdapterInfo(camera, lens);
+export function getEffectiveAperture(camera: Camera, lens: Lens, aperture: number, useSpeedbooster = false): number {
+  const adapter = getAdapterInfo(camera, lens, useSpeedbooster);
   if (!adapter || adapter.lightLossStops === 0) return aperture;
   // Each stop doubles the area, so T-number increases by 2^(stops/2)
+  // Negative lightLossStops = gain (speedbooster)
   return aperture * Math.pow(2, adapter.lightLossStops / 2);
 }
 

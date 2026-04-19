@@ -29,8 +29,8 @@ function CameraCard({ camId }: { camId: string }) {
   const grouped = groupByMount(compatLenses);
 
   // Adapter & effective sensor
-  const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef) : null;
-  const effectiveSensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef) : camDef?.sensor;
+  const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, cam.useSpeedbooster) : null;
+  const effectiveSensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster) : camDef?.sensor;
   const fov = effectiveSensor && lensDef ? computeFov(effectiveSensor, cam.focalLength, cam.focusDistance, cam.extenderActive) : null;
   const dof = effectiveSensor && lensDef ? computeDof(effectiveSensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive) : null;
 
@@ -77,8 +77,20 @@ function CameraCard({ camId }: { camId: string }) {
       {/* Adapter badge */}
       {adapterInfo && (
         <div className="text-xs mt-0.5 text-bc-yellow">
-          ⚡ {adapterInfo.name}{adapterInfo.lightLossStops > 0 ? ` (−${adapterInfo.lightLossStops}T)` : ''}{adapterInfo.cropSensor ? ` → ${adapterInfo.cropSensor.name}` : ''}
+          ⚡ {adapterInfo.name}{adapterInfo.lightLossStops > 0 ? ` (−${adapterInfo.lightLossStops}T)` : ''}{adapterInfo.lightLossStops < 0 ? ` (+${Math.abs(adapterInfo.lightLossStops)}T gain)` : ''}{adapterInfo.cropSensor ? ` → ${adapterInfo.cropSensor.name}` : ''}
         </div>
+      )}
+      {/* Speed Booster toggle — only for EF lens on MFT camera */}
+      {camDef?.mount === 'MFT' && lensDef?.mount === 'EF' && (
+        <label className="flex items-center gap-1.5 text-xs mt-1 text-gray-300 cursor-pointer" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={cam.useSpeedbooster}
+            onChange={(e) => updateCamera(cam.id, { useSpeedbooster: e.target.checked })}
+            className="accent-bc-accent"
+          />
+          Speed Booster 0.71× (focal reducer, +1T gain)
+        </label>
       )}
 
       {/* Expanded controls */}
@@ -148,7 +160,7 @@ function CameraCard({ camId }: { camId: string }) {
 
           {/* Aperture */}
           <label className="block">
-            <span className="text-gray-400">Aperture: f/{cam.aperture.toFixed(1)}{adapterInfo && adapterInfo.lightLossStops > 0 ? ` (eff. T${(cam.aperture * Math.pow(2, adapterInfo.lightLossStops / 2)).toFixed(1)})` : ''}</span>
+            <span className="text-gray-400">Aperture: f/{cam.aperture.toFixed(1)}{adapterInfo && adapterInfo.lightLossStops !== 0 ? ` (eff. T${(cam.aperture * Math.pow(2, adapterInfo.lightLossStops / 2)).toFixed(1)})` : ''}</span>
             <input
               type="range"
               className="w-full accent-bc-accent"

@@ -77,6 +77,7 @@ export interface VenueCamera {
   focusDistance: number; // metres
   color: string;
   extenderActive: number; // 1 = none, 1.5, 2
+  useSpeedbooster?: boolean; // EF Speedbooster on MFT cameras
 }
 
 // ── Stage / target zone ──

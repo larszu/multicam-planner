@@ -19,8 +19,8 @@ export default function CameraPreview() {
     const lensDef = getLensById(cam.lensId);
     if (!camDef || !lensDef) return;
 
-    const sensor = getEffectiveSensor(camDef, lensDef);
-    const adapterInfo = getAdapterInfo(camDef, lensDef);
+    const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster);
+    const adapterInfo = getAdapterInfo(camDef, lensDef, cam.useSpeedbooster);
 
     const W = canvas.width;
     const H = canvas.height;

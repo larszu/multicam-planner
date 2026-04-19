@@ -159,6 +159,7 @@ export const useStore = create<AppState>((set, get) => ({
       focusDistance: venue.heightM * 0.5,
       color: CAMERA_COLORS[idx % CAMERA_COLORS.length],
       extenderActive: 1,
+      useSpeedbooster: false,
     };
     set({ cameras: [...cameras, newCam], selectedCameraId: newCam.id });
   },
@@ -207,7 +208,7 @@ export const useStore = create<AppState>((set, get) => ({
     const tmpl = TEMPLATES.find((t) => t.id === templateId);
     if (!tmpl) return;
     nextId = 1;
-    const cams: VenueCamera[] = tmpl.cameras.map((c) => ({ ...c, id: uid() }));
+    const cams: VenueCamera[] = tmpl.cameras.map((c) => ({ ...c, id: uid(), useSpeedbooster: c.useSpeedbooster ?? false }));
     set({
       venue: { ...tmpl.venue },
       cameras: cams,

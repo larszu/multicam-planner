@@ -152,7 +152,7 @@ export default function Venue2D() {
           const lensDef = getLensById(cam.lensId);
           if (!camDef || !lensDef) return null;
 
-          const sensor = getEffectiveSensor(camDef, lensDef);
+          const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster);
           const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
           const range = cam.focusDistance * ppm;
           const isSelected = cam.id === selectedCameraId;

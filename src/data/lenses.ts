@@ -101,9 +101,88 @@ export const LENSES: Lens[] = [
   { id: 'sony-70-200gm', manufacturer: 'Sony', model: 'FE 70-200mm f/2.8 GM II', focalLengthMin: 70, focalLengthMax: 200, maxApertureWide: 2.8, mount: 'E', type: 'zoom' },
   { id: 'sony-200-600', manufacturer: 'Sony', model: 'FE 200-600mm f/5.6-6.3 G', focalLengthMin: 200, focalLengthMax: 600, maxApertureWide: 5.6, maxApertureTele: 6.3, mount: 'E', type: 'zoom' },
 
+  // ── Sony E-mount – Standard Photo/Video Zooms ──
+  { id: 'sony-fe-pz-16-35-f4g', manufacturer: 'Sony', model: 'FE PZ 16-35mm f/4 G', focalLengthMin: 16, focalLengthMax: 35, maxApertureWide: 4, mount: 'E', type: 'zoom', notes: 'Power zoom, compact' },
+  { id: 'sony-fe-12-24gm', manufacturer: 'Sony', model: 'FE 12-24mm f/2.8 GM', focalLengthMin: 12, focalLengthMax: 24, maxApertureWide: 2.8, mount: 'E', type: 'zoom' },
+  { id: 'sony-fe-24-105g', manufacturer: 'Sony', model: 'FE 24-105mm f/4 G OSS', focalLengthMin: 24, focalLengthMax: 105, maxApertureWide: 4, mount: 'E', type: 'zoom' },
+  { id: 'sony-fe-100-400gm', manufacturer: 'Sony', model: 'FE 100-400mm f/4.5-5.6 GM', focalLengthMin: 100, focalLengthMax: 400, maxApertureWide: 4.5, maxApertureTele: 5.6, mount: 'E', type: 'zoom' },
+  { id: 'sony-fe-pz-10-20g', manufacturer: 'Sony', model: 'FE PZ 10-20mm f/4 G', focalLengthMin: 10, focalLengthMax: 20, maxApertureWide: 4, mount: 'E', type: 'zoom', notes: 'Ultra-wide power zoom' },
+
+  // ── Sony E-mount – Primes ──
+  { id: 'sony-fe-14gm', manufacturer: 'Sony', model: 'FE 14mm f/1.8 GM', focalLengthMin: 14, focalLengthMax: 14, maxApertureWide: 1.8, mount: 'E', type: 'prime' },
+  { id: 'sony-fe-20g', manufacturer: 'Sony', model: 'FE 20mm f/1.8 G', focalLengthMin: 20, focalLengthMax: 20, maxApertureWide: 1.8, mount: 'E', type: 'prime' },
+  { id: 'sony-fe-24gm', manufacturer: 'Sony', model: 'FE 24mm f/1.4 GM', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 1.4, mount: 'E', type: 'prime' },
+  { id: 'sony-fe-35gm', manufacturer: 'Sony', model: 'FE 35mm f/1.4 GM', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.4, mount: 'E', type: 'prime' },
+  { id: 'sony-fe-50gm', manufacturer: 'Sony', model: 'FE 50mm f/1.2 GM', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.2, mount: 'E', type: 'prime' },
+  { id: 'sony-fe-85gm', manufacturer: 'Sony', model: 'FE 85mm f/1.4 GM', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.4, mount: 'E', type: 'prime' },
+  { id: 'sony-fe-135gm', manufacturer: 'Sony', model: 'FE 135mm f/1.8 GM', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 1.8, mount: 'E', type: 'prime' },
+
+  // ── Sigma E-mount (Art / Contemporary) ──
+  { id: 'sigma-16-28-e', manufacturer: 'Sigma', model: '16-28mm f/2.8 DG DN C', focalLengthMin: 16, focalLengthMax: 28, maxApertureWide: 2.8, mount: 'E', type: 'zoom', notes: 'Contemporary' },
+  { id: 'sigma-18-50-e', manufacturer: 'Sigma', model: '18-50mm f/2.8 DC DN C', focalLengthMin: 18, focalLengthMax: 50, maxApertureWide: 2.8, mount: 'E', type: 'zoom', notes: 'Contemporary, APS-C' },
+  { id: 'sigma-24-70-e', manufacturer: 'Sigma', model: '24-70mm f/2.8 DG DN Art', focalLengthMin: 24, focalLengthMax: 70, maxApertureWide: 2.8, mount: 'E', type: 'zoom' },
+  { id: 'sigma-28-70-e', manufacturer: 'Sigma', model: '28-70mm f/2.8 DG DN C', focalLengthMin: 28, focalLengthMax: 70, maxApertureWide: 2.8, mount: 'E', type: 'zoom', notes: 'Contemporary' },
+  { id: 'sigma-70-200-e', manufacturer: 'Sigma', model: '70-200mm f/2.8 DG DN OS Sport', focalLengthMin: 70, focalLengthMax: 200, maxApertureWide: 2.8, mount: 'E', type: 'zoom' },
+  { id: 'sigma-100-400-e', manufacturer: 'Sigma', model: '100-400mm f/5-6.3 DG DN OS C', focalLengthMin: 100, focalLengthMax: 400, maxApertureWide: 5, maxApertureTele: 6.3, mount: 'E', type: 'zoom' },
+  { id: 'sigma-14-e', manufacturer: 'Sigma', model: '14mm f/1.4 DG DN Art', focalLengthMin: 14, focalLengthMax: 14, maxApertureWide: 1.4, mount: 'E', type: 'prime' },
+  { id: 'sigma-20-e', manufacturer: 'Sigma', model: '20mm f/1.4 DG DN Art', focalLengthMin: 20, focalLengthMax: 20, maxApertureWide: 1.4, mount: 'E', type: 'prime' },
+  { id: 'sigma-24-e', manufacturer: 'Sigma', model: '24mm f/1.4 DG DN Art', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 1.4, mount: 'E', type: 'prime' },
+  { id: 'sigma-35-e', manufacturer: 'Sigma', model: '35mm f/1.4 DG DN Art', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.4, mount: 'E', type: 'prime' },
+  { id: 'sigma-50-e', manufacturer: 'Sigma', model: '50mm f/1.4 DG DN Art', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.4, mount: 'E', type: 'prime' },
+  { id: 'sigma-85-e', manufacturer: 'Sigma', model: '85mm f/1.4 DG DN Art', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.4, mount: 'E', type: 'prime' },
+  { id: 'sigma-105-e', manufacturer: 'Sigma', model: '105mm f/2.8 DG DN Macro Art', focalLengthMin: 105, focalLengthMax: 105, maxApertureWide: 2.8, mount: 'E', type: 'prime' },
+
+  // ── Tamron E-mount ──
+  { id: 'tamron-11-20-e', manufacturer: 'Tamron', model: '11-20mm f/2.8 Di III-A RXD', focalLengthMin: 11, focalLengthMax: 20, maxApertureWide: 2.8, mount: 'E', type: 'zoom', notes: 'APS-C ultra-wide' },
+  { id: 'tamron-17-28-e', manufacturer: 'Tamron', model: '17-28mm f/2.8 Di III RXD', focalLengthMin: 17, focalLengthMax: 28, maxApertureWide: 2.8, mount: 'E', type: 'zoom' },
+  { id: 'tamron-17-70-e', manufacturer: 'Tamron', model: '17-70mm f/2.8 Di III-A VC RXD', focalLengthMin: 17, focalLengthMax: 70, maxApertureWide: 2.8, mount: 'E', type: 'zoom', notes: 'APS-C' },
+  { id: 'tamron-28-75-e', manufacturer: 'Tamron', model: '28-75mm f/2.8 Di III VXD G2', focalLengthMin: 28, focalLengthMax: 75, maxApertureWide: 2.8, mount: 'E', type: 'zoom' },
+  { id: 'tamron-28-200-e', manufacturer: 'Tamron', model: '28-200mm f/2.8-5.6 Di III RXD', focalLengthMin: 28, focalLengthMax: 200, maxApertureWide: 2.8, maxApertureTele: 5.6, mount: 'E', type: 'zoom' },
+  { id: 'tamron-35-150-e', manufacturer: 'Tamron', model: '35-150mm f/2-2.8 Di III VXD', focalLengthMin: 35, focalLengthMax: 150, maxApertureWide: 2.0, maxApertureTele: 2.8, mount: 'E', type: 'zoom' },
+  { id: 'tamron-50-400-e', manufacturer: 'Tamron', model: '50-400mm f/4.5-6.3 Di III VC VXD', focalLengthMin: 50, focalLengthMax: 400, maxApertureWide: 4.5, maxApertureTele: 6.3, mount: 'E', type: 'zoom' },
+  { id: 'tamron-70-180-e', manufacturer: 'Tamron', model: '70-180mm f/2.8 Di III VXD G2', focalLengthMin: 70, focalLengthMax: 180, maxApertureWide: 2.8, mount: 'E', type: 'zoom' },
+  { id: 'tamron-150-500-e', manufacturer: 'Tamron', model: '150-500mm f/5-6.7 Di III VC VXD', focalLengthMin: 150, focalLengthMax: 500, maxApertureWide: 5, maxApertureTele: 6.7, mount: 'E', type: 'zoom' },
+
   // ── Canon Cinema EF / Compact Servo ──
   { id: 'can-cn-e18-80', manufacturer: 'Canon', model: 'CN-E 18-80mm T4.4', focalLengthMin: 18, focalLengthMax: 80, maxApertureWide: 4.4, mount: 'EF', type: 'zoom', notes: 'Compact servo, S35' },
   { id: 'can-cn-e70-200', manufacturer: 'Canon', model: 'CN-E 70-200mm T4.4', focalLengthMin: 70, focalLengthMax: 200, maxApertureWide: 4.4, mount: 'EF', type: 'zoom', notes: 'Compact servo, S35' },
+
+  // ── Canon EF – Standard Zooms ──
+  { id: 'can-ef-16-35-f28l', manufacturer: 'Canon', model: 'EF 16-35mm f/2.8L III USM', focalLengthMin: 16, focalLengthMax: 35, maxApertureWide: 2.8, mount: 'EF', type: 'zoom' },
+  { id: 'can-ef-24-70-f28l', manufacturer: 'Canon', model: 'EF 24-70mm f/2.8L II USM', focalLengthMin: 24, focalLengthMax: 70, maxApertureWide: 2.8, mount: 'EF', type: 'zoom' },
+  { id: 'can-ef-24-105-f4l', manufacturer: 'Canon', model: 'EF 24-105mm f/4L IS II USM', focalLengthMin: 24, focalLengthMax: 105, maxApertureWide: 4, mount: 'EF', type: 'zoom' },
+  { id: 'can-ef-70-200-f28l', manufacturer: 'Canon', model: 'EF 70-200mm f/2.8L IS III USM', focalLengthMin: 70, focalLengthMax: 200, maxApertureWide: 2.8, mount: 'EF', type: 'zoom' },
+  { id: 'can-ef-100-400-f56l', manufacturer: 'Canon', model: 'EF 100-400mm f/4.5-5.6L IS II USM', focalLengthMin: 100, focalLengthMax: 400, maxApertureWide: 4.5, maxApertureTele: 5.6, mount: 'EF', type: 'zoom' },
+  { id: 'can-ef-11-24-f4l', manufacturer: 'Canon', model: 'EF 11-24mm f/4L USM', focalLengthMin: 11, focalLengthMax: 24, maxApertureWide: 4, mount: 'EF', type: 'zoom' },
+
+  // ── Canon EF – Primes ──
+  { id: 'can-ef-24-f14l', manufacturer: 'Canon', model: 'EF 24mm f/1.4L II USM', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 1.4, mount: 'EF', type: 'prime' },
+  { id: 'can-ef-35-f14l', manufacturer: 'Canon', model: 'EF 35mm f/1.4L II USM', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.4, mount: 'EF', type: 'prime' },
+  { id: 'can-ef-50-f12l', manufacturer: 'Canon', model: 'EF 50mm f/1.2L USM', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.2, mount: 'EF', type: 'prime' },
+  { id: 'can-ef-85-f14l', manufacturer: 'Canon', model: 'EF 85mm f/1.4L IS USM', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.4, mount: 'EF', type: 'prime' },
+  { id: 'can-ef-135-f2l', manufacturer: 'Canon', model: 'EF 135mm f/2L USM', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2, mount: 'EF', type: 'prime' },
+
+  // ── Sigma EF-mount (Art / Classic) ──
+  { id: 'sigma-18-35-art-ef', manufacturer: 'Sigma', model: 'Art 18-35mm f/1.8 DC HSM', focalLengthMin: 18, focalLengthMax: 35, maxApertureWide: 1.8, mount: 'EF', type: 'zoom', notes: 'APS-C' },
+  { id: 'sigma-50-100-art-ef', manufacturer: 'Sigma', model: 'Art 50-100mm f/1.8 DC HSM', focalLengthMin: 50, focalLengthMax: 100, maxApertureWide: 1.8, mount: 'EF', type: 'zoom', notes: 'APS-C' },
+  { id: 'sigma-24-35-art-ef', manufacturer: 'Sigma', model: 'Art 24-35mm f/2 DG HSM', focalLengthMin: 24, focalLengthMax: 35, maxApertureWide: 2, mount: 'EF', type: 'zoom' },
+  { id: 'sigma-24-70-art-ef', manufacturer: 'Sigma', model: 'Art 24-70mm f/2.8 DG OS HSM', focalLengthMin: 24, focalLengthMax: 70, maxApertureWide: 2.8, mount: 'EF', type: 'zoom' },
+  { id: 'sigma-14-ef', manufacturer: 'Sigma', model: 'Art 14mm f/1.8 DG HSM', focalLengthMin: 14, focalLengthMax: 14, maxApertureWide: 1.8, mount: 'EF', type: 'prime' },
+  { id: 'sigma-20-ef', manufacturer: 'Sigma', model: 'Art 20mm f/1.4 DG HSM', focalLengthMin: 20, focalLengthMax: 20, maxApertureWide: 1.4, mount: 'EF', type: 'prime' },
+  { id: 'sigma-24-ef', manufacturer: 'Sigma', model: 'Art 24mm f/1.4 DG HSM', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 1.4, mount: 'EF', type: 'prime' },
+  { id: 'sigma-35-ef', manufacturer: 'Sigma', model: 'Art 35mm f/1.4 DG HSM', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.4, mount: 'EF', type: 'prime' },
+  { id: 'sigma-50-ef', manufacturer: 'Sigma', model: 'Art 50mm f/1.4 DG HSM', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.4, mount: 'EF', type: 'prime' },
+  { id: 'sigma-85-ef', manufacturer: 'Sigma', model: 'Art 85mm f/1.4 DG HSM', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.4, mount: 'EF', type: 'prime' },
+  { id: 'sigma-135-ef', manufacturer: 'Sigma', model: 'Art 135mm f/1.8 DG HSM', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 1.8, mount: 'EF', type: 'prime' },
+
+  // ── Tamron EF-mount ──
+  { id: 'tamron-15-30-ef', manufacturer: 'Tamron', model: 'SP 15-30mm f/2.8 Di VC USD G2', focalLengthMin: 15, focalLengthMax: 30, maxApertureWide: 2.8, mount: 'EF', type: 'zoom' },
+  { id: 'tamron-24-70-ef', manufacturer: 'Tamron', model: 'SP 24-70mm f/2.8 Di VC USD G2', focalLengthMin: 24, focalLengthMax: 70, maxApertureWide: 2.8, mount: 'EF', type: 'zoom' },
+  { id: 'tamron-70-200-ef', manufacturer: 'Tamron', model: 'SP 70-200mm f/2.8 Di VC USD G2', focalLengthMin: 70, focalLengthMax: 200, maxApertureWide: 2.8, mount: 'EF', type: 'zoom' },
+  { id: 'tamron-100-400-ef', manufacturer: 'Tamron', model: '100-400mm f/4.5-6.3 Di VC USD', focalLengthMin: 100, focalLengthMax: 400, maxApertureWide: 4.5, maxApertureTele: 6.3, mount: 'EF', type: 'zoom' },
+
+  // ── Tokina EF-mount ──
+  { id: 'tokina-11-20-ef', manufacturer: 'Tokina', model: 'ATX-i 11-20mm f/2.8 CF', focalLengthMin: 11, focalLengthMax: 20, maxApertureWide: 2.8, mount: 'EF', type: 'zoom', notes: 'APS-C ultra-wide, compact front' },
 
   // ┌─────────────────────────────────────────────┐
   // │  CANON CN7 / CN10 / CN20 – PL Servo Zooms   │
@@ -133,16 +212,26 @@ export const LENSES: Lens[] = [
   { id: 'sigma-50-100-cine', manufacturer: 'Sigma', model: 'Cine 50-100mm T2.0', focalLengthMin: 50, focalLengthMax: 100, maxApertureWide: 2.0, mount: 'EF', type: 'zoom' },
 
   // ══════════════════════════════════════════════
-  //  MFT LENSES (Blackmagic etc.)
+  //  MFT LENSES (Blackmagic / Olympus / Panasonic)
   // ══════════════════════════════════════════════
   { id: 'oly-12-100', manufacturer: 'Olympus', model: 'M.Zuiko 12-100mm f/4', focalLengthMin: 12, focalLengthMax: 100, maxApertureWide: 4, mount: 'MFT', type: 'zoom' },
   { id: 'pana-10-25', manufacturer: 'Panasonic', model: 'Leica 10-25mm f/1.7', focalLengthMin: 10, focalLengthMax: 25, maxApertureWide: 1.7, mount: 'MFT', type: 'zoom' },
+  { id: 'pana-25-50', manufacturer: 'Panasonic', model: 'Leica 25-50mm f/1.7', focalLengthMin: 25, focalLengthMax: 50, maxApertureWide: 1.7, mount: 'MFT', type: 'zoom' },
+  { id: 'oly-7-14-pro', manufacturer: 'Olympus', model: 'M.Zuiko 7-14mm f/2.8 PRO', focalLengthMin: 7, focalLengthMax: 14, maxApertureWide: 2.8, mount: 'MFT', type: 'zoom' },
+  { id: 'oly-12-40-pro', manufacturer: 'Olympus', model: 'M.Zuiko 12-40mm f/2.8 PRO II', focalLengthMin: 12, focalLengthMax: 40, maxApertureWide: 2.8, mount: 'MFT', type: 'zoom' },
+  { id: 'oly-40-150-pro', manufacturer: 'Olympus', model: 'M.Zuiko 40-150mm f/2.8 PRO', focalLengthMin: 40, focalLengthMax: 150, maxApertureWide: 2.8, mount: 'MFT', type: 'zoom' },
+  { id: 'pana-12-35-f28', manufacturer: 'Panasonic', model: 'Lumix 12-35mm f/2.8 II', focalLengthMin: 12, focalLengthMax: 35, maxApertureWide: 2.8, mount: 'MFT', type: 'zoom' },
+  { id: 'pana-35-100-f28', manufacturer: 'Panasonic', model: 'Lumix 35-100mm f/2.8 II', focalLengthMin: 35, focalLengthMax: 100, maxApertureWide: 2.8, mount: 'MFT', type: 'zoom' },
+  { id: 'sigma-16-mft', manufacturer: 'Sigma', model: '16mm f/1.4 DC DN C (MFT)', focalLengthMin: 16, focalLengthMax: 16, maxApertureWide: 1.4, mount: 'MFT', type: 'prime', notes: 'Contemporary' },
+  { id: 'sigma-30-mft', manufacturer: 'Sigma', model: '30mm f/1.4 DC DN C (MFT)', focalLengthMin: 30, focalLengthMax: 30, maxApertureWide: 1.4, mount: 'MFT', type: 'prime', notes: 'Contemporary' },
+  { id: 'sigma-56-mft', manufacturer: 'Sigma', model: '56mm f/1.4 DC DN C (MFT)', focalLengthMin: 56, focalLengthMax: 56, maxApertureWide: 1.4, mount: 'MFT', type: 'prime', notes: 'Contemporary' },
 
   // ══════════════════════════════════════════════
   //  PTZ INTEGRATED LENSES (virtual entries)
   // ══════════════════════════════════════════════
   { id: 'ptz-sony-brc-x400', manufacturer: 'Sony', model: 'BRC-X400 integrated 20x', focalLengthMin: 4.4, focalLengthMax: 88, maxApertureWide: 2.0, mount: 'integrated', type: 'integrated', notes: '20x optical zoom' },
   { id: 'ptz-sony-srg-x120', manufacturer: 'Sony', model: 'SRG-X120 integrated 12x', focalLengthMin: 4.4, focalLengthMax: 52.8, maxApertureWide: 2.0, mount: 'integrated', type: 'integrated', notes: '12x optical zoom' },
+  { id: 'ptz-sony-brc-h800', manufacturer: 'Sony', model: 'BRC-H800 integrated 12x', focalLengthMin: 4.5, focalLengthMax: 54, maxApertureWide: 1.6, mount: 'integrated', type: 'integrated', notes: '12x optical zoom, HD PTZ' },
   { id: 'ptz-pana-ue150', manufacturer: 'Panasonic', model: 'AW-UE150 integrated 20x', focalLengthMin: 4.08, focalLengthMax: 81.6, maxApertureWide: 1.6, mount: 'integrated', type: 'integrated', notes: '20x optical zoom' },
   { id: 'ptz-pana-ue40', manufacturer: 'Panasonic', model: 'AW-UE40 integrated 24x', focalLengthMin: 4.3, focalLengthMax: 103.2, maxApertureWide: 1.8, mount: 'integrated', type: 'integrated', notes: '24x optical zoom' },
   { id: 'ptz-canon-crn500', manufacturer: 'Canon', model: 'CR-N500 integrated 15x', focalLengthMin: 8.9, focalLengthMax: 133.5, maxApertureWide: 2.8, mount: 'integrated', type: 'integrated', notes: '15x optical zoom' },
