@@ -1,20 +1,28 @@
 import { useStore } from '../../store/useStore';
 import { getCameraById, getEffectiveSensor, getAdapterInfo } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
-import { computeFov, computeDof, personHeightInFrame } from '../../utils/fov';
+import { computeFov, computeDof } from '../../utils/fov';
 import { useRef, useEffect, useCallback, useState } from 'react';
 import type { StageObjectType } from '../../types';
 
 export default function CameraPreview() {
   const { cameras, selectedCameraId, venue, persons } = useStore();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const cam = cameras.find((c) => c.id === selectedCameraId);
   const isDragging = useRef(false);
   const lastMouse = useRef({ x: 0, y: 0 });
 
+  // Overlay toggles
+  const [showGrid, setShowGrid] = useState(true);
+  const [showSafeAreas, setShowSafeAreas] = useState(true);
+  const [showThirds, setShowThirds] = useState(false);
+  const [showCrosshair, setShowCrosshair] = useState(true);
+
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !cam) return;
+    const wrap = wrapRef.current;
+    if (!canvas || !wrap || !cam) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -23,106 +31,137 @@ export default function CameraPreview() {
     if (!camDef || !lensDef) return;
 
     const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster);
-    const adapterInfo = getAdapterInfo(camDef, lensDef, cam.useSpeedbooster);
 
-    const W = canvas.width;
-    const H = canvas.height;
+    // HiDPI: size canvas to container at device pixel ratio
+    const dpr = window.devicePixelRatio || 1;
+    const rect = wrap.getBoundingClientRect();
+    const cssW = rect.width;
+    const cssH = Math.round(cssW * 9 / 16);
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    canvas.style.width = `${cssW}px`;
+    canvas.style.height = `${cssH}px`;
+    ctx.scale(dpr, dpr);
+
+    // Logical size
+    const W = cssW;
+    const H = cssH;
+
     const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
     const dof = computeDof(sensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive);
 
-    // Image dimensions at focus distance
     const imgW = fov.imageWidthAtDistance;
     const imgH = fov.imageHeightAtDistance;
 
     // ── Pan/Tilt offsets ──
-    // Pan: camera default is -90° (pointing "up" in 2D = towards stage).
-    // Tilt: 0 = level, negative = looking down. We shift the scene vertically.
-    // Tilt shifts the view: looking down (-tilt) moves horizon up, showing more ground.
     const tiltOffsetPx = (cam.tilt / fov.verticalDeg) * H;
-
-    // Ground plane Y position (adjusted for camera height + tilt)
-    // At level (tilt=0), horizon is at camera height. Ground is below.
-    const cameraHeightFraction = cam.z / imgH; // how much of the image height the camera is above ground
+    const cameraHeightFraction = cam.z / imgH;
     const groundY = H * (0.5 - cameraHeightFraction) - tiltOffsetPx;
     const groundYClamped = Math.max(-H, Math.min(H * 2, groundY));
 
-    // Metres per pixel
-    const mPerPxH = imgW / W;
-    const mPerPxV = imgH / H;
 
-    // Clear
-    ctx.fillStyle = '#111318';
+
+    // ═══ BACKGROUND ═══
+    ctx.fillStyle = '#0a0e14';
     ctx.fillRect(0, 0, W, H);
 
-    // Draw sky gradient
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, Math.max(0, groundYClamped));
-    skyGrad.addColorStop(0, '#0d1520');
-    skyGrad.addColorStop(1, '#1a2535');
-    ctx.fillStyle = skyGrad;
-    ctx.fillRect(0, 0, W, Math.max(0, groundYClamped));
+    // Sky — richer gradient with subtle blue
+    const skyEnd = Math.max(0, groundYClamped);
+    if (skyEnd > 0) {
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, skyEnd);
+      skyGrad.addColorStop(0, '#070b12');
+      skyGrad.addColorStop(0.4, '#0c1322');
+      skyGrad.addColorStop(0.8, '#131d30');
+      skyGrad.addColorStop(1, '#1a2840');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, W, skyEnd);
+    }
 
-    // Draw ground
+    // Ground — realistic with subtle noise effect
     if (groundYClamped < H) {
+      const gH = H - groundYClamped;
       const gndGrad = ctx.createLinearGradient(0, groundYClamped, 0, H);
-      gndGrad.addColorStop(0, '#1e2530');
-      gndGrad.addColorStop(1, '#0d1117');
+      gndGrad.addColorStop(0, '#2a3040');
+      gndGrad.addColorStop(0.15, '#1e2530');
+      gndGrad.addColorStop(0.5, '#151a22');
+      gndGrad.addColorStop(1, '#0c0f14');
       ctx.fillStyle = gndGrad;
-      ctx.fillRect(0, groundYClamped, W, H - groundYClamped);
+      ctx.fillRect(0, groundYClamped, W, gH);
 
-      // Ground line
-      ctx.strokeStyle = '#3a4050';
-      ctx.lineWidth = 2;
+      // Horizon glow
+      const horizGlow = ctx.createLinearGradient(0, groundYClamped - 8, 0, groundYClamped + 20);
+      horizGlow.addColorStop(0, 'rgba(100,140,200,0)');
+      horizGlow.addColorStop(0.4, 'rgba(100,140,200,0.06)');
+      horizGlow.addColorStop(1, 'rgba(100,140,200,0)');
+      ctx.fillStyle = horizGlow;
+      ctx.fillRect(0, groundYClamped - 8, W, 28);
+
+      // Horizon line
+      ctx.strokeStyle = '#3a4a60';
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(0, groundYClamped);
       ctx.lineTo(W, groundYClamped);
       ctx.stroke();
     }
 
-    // ── Draw ground grid (perspective lines) ──
-    if (groundYClamped < H) {
-      ctx.strokeStyle = '#ffffff0a';
-      ctx.lineWidth = 1;
-      // Horizontal depth lines
-      for (let d = 1; d <= 10; d++) {
-        const depthFrac = d / 10;
-        const lineY = groundYClamped + (H - groundYClamped) * (1 - Math.pow(1 - depthFrac, 2));
-        ctx.beginPath();
-        ctx.moveTo(0, lineY);
-        ctx.lineTo(W, lineY);
-        ctx.stroke();
-      }
-    }
-
     // ── Helper: world position to screen pixel ──
-    // Converts a world-space position relative to camera into screen coordinates
     const panRad = (cam.pan * Math.PI) / 180;
     const cosP = Math.cos(panRad);
     const sinP = Math.sin(panRad);
 
     const worldToScreen = (wx: number, wy: number, wz: number): { sx: number; sy: number; dist: number; behindCamera: boolean } => {
-      // Translate relative to camera (cam is guaranteed non-null here by the guard at top of draw())
       const c = cam!;
       const dx = wx - c.x;
       const dy = wy - c.y;
-
-      // Rotate by -pan to get camera-local coords (forward = +Z_cam)
-      const localZ = dx * cosP + dy * sinP;   // forward (into scene)
-      const localX = -dx * sinP + dy * cosP;  // right
-
+      const localZ = dx * cosP + dy * sinP;
+      const localX = -dx * sinP + dy * cosP;
       if (localZ <= 0.1) return { sx: -999, sy: -999, dist: 0, behindCamera: true };
-
-      // Project to screen using FOV
-      const fovHRad = (fov.horizontalDeg * Math.PI) / 360; // half FOV
+      const fovHRad = (fov.horizontalDeg * Math.PI) / 360;
       const fovVRad = (fov.verticalDeg * Math.PI) / 360;
-
       const screenX = W / 2 + (localX / (localZ * Math.tan(fovHRad))) * (W / 2);
-      const heightAboveGround = wz;
       const tiltRad = (c.tilt * Math.PI) / 180;
-      const apparentY = (heightAboveGround - c.z) / localZ;
+      const apparentY = (wz - c.z) / localZ;
       const tiltShift = Math.tan(tiltRad);
       const screenY = H / 2 - ((apparentY + tiltShift) / Math.tan(fovVRad)) * (H / 2);
-
       return { sx: screenX, sy: screenY, dist: localZ, behindCamera: false };
+    };
+    const worldToScreenLocal = worldToScreen;
+
+    // ── Perspective ground grid ──
+    // (worldToScreen defined above)
+    if (showGrid && groundYClamped < H) {
+      ctx.save();
+      // Depth lines (horizontal, converging)
+      for (let d = 1; d <= 20; d++) {
+        const dist = d * 2; // every 2m
+        const screenPt = worldToScreenLocal(cam.x, cam.y + dist, 0);
+        if (screenPt.behindCamera || screenPt.sy < groundYClamped - 2) continue;
+        const alpha = Math.max(0.02, 0.12 - d * 0.005);
+        ctx.strokeStyle = `rgba(120,160,220,${alpha})`;
+        ctx.lineWidth = d % 5 === 0 ? 1.2 : 0.6;
+        ctx.beginPath();
+        ctx.moveTo(0, screenPt.sy);
+        ctx.lineTo(W, screenPt.sy);
+        ctx.stroke();
+      }
+      // Vertical lines (converging to vanishing point)
+      const vanishX = W / 2;
+      for (let i = -10; i <= 10; i++) {
+        if (i === 0) continue;
+        const worldX = cam.x + i * 2;
+        const nearPt = worldToScreenLocal(worldX, cam.y + 2, 0);
+        const farPt = worldToScreenLocal(worldX, cam.y + 40, 0);
+        if (nearPt.behindCamera && farPt.behindCamera) continue;
+        const alpha = Math.max(0.02, 0.08 - Math.abs(i) * 0.006);
+        ctx.strokeStyle = `rgba(120,160,220,${alpha})`;
+        ctx.lineWidth = 0.6;
+        ctx.beginPath();
+        ctx.moveTo(nearPt.behindCamera ? vanishX : nearPt.sx, nearPt.behindCamera ? groundYClamped : nearPt.sy);
+        ctx.lineTo(farPt.behindCamera ? vanishX : farPt.sx, farPt.behindCamera ? groundYClamped : farPt.sy);
+        ctx.stroke();
+      }
+      ctx.restore();
     }
 
     // ── Draw stages from venue ──
@@ -429,11 +468,9 @@ export default function CameraPreview() {
     }
 
     // ═══ RULERS ═══
-
-    // === HORIZONTAL RULER (bottom) ===
-    const rulerH = 24;
+    const rulerH = 22;
     const rulerY = H - rulerH;
-    ctx.fillStyle = '#000000bb';
+    ctx.fillStyle = '#000000cc';
     ctx.fillRect(0, rulerY, W, rulerH);
 
     const niceSteps = [0.25, 0.5, 1, 2, 5, 10, 20, 50, 100];
@@ -441,9 +478,9 @@ export default function CameraPreview() {
     const step = niceSteps.find((s) => s >= rawStep) ?? rawStep;
     const halfImgW = imgW / 2;
 
-    ctx.strokeStyle = '#888';
-    ctx.fillStyle = '#aaa';
-    ctx.font = '10px monospace';
+    ctx.strokeStyle = '#666';
+    ctx.fillStyle = '#999';
+    ctx.font = '10px sans-serif';
     ctx.textAlign = 'center';
     ctx.lineWidth = 1;
 
@@ -451,109 +488,94 @@ export default function CameraPreview() {
       const pxR = W / 2 + (m / imgW) * W;
       const pxL = W / 2 - (m / imgW) * W;
       if (pxR <= W) {
-        ctx.beginPath(); ctx.moveTo(pxR, rulerY); ctx.lineTo(pxR, rulerY + 8); ctx.stroke();
-        ctx.fillText(`${m.toFixed(m < 1 ? 2 : 1)}m`, pxR, rulerY + 18);
+        ctx.beginPath(); ctx.moveTo(pxR, rulerY); ctx.lineTo(pxR, rulerY + 6); ctx.stroke();
+        ctx.fillText(`${m.toFixed(m < 1 ? 2 : 1)}m`, pxR, rulerY + 16);
       }
       if (m > 0 && pxL >= 0) {
-        ctx.beginPath(); ctx.moveTo(pxL, rulerY); ctx.lineTo(pxL, rulerY + 8); ctx.stroke();
-        ctx.fillText(`${m.toFixed(m < 1 ? 2 : 1)}m`, pxL, rulerY + 18);
+        ctx.beginPath(); ctx.moveTo(pxL, rulerY); ctx.lineTo(pxL, rulerY + 6); ctx.stroke();
+        ctx.fillText(`${m.toFixed(m < 1 ? 2 : 1)}m`, pxL, rulerY + 16);
       }
     }
-    ctx.strokeStyle = '#fff';
-    ctx.beginPath(); ctx.moveTo(W / 2, rulerY); ctx.lineTo(W / 2, rulerY + 10); ctx.stroke();
+    ctx.strokeStyle = '#ccc';
+    ctx.beginPath(); ctx.moveTo(W / 2, rulerY); ctx.lineTo(W / 2, rulerY + 8); ctx.stroke();
 
-    // === VERTICAL RULER (right side) ===
-    const vRulerW = 28;
+    // Vertical ruler
+    const vRulerW = 26;
     const vRulerX = W - vRulerW;
-    ctx.fillStyle = '#000000bb';
+    ctx.fillStyle = '#000000cc';
     ctx.fillRect(vRulerX, 0, vRulerW, H - rulerH);
 
     const rawStepV = imgH / 6;
     const stepV = niceSteps.find((s) => s >= rawStepV) ?? rawStepV;
-
-    ctx.strokeStyle = '#888';
-    ctx.fillStyle = '#aaa';
+    ctx.strokeStyle = '#666';
+    ctx.fillStyle = '#999';
+    ctx.font = '9px sans-serif';
     ctx.textAlign = 'right';
 
     for (let m = 0; m <= imgH; m += stepV) {
       const py = groundYClamped - (m / imgH) * (H * 0.6);
       if (py < 0 || py > H - rulerH) continue;
-      ctx.beginPath(); ctx.moveTo(vRulerX, py); ctx.lineTo(vRulerX + 6, py); ctx.stroke();
-      ctx.fillText(`${m.toFixed(m < 1 ? 2 : 1)}m`, W - 4, py + 3);
+      ctx.beginPath(); ctx.moveTo(vRulerX, py); ctx.lineTo(vRulerX + 5, py); ctx.stroke();
+      ctx.fillText(`${m.toFixed(m < 1 ? 2 : 1)}m`, W - 3, py + 3);
     }
 
-    // ═══ OVERLAYS ═══
-
-    // Distance annotations
-    ctx.fillStyle = '#ffffff88';
-    ctx.font = '11px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(`← ${imgW.toFixed(1)}m →`, W / 2, rulerY - 4);
-
-    ctx.save();
-    ctx.translate(vRulerX - 6, H / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillText(`${imgH.toFixed(1)}m ↕`, 0, 0);
-    ctx.restore();
-
-    // Safe areas (action safe 93%, title safe 90%)
-    ctx.strokeStyle = '#ffffff22';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([6, 4]);
-    const asMargin = W * 0.035;
-    ctx.strokeRect(asMargin, asMargin * (H / W), W - asMargin * 2, H - asMargin * 2 * (H / W));
-    const tsMargin = W * 0.05;
-    ctx.strokeRect(tsMargin, tsMargin * (H / W), W - tsMargin * 2, H - tsMargin * 2 * (H / W));
-    ctx.setLineDash([]);
+    // ═══ OVERLAY GUIDES ═══
+    // Safe areas
+    if (showSafeAreas) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 4]);
+      const asM = W * 0.035;
+      ctx.strokeRect(asM, asM * (H / W), W - asM * 2, H - asM * 2 * (H / W));
+      const tsM = W * 0.05;
+      ctx.strokeRect(tsM, tsM * (H / W), W - tsM * 2, H - tsM * 2 * (H / W));
+      ctx.setLineDash([]);
+    }
 
     // Rule of thirds
-    ctx.strokeStyle = '#ffffff11';
-    ctx.lineWidth = 1;
-    for (let i = 1; i <= 2; i++) {
-      ctx.beginPath(); ctx.moveTo((W / 3) * i, 0); ctx.lineTo((W / 3) * i, H); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, (H / 3) * i); ctx.lineTo(W, (H / 3) * i); ctx.stroke();
+    if (showThirds) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 1;
+      for (let i = 1; i <= 2; i++) {
+        ctx.beginPath(); ctx.moveTo((W / 3) * i, 0); ctx.lineTo((W / 3) * i, H); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, (H / 3) * i); ctx.lineTo(W, (H / 3) * i); ctx.stroke();
+      }
     }
 
-    // Crosshair at centre
-    ctx.strokeStyle = '#ffffff33';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(W / 2 - 15, H / 2); ctx.lineTo(W / 2 + 15, H / 2); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(W / 2, H / 2 - 15); ctx.lineTo(W / 2, H / 2 + 15); ctx.stroke();
+    // Crosshair
+    if (showCrosshair) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(W / 2 - 18, H / 2); ctx.lineTo(W / 2 + 18, H / 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W / 2, H / 2 - 18); ctx.lineTo(W / 2, H / 2 + 18); ctx.stroke();
+    }
 
-    // Pan/Tilt indicator
-    ctx.fillStyle = '#ffffff66';
-    ctx.font = '10px monospace';
+    // ═══ VIGNETTE ═══
+    const vigR = Math.max(W, H) * 0.8;
+    const vig = ctx.createRadialGradient(W / 2, H / 2, vigR * 0.4, W / 2, H / 2, vigR);
+    vig.addColorStop(0, 'rgba(0,0,0,0)');
+    vig.addColorStop(0.7, 'rgba(0,0,0,0.05)');
+    vig.addColorStop(1, 'rgba(0,0,0,0.3)');
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, W, H);
+
+    // Compact Pan/Tilt badge top-right
+    ctx.fillStyle = '#00000088';
+    const badgeW = 110;
+    ctx.fillRect(W - vRulerW - badgeW - 4, 4, badgeW, 18);
+    ctx.fillStyle = '#ffffffaa';
+    ctx.font = '10px sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText(`Pan: ${cam.pan.toFixed(1)}°  Tilt: ${cam.tilt.toFixed(1)}°`, W - vRulerW - 8, 16);
+    ctx.fillText(`P ${cam.pan.toFixed(1)}°  T ${cam.tilt.toFixed(1)}°`, W - vRulerW - 8, 16);
 
-    // Info overlay
-    const lightLossStr = adapterInfo ? (adapterInfo.lightLossStops > 0 ? ` (−${adapterInfo.lightLossStops}T)` : adapterInfo.lightLossStops < 0 ? ` (+${Math.abs(adapterInfo.lightLossStops)}T)` : '') : '';
-    const infoLines = [
-      `${cam.label} — ${camDef.manufacturer} ${camDef.model}`,
-      `Lens: ${lensDef.manufacturer} ${lensDef.model}`,
-      `FL: ${cam.focalLength}mm${cam.extenderActive > 1 ? ` (×${cam.extenderActive} = ${cam.focalLength * cam.extenderActive}mm)` : ''}`,
-      `FOV: ${fov.horizontalDeg.toFixed(1)}° × ${fov.verticalDeg.toFixed(1)}°`,
-      `Image: ${imgW.toFixed(1)}m × ${imgH.toFixed(1)}m @ ${cam.focusDistance.toFixed(1)}m`,
-      `DoF: ${dof.nearLimit < 0.01 ? '0m' : dof.nearLimit.toFixed(1) + 'm'} – ${dof.farLimit === Infinity ? '∞' : dof.farLimit.toFixed(1) + 'm'}`,
-      `f/${cam.aperture} | eq.FL: ${fov.equivalentFocalLength.toFixed(0)}mm`,
-    ];
-    if (adapterInfo) infoLines.push(`Adapter: ${adapterInfo.name}${lightLossStr}`);
-
-    const lineH = 16;
-    const infoH = infoLines.length * lineH + 16;
-    ctx.fillStyle = '#000000aa';
-    ctx.fillRect(8, 8, 290, infoH);
-    ctx.textAlign = 'left';
-
-    infoLines.forEach((line, i) => {
-      ctx.fillStyle = i === 0 ? '#fff' : (line.startsWith('Adapter') ? '#f59e0b' : '#ddd');
-      ctx.font = i === 0 ? 'bold 13px monospace' : '11px monospace';
-      ctx.fillText(line, 16, 24 + i * lineH);
-    });
-  }, [cam, venue, persons, cameras]);
+  }, [cam, venue, persons, cameras, showGrid, showSafeAreas, showThirds, showCrosshair]);
 
   useEffect(() => {
     draw();
+    // Redraw on resize
+    const ro = new ResizeObserver(() => draw());
+    if (wrapRef.current) ro.observe(wrapRef.current);
+    return () => ro.disconnect();
   }, [draw]);
 
   // ── PTZ Mouse Controls ──
@@ -568,8 +590,6 @@ export default function CameraPreview() {
     const dx = e.clientX - lastMouse.current.x;
     const dy = e.clientY - lastMouse.current.y;
     lastMouse.current = { x: e.clientX, y: e.clientY };
-
-    // Pan: horizontal drag, scale by sensitivity
     const panSens = 0.3;
     const tiltSens = 0.2;
     const newPan = Math.max(-180, Math.min(180, cam.pan - dx * panSens));
@@ -585,11 +605,11 @@ export default function CameraPreview() {
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (!cam) return;
     e.preventDefault();
-    const lensDef = getLensById(cam.lensId) ?? useStore.getState().customLenses.find((l: any) => l.id === cam.lensId);
-    if (!lensDef) return;
-    const range = lensDef.focalLengthMax - lensDef.focalLengthMin;
+    const ld = getLensById(cam.lensId) ?? useStore.getState().customLenses.find((l: any) => l.id === cam.lensId);
+    if (!ld) return;
+    const range = ld.focalLengthMax - ld.focalLengthMin;
     const step = Math.max(0.1, range * 0.02);
-    const newFL = Math.max(lensDef.focalLengthMin, Math.min(lensDef.focalLengthMax, cam.focalLength + (e.deltaY > 0 ? step : -step)));
+    const newFL = Math.max(ld.focalLengthMin, Math.min(ld.focalLengthMax, cam.focalLength + (e.deltaY > 0 ? step : -step)));
     useStore.getState().updateCamera(cam.id, { focalLength: newFL });
   }, [cam]);
 
@@ -601,44 +621,104 @@ export default function CameraPreview() {
     );
   }
 
+  // Computed data for readout (outside canvas)
+  const camDef = getCameraById(cam.cameraId);
+  const lensDef = getLensById(cam.lensId);
+  const sensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster) : undefined;
+  const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, cam.useSpeedbooster) : null;
+  const fov = sensor ? computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive) : null;
+  const dof = sensor ? computeDof(sensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive) : null;
+  const lightLoss = adapterInfo ? (adapterInfo.lightLossStops > 0 ? ` (−${adapterInfo.lightLossStops}T)` : adapterInfo.lightLossStops < 0 ? ` (+${Math.abs(adapterInfo.lightLossStops)}T)` : '') : '';
+
   return (
-    <div className="relative w-full h-full flex flex-col">
-      <canvas
-        ref={canvasRef}
-        width={640}
-        height={360}
-        className="w-full rounded-lg"
-        style={{ aspectRatio: '16/9', cursor: 'grab' }}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
-      />
-      {/* PTZ hint */}
-      <div className="flex items-center gap-4 mt-1 px-2">
-        <span className="text-[10px] text-gray-500">Drag: Pan/Tilt | Scroll: Zoom</span>
+    <div className="relative w-full h-full flex flex-col gap-2 overflow-y-auto">
+      {/* Canvas container */}
+      <div ref={wrapRef} className="relative w-full">
+        <canvas
+          ref={canvasRef}
+          className="w-full rounded-lg"
+          style={{ cursor: 'grab', display: 'block' }}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onWheel={handleWheel}
+        />
       </div>
+
+      {/* Overlay toggle bar */}
+      <div className="flex items-center gap-2 px-2 flex-wrap">
+        {([
+          ['Grid', showGrid, setShowGrid],
+          ['Safe Areas', showSafeAreas, setShowSafeAreas],
+          ['Thirds', showThirds, setShowThirds],
+          ['Crosshair', showCrosshair, setShowCrosshair],
+        ] as [string, boolean, (v: boolean) => void][]).map(([label, on, set]) => (
+          <button
+            key={label}
+            onClick={() => set(!on)}
+            className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${on ? 'border-bc-accent text-bc-accent bg-bc-accent/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
+          >
+            {label}
+          </button>
+        ))}
+        <span className="text-[10px] text-gray-600 ml-auto">Drag: Pan/Tilt · Scroll: Zoom</span>
+      </div>
+
       {/* Zoom slider */}
-      <div className="flex items-center gap-3 mt-1 px-2">
-        <span className="text-xs text-gray-400 w-20">
-          {cam.focalLength.toFixed(0)}mm
-        </span>
+      <div className="flex items-center gap-3 px-2">
+        <span className="text-xs text-gray-400 w-16 font-mono">{cam.focalLength.toFixed(0)}mm</span>
         <input
           type="range"
-          min={getLensById(cam.lensId)?.focalLengthMin ?? 4}
-          max={getLensById(cam.lensId)?.focalLengthMax ?? 300}
+          min={lensDef?.focalLengthMin ?? 4}
+          max={lensDef?.focalLengthMax ?? 300}
           step={0.1}
           value={cam.focalLength}
-          onChange={(e) =>
-            useStore.getState().updateCamera(cam.id, { focalLength: parseFloat(e.target.value) })
-          }
+          onChange={(e) => useStore.getState().updateCamera(cam.id, { focalLength: parseFloat(e.target.value) })}
           className="flex-1 accent-bc-accent"
         />
-        <span className="text-xs text-gray-400 w-20 text-right">
-          {getLensById(cam.lensId)?.focalLengthMax ?? '?'}mm
-        </span>
+        <span className="text-xs text-gray-400 w-16 text-right font-mono">{lensDef?.focalLengthMax ?? '?'}mm</span>
       </div>
+
+      {/* ═══ DATA READOUT (HTML) ═══ */}
+      {camDef && lensDef && fov && dof && (
+        <div className="px-2 pb-2 space-y-1.5">
+          {/* Camera + Lens header */}
+          <div className="bg-bc-dark rounded-lg border border-bc-border p-2.5">
+            <div className="flex items-baseline justify-between">
+              <span className="text-white font-semibold text-sm">{cam.label}</span>
+              <span className="text-gray-500 text-[10px]">{camDef.sensor.name} · {camDef.mount}</span>
+            </div>
+            <div className="text-gray-400 text-xs mt-0.5">{camDef.manufacturer} {camDef.model} — {lensDef.manufacturer} {lensDef.model}</div>
+            {adapterInfo && (
+              <div className="text-yellow-400 text-[11px] mt-0.5">⚡ {adapterInfo.name}{lightLoss}</div>
+            )}
+          </div>
+
+          {/* Data grid */}
+          <div className="grid grid-cols-3 gap-1.5">
+            <DataCell label="Focal Length" value={`${cam.focalLength.toFixed(1)}mm`} sub={cam.extenderActive > 1 ? `eff. ${(cam.focalLength * cam.extenderActive).toFixed(0)}mm` : `eq. ${fov.equivalentFocalLength.toFixed(0)}mm`} />
+            <DataCell label="Aperture" value={`f/${cam.aperture.toFixed(1)}`} sub={adapterInfo && adapterInfo.lightLossStops !== 0 ? `eff. T${(cam.aperture * Math.pow(2, adapterInfo.lightLossStops / 2)).toFixed(1)}` : undefined} />
+            <DataCell label="Distance" value={`${cam.focusDistance.toFixed(1)}m`} />
+            <DataCell label="FOV H" value={`${fov.horizontalDeg.toFixed(1)}°`} />
+            <DataCell label="FOV V" value={`${fov.verticalDeg.toFixed(1)}°`} />
+            <DataCell label="Image Width" value={`${fov.imageWidthAtDistance.toFixed(1)}m`} sub={`@ ${cam.focusDistance.toFixed(0)}m`} />
+            <DataCell label="DoF Near" value={dof.nearLimit < 0.01 ? '0m' : `${dof.nearLimit.toFixed(2)}m`} />
+            <DataCell label="DoF Far" value={dof.farLimit === Infinity ? '∞' : `${dof.farLimit.toFixed(2)}m`} />
+            <DataCell label="DoF Total" value={dof.totalDof === Infinity ? '∞' : `${dof.totalDof.toFixed(2)}m`} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DataCell({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="bg-bc-dark rounded border border-bc-border px-2 py-1.5">
+      <div className="text-[10px] text-gray-500 leading-tight">{label}</div>
+      <div className="text-white text-sm font-mono font-semibold leading-tight">{value}</div>
+      {sub && <div className="text-[10px] text-gray-500 leading-tight">{sub}</div>}
     </div>
   );
 }
