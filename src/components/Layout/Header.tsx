@@ -33,12 +33,12 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="h-12 bg-bc-panel border-b border-bc-border flex items-center justify-between px-4 shrink-0">
-      <div className="flex items-center gap-2 text-white">
-        <FiCamera size={20} className="text-bc-accent" />
-        <span className="font-bold text-sm">MultiCam Planner</span>
-        <span className="text-xs text-gray-500 ml-2">— {venue.name}</span>
-        <span className={`text-xs ml-2 px-1.5 py-0.5 rounded ${unsaved ? 'bg-bc-yellow/20 text-bc-yellow' : 'bg-bc-green/20 text-bc-green'}`}>
+    <header className="h-12 bg-bc-panel border-b border-bc-border flex items-center justify-between px-2 sm:px-4 shrink-0">
+      <div className="flex items-center gap-2 text-white min-w-0">
+        <FiCamera size={20} className="text-bc-accent shrink-0" />
+        <span className="font-bold text-sm hidden sm:inline">MultiCam Planner</span>
+        <span className="text-xs text-gray-500 ml-2 hidden lg:inline">— {venue.name}</span>
+        <span className={`text-xs ml-2 px-1.5 py-0.5 rounded shrink-0 ${unsaved ? 'bg-bc-yellow/20 text-bc-yellow' : 'bg-bc-green/20 text-bc-green'}`}>
           v{projectVersion}{unsaved ? ' •' : ''}
         </span>
       </div>
@@ -48,33 +48,33 @@ export default function Header() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded text-xs font-medium transition-colors ${
               activeTab === tab.id
                 ? 'bg-bc-accent text-white'
                 : 'text-gray-400 hover:text-white hover:bg-bc-border'
             }`}
           >
             {tab.icon}
-            {tab.label}
+            <span className="hidden sm:inline">{tab.label}</span>
           </button>
         ))}
       </nav>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2">
         <button onClick={saveProject} className="flex items-center gap-1 px-2 py-1 rounded text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors" title="Save project (.mcplan)">
           <FiSave size={14} />
-          Save
+          <span className="hidden sm:inline">Save</span>
         </button>
         <button onClick={handleLoad} className="flex items-center gap-1 px-2 py-1 rounded text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors" title="Open project file">
           <FiUpload size={14} />
-          Open
+          <span className="hidden sm:inline">Open</span>
         </button>
         <button onClick={handleExport} className="flex items-center gap-1 px-2 py-1 rounded text-xs text-bc-accent hover:text-white hover:bg-bc-accent/20 transition-colors" title="Export all views as PNG">
           <FiDownload size={14} />
-          Export
+          <span className="hidden sm:inline">Export</span>
         </button>
         <input ref={fileInputRef} type="file" accept=".mcplan,.json" className="hidden" onChange={handleFileChange} />
-        <span className="text-xs text-gray-500">v{APP_VERSION}</span>
+        <span className="text-xs text-gray-500 hidden lg:inline">v{APP_VERSION}</span>
       </div>
     </header>
   );

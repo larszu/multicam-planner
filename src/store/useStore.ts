@@ -48,6 +48,10 @@ interface AppState {
   showAllFov: boolean;
   toggleShowAllFov: () => void;
 
+  // Layout UI
+  sidebarCollapsed: boolean;
+  setSidebarCollapsed: (v: boolean) => void;
+
   // Scale & grid
   pixelsPerMeter: number;
   setPixelsPerMeter: (ppm: number) => void;
@@ -299,6 +303,9 @@ export const useStore = create<AppState>((set, get) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
   showAllFov: true,
   toggleShowAllFov: () => set((s) => ({ showAllFov: !s.showAllFov })),
+
+  sidebarCollapsed: false,
+  setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
 
   pixelsPerMeter: 30,
   setPixelsPerMeter: (ppm) => set({ pixelsPerMeter: ppm }),

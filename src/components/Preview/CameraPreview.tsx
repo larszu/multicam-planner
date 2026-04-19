@@ -4,8 +4,14 @@ import { getLensById } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
 import { useRef, useEffect, useCallback, useState } from 'react';
 import type { StageObjectType } from '../../types';
+import { FiChevronDown, FiChevronUp, FiExternalLink } from 'react-icons/fi';
 
-export default function CameraPreview() {
+interface PreviewProps {
+  undocked: boolean;
+  onUndock: () => void;
+}
+
+export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   const { cameras, selectedCameraId, venue, persons } = useStore();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -18,6 +24,7 @@ export default function CameraPreview() {
   const [showSafeAreas, setShowSafeAreas] = useState(true);
   const [showThirds, setShowThirds] = useState(false);
   const [showCrosshair, setShowCrosshair] = useState(true);
+  const [showData, setShowData] = useState(true);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -653,6 +660,7 @@ export default function CameraPreview() {
           ['Safe Areas', showSafeAreas, setShowSafeAreas],
           ['Thirds', showThirds, setShowThirds],
           ['Crosshair', showCrosshair, setShowCrosshair],
+          ['Data', showData, setShowData],
         ] as [string, boolean, (v: boolean) => void][]).map(([label, on, set]) => (
           <button
             key={label}
@@ -662,6 +670,15 @@ export default function CameraPreview() {
             {label}
           </button>
         ))}
+        {!undocked && (
+          <button
+            onClick={onUndock}
+            className="px-2 py-0.5 rounded text-[10px] font-medium border border-bc-border text-gray-500 hover:text-gray-300 hover:border-gray-400 flex items-center gap-1"
+            title="Undock preview into floating window"
+          >
+            <FiExternalLink size={10} /> Float
+          </button>
+        )}
         <span className="text-[10px] text-gray-600 ml-auto">Drag: Pan/Tilt · Scroll: Zoom</span>
       </div>
 
@@ -681,7 +698,7 @@ export default function CameraPreview() {
       </div>
 
       {/* ═══ DATA READOUT (HTML) ═══ */}
-      {camDef && lensDef && fov && dof && (
+      {camDef && lensDef && fov && dof && showData && (
         <div className="px-2 pb-2 space-y-1.5">
           {/* Camera + Lens header */}
           <div className="bg-bc-dark rounded-lg border border-bc-border p-2.5">
