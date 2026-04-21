@@ -855,6 +855,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
             >
               <Preview3D
                 cam={cam}
+                cameras={cameras}
                 persons={persons}
                 walls={walls}
                 stages={stages}

@@ -14,6 +14,7 @@ import type { SensorSize } from '../../types';
  */
 interface Preview3DProps {
   cam: VenueCamera;
+  cameras: VenueCamera[];
   persons: ReferencePerson[];
   walls: Wall[];
   stages: Stage[];
@@ -279,7 +280,90 @@ function StageFloor({ s }: { s: Stage }) {
   );
 }
 
-export default function Preview3D({ cam, persons, walls, stages, sensor, width, height }: Preview3DProps) {
+function CameraRigMesh({ cam }: { cam: VenueCamera }) {
+  const live = getLiveCameraPosition(cam);
+  const bodyH = 0.18;
+  const bodyW = 0.22;
+  const bodyL = 0.34;
+  const yawRad = THREE.MathUtils.degToRad(-cam.pan - 90);
+  return (
+    <group position={[live.x, 0, live.y]}>
+      {/* Tripod legs */}
+      {[0, 120, 240].map((deg) => {
+        const r = THREE.MathUtils.degToRad(deg);
+        return (
+          <mesh
+            key={deg}
+            position={[Math.cos(r) * 0.18, live.z / 2, Math.sin(r) * 0.18]}
+            rotation={[Math.atan2(0.18, live.z), 0, -Math.atan2(Math.sin(r) * 0.18, live.z)]}
+            castShadow
+          >
+            <cylinderGeometry args={[0.015, 0.02, live.z * 1.05, 8]} />
+            <meshStandardMaterial color="#1a1a1a" roughness={0.55} metalness={0.3} />
+          </mesh>
+        );
+      })}
+      {/* Head + body yawed by pan */}
+      <group position={[0, live.z, 0]} rotation={[0, yawRad, 0]}>
+        <mesh position={[0, 0.04, 0]} castShadow>
+          <boxGeometry args={[bodyW, bodyH, bodyL]} />
+          <meshStandardMaterial color="#0f0f10" roughness={0.4} metalness={0.5} />
+        </mesh>
+        {/* Lens barrel */}
+        <mesh
+          position={[0, 0.04, -bodyL / 2 - 0.08]}
+          rotation={[Math.PI / 2 + THREE.MathUtils.degToRad(cam.tilt), 0, 0]}
+          castShadow
+        >
+          <cylinderGeometry args={[0.05, 0.05, 0.16, 16]} />
+          <meshStandardMaterial color="#151515" roughness={0.35} metalness={0.6} />
+        </mesh>
+        {/* Red tally */}
+        <mesh position={[0, 0.04 + bodyH / 2 + 0.012, 0.1]} castShadow>
+          <sphereGeometry args={[0.018, 12, 12]} />
+          <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={1.5} />
+        </mesh>
+      </group>
+      <Text position={[0, live.z + 0.25, 0]} fontSize={0.18} color="#f87171" anchorX="center" anchorY="middle">
+        {cam.label}
+      </Text>
+    </group>
+  );
+}
+
+function StageSpotlight({ target }: { target: [number, number, number] }) {
+  const lightRef = useMemo(() => new THREE.Object3D(), []);
+  lightRef.position.set(target[0], target[1], target[2]);
+  return (
+    <>
+      <primitive object={lightRef} />
+      <spotLight
+        position={[target[0] - 3, 6, target[2] - 3]}
+        angle={0.55}
+        penumbra={0.6}
+        intensity={120}
+        distance={25}
+        decay={1.5}
+        color="#ffe8c2"
+        castShadow
+        target={lightRef}
+      />
+      <spotLight
+        position={[target[0] + 3, 6, target[2] - 3]}
+        angle={0.55}
+        penumbra={0.6}
+        intensity={120}
+        distance={25}
+        decay={1.5}
+        color="#dceaff"
+        castShadow
+        target={lightRef}
+      />
+    </>
+  );
+}
+
+export default function Preview3D({ cam, cameras, persons, walls, stages, sensor, width, height }: Preview3DProps) {
   const live = getLiveCameraPosition(cam);
 
   // Compute horizontal FOV from sensor + focal length; R3F expects vertical FOV
@@ -300,6 +384,32 @@ export default function Preview3D({ cam, persons, walls, stages, sensor, width, 
     return e;
   }, [cam.pan, cam.tilt]);
 
+  // Each person faces the nearest camera (on the ground plane)
+  const personsWithYaw = useMemo(() => {
+    return persons.map((p) => {
+      let best: VenueCamera | null = null;
+      let bestD = Infinity;
+      for (const c of cameras) {
+        const cp = getLiveCameraPosition(c);
+        const d = (cp.x - p.x) * (cp.x - p.x) + (cp.y - p.y) * (cp.y - p.y);
+        if (d < bestD) { bestD = d; best = c; }
+      }
+      let yaw = 0;
+      if (best) {
+        const cp = getLiveCameraPosition(best);
+        // Persons should face TOWARDS the camera: in R3F the person mesh's "front" is +Z by construction,
+        // so yaw rotates around Y axis (world).
+        yaw = Math.atan2(cp.x - p.x, cp.y - p.y);
+      }
+      return { p, yaw };
+    });
+  }, [persons, cameras]);
+
+  // Stage centre for spot lights
+  const stageCenter: [number, number, number] | null = stages.length > 0
+    ? [stages[0].x + stages[0].width / 2, 0.5, stages[0].y + stages[0].height / 2]
+    : null;
+
   return (
     <div style={{ width, height, position: 'relative', background: '#000', borderRadius: 8, overflow: 'hidden' }}>
       <Canvas shadows dpr={[1, 2]} gl={{ antialias: true }}>
@@ -312,10 +422,10 @@ export default function Preview3D({ cam, persons, walls, stages, sensor, width, 
           far={400}
         />
         {/* Lighting */}
-        <ambientLight intensity={0.35} />
+        <ambientLight intensity={0.25} />
         <directionalLight
           position={[10, 14, 6]}
-          intensity={1.6}
+          intensity={1.2}
           castShadow
           shadow-mapSize-width={1024}
           shadow-mapSize-height={1024}
@@ -324,7 +434,8 @@ export default function Preview3D({ cam, persons, walls, stages, sensor, width, 
           shadow-camera-top={25}
           shadow-camera-bottom={-25}
         />
-        <hemisphereLight args={['#8ab4ff', '#2a2d2f', 0.4]} />
+        <hemisphereLight args={['#8ab4ff', '#2a2d2f', 0.3]} />
+        {stageCenter && <StageSpotlight target={stageCenter} />}
 
         {/* HDRI-style environment for reflections */}
         <Environment preset="studio" background={false} />
@@ -339,7 +450,16 @@ export default function Preview3D({ cam, persons, walls, stages, sensor, width, 
         {/* Venue geometry */}
         {walls.map((w) => <WallMesh key={w.id} wall={w} />)}
         {stages.map((s) => <StageFloor key={s.id} s={s} />)}
-        {persons.map((p) => <PersonBody key={p.id} p={p} />)}
+        {personsWithYaw.map(({ p, yaw }) => (
+          <group key={p.id} position={[p.x, 0, p.y]} rotation={[0, yaw, 0]}>
+            <PersonBody p={{ ...p, x: 0, y: 0 }} />
+          </group>
+        ))}
+
+        {/* Other cameras as physical rigs */}
+        {cameras.filter((c) => c.id !== cam.id).map((c) => (
+          <CameraRigMesh key={c.id} cam={c} />
+        ))}
 
         {/* Subtle distance fog */}
         <fog attach="fog" args={['#0a0e14', 8, 120]} />
