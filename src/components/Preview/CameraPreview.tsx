@@ -8,6 +8,7 @@ import { getLiveCameraPosition } from '../../types';
 import { FiChevronDown, FiChevronUp, FiExternalLink, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { MOUNT_TYPE_LABELS } from '../../types';
 import type { CameraMountType } from '../../types';
+import Preview3D from './Preview3D';
 
 interface PreviewProps {
   undocked: boolean;
@@ -16,6 +17,8 @@ interface PreviewProps {
 
 export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   const { cameras, selectedCameraId, venue, persons, selectNextCamera, selectPrevCamera } = useStore();
+  const walls = useStore((s) => s.walls);
+  const stages = venue.stages;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const cam = cameras.find((c) => c.id === selectedCameraId);
@@ -28,6 +31,8 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   const [showThirds, setShowThirds] = useState(false);
   const [showCrosshair, setShowCrosshair] = useState(true);
   const [showData, setShowData] = useState(true);
+  const [photorealistic, setPhotorealistic] = useState(false);
+  const [previewSize, setPreviewSize] = useState({ w: 0, h: 0 });
 
   // Distance lock: automatically track focus distance to locked person
   useEffect(() => {
@@ -66,6 +71,8 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     canvas.style.width = `${cssW}px`;
     canvas.style.height = `${cssH}px`;
     ctx.scale(dpr, dpr);
+    // Share size with the optional photorealistic preview
+    setPreviewSize((prev) => (prev.w === cssW && prev.h === cssH ? prev : { w: cssW, h: cssH }));
 
     // Logical size
     const W = cssW;
@@ -826,17 +833,37 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         </div>
 
         {/* Canvas container */}
-        <div ref={wrapRef} className="relative w-full">
+        <div ref={wrapRef} className="relative w-full" style={{ aspectRatio: '16 / 9' }}>
           <canvas
             ref={canvasRef}
             className="w-full rounded-lg"
-            style={{ cursor: 'grab', display: 'block' }}
+            style={{ cursor: 'grab', display: photorealistic ? 'none' : 'block' }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onWheel={handleWheel}
           />
+          {photorealistic && previewSize.w > 0 && (
+            <div
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onWheel={handleWheel}
+              style={{ cursor: 'grab', position: 'absolute', inset: 0 }}
+            >
+              <Preview3D
+                cam={cam}
+                persons={persons}
+                walls={walls}
+                stages={stages}
+                sensor={sensor}
+                width={previewSize.w}
+                height={previewSize.h}
+              />
+            </div>
+          )}
         </div>
 
         {/* Overlay toggle bar */}
@@ -847,6 +874,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
             ['Thirds', showThirds, setShowThirds],
             ['Crosshair', showCrosshair, setShowCrosshair],
             ['Data', showData, setShowData],
+            ['Photorealistic', photorealistic, setPhotorealistic],
           ] as [string, boolean, (v: boolean) => void][]).map(([label, on, set]) => (
             <button
               key={label}
