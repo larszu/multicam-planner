@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Grid, Text, PerspectiveCamera, Html, TransformControls } from '@react-three/drei';
+import { Grid, Text, PerspectiveCamera } from '@react-three/drei';
 import { useStore } from '../../store/useStore';
 import { getCameraById, getEffectiveSensor } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
@@ -417,37 +417,15 @@ function FovPyramid({ cam, isSelected }: { cam: ReturnType<typeof useStore.getSt
   );
 }
 
-type CameraEditMode = 'move' | 'height' | 'pan' | 'tilt';
-
-function normalizeDegrees(angle: number) {
-  let normalized = angle;
-  while (normalized > 180) normalized -= 360;
-  while (normalized <= -180) normalized += 360;
-  return normalized;
-}
-
 function CameraRig({
   cam,
   isSelected,
-  isUnlocked,
-  editMode,
   onSelect,
-  onToggleLock,
-  onEditModeChange,
-  venueWidth,
-  venueHeight,
 }: {
   cam: ReturnType<typeof useStore.getState>['cameras'][0];
   isSelected: boolean;
-  isUnlocked: boolean;
-  editMode: CameraEditMode;
   onSelect: (cameraId: string) => void;
-  onToggleLock: (cameraId: string) => void;
-  onEditModeChange: (mode: CameraEditMode) => void;
-  venueWidth: number;
-  venueHeight: number;
 }) {
-  const { moveCamera, updateCamera } = useStore();
   const baseRef = useRef<THREE.Group>(null);
   const liftRef = useRef<THREE.Group>(null);
   const pitchRef = useRef<THREE.Group>(null);
@@ -458,7 +436,6 @@ function CameraRig({
       baseRef.current.rotation.set(0, THREE.MathUtils.degToRad(-cam.pan), 0);
     }
     if (liftRef.current) {
-      // Live track offset is perpendicular to pan (rig-local X axis)
       liftRef.current.position.set(cam.trackOffset ?? 0, cam.z, 0);
     }
     if (pitchRef.current) {
@@ -466,45 +443,6 @@ function CameraRig({
       pitchRef.current.rotation.set(THREE.MathUtils.degToRad(cam.tilt), 0, 0);
     }
   }, [cam.pan, cam.tilt, cam.x, cam.y, cam.z, cam.trackOffset]);
-
-  const commitMove = useCallback(() => {
-    if (!baseRef.current) return;
-    const nextX = Math.max(0, Math.min(venueWidth, baseRef.current.position.x));
-    const nextY = Math.max(0, Math.min(venueHeight, baseRef.current.position.z));
-    baseRef.current.position.set(nextX, 0, nextY);
-    moveCamera(cam.id, nextX, nextY);
-  }, [cam.id, moveCamera, venueHeight, venueWidth]);
-
-  const commitHeight = useCallback(() => {
-    if (!liftRef.current) return;
-    const nextZ = Math.max(0, liftRef.current.position.y);
-    liftRef.current.position.set(0, nextZ, 0);
-    updateCamera(cam.id, { z: nextZ });
-  }, [cam.id, updateCamera]);
-
-  const commitPan = useCallback(() => {
-    if (!baseRef.current) return;
-    const nextPan = normalizeDegrees(-THREE.MathUtils.radToDeg(baseRef.current.rotation.y));
-    baseRef.current.rotation.set(0, THREE.MathUtils.degToRad(-nextPan), 0);
-    updateCamera(cam.id, { pan: nextPan });
-  }, [cam.id, updateCamera]);
-
-  const commitTilt = useCallback(() => {
-    if (!pitchRef.current) return;
-    const nextTilt = Math.max(-90, Math.min(45, THREE.MathUtils.radToDeg(pitchRef.current.rotation.x)));
-    pitchRef.current.rotation.set(THREE.MathUtils.degToRad(nextTilt), 0, 0);
-    updateCamera(cam.id, { tilt: nextTilt });
-  }, [cam.id, updateCamera]);
-
-  const buttonStyle = (active = false) => ({
-    background: active ? '#3b82f6' : '#111827',
-    border: `1px solid ${active ? '#60a5fa' : '#334155'}`,
-    color: active ? '#ffffff' : '#94a3b8',
-    borderRadius: 4,
-    padding: '3px 6px',
-    fontSize: 10,
-    cursor: 'pointer',
-  } as const);
 
   return (
     <group
@@ -516,56 +454,8 @@ function CameraRig({
         onSelect(cam.id);
       }}
     >
-      {isSelected && isUnlocked && editMode === 'move' && baseRef.current && (
-        <TransformControls object={baseRef.current} mode="translate" showX showY={false} showZ size={0.9} onMouseUp={commitMove} />
-      )}
-      {isSelected && isUnlocked && editMode === 'pan' && baseRef.current && (
-        <TransformControls object={baseRef.current} mode="rotate" showX={false} showY showZ={false} size={0.9} onMouseUp={commitPan} />
-      )}
-
       <group ref={liftRef} position={[0, cam.z, 0]}>
-        {isSelected && (
-          <Html position={[0, 1.15, 0]} center style={{ pointerEvents: 'auto' }}>
-            <div
-              style={{
-                display: 'flex',
-                gap: 4,
-                alignItems: 'center',
-                background: 'rgba(15, 23, 42, 0.92)',
-                border: '1px solid #334155',
-                borderRadius: 8,
-                padding: '6px 8px',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
-              }}
-              onPointerDown={(e) => e.stopPropagation()}
-            >
-              <button type="button" onClick={() => onToggleLock(cam.id)} style={buttonStyle(isUnlocked)}>
-                {isUnlocked ? 'Lock' : 'Unlock'}
-              </button>
-              <button type="button" disabled={!isUnlocked} onClick={() => onEditModeChange('move')} style={buttonStyle(editMode === 'move' && isUnlocked)}>
-                XY
-              </button>
-              <button type="button" disabled={!isUnlocked} onClick={() => onEditModeChange('height')} style={buttonStyle(editMode === 'height' && isUnlocked)}>
-                Z
-              </button>
-              <button type="button" disabled={!isUnlocked} onClick={() => onEditModeChange('pan')} style={buttonStyle(editMode === 'pan' && isUnlocked)}>
-                Pan
-              </button>
-              <button type="button" disabled={!isUnlocked} onClick={() => onEditModeChange('tilt')} style={buttonStyle(editMode === 'tilt' && isUnlocked)}>
-                Tilt
-              </button>
-            </div>
-          </Html>
-        )}
-
-        {isSelected && isUnlocked && editMode === 'height' && liftRef.current && (
-          <TransformControls object={liftRef.current} mode="translate" showX={false} showY showZ={false} size={0.9} onMouseUp={commitHeight} />
-        )}
-
         <group ref={pitchRef} rotation={[THREE.MathUtils.degToRad(cam.tilt), 0, 0]}>
-          {isSelected && isUnlocked && editMode === 'tilt' && pitchRef.current && (
-            <TransformControls object={pitchRef.current} mode="rotate" showX showY={false} showZ={false} size={0.9} onMouseUp={commitTilt} />
-          )}
           <FovPyramid cam={cam} isSelected={isSelected} />
         </group>
       </group>
@@ -794,16 +684,8 @@ function PersonMesh({ x, z, height, label, objectType, color }: { x: number; z: 
 }
 
 export default function Venue3D() {
-  const { venue, cameras, persons, backgroundPlan, walls, moveCamera, updatePerson, selectCamera, selectedCameraId } = useStore();
+  const { venue, cameras, persons, backgroundPlan, walls, updatePerson, selectCamera, selectedCameraId } = useStore();
   const drag3DLocked = useStore((s) => s.drag3DLocked);
-  const [unlockedCameraId, setUnlockedCameraId] = useState<string | null>(null);
-  const [editMode, setEditMode] = useState<CameraEditMode>('move');
-
-  useEffect(() => {
-    if (unlockedCameraId && !cameras.some((camera) => camera.id === unlockedCameraId)) {
-      setUnlockedCameraId(null);
-    }
-  }, [cameras, unlockedCameraId]);
 
   const handleReset = useCallback(() => {
     window.dispatchEvent(new CustomEvent('multicam-3d-reset', {
@@ -820,7 +702,6 @@ export default function Venue3D() {
         fontSize: 11, color: '#9ca3af', lineHeight: 1.6, backdropFilter: 'blur(4px)',
         pointerEvents: 'none',
       }}>
-        <b style={{ color: '#60a5fa' }}>Select camera</b> → unlock to edit<br/>
         <b style={{ color: '#60a5fa' }}>Right-drag</b> look &nbsp;|&nbsp;
         <b style={{ color: '#60a5fa' }}>Left-drag</b> move objects<br/>
         <b style={{ color: '#60a5fa' }}>WASD</b> Move &nbsp;|&nbsp;
@@ -861,7 +742,7 @@ export default function Venue3D() {
 
       <Canvas shadows gl={{ preserveDrawingBuffer: true }}>
         <PerspectiveCamera makeDefault position={[venue.widthM / 2, 15, venue.heightM + 10]} fov={50} />
-        <FPSControls mouseLookEnabled={unlockedCameraId === null} />
+        <FPSControls mouseLookEnabled={true} />
 
         {/* Improved lighting */}
         <ambientLight intensity={0.7} color="#e8eaf0" />
@@ -901,25 +782,13 @@ export default function Venue3D() {
           <StageMesh key={s.id} x={s.x} y={s.y} w={s.width} h={s.height} label={s.label} />
         ))}
 
-        {/* Cameras with explicit unlock + gizmo editing */}
+        {/* Cameras — select by clicking, edit via Sidebar */}
         {cameras.map((cam) => (
           <CameraRig
             key={cam.id}
             cam={cam}
             isSelected={cam.id === selectedCameraId}
-            isUnlocked={cam.id === unlockedCameraId}
-            editMode={editMode}
             onSelect={selectCamera}
-            onToggleLock={(cameraId) => {
-              setUnlockedCameraId((current) => {
-                if (current === cameraId) return null;
-                setEditMode('move');
-                return cameraId;
-              });
-            }}
-            onEditModeChange={setEditMode}
-            venueWidth={venue.widthM}
-            venueHeight={venue.heightM}
           />
         ))}
 
