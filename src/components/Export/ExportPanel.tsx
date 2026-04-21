@@ -57,8 +57,8 @@ export default function ExportPanel() {
       const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
       if (!camDef || !lensDef) return;
 
-      const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster);
-      const adapterInfo = getAdapterInfo(camDef, lensDef, cam.useSpeedbooster);
+      const sensor = getEffectiveSensor(camDef, lensDef, { adapterId: cam.adapterId, useSpeedbooster: cam.useSpeedbooster });
+      const adapterInfo = getAdapterInfo(camDef, lensDef, { adapterId: cam.adapterId, useSpeedbooster: cam.useSpeedbooster });
       const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
       const dof = computeDof(sensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive);
       const personPx = personHeightInFrame(sensor.heightMm, cam.focalLength * cam.extenderActive, cam.focusDistance);

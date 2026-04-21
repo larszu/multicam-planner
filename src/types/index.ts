@@ -21,10 +21,18 @@ export interface Camera {
 
 // ── Adapter result ──
 export interface AdapterInfo {
+  id: string; // stable id for manual selection (e.g. 'ef-e-smart-v')
   name: string;
-  lightLossStops: number; // T-stop loss (0 = no loss, 1 = ~1 stop)
+  lightLossStops: number; // T-stop loss (0 = no loss, 1 = ~1 stop, negative = gain)
   cropSensor?: SensorSize; // forced sensor crop (e.g. 2/3" when using B4 adapter)
+  cameraMounts?: string[]; // camera mounts this adapter fits; omitted = any
+  requiresSensorMode?: 'S35'; // only applicable when camera is set to that sensor mode
+  isSpeedBooster?: boolean;
+  /** Focal reduction factor for speed boosters (e.g. 0.71). Image circle shrinks by the same factor. */
+  speedBoosterFactor?: number;
 }
+
+export type LensImageCircle = 'FF' | 'S35' | 'APSC' | 'MFT' | '2/3' | '1' | 'integrated';
 
 // ── Lens ──
 export interface Lens {
@@ -36,6 +44,8 @@ export interface Lens {
   maxApertureWide: number;
   maxApertureTele?: number;
   mount: string;
+  /** Image circle the lens actually projects. If omitted, inferred from mount. */
+  imageCircle?: LensImageCircle;
   extenderFactors?: number[];
   type: 'zoom' | 'prime' | 'integrated';
   isCustom?: boolean;
@@ -43,7 +53,9 @@ export interface Lens {
 }
 
 // ── Object type presets ──
-export type StageObjectType = 'person' | 'person-guitar' | 'drums' | 'keys' | 'mic-stand' | 'custom';
+export type StageObjectType =
+  | 'person' | 'person-guitar' | 'sitting-person' | 'drums' | 'keys'
+  | 'mic-stand' | 'chair' | 'table' | 'lectern' | 'schneetiger' | 'custom';
 
 // ── Camera mount/support type ──
 export type CameraMountType = 'tripod' | 'pedestal' | 'jib' | 'dolly' | 'gimbal' | 'handheld' | 'steadicam' | 'fixed';
@@ -77,6 +89,8 @@ export interface ReferencePerson {
   width: number; // metres (footprint width)
   label: string;
   objectType: StageObjectType;
+  /** Optional custom accent colour (hex). Falls back to type default. */
+  color?: string;
 }
 
 // ── Background floor plan ──
@@ -107,8 +121,15 @@ export interface VenueCamera {
   focusDistance: number; // metres
   color: string;
   extenderActive: number; // 1 = none, 1.5, 2
-  useSpeedbooster?: boolean; // EF Speedbooster on MFT cameras
+  useSpeedbooster?: boolean; // legacy EF Speedbooster toggle (still honoured when adapterId is absent)
+  adapterId?: string; // explicit adapter override; undefined = auto pick best
   mountType?: CameraMountType;
+  /** Persistent override of preview mouse direction. Defaults to natural. */
+  invertPreview?: boolean;
+  /** If set, the preview keeps the focus distance locked to this person. */
+  lockedPersonId?: string;
+  /** If set, keeps the distance-to-target constant when dollying (pan/tilt unchanged). */
+  lockedDistance?: number;
 }
 
 // ── Stage / target zone ──

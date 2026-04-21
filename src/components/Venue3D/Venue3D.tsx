@@ -9,49 +9,63 @@ import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import type { BackgroundPlan, StageObjectType } from '../../types';
 
 /* ── Draggable group that moves on the XZ ground plane ── */
-function DraggableOnFloor({ children, x, z, onDragEnd, onClick }: {
+function DraggableOnFloor({ children, x, z, onDragEnd, onClick, draggable = true }: {
   children: React.ReactNode;
   x: number; z: number;
   onDragEnd?: (newX: number, newZ: number) => void;
   onClick?: () => void;
+  draggable?: boolean;
 }) {
   const groupRef = useRef<THREE.Group>(null!);
   const isDragging = useRef(false);
+  const { camera, gl, raycaster, mouse } = useThree();
   const floorPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
   const intersection = useMemo(() => new THREE.Vector3(), []);
   const offset = useRef(new THREE.Vector3());
 
+  const projectMouse = useCallback(() => {
+    raycaster.setFromCamera(mouse, camera);
+    if (raycaster.ray.intersectPlane(floorPlane, intersection)) return intersection;
+    return null;
+  }, [camera, floorPlane, intersection, mouse, raycaster]);
+
   const handlePointerDown = useCallback((e: any) => {
+    if (!draggable) return;
     e.stopPropagation();
-    (e.target as any).setPointerCapture?.(e.pointerId);
     isDragging.current = true;
-    // Calculate offset between pointer hit and group position
-    const raycaster = e.ray ? new THREE.Raycaster(e.ray.origin, e.ray.direction) : null;
-    if (raycaster) {
-      raycaster.ray.intersectPlane(floorPlane, intersection);
-      offset.current.set(intersection.x - x, 0, intersection.z - z);
-    }
-  }, [floorPlane, x, z, intersection]);
+    const hit = projectMouse();
+    if (hit) offset.current.set(hit.x - x, 0, hit.z - z);
+    else offset.current.set(0, 0, 0);
+    gl.domElement.style.cursor = 'grabbing';
+  }, [draggable, gl, projectMouse, x, z]);
 
-  const handlePointerMove = useCallback((e: any) => {
-    if (!isDragging.current) return;
-    e.stopPropagation();
-    const raycaster = e.ray ? new THREE.Raycaster(e.ray.origin, e.ray.direction) : null;
-    if (raycaster && groupRef.current) {
-      raycaster.ray.intersectPlane(floorPlane, intersection);
-      groupRef.current.position.x = intersection.x - offset.current.x;
-      groupRef.current.position.z = intersection.z - offset.current.z;
-    }
-  }, [floorPlane, intersection]);
-
-  const handlePointerUp = useCallback((e: any) => {
-    if (!isDragging.current) return;
-    isDragging.current = false;
-    (e.target as any).releasePointerCapture?.(e.pointerId);
-    if (groupRef.current && onDragEnd) {
-      onDragEnd(groupRef.current.position.x, groupRef.current.position.z);
-    }
-  }, [onDragEnd]);
+  // Global listeners so the drag keeps tracking even when the pointer leaves the mesh.
+  useEffect(() => {
+    const canvas = gl.domElement;
+    const handleMove = () => {
+      if (!isDragging.current || !groupRef.current) return;
+      const hit = projectMouse();
+      if (!hit) return;
+      groupRef.current.position.x = hit.x - offset.current.x;
+      groupRef.current.position.z = hit.z - offset.current.z;
+    };
+    const handleUp = () => {
+      if (!isDragging.current) return;
+      isDragging.current = false;
+      canvas.style.cursor = 'default';
+      if (groupRef.current && onDragEnd) {
+        onDragEnd(groupRef.current.position.x, groupRef.current.position.z);
+      }
+    };
+    canvas.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointerup', handleUp);
+    window.addEventListener('pointercancel', handleUp);
+    return () => {
+      canvas.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+      window.removeEventListener('pointercancel', handleUp);
+    };
+  }, [gl, onDragEnd, projectMouse]);
 
   const handleClick = useCallback((e: any) => {
     e.stopPropagation();
@@ -71,8 +85,6 @@ function DraggableOnFloor({ children, x, z, onDragEnd, onClick }: {
       ref={groupRef}
       position={[x, 0, z]}
       onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
       onClick={handleClick}
     >
       {children}
@@ -303,7 +315,7 @@ function FovPyramid({ cam, isSelected }: { cam: ReturnType<typeof useStore.getSt
   const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
   if (!camDef || !lensDef) return null;
 
-  const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster);
+  const sensor = getEffectiveSensor(camDef, lensDef, { adapterId: cam.adapterId, useSpeedbooster: cam.useSpeedbooster });
   const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
   const fovMin = computeFov(sensor, lensDef.focalLengthMax, cam.focusDistance, cam.extenderActive);
   const fovMax = computeFov(sensor, lensDef.focalLengthMin, cam.focusDistance, cam.extenderActive);
@@ -355,10 +367,12 @@ function FovPyramid({ cam, isSelected }: { cam: ReturnType<typeof useStore.getSt
     return geo;
   }, [isZoom, fovMax.horizontalDeg, fovMax.verticalDeg, cam.focusDistance]);
 
-  const tiltRad = (cam.tilt * Math.PI) / 180;
-
+  // NOTE: the outer `pitchRef` already applies the tilt on the local X axis.
+  // This inner group only needs to rotate the model so that it points along
+  // the parent's -X axis (pan=0). We use YXZ order so a tilt applied further
+  // up the hierarchy stays a pure pitch and never turns into roll.
   return (
-    <group rotation={[tiltRad, -Math.PI / 2, 0]}>
+    <group rotation={[0, -Math.PI / 2, 0]} rotation-order="YXZ">
       {/* Camera body */}
       <mesh>
         <boxGeometry args={[0.3, 0.2, 0.4]} />
@@ -443,6 +457,7 @@ function CameraRig({
       liftRef.current.position.set(0, cam.z, 0);
     }
     if (pitchRef.current) {
+      pitchRef.current.rotation.order = 'YXZ';
       pitchRef.current.rotation.set(THREE.MathUtils.degToRad(cam.tilt), 0, 0);
     }
   }, [cam.pan, cam.tilt, cam.x, cam.y, cam.z]);
@@ -585,9 +600,20 @@ function FloorPlanOverlay({ plan }: { plan: BackgroundPlan }) {
   );
 }
 
-function PersonMesh({ x, z, height, label, objectType }: { x: number; z: number; height: number; label: string; objectType?: StageObjectType }) {
+function PersonMesh({ x, z, height, label, objectType, color }: { x: number; z: number; height: number; label: string; objectType?: StageObjectType; color?: string }) {
   const type = objectType ?? 'person';
-  const color = type === 'drums' ? '#ef4444' : type === 'keys' ? '#8b5cf6' : type === 'person-guitar' ? '#f97316' : type === 'mic-stand' ? '#6b7280' : '#f59e0b';
+  const defaultColor =
+    type === 'drums' ? '#ef4444' :
+    type === 'keys' ? '#8b5cf6' :
+    type === 'person-guitar' ? '#f97316' :
+    type === 'sitting-person' ? '#38bdf8' :
+    type === 'mic-stand' ? '#6b7280' :
+    type === 'chair' ? '#a16207' :
+    type === 'table' ? '#a16207' :
+    type === 'lectern' ? '#7c3aed' :
+    type === 'schneetiger' ? '#e0f2fe' :
+    '#f59e0b';
+  const col = color ?? defaultColor;
 
   return (
     <group position={[x, height / 2, z]}>
@@ -596,7 +622,7 @@ function PersonMesh({ x, z, height, label, objectType }: { x: number; z: number;
           {/* Drum kit - wider base, shorter */}
           <mesh position={[0, -height * 0.15, 0]}>
             <cylinderGeometry args={[0.5, 0.6, height * 0.5, 12]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.2} opacity={0.6} transparent />
+            <meshStandardMaterial color={col} emissive={col} emissiveIntensity={0.2} opacity={0.6} transparent />
           </mesh>
           <mesh position={[-0.3, height * 0.1, 0]}>
             <cylinderGeometry args={[0.2, 0.2, 0.05, 12]} />
@@ -612,9 +638,8 @@ function PersonMesh({ x, z, height, label, objectType }: { x: number; z: number;
           {/* Keyboard on stand */}
           <mesh position={[0, -height * 0.1, 0]}>
             <boxGeometry args={[1.2, height * 0.15, 0.4]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.2} opacity={0.6} transparent />
+            <meshStandardMaterial color={col} emissive={col} emissiveIntensity={0.2} opacity={0.6} transparent />
           </mesh>
-          {/* Stand legs */}
           <mesh position={[-0.4, -height * 0.35, 0]}>
             <cylinderGeometry args={[0.03, 0.03, height * 0.5, 6]} />
             <meshStandardMaterial color="#9ca3af" opacity={0.5} transparent />
@@ -624,17 +649,121 @@ function PersonMesh({ x, z, height, label, objectType }: { x: number; z: number;
             <meshStandardMaterial color="#9ca3af" opacity={0.5} transparent />
           </mesh>
         </>
-      ) : (
+      ) : type === 'chair' ? (
         <>
-          {/* Body */}
+          {/* Seat */}
+          <mesh position={[0, -height * 0.05, 0]}>
+            <boxGeometry args={[0.5, 0.05, 0.5]} />
+            <meshStandardMaterial color={col} opacity={0.75} transparent />
+          </mesh>
+          {/* Backrest */}
+          <mesh position={[0, height * 0.25, -0.22]}>
+            <boxGeometry args={[0.5, height * 0.55, 0.05]} />
+            <meshStandardMaterial color={col} opacity={0.75} transparent />
+          </mesh>
+          {/* Four legs */}
+          {[[-0.22, -0.22], [0.22, -0.22], [-0.22, 0.22], [0.22, 0.22]].map(([lx, lz], i) => (
+            <mesh key={i} position={[lx, -height * 0.3, lz]}>
+              <boxGeometry args={[0.04, height * 0.5, 0.04]} />
+              <meshStandardMaterial color="#57534e" />
+            </mesh>
+          ))}
+        </>
+      ) : type === 'table' ? (
+        <>
+          {/* Tabletop */}
+          <mesh position={[0, height * 0.35, 0]}>
+            <boxGeometry args={[1.4, 0.06, 0.8]} />
+            <meshStandardMaterial color={col} opacity={0.8} transparent />
+          </mesh>
+          {/* Four legs */}
+          {[[-0.65, -0.35], [0.65, -0.35], [-0.65, 0.35], [0.65, 0.35]].map(([lx, lz], i) => (
+            <mesh key={i} position={[lx, -height * 0.07, lz]}>
+              <boxGeometry args={[0.06, height * 0.8, 0.06]} />
+              <meshStandardMaterial color="#57534e" />
+            </mesh>
+          ))}
+        </>
+      ) : type === 'lectern' ? (
+        <>
+          {/* Pedestal */}
+          <mesh position={[0, -height * 0.15, 0]}>
+            <boxGeometry args={[0.5, height * 0.7, 0.35]} />
+            <meshStandardMaterial color={col} opacity={0.8} transparent />
+          </mesh>
+          {/* Slanted top surface */}
+          <mesh position={[0, height * 0.35, 0]} rotation={[-0.35, 0, 0]}>
+            <boxGeometry args={[0.7, 0.04, 0.5]} />
+            <meshStandardMaterial color="#1f2937" opacity={0.9} transparent />
+          </mesh>
+        </>
+      ) : type === 'sitting-person' ? (
+        <>
+          {/* Seated body — shorter torso */}
           <mesh position={[0, -height * 0.1, 0]}>
-            <cylinderGeometry args={[0.15, 0.15, height * 0.65, 8]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.2} opacity={0.6} transparent />
+            <cylinderGeometry args={[0.15, 0.15, height * 0.55, 8]} />
+            <meshStandardMaterial color={col} emissive={col} emissiveIntensity={0.2} opacity={0.65} transparent />
           </mesh>
           {/* Head */}
           <mesh position={[0, height * 0.3, 0]}>
+            <sphereGeometry args={[0.14, 8, 8]} />
+            <meshStandardMaterial color={col} emissive={col} emissiveIntensity={0.2} opacity={0.65} transparent />
+          </mesh>
+          {/* Legs horizontal */}
+          <mesh position={[0, -height * 0.45, 0.25]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.08, 0.08, 0.6, 6]} />
+            <meshStandardMaterial color={col} opacity={0.6} transparent />
+          </mesh>
+        </>
+      ) : type === 'schneetiger' ? (
+        <>
+          {/* Body — elongated box, low profile */}
+          <mesh position={[0, -height * 0.1, 0]}>
+            <boxGeometry args={[1.5, height * 0.45, 0.6]} />
+            <meshStandardMaterial color={col} roughness={0.6} opacity={0.95} transparent />
+          </mesh>
+          {/* Head */}
+          <mesh position={[0.75, 0, 0]}>
+            <sphereGeometry args={[0.25, 10, 10]} />
+            <meshStandardMaterial color={col} roughness={0.6} />
+          </mesh>
+          {/* Ears */}
+          <mesh position={[0.75, 0.25, -0.15]}>
+            <coneGeometry args={[0.06, 0.12, 6]} />
+            <meshStandardMaterial color={col} />
+          </mesh>
+          <mesh position={[0.75, 0.25, 0.15]}>
+            <coneGeometry args={[0.06, 0.12, 6]} />
+            <meshStandardMaterial color={col} />
+          </mesh>
+          {/* Tail */}
+          <mesh position={[-0.85, -0.05, 0]} rotation={[0, 0, 0.4]}>
+            <cylinderGeometry args={[0.04, 0.04, 0.8, 6]} />
+            <meshStandardMaterial color={col} />
+          </mesh>
+          {/* Legs */}
+          {[[-0.55, -0.22], [0.55, -0.22], [-0.55, 0.22], [0.55, 0.22]].map(([lx, lz], i) => (
+            <mesh key={i} position={[lx, -height * 0.35, lz]}>
+              <cylinderGeometry args={[0.08, 0.08, height * 0.4, 6]} />
+              <meshStandardMaterial color={col} />
+            </mesh>
+          ))}
+          {/* Stripes hint */}
+          <mesh position={[0, height * 0.13, 0]}>
+            <boxGeometry args={[1.51, 0.03, 0.61]} />
+            <meshStandardMaterial color="#1f2937" opacity={0.6} transparent />
+          </mesh>
+        </>
+      ) : (
+        <>
+          {/* Generic person (or guitarist / mic-stand) */}
+          <mesh position={[0, -height * 0.1, 0]}>
+            <cylinderGeometry args={[0.15, 0.15, height * 0.65, 8]} />
+            <meshStandardMaterial color={col} emissive={col} emissiveIntensity={0.2} opacity={0.6} transparent />
+          </mesh>
+          <mesh position={[0, height * 0.3, 0]}>
             <sphereGeometry args={[0.15, 8, 8]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.2} opacity={0.6} transparent />
+            <meshStandardMaterial color={col} emissive={col} emissiveIntensity={0.2} opacity={0.6} transparent />
           </mesh>
           {type === 'person-guitar' && (
             <mesh position={[0.2, -height * 0.05, 0.15]} rotation={[0, 0, 0.3]}>
@@ -651,7 +780,7 @@ function PersonMesh({ x, z, height, label, objectType }: { x: number; z: number;
         </>
       )}
       {/* Label */}
-      <Text position={[0, height * 0.5, 0]} fontSize={0.22} color={color} anchorX="center"
+      <Text position={[0, height * 0.5, 0]} fontSize={0.22} color={col} anchorX="center"
         outlineWidth={0.015} outlineColor="#000000">
         {label} ({height}m)
       </Text>
@@ -781,7 +910,7 @@ export default function Venue3D() {
             z={p.y}
             onDragEnd={(nx, nz) => updatePerson(p.id, { x: nx, y: nz })}
           >
-            <PersonMesh x={0} z={0} height={p.height} label={p.label} objectType={p.objectType} />
+            <PersonMesh x={0} z={0} height={p.height} label={p.label} objectType={p.objectType} color={p.color} />
           </DraggableOnFloor>
         ))}
 

@@ -100,57 +100,239 @@ export function getCamerasByType(type: Camera['type']): Camera[] {
 }
 
 /**
- * Determine if an adapter is needed and its effects.
- * B4 lenses on non-B4 cameras → relay optics, crop to 2/3", ~1 stop loss.
- * PL/EF → FZ/E are simple spacers with no optical penalty.
- * EF → MFT with speedbooster: 0.71x focal reducer, +1 stop gain.
+ * Full catalogue of known physical adapters between lens- and camera-mounts.
+ * Each entry has a stable `id` used when the user overrides the automatic
+ * pick. `autoRank` controls the default: the highest ranked entry that is
+ * applicable to a lens/camera combination is selected automatically.
  */
-export function getAdapterInfo(camera: Camera, lens: Lens, useSpeedbooster = false): AdapterInfo | null {
-  if (lens.mount === camera.mount) return null; // native
+interface AdapterRule extends AdapterInfo {
+  lensMount: string;
+  autoRank: number; // higher = preferred default
+  /** Physical focal-reduction factor (0.71, 0.64, 0.58). Undefined = spacer. */
+  speedBoosterFactor?: number;
+}
+
+const S35_SPEEDBOOSTER_SENSOR: SensorSize = {
+  name: 'S35 + Speed Booster 0.71× (equiv ~FF framing)',
+  widthMm: 24.6 / 0.71,
+  heightMm: 13.8 / 0.71,
+  cropFactor: 1.46 * 0.71,
+};
+
+const MFT_SPEEDBOOSTER_ULTRA: SensorSize = {
+  name: 'MFT + Speed Booster ULTRA 0.71× (S35 equiv)',
+  widthMm: 17.3 / 0.71,
+  heightMm: 13 / 0.71,
+  cropFactor: 2.0 * 0.71,
+};
+
+const MFT_SPEEDBOOSTER_XL: SensorSize = {
+  name: 'MFT + Speed Booster XL 0.64× (near-S35)',
+  widthMm: 17.3 / 0.64,
+  heightMm: 13 / 0.64,
+  cropFactor: 2.0 * 0.64,
+};
+
+const FE_SPEEDBOOSTER_S: SensorSize = {
+  // Metabones EF → E Speed Booster "S" 0.58× is designed for S35 cameras
+  // operated in S35 crop mode (FS7/FS5/FX6 S35 mode). Widens FOV accordingly.
+  name: 'Sony S35 + Speed Booster S 0.58× (~FF framing)',
+  widthMm: 24.6 / 0.58,
+  heightMm: 13.8 / 0.58,
+  cropFactor: 1.46 * 0.58,
+};
+
+const ADAPTER_RULES: AdapterRule[] = [
+  // ── B4 → other mounts (relay optics, crop to 2/3", ~1 stop loss) ──
+  { id: 'b4-fz-lafzb1', lensMount: 'B4', cameraMounts: ['FZ'], name: 'Sony LA-FZB1 / FZB2 (B4 → FZ relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD, autoRank: 10 },
+  { id: 'b4-e-relay', lensMount: 'B4', cameraMounts: ['E'], name: 'B4 → E-mount Relay Adapter', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD, autoRank: 10 },
+  { id: 'b4-pl-relay', lensMount: 'B4', cameraMounts: ['PL'], name: 'B4 → PL Relay Adapter', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD, autoRank: 10 },
+  { id: 'b4-ef-relay', lensMount: 'B4', cameraMounts: ['EF'], name: 'B4 → EF Relay Adapter', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD, autoRank: 10 },
+
+  // ── PL → shorter flange mounts (mechanical, 0 stops) ──
+  { id: 'pl-fz', lensMount: 'PL', cameraMounts: ['FZ'], name: 'PL → FZ Adapter', lightLossStops: 0, autoRank: 10 },
+  { id: 'pl-e-cine', lensMount: 'PL', cameraMounts: ['E'], name: 'Metabones PL → E CINE Adapter', lightLossStops: 0, autoRank: 10 },
+  { id: 'pl-rf', lensMount: 'PL', cameraMounts: ['RF'], name: 'PL → RF Adapter', lightLossStops: 0, autoRank: 10 },
+  { id: 'pl-l', lensMount: 'PL', cameraMounts: ['L'], name: 'PL → L-mount Adapter', lightLossStops: 0, autoRank: 10 },
+
+  // ── Canon EF → Sony E (Metabones range) ──
+  { id: 'ef-e-smart-v', lensMount: 'EF', cameraMounts: ['E'], name: 'Metabones EF → E Smart Adapter Mark V', lightLossStops: 0, autoRank: 20 },
+  { id: 'ef-e-cine-smart', lensMount: 'EF', cameraMounts: ['E'], name: 'Metabones EF → E CINE Smart Adapter', lightLossStops: 0, autoRank: 15 },
+  { id: 'ef-e-cine-end', lensMount: 'EF', cameraMounts: ['E'], name: 'Metabones EF → E CINE eND Smart Adapter (variable ND)', lightLossStops: 0, autoRank: 5 },
+  { id: 'ef-e-sb-ultra', lensMount: 'EF', cameraMounts: ['E'], name: 'Metabones EF → E CINE Speed Booster ULTRA II 0.71×', lightLossStops: -1.0, isSpeedBooster: true, speedBoosterFactor: 0.71, autoRank: 3 },
+  { id: 'ef-e-sb-s', lensMount: 'EF', cameraMounts: ['E'], name: 'Metabones EF → E CINE Speed Booster "S" 0.58× (S35 mode only)', lightLossStops: -1.33, requiresSensorMode: 'S35', cropSensor: FE_SPEEDBOOSTER_S, isSpeedBooster: true, speedBoosterFactor: 0.58, autoRank: 2 },
+
+  // ── Canon EF → other mirrorless mounts ──
+  { id: 'ef-rf', lensMount: 'EF', cameraMounts: ['RF'], name: 'Canon EF → RF Adapter', lightLossStops: 0, autoRank: 20 },
+  { id: 'ef-mft-smart', lensMount: 'EF', cameraMounts: ['MFT'], name: 'Metabones EF → MFT Smart Adapter', lightLossStops: 0, autoRank: 20 },
+  { id: 'ef-mft-cine-smart', lensMount: 'EF', cameraMounts: ['MFT'], name: 'Metabones EF → MFT CINE Smart Adapter', lightLossStops: 0, autoRank: 15 },
+  { id: 'ef-mft-sb-ultra', lensMount: 'EF', cameraMounts: ['MFT'], name: 'Metabones EF → MFT Speed Booster ULTRA II 0.71×', lightLossStops: -1.0, cropSensor: MFT_SPEEDBOOSTER_ULTRA, isSpeedBooster: true, speedBoosterFactor: 0.71, autoRank: 5 },
+  { id: 'ef-mft-sb-xl', lensMount: 'EF', cameraMounts: ['MFT'], name: 'Metabones EF → MFT Speed Booster XL 0.64×', lightLossStops: -1.33, cropSensor: MFT_SPEEDBOOSTER_XL, isSpeedBooster: true, speedBoosterFactor: 0.64, autoRank: 3 },
+  { id: 'ef-l', lensMount: 'EF', cameraMounts: ['L'], name: 'EF → L-mount Adapter', lightLossStops: 0, autoRank: 10 },
+  { id: 'ef-x-cine-smart', lensMount: 'EF', cameraMounts: ['X'], name: 'Metabones EF-X CINE Smart Adapter II', lightLossStops: 0, autoRank: 15 },
+  { id: 'ef-x-sb-ultra', lensMount: 'EF', cameraMounts: ['X'], name: 'Metabones EF-X CINE Speed Booster ULTRA II 0.71×', lightLossStops: -1.0, cropSensor: S35_SPEEDBOOSTER_SENSOR, isSpeedBooster: true, speedBoosterFactor: 0.71, autoRank: 5 },
+
+  // ── Nikon F → other mounts ──
+  { id: 'nf-e-smart', lensMount: 'NF', cameraMounts: ['E'], name: 'Metabones Nikon G → E Smart Adapter', lightLossStops: 0, autoRank: 20 },
+  { id: 'nf-e-sb-ultra', lensMount: 'NF', cameraMounts: ['E'], name: 'Metabones Nikon G → E Speed Booster ULTRA II 0.71×', lightLossStops: -1.0, isSpeedBooster: true, speedBoosterFactor: 0.71, autoRank: 5 },
+  { id: 'nf-mft-sb-ultra', lensMount: 'NF', cameraMounts: ['MFT'], name: 'Metabones Nikon G → MFT Speed Booster ULTRA 0.71×', lightLossStops: -1.0, cropSensor: MFT_SPEEDBOOSTER_ULTRA, isSpeedBooster: true, speedBoosterFactor: 0.71, autoRank: 15 },
+
+  // ── L-mount shorter flange targets ──
+  { id: 'l-e', lensMount: 'L', cameraMounts: ['E'], name: 'L → E-mount Adapter', lightLossStops: 0, autoRank: 10 },
+];
+
+function stripAutoFields(rule: AdapterRule): AdapterInfo {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { lensMount, autoRank, ...info } = rule;
+  return info;
+}
+
+// ── Lens image-circle diameters (approx. diagonal in mm) ──
+const IMAGE_CIRCLE_MM: Record<string, number> = {
+  FF: 43.3,
+  S35: 28.4,
+  APSC: 28.3,
+  MFT: 21.6,
+  '2/3': 11.0,
+  '1': 15.9,
+  integrated: 0,
+};
+
+/** Infer a reasonable default image circle from the lens mount. */
+function defaultImageCircleForMount(mount: string): keyof typeof IMAGE_CIRCLE_MM {
+  switch (mount) {
+    case 'PL': case 'EF': case 'RF': case 'E': case 'L': case 'NF': case 'FZ':
+      return 'FF';
+    case 'MFT': return 'MFT';
+    case 'X':   return 'APSC';
+    case 'B4':  return '2/3';
+    case 'integrated': return 'integrated';
+    default: return 'FF';
+  }
+}
+
+/**
+ * Image circle diameter (mm) actually projected onto the sensor, after adapter optics.
+ * A speed booster demagnifies the lens image circle by its factor.
+ */
+export function getEffectiveImageCircleMm(lens: Lens, adapter: AdapterInfo | null): number {
+  const kind = lens.imageCircle ?? defaultImageCircleForMount(lens.mount);
+  let circle = IMAGE_CIRCLE_MM[kind] ?? IMAGE_CIRCLE_MM.FF;
+  if (adapter?.speedBoosterFactor) circle *= adapter.speedBoosterFactor;
+  // B4 / relay adapters re-project onto 2/3" regardless of lens circle
+  if (adapter?.cropSensor && !adapter.speedBoosterFactor) {
+    const diag = Math.hypot(adapter.cropSensor.widthMm, adapter.cropSensor.heightMm);
+    if (diag < circle) circle = diag;
+  }
+  return circle;
+}
+
+export type CoverageStatus = 'ok' | 'marginal' | 'vignette';
+
+export interface CoverageResult {
+  status: CoverageStatus;
+  lensCircleMm: number; // after adapter
+  sensorDiagonalMm: number;
+  /** Relative coverage; <1 means lens under-fills the sensor (vignetting). */
+  ratio: number;
+  message?: string;
+}
+
+/**
+ * Compare the adapter-reduced image circle against the REAL sensor diagonal
+ * (never the synthetic speed-booster sensor). This catches cases like
+ * APS-C / EF-S lenses on full-frame bodies, or any lens + Speed Booster S
+ * combined with a body that uses too small a focal reducer-compatible circle.
+ */
+export function getCoverageStatus(camera: Camera, lens: Lens, adapter: AdapterInfo | null): CoverageResult {
+  const sensorDiag = Math.hypot(camera.sensor.widthMm, camera.sensor.heightMm);
+  const circle = getEffectiveImageCircleMm(lens, adapter);
+  if (circle <= 0) return { status: 'ok', lensCircleMm: 0, sensorDiagonalMm: sensorDiag, ratio: 1 };
+  const ratio = circle / sensorDiag;
+  if (ratio >= 1.0) return { status: 'ok', lensCircleMm: circle, sensorDiagonalMm: sensorDiag, ratio };
+  if (ratio >= 0.9) {
+    return {
+      status: 'marginal',
+      lensCircleMm: circle,
+      sensorDiagonalMm: sensorDiag,
+      ratio,
+      message: `Bildkreis knapp (${(ratio * 100).toFixed(0)} %) – leichte Randabschattung möglich.`,
+    };
+  }
+  return {
+    status: 'vignette',
+    lensCircleMm: circle,
+    sensorDiagonalMm: sensorDiag,
+    ratio,
+    message: `Objektiv deckt Sensor nicht ab (${(ratio * 100).toFixed(0)} %) – starkes Vignetting / Crop nötig.`,
+  };
+}
+
+/**
+ * Return all physically valid adapters between a lens and camera.
+ * Ordered by `autoRank` (highest first) so the first entry is the auto default.
+ * Speedboosters are deprioritised when the lens cannot cover the resulting circle.
+ */
+export function getAvailableAdapters(camera: Camera, lens: Lens): AdapterInfo[] {
+  if (lens.mount === camera.mount) return [];
+  if (lens.mount === 'integrated') return [];
+  const lensCircleKind = lens.imageCircle ?? defaultImageCircleForMount(lens.mount);
+  const isSmallCircle = lensCircleKind !== 'FF' && lensCircleKind !== 'S35';
+  return ADAPTER_RULES
+    .filter((r) => r.lensMount === lens.mount && (!r.cameraMounts || r.cameraMounts.includes(camera.mount)))
+    .map((r) => {
+      // If lens circle is too small, penalise speed boosters so auto-pick avoids them.
+      if (r.isSpeedBooster && isSmallCircle) {
+        return { ...r, autoRank: r.autoRank - 100 };
+      }
+      return r;
+    })
+    .sort((a, b) => b.autoRank - a.autoRank)
+    .map(stripAutoFields);
+}
+
+/**
+ * Pick the adapter that would be used by default (highest `autoRank`).
+ */
+export function getAutoAdapterId(camera: Camera, lens: Lens): string | null {
+  const list = getAvailableAdapters(camera, lens);
+  return list[0]?.id ?? null;
+}
+
+/**
+ * Resolve the active adapter info, honouring an explicit override or falling
+ * back to the automatic pick. A legacy `useSpeedbooster` boolean is still
+ * respected when no explicit `adapterId` is supplied, so existing projects
+ * keep working.
+ */
+export function getAdapterInfo(
+  camera: Camera,
+  lens: Lens,
+  legacySpeedbooster: boolean | { adapterId?: string; useSpeedbooster?: boolean } = false,
+): AdapterInfo | null {
+  if (lens.mount === camera.mount) return null;
   if (lens.mount === 'integrated') return null;
 
-  // B4 → any larger-sensor camera: relay optics needed, crop to 2/3"
-  if (lens.mount === 'B4') {
-    if (camera.mount === 'FZ') return { name: 'Sony LA-FZB1/FZB2', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
-    if (camera.mount === 'E') return { name: 'B4 → E-mount Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
-    if (camera.mount === 'PL') return { name: 'B4 → PL Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
-    if (camera.mount === 'EF') return { name: 'B4 → EF Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
-    return null;
+  const override = typeof legacySpeedbooster === 'object' ? legacySpeedbooster.adapterId : undefined;
+  const legacyBooster = typeof legacySpeedbooster === 'boolean'
+    ? legacySpeedbooster
+    : !!legacySpeedbooster.useSpeedbooster;
+
+  const available = getAvailableAdapters(camera, lens);
+  if (available.length === 0) return null;
+
+  if (override) {
+    const chosen = available.find((a) => a.id === override);
+    if (chosen) return chosen;
+    // override invalid for this pairing → fall through to auto
   }
 
-  // PL → shorter flange mounts (spacer adapters, no optics)
-  if (lens.mount === 'PL') {
-    if (camera.mount === 'FZ') return { name: 'PL → FZ Adapter', lightLossStops: 0 };
-    if (camera.mount === 'E') return { name: 'PL → E-mount Adapter', lightLossStops: 0 };
-    if (camera.mount === 'RF') return { name: 'PL → RF Adapter', lightLossStops: 0 };
-    return null;
+  if (legacyBooster) {
+    const booster = available.find((a) => a.isSpeedBooster);
+    if (booster) return booster;
   }
 
-  // EF → shorter flange mounts
-  if (lens.mount === 'EF') {
-    if (camera.mount === 'E') return { name: 'EF → E-mount Adapter', lightLossStops: 0 };
-    if (camera.mount === 'RF') return { name: 'Canon EF → RF Adapter', lightLossStops: 0 };
-    if (camera.mount === 'MFT') {
-      if (useSpeedbooster) {
-        // Metabones Speed Booster Ultra 0.71x: widens FOV by 0.71x, gains ~1 stop
-        return {
-          name: 'Metabones EF→MFT Speed Booster 0.71×',
-          lightLossStops: -1.0, // gain
-          cropSensor: { name: 'MFT + Speed Booster (S35 equiv)', widthMm: 17.3 / 0.71, heightMm: 13 / 0.71, cropFactor: 2.0 * 0.71 },
-        };
-      }
-      return { name: 'EF → MFT Adapter', lightLossStops: 0 };
-    }
-    return null;
-  }
-
-  // Nikon F → shorter flange mounts
-  if (lens.mount === 'NF') {
-    if (camera.mount === 'E') return { name: 'Nikon F → E-mount Adapter', lightLossStops: 0 };
-    return null;
-  }
-
-  return null;
+  return available[0];
 }
 
 /**
@@ -158,8 +340,12 @@ export function getAdapterInfo(camera: Camera, lens: Lens, useSpeedbooster = fal
  * B4 lenses always project 2/3" image circle regardless of camera sensor.
  * Speedbooster widens the effective sensor area.
  */
-export function getEffectiveSensor(camera: Camera, lens: Lens, useSpeedbooster = false): SensorSize {
-  const adapter = getAdapterInfo(camera, lens, useSpeedbooster);
+export function getEffectiveSensor(
+  camera: Camera,
+  lens: Lens,
+  override: boolean | { adapterId?: string; useSpeedbooster?: boolean } = false,
+): SensorSize {
+  const adapter = getAdapterInfo(camera, lens, override);
   if (adapter?.cropSensor) return adapter.cropSensor;
   return camera.sensor;
 }
@@ -167,8 +353,13 @@ export function getEffectiveSensor(camera: Camera, lens: Lens, useSpeedbooster =
 /**
  * Get effective aperture accounting for adapter light loss.
  */
-export function getEffectiveAperture(camera: Camera, lens: Lens, aperture: number, useSpeedbooster = false): number {
-  const adapter = getAdapterInfo(camera, lens, useSpeedbooster);
+export function getEffectiveAperture(
+  camera: Camera,
+  lens: Lens,
+  aperture: number,
+  override: boolean | { adapterId?: string; useSpeedbooster?: boolean } = false,
+): number {
+  const adapter = getAdapterInfo(camera, lens, override);
   if (!adapter || adapter.lightLossStops === 0) return aperture;
   // Each stop doubles the area, so T-number increases by 2^(stops/2)
   // Negative lightLossStops = gain (speedbooster)

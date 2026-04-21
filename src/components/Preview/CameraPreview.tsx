@@ -28,6 +28,20 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   const [showCrosshair, setShowCrosshair] = useState(true);
   const [showData, setShowData] = useState(true);
 
+  // Distance lock: automatically track focus distance to locked person
+  useEffect(() => {
+    if (!cam?.lockedPersonId) return;
+    const target = persons.find((p) => p.id === cam.lockedPersonId);
+    if (!target) return;
+    const dx = target.x - cam.x;
+    const dy = target.y - cam.y;
+    const dz = target.height * 0.8 - cam.z;
+    const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (Math.abs(d - cam.focusDistance) > 0.05) {
+      useStore.getState().updateCamera(cam.id, { focusDistance: Math.max(0.1, d) });
+    }
+  }, [cam?.lockedPersonId, cam?.x, cam?.y, cam?.z, cam?.focusDistance, cam?.id, persons]);
+
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     const wrap = wrapRef.current;
@@ -39,7 +53,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
     if (!camDef || !lensDef) return;
 
-    const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster);
+    const sensor = getEffectiveSensor(camDef, lensDef, { adapterId: cam.adapterId, useSpeedbooster: cam.useSpeedbooster });
 
     // HiDPI: size canvas to container at device pixel ratio
     const dpr = window.devicePixelRatio || 1;
@@ -223,7 +237,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       return Math.max(-SAFE, Math.min(SAFE, v));
     }
 
-    const drawPerson = (cx: number, feetY: number, headY: number, dist: number, objectType?: StageObjectType, label?: string) => {
+    const drawPerson = (cx: number, feetY: number, headY: number, dist: number, objectType?: StageObjectType, label?: string, customColor?: string) => {
       const pxH = Math.abs(headY - feetY);
       if (pxH < 1) return;
       const type = objectType ?? 'person';
@@ -299,6 +313,97 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         ctx.beginPath();
         ctx.ellipse(cx, headY + pxH * 0.05, pxH * 0.04, pxH * 0.06, 0, 0, Math.PI * 2);
         ctx.fill(); ctx.stroke();
+      } else if (type === 'chair') {
+        const c = customColor ?? '#a16207';
+        const seatW = pxH * 0.6;
+        const seatY = feetY - pxH * 0.55;
+        const backH = pxH * 0.65;
+        // Legs
+        ctx.strokeStyle = '#57534e'; ctx.lineWidth = Math.max(1, pxH * 0.04);
+        ctx.beginPath(); ctx.moveTo(cx - seatW / 2, seatY); ctx.lineTo(cx - seatW / 2, feetY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + seatW / 2, seatY); ctx.lineTo(cx + seatW / 2, feetY); ctx.stroke();
+        // Seat
+        ctx.fillStyle = c + 'aa'; ctx.strokeStyle = c; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.rect(cx - seatW / 2, seatY, seatW, pxH * 0.08); ctx.fill(); ctx.stroke();
+        // Backrest
+        ctx.beginPath(); ctx.rect(cx - seatW * 0.45, seatY - backH, seatW * 0.9, backH); ctx.fill(); ctx.stroke();
+      } else if (type === 'table') {
+        const c = customColor ?? '#a16207';
+        const topW = pxH * 1.4;
+        const topY = feetY - pxH * 0.75;
+        ctx.strokeStyle = '#57534e'; ctx.lineWidth = Math.max(1, pxH * 0.05);
+        ctx.beginPath(); ctx.moveTo(cx - topW / 2 + pxH * 0.06, topY + pxH * 0.04); ctx.lineTo(cx - topW / 2 + pxH * 0.06, feetY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + topW / 2 - pxH * 0.06, topY + pxH * 0.04); ctx.lineTo(cx + topW / 2 - pxH * 0.06, feetY); ctx.stroke();
+        ctx.fillStyle = c + 'cc'; ctx.strokeStyle = c; ctx.lineWidth = 1.3;
+        ctx.beginPath(); ctx.rect(cx - topW / 2, topY, topW, pxH * 0.08); ctx.fill(); ctx.stroke();
+      } else if (type === 'lectern') {
+        const c = customColor ?? '#7c3aed';
+        const w = pxH * 0.55;
+        ctx.fillStyle = c + 'bb'; ctx.strokeStyle = c; ctx.lineWidth = 1.3;
+        ctx.beginPath(); ctx.rect(cx - w / 2, feetY - pxH * 0.85, w, pxH * 0.85); ctx.fill(); ctx.stroke();
+        // Slanted top
+        ctx.fillStyle = '#1f2937cc'; ctx.strokeStyle = '#475569';
+        ctx.beginPath();
+        ctx.moveTo(cx - w * 0.6, feetY - pxH * 0.95);
+        ctx.lineTo(cx + w * 0.6, feetY - pxH * 0.8);
+        ctx.lineTo(cx + w * 0.6, feetY - pxH * 0.72);
+        ctx.lineTo(cx - w * 0.6, feetY - pxH * 0.87);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+      } else if (type === 'sitting-person') {
+        const c = customColor ?? '#38bdf8';
+        const pxW = pxH * 0.3;
+        const headR = pxH * 0.11;
+        // Stool hint
+        ctx.strokeStyle = '#57534e'; ctx.lineWidth = Math.max(1, pxH * 0.03);
+        ctx.beginPath(); ctx.moveTo(cx - pxW * 0.6, feetY - pxH * 0.05); ctx.lineTo(cx - pxW * 0.6, feetY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + pxW * 0.6, feetY - pxH * 0.05); ctx.lineTo(cx + pxW * 0.6, feetY); ctx.stroke();
+        // Torso (short)
+        ctx.fillStyle = c + '55'; ctx.strokeStyle = c; ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(cx - pxW * 0.55, feetY - pxH * 0.5);
+        ctx.lineTo(cx + pxW * 0.55, feetY - pxH * 0.5);
+        ctx.lineTo(cx + pxW * 0.4, feetY - pxH * 0.05);
+        ctx.lineTo(cx - pxW * 0.4, feetY - pxH * 0.05);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        // Head
+        ctx.fillStyle = '#d4a57488'; ctx.strokeStyle = c;
+        ctx.beginPath(); ctx.arc(cx, headY + headR + pxH * 0.05, headR, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        // Thighs horizontal
+        ctx.strokeStyle = c + '88'; ctx.lineWidth = Math.max(1, pxH * 0.04);
+        ctx.beginPath(); ctx.moveTo(cx - pxW * 0.3, feetY - pxH * 0.1); ctx.lineTo(cx + pxW * 0.8, feetY - pxH * 0.1); ctx.stroke();
+      } else if (type === 'schneetiger') {
+        const c = customColor ?? '#e0f2fe';
+        const bodyW = pxH * 1.3;
+        const bodyH = pxH * 0.5;
+        const bodyY = feetY - bodyH * 1.3;
+        // Legs
+        ctx.strokeStyle = c; ctx.lineWidth = Math.max(1.5, pxH * 0.06);
+        ctx.beginPath(); ctx.moveTo(cx - bodyW * 0.35, bodyY + bodyH); ctx.lineTo(cx - bodyW * 0.35, feetY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + bodyW * 0.35, bodyY + bodyH); ctx.lineTo(cx + bodyW * 0.35, feetY); ctx.stroke();
+        // Body
+        ctx.fillStyle = c + 'cc'; ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        if (pxH > 10) ctx.roundRect(cx - bodyW / 2, bodyY, bodyW, bodyH, bodyH * 0.4);
+        else ctx.rect(cx - bodyW / 2, bodyY, bodyW, bodyH);
+        ctx.fill(); ctx.stroke();
+        // Stripes
+        ctx.strokeStyle = '#1f2937aa'; ctx.lineWidth = Math.max(1, pxH * 0.02);
+        for (let i = 1; i < 5; i++) {
+          const sx = cx - bodyW / 2 + (bodyW * i) / 5;
+          ctx.beginPath(); ctx.moveTo(sx, bodyY + bodyH * 0.1); ctx.lineTo(sx + pxH * 0.04, bodyY + bodyH * 0.9); ctx.stroke();
+        }
+        // Head
+        ctx.fillStyle = c + 'dd'; ctx.strokeStyle = '#334155';
+        const hr = pxH * 0.18;
+        ctx.beginPath(); ctx.arc(cx + bodyW * 0.45, bodyY + bodyH * 0.3, hr, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        // Ears
+        ctx.fillStyle = c;
+        ctx.beginPath(); ctx.moveTo(cx + bodyW * 0.45 - hr * 0.5, bodyY + bodyH * 0.3 - hr); ctx.lineTo(cx + bodyW * 0.45 - hr * 0.2, bodyY + bodyH * 0.3 - hr * 1.5); ctx.lineTo(cx + bodyW * 0.45, bodyY + bodyH * 0.3 - hr); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(cx + bodyW * 0.45 + hr * 0.5, bodyY + bodyH * 0.3 - hr); ctx.lineTo(cx + bodyW * 0.45 + hr * 0.2, bodyY + bodyH * 0.3 - hr * 1.5); ctx.lineTo(cx + bodyW * 0.45, bodyY + bodyH * 0.3 - hr); ctx.closePath(); ctx.fill();
+        // Tail
+        ctx.strokeStyle = c; ctx.lineWidth = Math.max(1.5, pxH * 0.05);
+        ctx.beginPath(); ctx.moveTo(cx - bodyW * 0.5, bodyY + bodyH * 0.3); ctx.quadraticCurveTo(cx - bodyW * 0.85, bodyY, cx - bodyW * 0.75, bodyY - bodyH * 0.4); ctx.stroke();
       } else {
         // Person (or person-guitar) - realistic silhouette
         const pxW = pxH * 0.28;
@@ -309,8 +414,8 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         const waistY = feetY - pxH * 0.42;
         const hipW = pxW * 0.4;
 
-        const bodyColor = type === 'person-guitar' ? '#f97316' : '#22c55e';
-        const bodyFill = type === 'person-guitar' ? '#f9731644' : '#22c55e44';
+        const bodyColor = customColor ?? (type === 'person-guitar' ? '#f97316' : '#22c55e');
+        const bodyFill = bodyColor + '44';
         const skinColor = '#d4a574';
 
         // Head (skin-colored circle)
@@ -391,7 +496,18 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       // Label
       if (label && feetY > 0 && feetY < H - 5 && cx > -50 && cx < W + 50 && dist > 0) {
         const fontSize = Math.max(7, Math.min(11, 120 / dist));
-        const labelColor = type === 'drums' ? '#ef4444' : type === 'keys' ? '#8b5cf6' : type === 'person-guitar' ? '#f97316' : type === 'mic-stand' ? '#9ca3af' : '#22c55e';
+        const labelColor = customColor ?? (
+          type === 'drums' ? '#ef4444' :
+          type === 'keys' ? '#8b5cf6' :
+          type === 'person-guitar' ? '#f97316' :
+          type === 'mic-stand' ? '#9ca3af' :
+          type === 'chair' ? '#a16207' :
+          type === 'table' ? '#a16207' :
+          type === 'lectern' ? '#7c3aed' :
+          type === 'sitting-person' ? '#38bdf8' :
+          type === 'schneetiger' ? '#e0f2fe' :
+          '#22c55e'
+        );
         ctx.fillStyle = labelColor;
         ctx.font = `${fontSize}px monospace`;
         ctx.textAlign = 'center';
@@ -399,6 +515,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       }
     }
 
+    const personScreenData: { sx: number; sy: number; dist: number; label: string; color?: string }[] = [];
     persons.forEach((person) => {
       const feet = worldToScreen(person.x, person.y, 0);
       const head = worldToScreen(person.x, person.y, person.height);
@@ -419,7 +536,19 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       if (feetSy < 0 && headSy < 0) return;
       if (feetSy > H && headSy > H) return;
 
-      drawPerson(feetSx, feetSy, headSy, feet.dist, person.objectType, `${person.label} (${person.height.toFixed(1)}m)`);
+      // DoF-based blur
+      let blurPx = 0;
+      if (dof) {
+        const outOfFocus = Math.abs(feet.dist - cam.focusDistance);
+        blurPx = Math.min(12, outOfFocus * (cam.focalLength / 50) / Math.max(1, cam.aperture) * 0.6);
+      }
+      if (blurPx > 0.5) (ctx as any).filter = `blur(${blurPx.toFixed(1)}px)`;
+
+      drawPerson(feetSx, feetSy, headSy, feet.dist, person.objectType, `${person.label} (${person.height.toFixed(1)}m)`, person.color);
+
+      if (blurPx > 0.5) (ctx as any).filter = 'none';
+
+      personScreenData.push({ sx: feetSx, sy: (feetSy + headSy) / 2, dist: feet.dist, label: person.label, color: person.color });
     });
 
     ctx.restore();
@@ -557,6 +686,25 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(W / 2 - 18, H / 2); ctx.lineTo(W / 2 + 18, H / 2); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(W / 2, H / 2 - 18); ctx.lineTo(W / 2, H / 2 + 18); ctx.stroke();
+
+      // Distance overlay: nearest person closest to crosshair horizontally
+      if (personScreenData.length > 0) {
+        const near = personScreenData
+          .map((p) => ({ ...p, dx: Math.abs(p.sx - W / 2) }))
+          .filter((p) => p.dx < 80)
+          .sort((a, b) => a.dx - b.dx)[0];
+        if (near) {
+          ctx.fillStyle = 'rgba(0,0,0,0.55)';
+          ctx.fillRect(W / 2 + 22, H / 2 - 8, 68, 16);
+          ctx.strokeStyle = near.color ?? '#fbbf24';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(W / 2 + 22, H / 2 - 8, 68, 16);
+          ctx.fillStyle = near.color ?? '#fbbf24';
+          ctx.font = '10px monospace';
+          ctx.textAlign = 'left';
+          ctx.fillText(`${near.label.slice(0, 6)} ${near.dist.toFixed(1)}m`, W / 2 + 25, H / 2 + 4);
+        }
+      }
     }
 
     // ═══ VIGNETTE ═══
@@ -618,10 +766,13 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     const dx = e.clientX - lastMouse.current.x;
     const dy = e.clientY - lastMouse.current.y;
     lastMouse.current = { x: e.clientX, y: e.clientY };
-    const panSens = 0.3;
-    const tiltSens = 0.2;
-    const newPan = Math.max(-180, Math.min(180, cam.pan - dx * panSens));
-    const newTilt = Math.max(-90, Math.min(45, cam.tilt + dy * tiltSens));
+    const inv = cam.invertPreview ? -1 : 1;
+    // Scale sensitivity with FOV: wider FOV = faster, tele = slower (natural feel)
+    const fovScale = Math.max(0.15, Math.min(1.5, cam.focalLength / 50));
+    const panSens = 0.25 / fovScale;
+    const tiltSens = 0.18 / fovScale;
+    const newPan = Math.max(-180, Math.min(180, cam.pan - dx * panSens * inv));
+    const newTilt = Math.max(-90, Math.min(45, cam.tilt + dy * tiltSens * inv));
     useStore.getState().updateCamera(cam.id, { pan: newPan, tilt: newTilt });
   }, [cam]);
 
@@ -652,8 +803,8 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   // Computed data for readout (outside canvas)
   const camDef = getCameraById(cam.cameraId);
   const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
-  const sensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster) : undefined;
-  const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, cam.useSpeedbooster) : null;
+  const sensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, { adapterId: cam.adapterId, useSpeedbooster: cam.useSpeedbooster }) : undefined;
+  const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, { adapterId: cam.adapterId, useSpeedbooster: cam.useSpeedbooster }) : null;
   const fov = sensor ? computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive) : null;
   const dof = sensor ? computeDof(sensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive) : null;
   const lightLoss = adapterInfo ? (adapterInfo.lightLossStops > 0 ? ` (−${adapterInfo.lightLossStops}T)` : adapterInfo.lightLossStops < 0 ? ` (+${Math.abs(adapterInfo.lightLossStops)}T)` : '') : '';

@@ -383,7 +383,7 @@ export default function Venue2D() {
           const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
           if (!camDef || !lensDef) return null;
 
-          const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster);
+          const sensor = getEffectiveSensor(camDef, lensDef, { adapterId: cam.adapterId, useSpeedbooster: cam.useSpeedbooster });
           const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
           const fovMin = computeFov(sensor, lensDef.focalLengthMax, cam.focusDistance, cam.extenderActive);
           const fovMax = computeFov(sensor, lensDef.focalLengthMin, cam.focusDistance, cam.extenderActive);
@@ -453,12 +453,34 @@ export default function Venue2D() {
         )}
 
         {/* Persons */}
-        {persons.map((p) => (
-          <Group key={p.id} x={p.x * ppm} y={p.y * ppm} draggable onDragEnd={(e) => handlePersonDragEnd(p.id, e)}>
-            <Circle radius={6} fill="#f59e0b" stroke="#fff" strokeWidth={1} opacity={0.8} />
-            <Text x={-20} y={8} text={`${p.label} (${p.height}m)`} fontSize={9} fill="#f59e0b" align="center" width={40} />
-          </Group>
-        ))}
+        {persons.map((p) => {
+          const type = p.objectType ?? 'person';
+          const col = p.color ?? (
+            type === 'drums' ? '#ef4444' :
+            type === 'keys' ? '#8b5cf6' :
+            type === 'person-guitar' ? '#f97316' :
+            type === 'sitting-person' ? '#38bdf8' :
+            type === 'mic-stand' ? '#9ca3af' :
+            type === 'chair' ? '#a16207' :
+            type === 'table' ? '#a16207' :
+            type === 'lectern' ? '#7c3aed' :
+            type === 'schneetiger' ? '#e0f2fe' :
+            '#f59e0b'
+          );
+          const footW = Math.max(6, p.width * ppm);
+          return (
+            <Group key={p.id} x={p.x * ppm} y={p.y * ppm} draggable onDragEnd={(e) => handlePersonDragEnd(p.id, e)}>
+              {type === 'table' || type === 'drums' || type === 'keys' ? (
+                <Rect x={-footW / 2} y={-footW / 4} width={footW} height={footW / 2} fill={col} opacity={0.55} stroke={col} strokeWidth={1} cornerRadius={2} />
+              ) : type === 'schneetiger' ? (
+                <Rect x={-footW / 2} y={-footW / 4} width={footW} height={footW / 2} fill={col} opacity={0.85} stroke="#1f2937" strokeWidth={1} cornerRadius={footW / 4} />
+              ) : (
+                <Circle radius={Math.max(5, footW / 3)} fill={col} stroke="#fff" strokeWidth={1} opacity={0.85} />
+              )}
+              <Text x={-26} y={8} text={`${p.label} (${p.height}m)`} fontSize={9} fill={col} align="center" width={52} />
+            </Group>
+          );
+        })}
 
         {/* Camera icons (on top) */}
         {cameras.map((cam) => {

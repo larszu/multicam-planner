@@ -128,7 +128,7 @@ export const LENSES: Lens[] = [
 
   // ── Sigma E-mount (Art / Contemporary) ──
   { id: 'sigma-16-28-e', manufacturer: 'Sigma', model: '16-28mm f/2.8 DG DN C', focalLengthMin: 16, focalLengthMax: 28, maxApertureWide: 2.8, mount: 'E', type: 'zoom', notes: 'Contemporary' },
-  { id: 'sigma-18-50-e', manufacturer: 'Sigma', model: '18-50mm f/2.8 DC DN C', focalLengthMin: 18, focalLengthMax: 50, maxApertureWide: 2.8, mount: 'E', type: 'zoom', notes: 'Contemporary, APS-C' },
+  { id: 'sigma-18-50-e', manufacturer: 'Sigma', model: '18-50mm f/2.8 DC DN C', focalLengthMin: 18, focalLengthMax: 50, maxApertureWide: 2.8, mount: 'E', imageCircle: 'APSC', type: 'zoom', notes: 'Contemporary, APS-C' },
   { id: 'sigma-24-70-e', manufacturer: 'Sigma', model: '24-70mm f/2.8 DG DN Art', focalLengthMin: 24, focalLengthMax: 70, maxApertureWide: 2.8, mount: 'E', type: 'zoom' },
   { id: 'sigma-28-70-e', manufacturer: 'Sigma', model: '28-70mm f/2.8 DG DN C', focalLengthMin: 28, focalLengthMax: 70, maxApertureWide: 2.8, mount: 'E', type: 'zoom', notes: 'Contemporary' },
   { id: 'sigma-70-200-e', manufacturer: 'Sigma', model: '70-200mm f/2.8 DG DN OS Sport', focalLengthMin: 70, focalLengthMax: 200, maxApertureWide: 2.8, mount: 'E', type: 'zoom' },
@@ -142,9 +142,9 @@ export const LENSES: Lens[] = [
   { id: 'sigma-105-e', manufacturer: 'Sigma', model: '105mm f/2.8 DG DN Macro Art', focalLengthMin: 105, focalLengthMax: 105, maxApertureWide: 2.8, mount: 'E', type: 'prime' },
 
   // ── Tamron E-mount ──
-  { id: 'tamron-11-20-e', manufacturer: 'Tamron', model: '11-20mm f/2.8 Di III-A RXD', focalLengthMin: 11, focalLengthMax: 20, maxApertureWide: 2.8, mount: 'E', type: 'zoom', notes: 'APS-C ultra-wide' },
+  { id: 'tamron-11-20-e', manufacturer: 'Tamron', model: '11-20mm f/2.8 Di III-A RXD', focalLengthMin: 11, focalLengthMax: 20, maxApertureWide: 2.8, mount: 'E', imageCircle: 'APSC', type: 'zoom', notes: 'APS-C ultra-wide' },
   { id: 'tamron-17-28-e', manufacturer: 'Tamron', model: '17-28mm f/2.8 Di III RXD', focalLengthMin: 17, focalLengthMax: 28, maxApertureWide: 2.8, mount: 'E', type: 'zoom' },
-  { id: 'tamron-17-70-e', manufacturer: 'Tamron', model: '17-70mm f/2.8 Di III-A VC RXD', focalLengthMin: 17, focalLengthMax: 70, maxApertureWide: 2.8, mount: 'E', type: 'zoom', notes: 'APS-C' },
+  { id: 'tamron-17-70-e', manufacturer: 'Tamron', model: '17-70mm f/2.8 Di III-A VC RXD', focalLengthMin: 17, focalLengthMax: 70, maxApertureWide: 2.8, mount: 'E', imageCircle: 'APSC', type: 'zoom', notes: 'APS-C' },
   { id: 'tamron-28-75-e', manufacturer: 'Tamron', model: '28-75mm f/2.8 Di III VXD G2', focalLengthMin: 28, focalLengthMax: 75, maxApertureWide: 2.8, mount: 'E', type: 'zoom' },
   { id: 'tamron-28-200-e', manufacturer: 'Tamron', model: '28-200mm f/2.8-5.6 Di III RXD', focalLengthMin: 28, focalLengthMax: 200, maxApertureWide: 2.8, maxApertureTele: 5.6, mount: 'E', type: 'zoom' },
   { id: 'tamron-35-150-e', manufacturer: 'Tamron', model: '35-150mm f/2-2.8 Di III VXD', focalLengthMin: 35, focalLengthMax: 150, maxApertureWide: 2.0, maxApertureTele: 2.8, mount: 'E', type: 'zoom' },
@@ -153,8 +153,8 @@ export const LENSES: Lens[] = [
   { id: 'tamron-150-500-e', manufacturer: 'Tamron', model: '150-500mm f/5-6.7 Di III VC VXD', focalLengthMin: 150, focalLengthMax: 500, maxApertureWide: 5, maxApertureTele: 6.7, mount: 'E', type: 'zoom' },
 
   // ── Canon Cinema EF / Compact Servo ──
-  { id: 'can-cn-e18-80', manufacturer: 'Canon', model: 'CN-E 18-80mm T4.4', focalLengthMin: 18, focalLengthMax: 80, maxApertureWide: 4.4, mount: 'EF', type: 'zoom', notes: 'Compact servo, S35' },
-  { id: 'can-cn-e70-200', manufacturer: 'Canon', model: 'CN-E 70-200mm T4.4', focalLengthMin: 70, focalLengthMax: 200, maxApertureWide: 4.4, mount: 'EF', type: 'zoom', notes: 'Compact servo, S35' },
+  { id: 'can-cn-e18-80', manufacturer: 'Canon', model: 'CN-E 18-80mm T4.4', focalLengthMin: 18, focalLengthMax: 80, maxApertureWide: 4.4, mount: 'EF', imageCircle: 'S35', type: 'zoom', notes: 'Compact servo, S35' },
+  { id: 'can-cn-e70-200', manufacturer: 'Canon', model: 'CN-E 70-200mm T4.4', focalLengthMin: 70, focalLengthMax: 200, maxApertureWide: 4.4, mount: 'EF', imageCircle: 'S35', type: 'zoom', notes: 'Compact servo, S35' },
 
   // ── Canon EF – Standard Zooms ──
   { id: 'can-ef-16-35-f28l', manufacturer: 'Canon', model: 'EF 16-35mm f/2.8L III USM', focalLengthMin: 16, focalLengthMax: 35, maxApertureWide: 2.8, mount: 'EF', type: 'zoom' },
@@ -172,8 +172,8 @@ export const LENSES: Lens[] = [
   { id: 'can-ef-135-f2l', manufacturer: 'Canon', model: 'EF 135mm f/2L USM', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2, mount: 'EF', type: 'prime' },
 
   // ── Sigma EF-mount (Art / Classic) ──
-  { id: 'sigma-18-35-art-ef', manufacturer: 'Sigma', model: 'Art 18-35mm f/1.8 DC HSM', focalLengthMin: 18, focalLengthMax: 35, maxApertureWide: 1.8, mount: 'EF', type: 'zoom', notes: 'APS-C' },
-  { id: 'sigma-50-100-art-ef', manufacturer: 'Sigma', model: 'Art 50-100mm f/1.8 DC HSM', focalLengthMin: 50, focalLengthMax: 100, maxApertureWide: 1.8, mount: 'EF', type: 'zoom', notes: 'APS-C' },
+  { id: 'sigma-18-35-art-ef', manufacturer: 'Sigma', model: 'Art 18-35mm f/1.8 DC HSM', focalLengthMin: 18, focalLengthMax: 35, maxApertureWide: 1.8, mount: 'EF', imageCircle: 'APSC', type: 'zoom', notes: 'APS-C' },
+  { id: 'sigma-50-100-art-ef', manufacturer: 'Sigma', model: 'Art 50-100mm f/1.8 DC HSM', focalLengthMin: 50, focalLengthMax: 100, maxApertureWide: 1.8, mount: 'EF', imageCircle: 'APSC', type: 'zoom', notes: 'APS-C' },
   { id: 'sigma-24-35-art-ef', manufacturer: 'Sigma', model: 'Art 24-35mm f/2 DG HSM', focalLengthMin: 24, focalLengthMax: 35, maxApertureWide: 2, mount: 'EF', type: 'zoom' },
   { id: 'sigma-24-70-art-ef', manufacturer: 'Sigma', model: 'Art 24-70mm f/2.8 DG OS HSM', focalLengthMin: 24, focalLengthMax: 70, maxApertureWide: 2.8, mount: 'EF', type: 'zoom' },
   { id: 'sigma-14-ef', manufacturer: 'Sigma', model: 'Art 14mm f/1.8 DG HSM', focalLengthMin: 14, focalLengthMax: 14, maxApertureWide: 1.8, mount: 'EF', type: 'prime' },
@@ -191,26 +191,26 @@ export const LENSES: Lens[] = [
   { id: 'tamron-100-400-ef', manufacturer: 'Tamron', model: '100-400mm f/4.5-6.3 Di VC USD', focalLengthMin: 100, focalLengthMax: 400, maxApertureWide: 4.5, maxApertureTele: 6.3, mount: 'EF', type: 'zoom' },
 
   // ── Tokina EF-mount ──
-  { id: 'tokina-11-20-ef', manufacturer: 'Tokina', model: 'ATX-i 11-20mm f/2.8 CF', focalLengthMin: 11, focalLengthMax: 20, maxApertureWide: 2.8, mount: 'EF', type: 'zoom', notes: 'APS-C ultra-wide, compact front' },
+  { id: 'tokina-11-20-ef', manufacturer: 'Tokina', model: 'ATX-i 11-20mm f/2.8 CF', focalLengthMin: 11, focalLengthMax: 20, maxApertureWide: 2.8, mount: 'EF', imageCircle: 'APSC', type: 'zoom', notes: 'APS-C ultra-wide, compact front' },
 
   // ┌─────────────────────────────────────────────┐
   // │  CANON CN7 / CN10 / CN20 – PL Servo Zooms   │
   // └─────────────────────────────────────────────┘
-  { id: 'can-cn7x17', manufacturer: 'Canon', model: 'CN7x17 KAS S / E1 (17-120mm T2.95)', focalLengthMin: 17, focalLengthMax: 120, maxApertureWide: 2.95, mount: 'PL', type: 'zoom', notes: 'Cine-Servo, S35 PL, also EF version' },
-  { id: 'can-cn10x25', manufacturer: 'Canon', model: 'CN10x25 IAS S / E1 (25-250mm T2.95-3.95)', focalLengthMin: 25, focalLengthMax: 250, maxApertureWide: 2.95, maxApertureTele: 3.95, mount: 'PL', type: 'zoom', notes: 'Cine-Servo telephoto, S35 PL' },
-  { id: 'can-cn20x50', manufacturer: 'Canon', model: 'CN20x50 IAS H / E1 (50-1000mm T5.0-8.9)', focalLengthMin: 50, focalLengthMax: 1000, maxApertureWide: 5.0, maxApertureTele: 8.9, mount: 'PL', extenderFactors: [1.5], type: 'zoom', notes: 'Cine-Servo super-telephoto, S35, 1.5x built-in' },
-  { id: 'can-cn-e15.5-47', manufacturer: 'Canon', model: 'CN-E 15.5-47mm T2.8 L S/SP', focalLengthMin: 15.5, focalLengthMax: 47, maxApertureWide: 2.8, mount: 'PL', type: 'zoom', notes: 'Cinema zoom, S35' },
-  { id: 'can-cn-e30-105', manufacturer: 'Canon', model: 'CN-E 30-105mm T2.8 L S/SP', focalLengthMin: 30, focalLengthMax: 105, maxApertureWide: 2.8, mount: 'PL', type: 'zoom', notes: 'Cinema zoom, S35' },
-  { id: 'can-cn-e14.5-60', manufacturer: 'Canon', model: 'CN-E 14.5-60mm T2.6 L S/SP', focalLengthMin: 14.5, focalLengthMax: 60, maxApertureWide: 2.6, mount: 'PL', type: 'zoom', notes: 'Cinema zoom compact, S35' },
-  { id: 'can-cn-e30-300', manufacturer: 'Canon', model: 'CN-E 30-300mm T2.95-3.7 L S/SP', focalLengthMin: 30, focalLengthMax: 300, maxApertureWide: 2.95, maxApertureTele: 3.7, mount: 'PL', type: 'zoom', notes: 'Cinema long zoom, S35' },
+  { id: 'can-cn7x17', manufacturer: 'Canon', model: 'CN7x17 KAS S / E1 (17-120mm T2.95)', focalLengthMin: 17, focalLengthMax: 120, maxApertureWide: 2.95, mount: 'PL', imageCircle: 'S35', type: 'zoom', notes: 'Cine-Servo, S35 PL, also EF version' },
+  { id: 'can-cn10x25', manufacturer: 'Canon', model: 'CN10x25 IAS S / E1 (25-250mm T2.95-3.95)', focalLengthMin: 25, focalLengthMax: 250, maxApertureWide: 2.95, maxApertureTele: 3.95, mount: 'PL', imageCircle: 'S35', type: 'zoom', notes: 'Cine-Servo telephoto, S35 PL' },
+  { id: 'can-cn20x50', manufacturer: 'Canon', model: 'CN20x50 IAS H / E1 (50-1000mm T5.0-8.9)', focalLengthMin: 50, focalLengthMax: 1000, maxApertureWide: 5.0, maxApertureTele: 8.9, mount: 'PL', imageCircle: 'S35', extenderFactors: [1.5], type: 'zoom', notes: 'Cine-Servo super-telephoto, S35, 1.5x built-in' },
+  { id: 'can-cn-e15.5-47', manufacturer: 'Canon', model: 'CN-E 15.5-47mm T2.8 L S/SP', focalLengthMin: 15.5, focalLengthMax: 47, maxApertureWide: 2.8, mount: 'PL', imageCircle: 'S35', type: 'zoom', notes: 'Cinema zoom, S35' },
+  { id: 'can-cn-e30-105', manufacturer: 'Canon', model: 'CN-E 30-105mm T2.8 L S/SP', focalLengthMin: 30, focalLengthMax: 105, maxApertureWide: 2.8, mount: 'PL', imageCircle: 'S35', type: 'zoom', notes: 'Cinema zoom, S35' },
+  { id: 'can-cn-e14.5-60', manufacturer: 'Canon', model: 'CN-E 14.5-60mm T2.6 L S/SP', focalLengthMin: 14.5, focalLengthMax: 60, maxApertureWide: 2.6, mount: 'PL', imageCircle: 'S35', type: 'zoom', notes: 'Cinema zoom compact, S35' },
+  { id: 'can-cn-e30-300', manufacturer: 'Canon', model: 'CN-E 30-300mm T2.95-3.7 L S/SP', focalLengthMin: 30, focalLengthMax: 300, maxApertureWide: 2.95, maxApertureTele: 3.7, mount: 'PL', imageCircle: 'S35', type: 'zoom', notes: 'Cinema long zoom, S35' },
 
   // ┌─────────────────────────────────────────────┐
   // │  FUJINON ZK Series – PL Servo/Cine Zooms    │
   // └─────────────────────────────────────────────┘
-  { id: 'fuj-zk2.5x14', manufacturer: 'Fujinon', model: 'ZK2.5x14 (14-35mm T2.9)', focalLengthMin: 14, focalLengthMax: 35, maxApertureWide: 2.9, mount: 'PL', type: 'zoom', notes: 'Cabrio wide, S35' },
-  { id: 'fuj-zk3.5x85', manufacturer: 'Fujinon', model: 'ZK3.5x85 (85-300mm T2.9)', focalLengthMin: 85, focalLengthMax: 300, maxApertureWide: 2.9, mount: 'PL', type: 'zoom', notes: 'Cabrio telephoto, S35' },
-  { id: 'fuj-zk4.7x19', manufacturer: 'Fujinon', model: 'ZK4.7x19 (19-90mm T2.9)', focalLengthMin: 19, focalLengthMax: 90, maxApertureWide: 2.9, mount: 'PL', type: 'zoom', notes: 'Cabrio standard, S35' },
-  { id: 'fuj-zk12x25', manufacturer: 'Fujinon', model: 'ZK12x25 (25-300mm T3.5-3.85)', focalLengthMin: 25, focalLengthMax: 300, maxApertureWide: 3.5, maxApertureTele: 3.85, mount: 'PL', type: 'zoom', notes: 'Cabrio long zoom, S35' },
+  { id: 'fuj-zk2.5x14', manufacturer: 'Fujinon', model: 'ZK2.5x14 (14-35mm T2.9)', focalLengthMin: 14, focalLengthMax: 35, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'S35', type: 'zoom', notes: 'Cabrio wide, S35' },
+  { id: 'fuj-zk3.5x85', manufacturer: 'Fujinon', model: 'ZK3.5x85 (85-300mm T2.9)', focalLengthMin: 85, focalLengthMax: 300, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'S35', type: 'zoom', notes: 'Cabrio telephoto, S35' },
+  { id: 'fuj-zk4.7x19', manufacturer: 'Fujinon', model: 'ZK4.7x19 (19-90mm T2.9)', focalLengthMin: 19, focalLengthMax: 90, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'S35', type: 'zoom', notes: 'Cabrio standard, S35' },
+  { id: 'fuj-zk12x25', manufacturer: 'Fujinon', model: 'ZK12x25 (25-300mm T3.5-3.85)', focalLengthMin: 25, focalLengthMax: 300, maxApertureWide: 3.5, maxApertureTele: 3.85, mount: 'PL', imageCircle: 'S35', type: 'zoom', notes: 'Cabrio long zoom, S35' },
   { id: 'fuj-zk25-300', manufacturer: 'Fujinon', model: 'ZK25-300mm Premier (T3.5-3.85)', focalLengthMin: 25, focalLengthMax: 300, maxApertureWide: 3.5, maxApertureTele: 3.85, mount: 'PL', type: 'zoom', notes: 'Cabrio Premier, detachable servo' },
   { id: 'fuj-premista-19-45', manufacturer: 'Fujinon', model: 'Premista 19-45mm T2.9', focalLengthMin: 19, focalLengthMax: 45, maxApertureWide: 2.9, mount: 'PL', type: 'zoom', notes: 'Large-format PL zoom' },
   { id: 'fuj-premista-28-100', manufacturer: 'Fujinon', model: 'Premista 28-100mm T2.9', focalLengthMin: 28, focalLengthMax: 100, maxApertureWide: 2.9, mount: 'PL', type: 'zoom', notes: 'Large-format PL zoom' },

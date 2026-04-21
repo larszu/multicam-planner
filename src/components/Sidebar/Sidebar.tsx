@@ -1,5 +1,5 @@
 import { useStore } from '../../store/useStore';
-import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor } from '../../data/cameras';
+import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor, getAvailableAdapters, getAutoAdapterId, getCoverageStatus } from '../../data/cameras';
 import { LENSES, getLensById, getCompatibleLenses } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
 import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar } from 'react-icons/fi';
@@ -47,6 +47,7 @@ function CameraCard({ camId }: { camId: string }) {
     favoriteLensIds,
     toggleFavoriteCameraId,
     toggleFavoriteLensId,
+    persons,
   } = useStore();
   const cam = cameras.find((c) => c.id === camId)!;
   const isSelected = cam.id === selectedCameraId;
@@ -69,8 +70,13 @@ function CameraCard({ camId }: { camId: string }) {
   const sortedCameras = sortFavoritesFirst(CAMERAS, favoriteCameraIds);
 
   // Adapter & effective sensor
-  const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, cam.useSpeedbooster) : null;
-  const effectiveSensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster) : camDef?.sensor;
+  const adapterOverride = { adapterId: cam.adapterId, useSpeedbooster: cam.useSpeedbooster };
+  const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, adapterOverride) : null;
+  const effectiveSensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, adapterOverride) : camDef?.sensor;
+  const availableAdapters = camDef && lensDef ? getAvailableAdapters(camDef, lensDef) : [];
+  const autoAdapterId = camDef && lensDef ? getAutoAdapterId(camDef, lensDef) : null;
+  const adapterSelectValue = cam.adapterId ?? 'auto';
+  const coverage = camDef && lensDef ? getCoverageStatus(camDef, lensDef, adapterInfo) : null;
   const fov = effectiveSensor && lensDef ? computeFov(effectiveSensor, cam.focalLength, cam.focusDistance, cam.extenderActive) : null;
   const dof = effectiveSensor && lensDef ? computeDof(effectiveSensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive) : null;
 
@@ -118,18 +124,39 @@ function CameraCard({ camId }: { camId: string }) {
       {adapterInfo && (
         <div className="text-xs mt-0.5 text-bc-yellow">
           ⚡ {adapterInfo.name}{adapterInfo.lightLossStops > 0 ? ` (−${adapterInfo.lightLossStops}T)` : ''}{adapterInfo.lightLossStops < 0 ? ` (+${Math.abs(adapterInfo.lightLossStops)}T gain)` : ''}{adapterInfo.cropSensor ? ` → ${adapterInfo.cropSensor.name}` : ''}
+          {cam.adapterId && <span className="ml-1 text-[10px] text-gray-400">(manual)</span>}
         </div>
       )}
-      {/* Speed Booster toggle — only for EF lens on MFT camera */}
-      {camDef?.mount === 'MFT' && lensDef?.mount === 'EF' && (
-        <label className="flex items-center gap-1.5 text-xs mt-1 text-gray-300 cursor-pointer" onClick={(e) => e.stopPropagation()}>
-          <input
-            type="checkbox"
-            checked={cam.useSpeedbooster}
-            onChange={(e) => updateCamera(cam.id, { useSpeedbooster: e.target.checked })}
-            className="accent-bc-accent"
-          />
-          Speed Booster 0.71× (focal reducer, +1T gain)
+
+      {/* Image-circle coverage warning */}
+      {coverage && coverage.status !== 'ok' && (
+        <div className={`text-xs mt-0.5 ${coverage.status === 'vignette' ? 'text-red-400' : 'text-orange-300'}`}>
+          {coverage.status === 'vignette' ? '⛔' : '⚠️'} {coverage.message}
+        </div>
+      )}
+
+      {/* Adapter override selector – only if more than one choice exists */}
+      {availableAdapters.length > 1 && (
+        <label className="flex items-center gap-1.5 text-xs mt-1 text-gray-300" onClick={(e) => e.stopPropagation()}>
+          <span className="text-gray-500 shrink-0">Adapter</span>
+          <select
+            className="flex-1 bg-bc-dark border border-bc-border rounded px-1.5 py-0.5 text-white text-[11px]"
+            value={adapterSelectValue}
+            onChange={(e) => {
+              const next = e.target.value;
+              if (next === 'auto') {
+                updateCamera(cam.id, { adapterId: undefined, useSpeedbooster: false });
+              } else {
+                const chosen = availableAdapters.find((a) => a.id === next);
+                updateCamera(cam.id, { adapterId: next, useSpeedbooster: !!chosen?.isSpeedBooster });
+              }
+            }}
+          >
+            <option value="auto">Auto{autoAdapterId ? ` (${availableAdapters.find((a) => a.id === autoAdapterId)?.name ?? autoAdapterId})` : ''}</option>
+            {availableAdapters.map((a) => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
         </label>
       )}
 
@@ -282,7 +309,24 @@ function CameraCard({ camId }: { camId: string }) {
 
           {/* Focal length slider */}
           <label className="block">
-            <span className="text-gray-400">Focal Length: {cam.focalLength.toFixed(1)}mm{cam.extenderActive > 1 ? ` (eff. ${(cam.focalLength * cam.extenderActive).toFixed(0)}mm)` : ''}</span>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-gray-400">Focal Length: {cam.focalLength.toFixed(1)}mm{cam.extenderActive > 1 ? ` (eff. ${(cam.focalLength * cam.extenderActive).toFixed(0)}mm)` : ''}</span>
+              <input
+                type="number"
+                step={0.1}
+                min={lensDef?.focalLengthMin ?? 1}
+                max={lensDef?.focalLengthMax ?? 2000}
+                className="w-16 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-white text-[11px]"
+                value={cam.focalLength}
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  if (!isFinite(v)) return;
+                  const min = lensDef?.focalLengthMin ?? 1;
+                  const max = lensDef?.focalLengthMax ?? 2000;
+                  updateCamera(cam.id, { focalLength: Math.max(min, Math.min(max, v)) });
+                }}
+              />
+            </div>
             <input
               type="range"
               className="w-full accent-bc-accent"
@@ -310,7 +354,21 @@ function CameraCard({ camId }: { camId: string }) {
 
           {/* Focus distance */}
           <label className="block">
-            <span className="text-gray-400">Distance: {cam.focusDistance.toFixed(1)}m</span>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-gray-400">
+                Distance: {cam.focusDistance.toFixed(1)}m
+                {cam.lockedPersonId && <span className="ml-1 text-bc-accent text-[10px]">🔒 locked</span>}
+              </span>
+              <input
+                type="number"
+                step={0.1}
+                min={0.1}
+                max={500}
+                className="w-16 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-white text-[11px]"
+                value={cam.focusDistance}
+                onChange={(e) => updateCamera(cam.id, { focusDistance: Math.max(0.1, parseFloat(e.target.value) || 0) })}
+              />
+            </div>
             <input
               type="range"
               className="w-full accent-bc-accent"
@@ -320,6 +378,19 @@ function CameraCard({ camId }: { camId: string }) {
               value={cam.focusDistance}
               onChange={(e) => updateCamera(cam.id, { focusDistance: parseFloat(e.target.value) })}
             />
+            <div className="flex items-center gap-1 text-[10px] text-gray-400 mt-0.5">
+              <span className="shrink-0">Lock to</span>
+              <select
+                className="flex-1 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-white"
+                value={cam.lockedPersonId ?? ''}
+                onChange={(e) => updateCamera(cam.id, { lockedPersonId: e.target.value || undefined })}
+              >
+                <option value="">— none —</option>
+                {persons.map((p) => (
+                  <option key={p.id} value={p.id}>{p.label}</option>
+                ))}
+              </select>
+            </div>
           </label>
 
           {/* Pan */}
@@ -413,6 +484,17 @@ function CameraCard({ camId }: { camId: string }) {
                 <option key={k} value={k}>{v}</option>
               ))}
             </select>
+          </label>
+
+          {/* Preview control options */}
+          <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!!cam.invertPreview}
+              onChange={(e) => updateCamera(cam.id, { invertPreview: e.target.checked })}
+              className="accent-bc-accent"
+            />
+            Invert preview mouse (natural ↔ reverse)
           </label>
 
           {/* DoF readout */}
@@ -679,27 +761,54 @@ export default function Sidebar() {
         </button>
         {personsOpen && (
           <div className="mt-2 space-y-2 text-xs">
-            {persons.map((p) => (
-              <div key={p.id} className="flex items-center gap-2 bg-bc-dark rounded p-1.5 border border-bc-border">
-                <span className="text-gray-500 text-[10px] w-6">{
-                  p.objectType === 'drums' ? '🥁' :
-                  p.objectType === 'keys' ? '🎹' :
-                  p.objectType === 'person-guitar' ? '🎸' :
-                  p.objectType === 'mic-stand' ? '🎤' : '👤'
-                }</span>
-                <input className="bg-transparent text-white text-xs w-16 outline-none" value={p.label}
-                  onChange={(e) => useStore.getState().updatePerson(p.id, { label: e.target.value })} />
-                <span className="text-gray-500">{p.height}m</span>
-                <span className="text-gray-500">({p.x.toFixed(1)}, {p.y.toFixed(1)})</span>
-                <button onClick={() => removePerson(p.id)} className="ml-auto p-0.5 hover:text-bc-red"><FiTrash2 size={11} /></button>
-              </div>
-            ))}
+            {persons.map((p) => {
+              const typeIcon =
+                p.objectType === 'drums' ? '🥁' :
+                p.objectType === 'keys' ? '🎹' :
+                p.objectType === 'person-guitar' ? '🎸' :
+                p.objectType === 'sitting-person' ? '🪑' :
+                p.objectType === 'mic-stand' ? '🎤' :
+                p.objectType === 'chair' ? '🪑' :
+                p.objectType === 'table' ? '🟫' :
+                p.objectType === 'lectern' ? '🎙️' :
+                p.objectType === 'schneetiger' ? '🐅' : '👤';
+              return (
+                <div key={p.id} className="bg-bc-dark rounded p-1.5 border border-bc-border space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500 text-[10px] w-5">{typeIcon}</span>
+                    <input className="bg-transparent text-white text-xs flex-1 outline-none" value={p.label}
+                      onChange={(e) => useStore.getState().updatePerson(p.id, { label: e.target.value })} />
+                    <button onClick={() => removePerson(p.id)} className="p-0.5 hover:text-bc-red"><FiTrash2 size={11} /></button>
+                  </div>
+                  <div className="flex items-center gap-1 text-[10px] text-gray-400">
+                    <span className="w-8 shrink-0">Size</span>
+                    <input type="number" step="0.05" min={0.1} max={3}
+                      className="w-14 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white"
+                      value={p.height}
+                      onChange={(e) => useStore.getState().updatePerson(p.id, { height: Math.max(0.1, parseFloat(e.target.value) || 0) })} />
+                    <span className="text-gray-600">m</span>
+                    <input type="number" step="0.05" min={0.1} max={5}
+                      className="w-14 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white"
+                      value={p.width}
+                      onChange={(e) => useStore.getState().updatePerson(p.id, { width: Math.max(0.1, parseFloat(e.target.value) || 0) })} />
+                    <span className="text-gray-600">w</span>
+                    <input type="color" className="h-5 w-8 bg-transparent border border-bc-border rounded cursor-pointer"
+                      value={p.color ?? '#f59e0b'}
+                      onChange={(e) => useStore.getState().updatePerson(p.id, { color: e.target.value })} />
+                    <span className="ml-auto text-gray-600">({p.x.toFixed(1)}, {p.y.toFixed(1)})</span>
+                  </div>
+                </div>
+              );
+            })}
             <div className="grid grid-cols-3 gap-1">
               <button onClick={() => addPerson()} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
                 <FiUser size={10} /> Person
               </button>
               <button onClick={() => addStageObject('person-guitar')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
                 🎸 Guitarist
+              </button>
+              <button onClick={() => addStageObject('sitting-person')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                🪑 Seated
               </button>
               <button onClick={() => addStageObject('drums')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
                 🥁 Drums
@@ -708,7 +817,19 @@ export default function Sidebar() {
                 🎹 Keys
               </button>
               <button onClick={() => addStageObject('mic-stand')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
-                🎤 Mic Stand
+                🎤 Mic
+              </button>
+              <button onClick={() => addStageObject('chair')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                🪑 Chair
+              </button>
+              <button onClick={() => addStageObject('table')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                🟫 Table
+              </button>
+              <button onClick={() => addStageObject('lectern')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                🎙️ Lectern
+              </button>
+              <button onClick={() => addStageObject('schneetiger')} className="col-span-3 flex items-center justify-center gap-1 px-1 py-1 rounded bg-sky-500/20 text-sky-300 text-[10px] hover:bg-sky-500/30">
+                🐅 Schneetiger
               </button>
             </div>
           </div>

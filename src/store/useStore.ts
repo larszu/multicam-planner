@@ -140,14 +140,19 @@ function personUid(): string {
   return `person-${personId++}`;
 }
 
-// Object type presets: { height, width, defaultLabel }
-const OBJECT_PRESETS: Record<string, { height: number; width: number; label: string }> = {
-  'person': { height: 1.8, width: 0.5, label: 'Person' },
-  'person-guitar': { height: 1.8, width: 0.8, label: 'Guitarist' },
-  'drums': { height: 1.2, width: 1.5, label: 'Drums' },
-  'keys': { height: 1.0, width: 1.5, label: 'Keys' },
-  'mic-stand': { height: 1.6, width: 0.3, label: 'Mic Stand' },
-  'custom': { height: 1.0, width: 0.5, label: 'Object' },
+// Object type presets: { height, width, defaultLabel, defaultColor }
+export const OBJECT_PRESETS: Record<string, { height: number; width: number; label: string; color: string }> = {
+  'person':          { height: 1.8, width: 0.5, label: 'Person',       color: '#22c55e' },
+  'person-guitar':   { height: 1.8, width: 0.8, label: 'Guitarist',    color: '#f97316' },
+  'sitting-person':  { height: 1.3, width: 0.6, label: 'Seated',       color: '#38bdf8' },
+  'drums':           { height: 1.2, width: 1.5, label: 'Drums',        color: '#ef4444' },
+  'keys':            { height: 1.0, width: 1.5, label: 'Keys',         color: '#8b5cf6' },
+  'mic-stand':       { height: 1.6, width: 0.3, label: 'Mic Stand',    color: '#9ca3af' },
+  'chair':           { height: 0.9, width: 0.5, label: 'Chair',        color: '#a16207' },
+  'table':           { height: 0.75, width: 1.2, label: 'Table',       color: '#a16207' },
+  'lectern':         { height: 1.2, width: 0.7, label: 'Lectern',      color: '#7c3aed' },
+  'schneetiger':     { height: 1.1, width: 1.8, label: 'Schneetiger',  color: '#e0f2fe' },
+  'custom':          { height: 1.0, width: 0.5, label: 'Object',       color: '#f59e0b' },
 };
 
 const defaultVenue: Venue = {
@@ -200,6 +205,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   addPerson: (x, y) => {
     const { venue, persons } = get();
+    const preset = OBJECT_PRESETS['person'];
     const newPerson: ReferencePerson = {
       id: personUid(),
       x: x ?? venue.widthM / 2,
@@ -208,6 +214,7 @@ export const useStore = create<AppState>((set, get) => ({
       width: 0.5,
       label: `Person ${persons.length + 1}`,
       objectType: 'person',
+      color: preset.color,
     };
     set((s) => ({ persons: [...s.persons, newPerson], projectVersion: s.projectVersion + 1 }));
   },
@@ -224,6 +231,7 @@ export const useStore = create<AppState>((set, get) => ({
       width: preset.width,
       label: `${preset.label} ${count + 1}`,
       objectType,
+      color: preset.color,
     };
     set((s) => ({ persons: [...s.persons, newObj], projectVersion: s.projectVersion + 1 }));
   },
