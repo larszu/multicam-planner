@@ -5,7 +5,7 @@ import { computeFov, computeDof } from '../../utils/fov';
 import { useRef, useEffect, useCallback, useState } from 'react';
 import type { StageObjectType } from '../../types';
 import { getLiveCameraPosition } from '../../types';
-import { FiChevronDown, FiChevronUp, FiExternalLink, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiChevronDown, FiChevronUp, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { MOUNT_TYPE_LABELS } from '../../types';
 import type { CameraMountType } from '../../types';
 import Preview3D from './Preview3D';
@@ -582,38 +582,6 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       ctx.fillText(otherCam.label, pos.sx, pos.sy - sz / 2 - 3);
     });
 
-    // ── Reference person at centre of view ──
-    const refPersonH = 1.8;
-    const scale = H * 0.6 / imgH;
-    const pxHeight = refPersonH * scale;
-    const pxWidth = pxHeight * 0.35;
-    const personX = W / 2;
-    const personBottom = groundYClamped;
-
-    if (groundYClamped > 0 && groundYClamped < H) {
-      // Body
-      ctx.fillStyle = cam.color + '55';
-      ctx.strokeStyle = cam.color + 'aa';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.roundRect(personX - pxWidth / 2, personBottom - pxHeight, pxWidth, pxHeight * 0.7, 4);
-      ctx.fill();
-      ctx.stroke();
-
-      // Head
-      const headR = pxWidth * 0.45;
-      ctx.beginPath();
-      ctx.arc(personX, personBottom - pxHeight - headR * 0.2, headR, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      // Person height label
-      ctx.fillStyle = '#ffffff88';
-      ctx.font = '10px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText('1.80m ref', personX + pxWidth / 2 + 4, personBottom - pxHeight / 2);
-    }
-
     // ═══ RULERS ═══
     const rulerH = 22;
     const rulerY = H - rulerH;
@@ -885,15 +853,6 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
               {label}
             </button>
           ))}
-          {!undocked && (
-            <button
-              onClick={onUndock}
-              className="px-2 py-0.5 rounded text-[10px] font-medium border border-bc-border text-gray-500 hover:text-gray-300 hover:border-gray-400 flex items-center gap-1"
-              title="Undock preview into floating window"
-            >
-              <FiExternalLink size={10} /> Float
-            </button>
-          )}
           <span className="text-[10px] text-gray-600 ml-auto">Drag: Pan/Tilt · Scroll: Zoom</span>
         </div>
 
