@@ -5,7 +5,7 @@ import { computeFov, computeDof } from '../../utils/fov';
 import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { BackgroundPlan, StageObjectType, CameraMountType } from '../../types';
-import { MOUNT_TYPE_LABELS } from '../../types';
+import { MOUNT_TYPE_LABELS, MOUNT_HEIGHT_RANGE } from '../../types';
 import * as pdfjsLib from 'pdfjs-dist';
 
 /** Group lenses by mount for the dropdown */
@@ -478,13 +478,44 @@ function CameraCard({ camId }: { camId: string }) {
             <select
               className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
               value={cam.mountType ?? 'tripod'}
-              onChange={(e) => updateCamera(cam.id, { mountType: e.target.value as CameraMountType })}
+              onChange={(e) => {
+                const mt = e.target.value as CameraMountType;
+                const range = MOUNT_HEIGHT_RANGE[mt];
+                // Clamp existing Z into the new mount range
+                const z = Math.max(range.min, Math.min(range.max, cam.z));
+                updateCamera(cam.id, { mountType: mt, z });
+              }}
             >
               {Object.entries(MOUNT_TYPE_LABELS).map(([k, v]) => (
                 <option key={k} value={k}>{v}</option>
               ))}
             </select>
           </label>
+
+          {/* Mount-constrained height slider (pedestal pump / jib boom / dolly height etc.) */}
+          {(() => {
+            const mt = cam.mountType ?? 'tripod';
+            const range = MOUNT_HEIGHT_RANGE[mt];
+            return (
+              <label className="block">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">
+                    Height: {cam.z.toFixed(2)}m
+                    <span className="ml-1 text-[10px] text-gray-600">({range.min.toFixed(1)}–{range.max.toFixed(1)}m {mt === 'pedestal' ? 'pump' : mt === 'jib' ? 'boom' : 'range'})</span>
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  className="w-full accent-bc-accent"
+                  min={range.min}
+                  max={range.max}
+                  step={0.01}
+                  value={Math.max(range.min, Math.min(range.max, cam.z))}
+                  onChange={(e) => updateCamera(cam.id, { z: parseFloat(e.target.value) })}
+                />
+              </label>
+            );
+          })()}
 
           {/* Preview control options */}
           <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">

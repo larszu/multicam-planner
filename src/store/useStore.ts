@@ -59,6 +59,8 @@ interface AppState {
   setActiveTab: (tab: ViewTab) => void;
   showAllFov: boolean;
   toggleShowAllFov: () => void;
+  drag3DLocked: boolean;
+  toggleDrag3DLocked: () => void;
 
   // Layout UI
   sidebarCollapsed: boolean;
@@ -397,6 +399,8 @@ export const useStore = create<AppState>((set, get) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
   showAllFov: true,
   toggleShowAllFov: () => set((s) => ({ showAllFov: !s.showAllFov })),
+  drag3DLocked: false,
+  toggleDrag3DLocked: () => set((s) => ({ drag3DLocked: !s.drag3DLocked })),
 
   sidebarCollapsed: false,
   setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),

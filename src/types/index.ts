@@ -71,6 +71,23 @@ export const MOUNT_TYPE_LABELS: Record<CameraMountType, string> = {
   fixed: 'Fixed Mount',
 };
 
+/**
+ * Physically realistic vertical movement range (in meters) for each mount type.
+ * `min`/`max` = absolute camera height above ground.
+ * `pump` = how quickly the operator can change height while "live" (m/s) — used for live-motion preview.
+ * `track` = optional horizontal travel along the dolly/jib arm (radius in meters).
+ */
+export const MOUNT_HEIGHT_RANGE: Record<CameraMountType, { min: number; max: number; pump: number; track?: number }> = {
+  tripod:    { min: 0.5, max: 2.2, pump: 0.05 },
+  pedestal:  { min: 0.6, max: 1.8, pump: 0.4 },
+  jib:       { min: 0.3, max: 6.0, pump: 1.5, track: 3.5 },
+  dolly:     { min: 0.4, max: 1.9, pump: 0.1, track: 6.0 },
+  gimbal:    { min: 0.8, max: 1.9, pump: 0.6 },
+  handheld:  { min: 1.0, max: 1.9, pump: 0.8 },
+  steadicam: { min: 0.3, max: 2.0, pump: 0.5 },
+  fixed:     { min: 0.0, max: 12.0, pump: 0.0 },
+};
+
 // ── Venue wall ──
 export interface Wall {
   id: string;

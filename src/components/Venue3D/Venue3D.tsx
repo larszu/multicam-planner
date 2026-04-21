@@ -16,6 +16,8 @@ function DraggableOnFloor({ children, x, z, onDragEnd, onClick, draggable = true
   onClick?: () => void;
   draggable?: boolean;
 }) {
+  const drag3DLocked = useStore((s) => s.drag3DLocked);
+  const effectiveDraggable = draggable && !drag3DLocked;
   const groupRef = useRef<THREE.Group>(null!);
   const isDragging = useRef(false);
   const { camera, gl, raycaster, mouse } = useThree();
@@ -30,14 +32,16 @@ function DraggableOnFloor({ children, x, z, onDragEnd, onClick, draggable = true
   }, [camera, floorPlane, intersection, mouse, raycaster]);
 
   const handlePointerDown = useCallback((e: any) => {
-    if (!draggable) return;
+    if (!effectiveDraggable) return;
+    // Only left mouse button should initiate drag (right = camera look)
+    if (typeof e.button === 'number' && e.button !== 0) return;
     e.stopPropagation();
     isDragging.current = true;
     const hit = projectMouse();
     if (hit) offset.current.set(hit.x - x, 0, hit.z - z);
     else offset.current.set(0, 0, 0);
     gl.domElement.style.cursor = 'grabbing';
-  }, [draggable, gl, projectMouse, x, z]);
+  }, [effectiveDraggable, gl, projectMouse, x, z]);
 
   // Global listeners so the drag keeps tracking even when the pointer leaves the mesh.
   useEffect(() => {
@@ -152,7 +156,8 @@ function VenueWalls({ widthM, heightM }: { widthM: number; heightM: number }) {
  * WASD      = move forward/back/strafe
  * Space     = up
  * Shift     = down
- * Mouse     = look (hold left-click or right-click)
+ * Mouse (right) = look (hold right mouse button)
+ * Mouse (left)  = select/drag objects and cameras
  * Scroll    = move forward/back (dolly)
  * Ctrl      = sprint (2×)
  */
@@ -205,12 +210,11 @@ function FPSControls({ mouseLookEnabled }: { mouseLookEnabled: boolean }) {
 
     const onMouseDown = (e: MouseEvent) => {
       if (!mouseLookEnabled) return;
+      // Only right mouse button triggers camera look. Left button is reserved for selecting/dragging objects.
+      if (e.button !== 2) return;
       isLooking.current = true;
       canvas.style.cursor = 'grabbing';
-      // Try pointer lock for smoother FPS look
-      if (e.button === 2) {
-        canvas.requestPointerLock?.();
-      }
+      canvas.requestPointerLock?.();
     };
     const onMouseUp = () => {
       isLooking.current = false;
@@ -790,6 +794,7 @@ function PersonMesh({ x, z, height, label, objectType, color }: { x: number; z: 
 
 export default function Venue3D() {
   const { venue, cameras, persons, backgroundPlan, walls, moveCamera, updatePerson, selectCamera, selectedCameraId } = useStore();
+  const drag3DLocked = useStore((s) => s.drag3DLocked);
   const [unlockedCameraId, setUnlockedCameraId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState<CameraEditMode>('move');
 
@@ -815,13 +820,28 @@ export default function Venue3D() {
         pointerEvents: 'none',
       }}>
         <b style={{ color: '#60a5fa' }}>Select camera</b> → unlock to edit<br/>
-        <b style={{ color: '#60a5fa' }}>XY</b> floor move &nbsp;|&nbsp;
-        <b style={{ color: '#60a5fa' }}>Z</b> height &nbsp;|&nbsp;
-        <b style={{ color: '#60a5fa' }}>Pan/Tilt</b> rotate axes<br/>
+        <b style={{ color: '#60a5fa' }}>Right-drag</b> look &nbsp;|&nbsp;
+        <b style={{ color: '#60a5fa' }}>Left-drag</b> move objects<br/>
         <b style={{ color: '#60a5fa' }}>WASD</b> Move &nbsp;|&nbsp;
         <b style={{ color: '#60a5fa' }}>Space/Shift</b> vertical &nbsp;|&nbsp;
         <b style={{ color: '#60a5fa' }}>Scroll</b> Dolly
       </div>
+
+      {/* Drag lock toggle */}
+      <button
+        onClick={() => useStore.getState().toggleDrag3DLocked()}
+        style={{
+          position: 'absolute', top: 8, right: 128, zIndex: 10,
+          background: drag3DLocked ? '#fbbf24cc' : '#1e293bcc',
+          border: `1px solid ${drag3DLocked ? '#fbbf24' : '#334155'}`,
+          color: drag3DLocked ? '#000' : '#94a3b8',
+          padding: '6px 14px', borderRadius: 6, fontSize: 12, cursor: 'pointer',
+          backdropFilter: 'blur(4px)',
+        }}
+        title={drag3DLocked ? 'Drag locked — click to unlock' : 'Click to lock drag (prevents accidental movement)'}
+      >
+        {drag3DLocked ? '🔒 Drag locked' : '🔓 Drag free'}
+      </button>
 
       {/* Reset View button */}
       <button
