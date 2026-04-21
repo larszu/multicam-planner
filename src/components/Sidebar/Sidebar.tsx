@@ -517,6 +517,50 @@ function CameraCard({ camId }: { camId: string }) {
             );
           })()}
 
+          {/* Live-motion track slider (jib swing / dolly roll along current pan axis) */}
+          {(() => {
+            const mt = cam.mountType ?? 'tripod';
+            const range = MOUNT_HEIGHT_RANGE[mt];
+            if (!range.track) return null;
+            const t = cam.trackOffset ?? 0;
+            const half = range.track;
+            return (
+              <label className="block">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">
+                    {mt === 'jib' ? 'Jib swing' : 'Dolly travel'}: {t.toFixed(2)}m
+                  </span>
+                  <button
+                    onClick={() => {
+                      // "Bake" the live track offset into camera x/y then reset slider to 0
+                      const panRad = (cam.pan * Math.PI) / 180;
+                      const perpX = Math.cos(panRad);
+                      const perpY = Math.sin(panRad);
+                      updateCamera(cam.id, {
+                        x: cam.x + perpX * t,
+                        y: cam.y + perpY * t,
+                        trackOffset: 0,
+                      });
+                    }}
+                    className="text-[10px] text-bc-accent hover:text-white px-1 py-0.5 rounded border border-bc-border"
+                    title="Bake current offset into camera position"
+                  >
+                    bake
+                  </button>
+                </div>
+                <input
+                  type="range"
+                  className="w-full accent-bc-accent"
+                  min={-half}
+                  max={half}
+                  step={0.01}
+                  value={Math.max(-half, Math.min(half, t))}
+                  onChange={(e) => updateCamera(cam.id, { trackOffset: parseFloat(e.target.value) })}
+                />
+              </label>
+            );
+          })()}
+
           {/* Preview control options */}
           <label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
             <input

@@ -4,6 +4,7 @@ import { getLensById } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
 import { useRef, useEffect, useCallback, useState } from 'react';
 import type { StageObjectType } from '../../types';
+import { getLiveCameraPosition } from '../../types';
 import { FiChevronDown, FiChevronUp, FiExternalLink, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { MOUNT_TYPE_LABELS } from '../../types';
 import type { CameraMountType } from '../../types';
@@ -132,19 +133,20 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     const panRad = (cam.pan * Math.PI) / 180;
     const cosP = Math.cos(panRad);
     const sinP = Math.sin(panRad);
+    // Apply live track offset (dolly/jib) to the effective camera position used for projection
+    const livePos = getLiveCameraPosition(cam);
 
     const worldToScreen = (wx: number, wy: number, wz: number): { sx: number; sy: number; dist: number; behindCamera: boolean } => {
-      const c = cam!;
-      const dx = wx - c.x;
-      const dy = wy - c.y;
+      const dx = wx - livePos.x;
+      const dy = wy - livePos.y;
       const localZ = dx * cosP + dy * sinP;
       const localX = -dx * sinP + dy * cosP;
       if (localZ <= 0.1) return { sx: -999, sy: -999, dist: 0, behindCamera: true };
       const fovHRad = (fov.horizontalDeg * Math.PI) / 360;
       const fovVRad = (fov.verticalDeg * Math.PI) / 360;
       const screenX = W / 2 + (localX / (localZ * Math.tan(fovHRad))) * (W / 2);
-      const tiltRad = (c.tilt * Math.PI) / 180;
-      const apparentY = (wz - c.z) / localZ;
+      const tiltRad = (cam.tilt * Math.PI) / 180;
+      const apparentY = (wz - livePos.z) / localZ;
       const tiltShift = Math.tan(tiltRad);
       const screenY = H / 2 - ((apparentY + tiltShift) / Math.tan(fovVRad)) * (H / 2);
       return { sx: screenX, sy: screenY, dist: localZ, behindCamera: false };

@@ -88,6 +88,20 @@ export const MOUNT_HEIGHT_RANGE: Record<CameraMountType, { min: number; max: num
   fixed:     { min: 0.0, max: 12.0, pump: 0.0 },
 };
 
+/**
+ * Resolve the *live* camera position including any track offset.
+ * The offset is applied perpendicular-left to the pan direction (positive = camera-right swing).
+ */
+export function getLiveCameraPosition(cam: { x: number; y: number; z: number; pan: number; trackOffset?: number }): { x: number; y: number; z: number } {
+  const t = cam.trackOffset ?? 0;
+  if (!t) return { x: cam.x, y: cam.y, z: cam.z };
+  const panRad = (cam.pan * Math.PI) / 180;
+  // +trackOffset moves camera along its left-right axis (perpendicular to look dir)
+  const dx = Math.cos(panRad) * t;
+  const dy = Math.sin(panRad) * t;
+  return { x: cam.x + dx, y: cam.y + dy, z: cam.z };
+}
+
 // ── Venue wall ──
 export interface Wall {
   id: string;
@@ -147,6 +161,8 @@ export interface VenueCamera {
   lockedPersonId?: string;
   /** If set, keeps the distance-to-target constant when dollying (pan/tilt unchanged). */
   lockedDistance?: number;
+  /** Live-motion track position for dolly/jib/pedestal (meters along arm/track). */
+  trackOffset?: number;
 }
 
 // ── Stage / target zone ──

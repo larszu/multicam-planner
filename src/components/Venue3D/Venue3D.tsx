@@ -458,13 +458,14 @@ function CameraRig({
       baseRef.current.rotation.set(0, THREE.MathUtils.degToRad(-cam.pan), 0);
     }
     if (liftRef.current) {
-      liftRef.current.position.set(0, cam.z, 0);
+      // Live track offset is perpendicular to pan (rig-local X axis)
+      liftRef.current.position.set(cam.trackOffset ?? 0, cam.z, 0);
     }
     if (pitchRef.current) {
       pitchRef.current.rotation.order = 'YXZ';
       pitchRef.current.rotation.set(THREE.MathUtils.degToRad(cam.tilt), 0, 0);
     }
-  }, [cam.pan, cam.tilt, cam.x, cam.y, cam.z]);
+  }, [cam.pan, cam.tilt, cam.x, cam.y, cam.z, cam.trackOffset]);
 
   const commitMove = useCallback(() => {
     if (!baseRef.current) return;
