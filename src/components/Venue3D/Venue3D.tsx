@@ -7,6 +7,7 @@ import { computeFov } from '../../utils/fov';
 import * as THREE from 'three';
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import type { BackgroundPlan, StageObjectType } from '../../types';
+import FixtureMesh3D from '../Lighting/FixtureMesh3D';
 
 /* ── Draggable group that moves on the XZ ground plane ── */
 function DraggableOnFloor({ children, x, z, onDragEnd, onClick, draggable = true }: {
@@ -685,6 +686,10 @@ function PersonMesh({ x, z, height, label, objectType, color }: { x: number; z: 
 
 export default function Venue3D() {
   const { venue, cameras, persons, backgroundPlan, walls, updatePerson, selectCamera, selectedCameraId } = useStore();
+  const appMode = useStore((s) => s.appMode);
+  const placedFixtures = useStore((s) => s.placedFixtures);
+  const customFixtures = useStore((s) => s.customFixtures);
+  const selectedFixtureId = useStore((s) => s.selectedFixtureId);
   const drag3DLocked = useStore((s) => s.drag3DLocked);
 
   const handleReset = useCallback(() => {
@@ -819,6 +824,16 @@ export default function Venue3D() {
             </mesh>
           );
         })}
+
+        {/* Fixtures (lighting mode) */}
+        {appMode === 'lighting' && placedFixtures.map((pf) => (
+          <FixtureMesh3D
+            key={pf.id}
+            placed={pf}
+            customFixtures={customFixtures}
+            selected={selectedFixtureId === pf.id}
+          />
+        ))}
       </Canvas>
     </div>
   );

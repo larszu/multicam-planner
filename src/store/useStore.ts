@@ -1,8 +1,10 @@
 import { create } from 'zustand';
 import type { VenueCamera, Venue, ViewTab, ReferencePerson, BackgroundPlan, Stage, ProjectFile, VenueTemplate, StageObjectType, Lens, Wall } from '../types';
+import type { PlacedFixture, FixtureGroup, Fixture, AppMode } from '../types/lighting';
 import { CAMERAS, CAMERA_COLORS } from '../data/cameras';
 import { LENSES } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
+import { getFixtureById } from '../data/fixtures';
 
 export const APP_VERSION = '0.2.0';
 
@@ -53,6 +55,31 @@ interface AppState {
   addWall: (wall?: Partial<Wall>) => void;
   removeWall: (id: string) => void;
   updateWall: (id: string, updates: Partial<Wall>) => void;
+
+  // ── Lighting module ──
+  appMode: AppMode;
+  setAppMode: (mode: AppMode) => void;
+  placedFixtures: PlacedFixture[];
+  customFixtures: Fixture[];
+  fixtureGroups: FixtureGroup[];
+  selectedFixtureId: string | null;
+  fixtureToPlace: Fixture | null;
+  heatMapEnabled: boolean;
+  heatMapTargetLux: number;
+  heatMapScale: number;
+  selectFixture: (id: string | null) => void;
+  setFixtureToPlace: (f: Fixture | null) => void;
+  addPlacedFixture: (fixtureId: string, x: number, y: number) => string;
+  removePlacedFixture: (id: string) => void;
+  updatePlacedFixture: (id: string, updates: Partial<PlacedFixture>) => void;
+  movePlacedFixture: (id: string, x: number, y: number) => void;
+  movePlacedFixtureAim: (id: string, aimX: number, aimY: number) => void;
+  duplicatePlacedFixture: (id: string) => void;
+  addCustomFixture: (f: Omit<Fixture, 'id' | 'isCustom'>) => string;
+  removeCustomFixture: (id: string) => void;
+  toggleHeatMap: () => void;
+  setHeatMapTargetLux: (lux: number) => void;
+  setHeatMapScale: (scale: number) => void;
 
   // View
   activeTab: ViewTab;
@@ -140,6 +167,22 @@ function stageUid(): string {
 let personId = 1;
 function personUid(): string {
   return `person-${personId++}`;
+}
+
+let fixtureNextId = 1;
+function fixtureUid(): string {
+  return `fixture-${Date.now().toString(36)}-${fixtureNextId++}`;
+}
+
+const CUSTOM_FIXTURES_KEY = 'multicam-custom-fixtures';
+function loadCustomFixtures(): Fixture[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_FIXTURES_KEY);
+    return raw ? (JSON.parse(raw) as Fixture[]) : [];
+  } catch { return []; }
+}
+function saveCustomFixtures(fixtures: Fixture[]) {
+  try { localStorage.setItem(CUSTOM_FIXTURES_KEY, JSON.stringify(fixtures)); } catch { /* ignore */ }
 }
 
 // Object type presets: { height, width, defaultLabel, defaultColor }
@@ -466,8 +509,116 @@ export const useStore = create<AppState>((set, get) => ({
     nextId = 1;
     stageId = 1;
     personId = 1;
-    set({ venue: defaultVenue, cameras: [], selectedCameraId: null, persons: [], walls: [], backgroundPlan: null, projectVersion: 1, lastSavedVersion: 0 });
+    fixtureNextId = 1;
+    set({
+      venue: defaultVenue,
+      cameras: [],
+      selectedCameraId: null,
+      persons: [],
+      walls: [],
+      backgroundPlan: null,
+      placedFixtures: [],
+      fixtureGroups: [],
+      selectedFixtureId: null,
+      fixtureToPlace: null,
+      projectVersion: 1,
+      lastSavedVersion: 0,
+    });
   },
+
+  // ── Lighting module ──
+  appMode: 'camera',
+  setAppMode: (mode) => set({ appMode: mode }),
+  placedFixtures: [],
+  customFixtures: loadCustomFixtures(),
+  fixtureGroups: [],
+  selectedFixtureId: null,
+  fixtureToPlace: null,
+  heatMapEnabled: false,
+  heatMapTargetLux: 300,
+  heatMapScale: 1000,
+  selectFixture: (id) => set({ selectedFixtureId: id }),
+  setFixtureToPlace: (f) => set({ fixtureToPlace: f }),
+  addPlacedFixture: (fixtureId, x, y) => {
+    const { customFixtures } = get();
+    const def = getFixtureById(fixtureId, customFixtures);
+    if (!def) return '';
+    const id = fixtureUid();
+    const pf: PlacedFixture = {
+      id,
+      fixtureId,
+      x: Math.round(x * 10) / 10,
+      y: Math.round(y * 10) / 10,
+      z: 5,
+      aimX: Math.round(x * 10) / 10,
+      aimY: Math.round(y * 10) / 10,
+      bodyRotation: 0,
+      dimming: 100,
+      currentColorTemp: def.colorTemp || undefined,
+    };
+    set((s) => ({
+      placedFixtures: [...s.placedFixtures, pf],
+      selectedFixtureId: id,
+      projectVersion: s.projectVersion + 1,
+    }));
+    return id;
+  },
+  removePlacedFixture: (id) => set((s) => ({
+    placedFixtures: s.placedFixtures.filter((f) => f.id !== id),
+    fixtureGroups: s.fixtureGroups
+      .map((g) => ({ ...g, fixtureIds: g.fixtureIds.filter((fid) => fid !== id) }))
+      .filter((g) => g.fixtureIds.length > 0),
+    selectedFixtureId: s.selectedFixtureId === id ? null : s.selectedFixtureId,
+    projectVersion: s.projectVersion + 1,
+  })),
+  updatePlacedFixture: (id, updates) => set((s) => ({
+    placedFixtures: s.placedFixtures.map((f) => (f.id === id ? { ...f, ...updates } : f)),
+    projectVersion: s.projectVersion + 1,
+  })),
+  movePlacedFixture: (id, x, y) => set((s) => ({
+    placedFixtures: s.placedFixtures.map((f) => {
+      if (f.id !== id) return f;
+      const dx = x - f.x;
+      const dy = y - f.y;
+      return { ...f, x, y, aimX: f.aimX + dx, aimY: f.aimY + dy };
+    }),
+    projectVersion: s.projectVersion + 1,
+  })),
+  movePlacedFixtureAim: (id, aimX, aimY) => set((s) => ({
+    placedFixtures: s.placedFixtures.map((f) => (f.id === id ? { ...f, aimX, aimY } : f)),
+    projectVersion: s.projectVersion + 1,
+  })),
+  duplicatePlacedFixture: (id) => {
+    const { placedFixtures } = get();
+    const src = placedFixtures.find((f) => f.id === id);
+    if (!src) return;
+    const nid = fixtureUid();
+    const copy: PlacedFixture = { ...src, id: nid, x: src.x + 0.5, y: src.y + 0.5, aimX: src.aimX + 0.5, aimY: src.aimY + 0.5 };
+    set((s) => ({
+      placedFixtures: [...s.placedFixtures, copy],
+      selectedFixtureId: nid,
+      projectVersion: s.projectVersion + 1,
+    }));
+  },
+  addCustomFixture: (f) => {
+    const id = `custom-fixture-${Date.now()}`;
+    const fixture: Fixture = { ...f, id, isCustom: true };
+    set((s) => {
+      const next = [...s.customFixtures, fixture];
+      saveCustomFixtures(next);
+      return { customFixtures: next, projectVersion: s.projectVersion + 1 };
+    });
+    return id;
+  },
+  removeCustomFixture: (id) => set((s) => {
+    const next = s.customFixtures.filter((f) => f.id !== id);
+    saveCustomFixtures(next);
+    return { customFixtures: next, projectVersion: s.projectVersion + 1 };
+  }),
+  toggleHeatMap: () => set((s) => ({ heatMapEnabled: !s.heatMapEnabled })),
+  setHeatMapTargetLux: (lux) => set({ heatMapTargetLux: Math.max(0, lux) }),
+  setHeatMapScale: (scale) => set({ heatMapScale: Math.max(100, scale) }),
+
 
   // ── Project versioning ──
   projectVersion: 1,

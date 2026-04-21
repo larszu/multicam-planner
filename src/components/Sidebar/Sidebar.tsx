@@ -7,6 +7,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import type { BackgroundPlan, StageObjectType, CameraMountType } from '../../types';
 import { MOUNT_TYPE_LABELS, MOUNT_HEIGHT_RANGE } from '../../types';
 import * as pdfjsLib from 'pdfjs-dist';
+import LightingSidebar from './LightingSidebar';
 
 /** Group lenses by mount for the dropdown */
 function groupByMount(lenses: typeof LENSES) {
@@ -598,6 +599,14 @@ function CameraCard({ camId }: { camId: string }) {
 }
 
 export default function Sidebar() {
+  const appMode = useStore((s) => s.appMode);
+  if (appMode === 'lighting') {
+    return <LightingSidebar />;
+  }
+  return <CameraSidebar />;
+}
+
+function CameraSidebar() {
   const {
     cameras, addCamera, venue, setVenue, showAllFov, toggleShowAllFov, clearAll,
     pixelsPerMeter, setPixelsPerMeter,

@@ -30,7 +30,7 @@ export default function Header({
   layoutPresetOptions,
   layoutMode,
 }: HeaderProps) {
-  const { venue, projectVersion, lastSavedVersion, saveProject, loadProject } = useStore();
+  const { venue, projectVersion, lastSavedVersion, saveProject, loadProject, appMode, setAppMode } = useStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const unsaved = projectVersion !== lastSavedVersion;
   const [presetMenuOpen, setPresetMenuOpen] = useState(false);
@@ -92,6 +92,24 @@ export default function Header({
         <span className={`text-xs ml-2 px-1.5 py-0.5 rounded shrink-0 ${unsaved ? 'bg-bc-yellow/20 text-bc-yellow' : 'bg-bc-green/20 text-bc-green'}`}>
           v{projectVersion}{unsaved ? ' •' : ''}
         </span>
+        <div className="hidden md:flex items-center rounded-lg border border-bc-border bg-bc-dark p-0.5 ml-3">
+          <button
+            type="button"
+            onClick={() => setAppMode('camera')}
+            className={`px-2 py-1 rounded-md text-xs font-medium transition-colors flex items-center gap-1 ${appMode === 'camera' ? 'bg-bc-accent text-white' : 'text-gray-400 hover:text-white'}`}
+            title="Multicam-Modus"
+          >
+            📷 <span className="hidden lg:inline">Multicam</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setAppMode('lighting')}
+            className={`px-2 py-1 rounded-md text-xs font-medium transition-colors flex items-center gap-1 ${appMode === 'lighting' ? 'bg-bc-accent text-white' : 'text-gray-400 hover:text-white'}`}
+            title="Licht-Modus"
+          >
+            💡 <span className="hidden lg:inline">Licht</span>
+          </button>
+        </div>
       </div>
 
       <nav className="flex gap-2 min-w-0 flex-1 justify-center items-center">

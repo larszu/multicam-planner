@@ -6,9 +6,15 @@ import { computeFov } from '../../utils/fov';
 import type { VenueCamera, Wall } from '../../types';
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import type Konva from 'konva';
+import FixtureIcon2D from '../Lighting/FixtureIcon2D';
 
 export default function Venue2D() {
-  const { venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, showAllFov, pixelsPerMeter, persons, updatePerson, updateStage, backgroundPlan, setBackgroundPlan, walls, updateWall, addWall } = useStore();
+  const {
+    venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, showAllFov, pixelsPerMeter,
+    persons, updatePerson, updateStage, backgroundPlan, setBackgroundPlan, walls, updateWall, addWall,
+    appMode, placedFixtures, customFixtures, selectedFixtureId, selectFixture,
+    fixtureToPlace, setFixtureToPlace, addPlacedFixture, movePlacedFixture, movePlacedFixtureAim,
+  } = useStore();
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
@@ -196,6 +202,15 @@ export default function Venue2D() {
     const point = getPointerWorldPoint();
     if (!point) return;
 
+    // Lighting mode: place selected fixture
+    if (appMode === 'lighting' && fixtureToPlace) {
+      const wx = point.xPx / ppm;
+      const wy = point.yPx / ppm;
+      addPlacedFixture(fixtureToPlace.id, wx, wy);
+      // Keep the chosen fixture active so user can place multiple with further clicks
+      return;
+    }
+
     if (drawingWall) {
       const worldPoint = { x: point.xPx / ppm, y: point.yPx / ppm };
       if (!wallStart) {
@@ -266,7 +281,7 @@ export default function Venue2D() {
       setCalibPoints([]);
       window.dispatchEvent(new CustomEvent('multicam-calibrate-done'));
     }
-  }, [addWall, backgroundPlan, calibActive, calibAutoResize, calibAxis, calibDistM, calibPoints, calibScaleLocked, drawingWall, getPointerWorldPoint, ppm, setBackgroundPlan, setVenue, snapPoint, venue, wallStart, walls.length]);
+  }, [addWall, backgroundPlan, calibActive, calibAutoResize, calibAxis, calibDistM, calibPoints, calibScaleLocked, drawingWall, getPointerWorldPoint, ppm, setBackgroundPlan, setVenue, snapPoint, venue, wallStart, walls.length, appMode, fixtureToPlace, addPlacedFixture]);
 
   const handleStageMouseMove = useCallback(() => {
     if (!drawingWall || !wallStart) return;
@@ -494,6 +509,24 @@ export default function Venue2D() {
           );
         })}
       </Layer>
+
+      {/* ── Lighting layer ── */}
+      {appMode === 'lighting' && (
+        <Layer>
+          {placedFixtures.map((pf) => (
+            <FixtureIcon2D
+              key={pf.id}
+              placed={pf}
+              customFixtures={customFixtures}
+              ppm={ppm}
+              selected={selectedFixtureId === pf.id}
+              onSelect={() => selectFixture(pf.id)}
+              onMove={(x, y) => movePlacedFixture(pf.id, x, y)}
+              onMoveAim={(ax, ay) => movePlacedFixtureAim(pf.id, ax, ay)}
+            />
+          ))}
+        </Layer>
+      )}
 
       {/* ── Layer 3: Calibration overlay (conditional) ── */}
       {calibActive && (
