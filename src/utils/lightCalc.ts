@@ -24,6 +24,25 @@ function candelaFromPhotometric(p: PhotometricData): number {
   return p.lux * p.distance * p.distance;
 }
 
+/**
+ * Zoom- & frost-compensation scale factor for peak candela.
+ *
+ * A focusing fixture conserves luminous flux while the beam is zoomed or
+ * diffused, so the peak angular intensity scales with 1/σ². We therefore
+ * multiply the reference peak candela by (σ_ref / σ_current)². Both σs are
+ * derived from the same field-angle convention used for the Gaussian, so
+ * the ratio simplifies to (angle_ref / angle_current)².
+ *
+ * `refAngle` is the field angle at which the photometric/lumen reference
+ * was taken: `photometric.beamAngle` if available, otherwise the fixture's
+ * nominal `fieldAngle`.
+ */
+function zoomCompensation(refAngle: number, currentAngle: number): number {
+  if (refAngle <= 0 || currentAngle <= 0) return 1;
+  const ratio = refAngle / currentAngle;
+  return ratio * ratio;
+}
+
 function peakIntensityFromLumens(lumens: number, fieldAngleDeg: number, ratio: number): number {
   // For a Gaussian angular intensity I(θ_x,θ_y) = I₀·exp(−θ_x²/2σ_x² − θ_y²/2σ_y²)
   // total flux Φ = 2π·I₀·σ_x·σ_y  ⇒  I₀ = Φ / (2π·σ_x·σ_y).
@@ -36,15 +55,20 @@ function peakIntensityFromLumens(lumens: number, fieldAngleDeg: number, ratio: n
 
 function peakIntensity(
   lumens: number | undefined,
-  beamAngleDeg: number,
+  refAngleDeg: number,
+  currentAngleDeg: number,
   ratio: number,
   photometric?: PhotometricData,
 ): number {
   if (photometric && photometric.lux > 0 && photometric.distance > 0) {
-    return candelaFromPhotometric(photometric);
+    // Photometric reference gives I₀ at the reference zoom. Compensate if
+    // the fixture is zoomed to a different field angle (flux conservation).
+    return candelaFromPhotometric(photometric) * zoomCompensation(refAngleDeg, currentAngleDeg);
   }
   if (!lumens) return 0;
-  return peakIntensityFromLumens(lumens, beamAngleDeg, ratio);
+  // Lumen fallback already bakes σ² scaling into I₀ via Φ = 2π·I₀·σ², so no
+  // separate zoom compensation is required here.
+  return peakIntensityFromLumens(lumens, currentAngleDeg, ratio);
 }
 
 function beamSigma(fieldAngleDeg: number): number {
@@ -67,17 +91,18 @@ export function luxFromFixture(
   const dimFactor = placed.dimming / 100;
   if (dimFactor <= 0) return 0;
 
-  // `beamAngle` here is the 10 %-intensity angle (field angle) used to derive
-  // the Gaussian σ such that I(θ=fieldAngle/2) = 10 % of I₀. This matches
-  // how the volumetric cone & 2D footprint are drawn (FixtureIcon2D /
-  // FixtureMesh3D both use fieldAngle) so the visible edge and the heatmap
-  // boundary coincide. The 50 % (FWHM) `fixture.beamAngle` is metadata only
-  // – we'd need a super-Gaussian to honour both 50 % and 10 % independently.
-  let beamAngle = placed.currentBeamAngle ?? fixture.fieldAngle;
+  // Nominal field angle from the current zoom setting (or the fixture's
+  // default). Frost/diffusion widens it below.
+  const nominalFieldAngle = placed.currentBeamAngle ?? fixture.fieldAngle;
   const ratio = fixture.beamRatioWH;
 
-  beamAngle = effectiveBeamAngleWithFrost(beamAngle, placed.gelFilterIds);
+  const effectiveFieldAngle = effectiveBeamAngleWithFrost(nominalFieldAngle, placed.gelFilterIds);
   const gelTransmission = gelStackTransmission(placed.gelFilterIds);
+
+  // Reference field angle at which the photometric measurement was taken.
+  // Zoom (currentBeamAngle) and frost both shift us away from this reference
+  // and are compensated for inside peakIntensity().
+  const refAngle = fixture.photometric?.beamAngle ?? fixture.fieldAngle;
 
   const dx = px - placed.x;
   const dy = py - placed.y;
@@ -120,8 +145,11 @@ export function luxFromFixture(
     if (origOff > 0.01) effectiveTheta = theta * (effOff / origOff);
   }
 
-  const sigma = beamSigma(beamAngle);
-  const Ipeak = peakIntensity(fixture.lumens, beamAngle, ratio, fixture.photometric) * dimFactor * gelTransmission;
+  const sigma = beamSigma(effectiveFieldAngle);
+  const Ipeak =
+    peakIntensity(fixture.lumens, refAngle, effectiveFieldAngle, ratio, fixture.photometric)
+    * dimFactor
+    * gelTransmission;
   const I = Ipeak * Math.exp(-(effectiveTheta * effectiveTheta) / (2 * sigma * sigma));
   const cosIncidence = h / dist;
   return (I * cosIncidence) / dist2;
