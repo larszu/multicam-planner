@@ -1,7 +1,7 @@
 {
   "name": "multicam-planner",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Multicam Broadcast Camera & Lens Planner – FOV/DoF calculator, 2D/3D venue planner, dynamic preview",
   "main": "electron/main.cjs",
   "type": "module",
@@ -10,6 +10,8 @@
     "build": "tsc -b && vite build",
     "desktop": "electron .",
     "dist:win": "npm run build && electron-builder --win nsis portable",
+    "dist:mac": "npm run build && electron-builder --mac zip",
+    "dist:all": "npm run build && electron-builder -wm",
     "preview": "vite preview",
     "lint": "eslint ."
   },
@@ -29,6 +31,19 @@
         "nsis",
         "portable"
       ]
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.video",
+      "identity": null
     },
     "nsis": {
       "oneClick": false,
