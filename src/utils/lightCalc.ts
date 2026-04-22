@@ -25,11 +25,16 @@ function candelaFromPhotometric(p: PhotometricData): number {
 }
 
 function peakIntensityFromLumens(lumens: number, beamAngleDeg: number, ratio: number): number {
+  // For a Gaussian beam with FWHM = beamAngleDeg, the total luminous flux is
+  //   Φ ≈ 2π · I₀ · σ_x · σ_y
+  // so the peak candela is I₀ = Φ / (2π · σ_x · σ_y). Using σ = halfAngle/√(2·ln2)
+  // this reduces to I₀ = Φ · ln2 · 2 / (π · halfW · halfH).
   const halfW = (beamAngleDeg / 2) * DEG2RAD;
   const halfH = halfW / Math.max(ratio, 0.1);
-  const geoMean = Math.sqrt(halfW * halfH);
-  const solidAngle = 2 * Math.PI * (1 - Math.cos(geoMean));
-  return solidAngle > 0 ? lumens / solidAngle : 0;
+  const sigmaW = halfW / Math.sqrt(2 * Math.LN2);
+  const sigmaH = halfH / Math.sqrt(2 * Math.LN2);
+  const denom = 2 * Math.PI * sigmaW * sigmaH;
+  return denom > 0 ? lumens / denom : 0;
 }
 
 function peakIntensity(
@@ -63,7 +68,11 @@ export function luxFromFixture(
   const dimFactor = placed.dimming / 100;
   if (dimFactor <= 0) return 0;
 
-  let beamAngle = placed.currentBeamAngle ?? fixture.fieldAngle;
+  // `beamAngle` here is the 50 % (FWHM) angle used to derive the Gaussian σ.
+  // Zoom override (`currentBeamAngle`) is a FWHM value too (spec conventions).
+  // We intentionally do NOT use `fixture.fieldAngle` (10 % angle) here – that
+  // would make the Gaussian ~1.8× too wide and over-illuminate the beam edge.
+  let beamAngle = placed.currentBeamAngle ?? fixture.beamAngle;
   const ratio = fixture.beamRatioWH;
 
   beamAngle = effectiveBeamAngleWithFrost(beamAngle, placed.gelFilterIds);
