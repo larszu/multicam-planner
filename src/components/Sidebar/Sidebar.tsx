@@ -136,26 +136,39 @@ function CameraCard({ camId }: { camId: string }) {
         </div>
       )}
 
-      {/* Adapter override selector – only if more than one choice exists */}
-      {availableAdapters.length > 1 && (
+      {/* Adapter dropdown – mirrors the camera/lens selectors.
+          Always visible so the user can inspect/override the match. */}
+      {camDef && lensDef && (
         <label className="flex items-center gap-1.5 text-xs mt-1 text-gray-300" onClick={(e) => e.stopPropagation()}>
-          <span className="text-gray-500 shrink-0">Adapter</span>
+          <span className="text-gray-500 shrink-0 w-14">Adapter</span>
           <select
             className="flex-1 bg-bc-dark border border-bc-border rounded px-1.5 py-0.5 text-white text-[11px]"
             value={adapterSelectValue}
+            title="Adapter für Kamera & Objektiv"
             onChange={(e) => {
               const next = e.target.value;
               if (next === 'auto') {
                 updateCamera(cam.id, { adapterId: undefined, useSpeedbooster: false });
+              } else if (next === 'none') {
+                updateCamera(cam.id, { adapterId: 'none', useSpeedbooster: false });
               } else {
                 const chosen = availableAdapters.find((a) => a.id === next);
                 updateCamera(cam.id, { adapterId: next, useSpeedbooster: !!chosen?.isSpeedBooster });
               }
             }}
           >
-            <option value="auto">Auto{autoAdapterId ? ` (${availableAdapters.find((a) => a.id === autoAdapterId)?.name ?? autoAdapterId})` : ''}</option>
+            {autoAdapterId === null && availableAdapters.length === 0 ? (
+              <option value="auto">✓ Kein Adapter nötig</option>
+            ) : (
+              <option value="auto">
+                Auto{autoAdapterId
+                  ? ` — ${availableAdapters.find((a) => a.id === autoAdapterId)?.name ?? autoAdapterId}`
+                  : ' — Kein Adapter nötig'}
+              </option>
+            )}
+            {availableAdapters.length > 0 && <option value="none">Kein Adapter</option>}
             {availableAdapters.map((a) => (
-              <option key={a.id} value={a.id}>{a.name}</option>
+              <option key={a.id} value={a.id}>{a.name}{a.lightLossStops ? ` (${a.lightLossStops > 0 ? '−' : '+'}${Math.abs(a.lightLossStops)}T)` : ''}</option>
             ))}
           </select>
         </label>
@@ -392,6 +405,38 @@ function CameraCard({ camId }: { camId: string }) {
                 ))}
               </select>
             </div>
+            {cam.lockedPersonId && (() => {
+              const target = persons.find((p) => p.id === cam.lockedPersonId);
+              if (!target) return null;
+              const dx = cam.x - target.x;
+              const dy = cam.y - target.y;
+              const currentDist = Math.hypot(dx, dy);
+              return (
+                <div className="mt-1 pl-3 border-l-2 border-bc-accent/60">
+                  <label className="block">
+                    <span className="text-[10px] text-gray-400">Entfernung zum Objekt: {currentDist.toFixed(2)} m</span>
+                    <input
+                      type="range"
+                      className="w-full accent-bc-accent"
+                      min={0.3}
+                      max={Math.max(10, currentDist + 5)}
+                      step={0.1}
+                      title="Kamera entlang der Achse zum Objekt verschieben"
+                      value={currentDist}
+                      onChange={(e) => {
+                        const d = parseFloat(e.target.value);
+                        const len = Math.hypot(dx, dy) || 1e-4;
+                        const ux = dx / len;
+                        const uy = dy / len;
+                        const nx = target.x + ux * d;
+                        const ny = target.y + uy * d;
+                        updateCamera(cam.id, { x: nx, y: ny, lockedDistance: d });
+                      }}
+                    />
+                  </label>
+                </div>
+              );
+            })()}
           </label>
 
           {/* Pan */}
@@ -621,6 +666,7 @@ function CameraSidebar() {
   const [wallsOpen, setWallsOpen] = useState(false);
   const [bgOpen, setBgOpen] = useState(false);
   const [wallDrawMode, setWallDrawMode] = useState(false);
+  const [showObjectAdder, setShowObjectAdder] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [calibAxis, setCalibAxis] = useState<'x' | 'y' | null>(null);
   const [calibDistX, setCalibDistX] = useState('10');
@@ -888,6 +934,16 @@ function CameraSidebar() {
               <button onClick={() => addPerson()} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
                 <FiUser size={10} /> Person
               </button>
+              <button
+                onClick={() => setShowObjectAdder((v) => !v)}
+                title={showObjectAdder ? 'Objekt-Liste ausblenden' : 'Weitere Objekte hinzufügen'}
+                className={`col-span-2 flex items-center justify-center gap-1 px-1 py-1 rounded text-[10px] border border-bc-border ${showObjectAdder ? 'bg-bc-accent/30 text-white' : 'bg-bc-dark text-gray-400 hover:text-white'}`}
+              >
+                {showObjectAdder ? '− Objekte ausblenden' : '+ Objekt hinzufügen'}
+              </button>
+            </div>
+            {showObjectAdder && (
+              <div className="grid grid-cols-3 gap-1 mt-1">
               <button onClick={() => addStageObject('person-guitar')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
                 🎸 Guitarist
               </button>
@@ -915,7 +971,8 @@ function CameraSidebar() {
               <button onClick={() => addStageObject('schneetiger')} className="col-span-3 flex items-center justify-center gap-1 px-1 py-1 rounded bg-sky-500/20 text-sky-300 text-[10px] hover:bg-sky-500/30">
                 🐅 Schneetiger
               </button>
-            </div>
+              </div>
+            )}
           </div>
         )}
       </div>

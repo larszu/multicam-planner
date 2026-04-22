@@ -7,6 +7,8 @@ import type { VenueCamera, Wall } from '../../types';
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import type Konva from 'konva';
 import FixtureIcon2D from '../Lighting/FixtureIcon2D';
+import HeatMapOverlay from '../Lighting/HeatMapOverlay';
+import { getFixtureById } from '../../data/fixtures';
 
 export default function Venue2D() {
   const {
@@ -14,6 +16,7 @@ export default function Venue2D() {
     persons, updatePerson, updateStage, backgroundPlan, setBackgroundPlan, walls, updateWall, addWall,
     appMode, placedFixtures, customFixtures, selectedFixtureId, selectFixture,
     fixtureToPlace, setFixtureToPlace, addPlacedFixture, movePlacedFixture, movePlacedFixtureAim,
+    heatMapEnabled, heatMapTargetLux, heatMapScale,
   } = useStore();
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -513,6 +516,19 @@ export default function Venue2D() {
       {/* ── Lighting layer ── */}
       {appMode === 'lighting' && (
         <Layer>
+          {heatMapEnabled && placedFixtures.length > 0 && (
+            <HeatMapOverlay
+              placedFixtures={placedFixtures}
+              fixtureLookup={(id) => getFixtureById(id, customFixtures)}
+              originX={0}
+              originY={0}
+              widthM={venue.widthM}
+              heightM={venue.heightM}
+              ppm={ppm}
+              targetLux={heatMapTargetLux}
+              scaleLux={heatMapScale}
+            />
+          )}
           {placedFixtures.map((pf) => (
             <FixtureIcon2D
               key={pf.id}

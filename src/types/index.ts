@@ -157,6 +157,10 @@ export interface VenueCamera {
   mountType?: CameraMountType;
   /** Persistent override of preview mouse direction. Defaults to natural. */
   invertPreview?: boolean;
+  /** Invert horizontal preview axis (pan / left-right). */
+  invertPreviewH?: boolean;
+  /** Invert vertical preview axis (tilt / up-down). */
+  invertPreviewV?: boolean;
   /** If set, the preview keeps the focus distance locked to this person. */
   lockedPersonId?: string;
   /** If set, keeps the distance-to-target constant when dollying (pan/tilt unchanged). */

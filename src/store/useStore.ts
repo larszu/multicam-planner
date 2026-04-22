@@ -399,10 +399,37 @@ export const useStore = create<AppState>((set, get) => ({
     })),
 
   moveCamera: (id, x, y) =>
-    set((s) => ({
-      cameras: s.cameras.map((c) => (c.id === id ? { ...c, x, y } : c)),
-      projectVersion: s.projectVersion + 1,
-    })),
+    set((s) => {
+      const cam = s.cameras.find((c) => c.id === id);
+      if (!cam) return {};
+      let nx = x;
+      let ny = y;
+      let nextLockedDistance = cam.lockedDistance;
+      // Lock-to-person: constrain movement to the axis between camera and target.
+      if (cam.lockedPersonId) {
+        const target = s.persons.find((p) => p.id === cam.lockedPersonId);
+        if (target) {
+          const dirX = cam.x - target.x;
+          const dirY = cam.y - target.y;
+          const len = Math.hypot(dirX, dirY);
+          if (len > 1e-4) {
+            const ux = dirX / len;
+            const uy = dirY / len;
+            const reqX = x - target.x;
+            const reqY = y - target.y;
+            let dist = reqX * ux + reqY * uy; // project onto axis
+            dist = Math.max(0.3, Math.min(50, dist));
+            nx = target.x + ux * dist;
+            ny = target.y + uy * dist;
+            nextLockedDistance = dist;
+          }
+        }
+      }
+      return {
+        cameras: s.cameras.map((c) => (c.id === id ? { ...c, x: nx, y: ny, lockedDistance: nextLockedDistance } : c)),
+        projectVersion: s.projectVersion + 1,
+      };
+    }),
 
   duplicateCamera: (id) => {
     const { cameras } = get();

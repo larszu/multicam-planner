@@ -744,12 +744,14 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     const dy = e.clientY - lastMouse.current.y;
     lastMouse.current = { x: e.clientX, y: e.clientY };
     const inv = cam.invertPreview ? -1 : 1;
+    const invH = cam.invertPreviewH ? -1 : 1;
+    const invV = cam.invertPreviewV ? -1 : 1;
     // Scale sensitivity with FOV: wider FOV = faster, tele = slower (natural feel)
     const fovScale = Math.max(0.15, Math.min(1.5, cam.focalLength / 50));
     const panSens = 0.25 / fovScale;
     const tiltSens = 0.18 / fovScale;
-    const newPan = Math.max(-180, Math.min(180, cam.pan - dx * panSens * inv));
-    const newTilt = Math.max(-90, Math.min(45, cam.tilt + dy * tiltSens * inv));
+    const newPan = Math.max(-180, Math.min(180, cam.pan - dx * panSens * inv * invH));
+    const newTilt = Math.max(-90, Math.min(45, cam.tilt + dy * tiltSens * inv * invV));
     useStore.getState().updateCamera(cam.id, { pan: newPan, tilt: newTilt });
   }, [cam]);
 
@@ -796,6 +798,18 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         <div className="flex items-center gap-2 px-2">
           <button onClick={selectPrevCamera} className="p-1 rounded hover:bg-bc-border text-gray-400 hover:text-white" title="Previous camera"><FiChevronLeft size={16} /></button>
           <span className="text-white font-bold text-sm flex-1 text-center">{cam.label}</span>
+          <button
+            type="button"
+            onClick={() => useStore.getState().updateCamera(cam.id, { invertPreviewH: !cam.invertPreviewH })}
+            title={cam.invertPreviewH ? 'Horizontal invertiert (klicken zum Zurücksetzen)' : 'Horizontal invertieren'}
+            className={`px-1.5 py-0.5 text-[10px] rounded border font-mono ${cam.invertPreviewH ? 'bg-bc-accent text-white border-bc-accent' : 'bg-bc-dark text-gray-400 border-bc-border hover:text-white'}`}
+          >↔</button>
+          <button
+            type="button"
+            onClick={() => useStore.getState().updateCamera(cam.id, { invertPreviewV: !cam.invertPreviewV })}
+            title={cam.invertPreviewV ? 'Vertikal invertiert (klicken zum Zurücksetzen)' : 'Vertikal invertieren'}
+            className={`px-1.5 py-0.5 text-[10px] rounded border font-mono ${cam.invertPreviewV ? 'bg-bc-accent text-white border-bc-accent' : 'bg-bc-dark text-gray-400 border-bc-border hover:text-white'}`}
+          >↕</button>
           <button onClick={selectNextCamera} className="p-1 rounded hover:bg-bc-border text-gray-400 hover:text-white" title="Next camera"><FiChevronRight size={16} /></button>
           <span className="text-gray-500 text-[10px]">{camIdx + 1}/{cameras.length}</span>
         </div>

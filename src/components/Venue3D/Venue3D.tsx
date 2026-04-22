@@ -34,8 +34,8 @@ function DraggableOnFloor({ children, x, z, onDragEnd, onClick, draggable = true
 
   const handlePointerDown = useCallback((e: any) => {
     if (!effectiveDraggable) return;
-    // Only left mouse button should initiate drag (right = camera look)
-    if (typeof e.button === 'number' && e.button !== 0) return;
+    // Only right mouse button should initiate drag (left = camera look)
+    if (typeof e.button === 'number' && e.button !== 2) return;
     e.stopPropagation();
     isDragging.current = true;
     const hit = projectMouse();
@@ -157,8 +157,8 @@ function VenueWalls({ widthM, heightM }: { widthM: number; heightM: number }) {
  * WASD      = move forward/back/strafe
  * Space     = up
  * Shift     = down
- * Mouse (right) = look (hold right mouse button)
- * Mouse (left)  = select/drag objects and cameras
+ * Mouse (left)  = look (hold left mouse button)
+ * Mouse (right) = select/drag objects and cameras
  * Scroll    = move forward/back (dolly)
  * Ctrl      = sprint (2×)
  */
@@ -211,8 +211,8 @@ function FPSControls({ mouseLookEnabled }: { mouseLookEnabled: boolean }) {
 
     const onMouseDown = (e: MouseEvent) => {
       if (!mouseLookEnabled) return;
-      // Only right mouse button triggers camera look. Left button is reserved for selecting/dragging objects.
-      if (e.button !== 2) return;
+      // Left mouse button triggers camera look. Right button is reserved for dragging objects.
+      if (e.button !== 0) return;
       isLooking.current = true;
       canvas.style.cursor = 'grabbing';
       canvas.requestPointerLock?.();
@@ -372,12 +372,10 @@ function FovPyramid({ cam, isSelected }: { cam: ReturnType<typeof useStore.getSt
     return geo;
   }, [isZoom, fovMax.horizontalDeg, fovMax.verticalDeg, cam.focusDistance]);
 
-  // NOTE: the outer `pitchRef` already applies the tilt on the local X axis.
-  // This inner group only needs to rotate the model so that it points along
-  // the parent's -X axis (pan=0). We use YXZ order so a tilt applied further
-  // up the hierarchy stays a pure pitch and never turns into roll.
+  // The outer pitchRef applies tilt on the local X axis. The base yaw already
+  // bakes the pan + model orientation offset – so pitch stays a pure pitch.
   return (
-    <group rotation={[0, -Math.PI / 2, 0]} rotation-order="YXZ">
+    <group rotation-order="YXZ">
       {/* Camera body */}
       <mesh>
         <boxGeometry args={[0.3, 0.2, 0.4]} />
@@ -434,7 +432,10 @@ function CameraRig({
   useEffect(() => {
     if (baseRef.current) {
       baseRef.current.position.set(cam.x, 0, cam.y);
-      baseRef.current.rotation.set(0, THREE.MathUtils.degToRad(-cam.pan), 0);
+      // Bake the FovPyramid's -π/2 orientation offset into the yaw so that the
+      // pitchRef rotates around a horizontal world axis – keeping tilt as pure
+      // pitch instead of roll.
+      baseRef.current.rotation.set(0, THREE.MathUtils.degToRad(-cam.pan) - Math.PI / 2, 0);
     }
     if (liftRef.current) {
       liftRef.current.position.set(cam.trackOffset ?? 0, cam.z, 0);
@@ -449,7 +450,7 @@ function CameraRig({
     <group
       ref={baseRef}
       position={[cam.x, 0, cam.y]}
-      rotation={[0, THREE.MathUtils.degToRad(-cam.pan), 0]}
+      rotation={[0, THREE.MathUtils.degToRad(-cam.pan) - Math.PI / 2, 0]}
       onClick={(e) => {
         e.stopPropagation();
         onSelect(cam.id);
@@ -707,8 +708,8 @@ export default function Venue3D() {
         fontSize: 11, color: '#9ca3af', lineHeight: 1.6, backdropFilter: 'blur(4px)',
         pointerEvents: 'none',
       }}>
-        <b style={{ color: '#60a5fa' }}>Right-drag</b> look &nbsp;|&nbsp;
-        <b style={{ color: '#60a5fa' }}>Left-drag</b> move objects<br/>
+        <b style={{ color: '#60a5fa' }}>Left-drag</b> look &nbsp;|&nbsp;
+        <b style={{ color: '#60a5fa' }}>Right-drag</b> move objects<br/>
         <b style={{ color: '#60a5fa' }}>WASD</b> Move &nbsp;|&nbsp;
         <b style={{ color: '#60a5fa' }}>Space/Shift</b> vertical &nbsp;|&nbsp;
         <b style={{ color: '#60a5fa' }}>Scroll</b> Dolly
