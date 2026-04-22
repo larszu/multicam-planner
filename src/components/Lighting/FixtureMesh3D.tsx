@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { getFixtureById, FIXTURE_CATEGORY_COLOR } from '../../data/fixtures';
 import { gelStackColor } from '../../data/gels';
@@ -25,6 +25,22 @@ export default function FixtureMesh3D({ placed, customFixtures, showVolumetric =
       lightRef.current.target = targetRef.current;
     }
   }, []);
+
+  // Keep the spotlight target's world transform up to date whenever the
+  // placement changes. Without an explicit updateMatrixWorld the spotlight
+  // can keep pointing at a stale position (visually appearing mirrored or
+  // stuck) because three.js only updates the target's matrix when it is
+  // part of the scene graph and gets traversed.
+  useLayoutEffect(() => {
+    const t = targetRef.current;
+    t.position.set(placed.aimX, 0, placed.aimY);
+    t.updateMatrix();
+    t.updateMatrixWorld(true);
+    if (lightRef.current) {
+      lightRef.current.target = t;
+      lightRef.current.updateMatrixWorld(true);
+    }
+  }, [placed.aimX, placed.aimY]);
 
   const colorHex = useMemo(() => {
     if (!fixture) return '#ffffff';
