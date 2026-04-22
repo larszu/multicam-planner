@@ -8,6 +8,7 @@ import React, { useRef, useCallback, useEffect, useState } from 'react';
 import type Konva from 'konva';
 import FixtureIcon2D from '../Lighting/FixtureIcon2D';
 import HeatMapOverlay from '../Lighting/HeatMapOverlay';
+import HeatMapLegend from '../Lighting/HeatMapLegend';
 import { getFixtureById } from '../../data/fixtures';
 
 export default function Venue2D() {
@@ -340,6 +341,9 @@ export default function Venue2D() {
       <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 10, background: '#000000aa', padding: '4px 10px', borderRadius: 4, fontSize: 11, color: '#9ca3af', pointerEvents: 'none', backdropFilter: 'blur(4px)' }}>
         {(zoom * 100).toFixed(0)}%
       </div>
+      {heatMapEnabled && placedFixtures.length > 0 && (
+        <HeatMapLegend targetLux={heatMapTargetLux} scaleLux={heatMapScale} position="bottom-left" />
+      )}
       <Stage
         ref={stageRef}
         width={containerSize.w}

@@ -8,6 +8,9 @@ import * as THREE from 'three';
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import type { BackgroundPlan, StageObjectType } from '../../types';
 import FixtureMesh3D from '../Lighting/FixtureMesh3D';
+import HeatMapFloor3D from '../Lighting/HeatMapFloor3D';
+import HeatMapLegend from '../Lighting/HeatMapLegend';
+import { getFixtureById } from '../../data/fixtures';
 
 /* ── Draggable group that moves on the XZ ground plane ── */
 function DraggableOnFloor({ children, x, z, onDragEnd, onClick, draggable = true }: {
@@ -692,6 +695,14 @@ export default function Venue3D() {
   const customFixtures = useStore((s) => s.customFixtures);
   const selectedFixtureId = useStore((s) => s.selectedFixtureId);
   const drag3DLocked = useStore((s) => s.drag3DLocked);
+  const heatMapEnabled = useStore((s) => s.heatMapEnabled);
+  const heatMapTargetLux = useStore((s) => s.heatMapTargetLux);
+  const heatMapScale = useStore((s) => s.heatMapScale);
+
+  const fixtureLookup = useCallback(
+    (id: string) => getFixtureById(id, customFixtures),
+    [customFixtures],
+  );
 
   const handleReset = useCallback(() => {
     window.dispatchEvent(new CustomEvent('multicam-3d-reset', {
@@ -835,7 +846,28 @@ export default function Venue3D() {
             selected={selectedFixtureId === pf.id}
           />
         ))}
+
+        {/* Lighting heat-map on floor */}
+        {appMode === 'lighting' && heatMapEnabled && placedFixtures.length > 0 && (
+          <HeatMapFloor3D
+            placedFixtures={placedFixtures}
+            fixtureLookup={fixtureLookup}
+            widthM={venue.widthM}
+            heightM={venue.heightM}
+            targetLux={heatMapTargetLux}
+            scaleLux={heatMapScale}
+          />
+        )}
       </Canvas>
+
+      {/* Heat-map legend overlay (matches 2D) */}
+      {appMode === 'lighting' && heatMapEnabled && placedFixtures.length > 0 && (
+        <HeatMapLegend
+          targetLux={heatMapTargetLux}
+          scaleLux={heatMapScale}
+          position="bottom-right"
+        />
+      )}
     </div>
   );
 }

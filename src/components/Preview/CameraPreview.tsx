@@ -798,18 +798,6 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         <div className="flex items-center gap-2 px-2">
           <button onClick={selectPrevCamera} className="p-1 rounded hover:bg-bc-border text-gray-400 hover:text-white" title="Previous camera"><FiChevronLeft size={16} /></button>
           <span className="text-white font-bold text-sm flex-1 text-center">{cam.label}</span>
-          <button
-            type="button"
-            onClick={() => useStore.getState().updateCamera(cam.id, { invertPreviewH: !cam.invertPreviewH })}
-            title={cam.invertPreviewH ? 'Horizontal invertiert (klicken zum Zurücksetzen)' : 'Horizontal invertieren'}
-            className={`px-1.5 py-0.5 text-[10px] rounded border font-mono ${cam.invertPreviewH ? 'bg-bc-accent text-white border-bc-accent' : 'bg-bc-dark text-gray-400 border-bc-border hover:text-white'}`}
-          >↔</button>
-          <button
-            type="button"
-            onClick={() => useStore.getState().updateCamera(cam.id, { invertPreviewV: !cam.invertPreviewV })}
-            title={cam.invertPreviewV ? 'Vertikal invertiert (klicken zum Zurücksetzen)' : 'Vertikal invertieren'}
-            className={`px-1.5 py-0.5 text-[10px] rounded border font-mono ${cam.invertPreviewV ? 'bg-bc-accent text-white border-bc-accent' : 'bg-bc-dark text-gray-400 border-bc-border hover:text-white'}`}
-          >↕</button>
           <button onClick={selectNextCamera} className="p-1 rounded hover:bg-bc-border text-gray-400 hover:text-white" title="Next camera"><FiChevronRight size={16} /></button>
           <span className="text-gray-500 text-[10px]">{camIdx + 1}/{cameras.length}</span>
         </div>
@@ -867,6 +855,18 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
               {label}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => useStore.getState().updateCamera(cam.id, { invertPreviewH: !cam.invertPreviewH })}
+            title={cam.invertPreviewH ? 'Horizontal invert ON (pan drag reversed) — click to reset' : 'Invert horizontal pan drag'}
+            className={`px-2 py-0.5 rounded text-[10px] font-mono border transition-colors ${cam.invertPreviewH ? 'border-bc-accent text-bc-accent bg-bc-accent/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
+          >↔ Invert</button>
+          <button
+            type="button"
+            onClick={() => useStore.getState().updateCamera(cam.id, { invertPreviewV: !cam.invertPreviewV })}
+            title={cam.invertPreviewV ? 'Vertical invert ON (tilt drag reversed) — click to reset' : 'Invert vertical tilt drag'}
+            className={`px-2 py-0.5 rounded text-[10px] font-mono border transition-colors ${cam.invertPreviewV ? 'border-bc-accent text-bc-accent bg-bc-accent/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
+          >↕ Invert</button>
           <span className="text-[10px] text-gray-600 ml-auto">Drag: Pan/Tilt · Scroll: Zoom</span>
         </div>
 

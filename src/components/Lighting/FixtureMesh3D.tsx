@@ -133,10 +133,12 @@ function VolumetricCone({ from, to, halfAngleRad, color, opacity }: {
   const length = Math.hypot(dx, dy, dz);
   const radius = Math.tan(halfAngleRad) * length;
 
-  // Orient cone so its axis (local +Y) points from 'from' -> 'to'
+  // ConeGeometry has apex at local +Y and base (wide) at local -Y.
+  // We want the APEX at the fixture ('from') and the WIDE BASE at the target ('to').
+  // So rotate so local +Y points from target -> fixture (i.e. the negated direction).
   const mid: [number, number, number] = [(fx + tx) / 2, (fy + ty) / 2, (fz + tz) / 2];
   const up = new THREE.Vector3(0, 1, 0);
-  const dir = new THREE.Vector3(dx, dy, dz).normalize();
+  const dir = new THREE.Vector3(-dx, -dy, -dz).normalize();
   const quat = new THREE.Quaternion().setFromUnitVectors(up, dir);
   const euler = new THREE.Euler().setFromQuaternion(quat);
 
