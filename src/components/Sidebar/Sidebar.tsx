@@ -459,8 +459,8 @@ function CameraCard({ camId }: { camId: string }) {
             <input
               type="range"
               className="w-full accent-bc-accent"
-              min={-90}
-              max={45}
+              min={-180}
+              max={180}
               step={1}
               value={cam.tilt}
               onChange={(e) => updateCamera(cam.id, { tilt: parseFloat(e.target.value) })}

@@ -750,8 +750,14 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     const fovScale = Math.max(0.15, Math.min(1.5, cam.focalLength / 50));
     const panSens = 0.25 / fovScale;
     const tiltSens = 0.18 / fovScale;
-    const newPan = Math.max(-180, Math.min(180, cam.pan - dx * panSens * inv * invH));
-    const newTilt = Math.max(-90, Math.min(45, cam.tilt + dy * tiltSens * inv * invV));
+    // Infinite rotation: wrap pan & tilt into [-180, 180) so crossing ±180° jumps
+    // to the opposite sign instead of hitting a hard stop.
+    const wrap180 = (v: number) => {
+      const x = ((v + 180) % 360 + 360) % 360;
+      return x - 180;
+    };
+    const newPan = wrap180(cam.pan - dx * panSens * inv * invH);
+    const newTilt = wrap180(cam.tilt + dy * tiltSens * inv * invV);
     useStore.getState().updateCamera(cam.id, { pan: newPan, tilt: newTilt });
   }, [cam]);
 
