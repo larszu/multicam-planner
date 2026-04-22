@@ -24,15 +24,12 @@ function candelaFromPhotometric(p: PhotometricData): number {
   return p.lux * p.distance * p.distance;
 }
 
-function peakIntensityFromLumens(lumens: number, beamAngleDeg: number, ratio: number): number {
-  // For a Gaussian beam with FWHM = beamAngleDeg, the total luminous flux is
-  //   Φ ≈ 2π · I₀ · σ_x · σ_y
-  // so the peak candela is I₀ = Φ / (2π · σ_x · σ_y). Using σ = halfAngle/√(2·ln2)
-  // this reduces to I₀ = Φ · ln2 · 2 / (π · halfW · halfH).
-  const halfW = (beamAngleDeg / 2) * DEG2RAD;
-  const halfH = halfW / Math.max(ratio, 0.1);
-  const sigmaW = halfW / Math.sqrt(2 * Math.LN2);
-  const sigmaH = halfH / Math.sqrt(2 * Math.LN2);
+function peakIntensityFromLumens(lumens: number, fieldAngleDeg: number, ratio: number): number {
+  // For a Gaussian angular intensity I(θ_x,θ_y) = I₀·exp(−θ_x²/2σ_x² − θ_y²/2σ_y²)
+  // total flux Φ = 2π·I₀·σ_x·σ_y  ⇒  I₀ = Φ / (2π·σ_x·σ_y).
+  // σ is anchored on the field angle so the same σ is used in luxFromFixture.
+  const sigmaW = beamSigma(fieldAngleDeg);
+  const sigmaH = sigmaW / Math.max(ratio, 0.1);
   const denom = 2 * Math.PI * sigmaW * sigmaH;
   return denom > 0 ? lumens / denom : 0;
 }
@@ -50,9 +47,11 @@ function peakIntensity(
   return peakIntensityFromLumens(lumens, beamAngleDeg, ratio);
 }
 
-function beamSigma(beamAngleDeg: number): number {
-  const halfAngle = (beamAngleDeg / 2) * DEG2RAD;
-  return halfAngle / Math.sqrt(2 * Math.LN2);
+function beamSigma(fieldAngleDeg: number): number {
+  // σ such that I(θ = fieldAngle/2) = 10 % · I₀.
+  //   exp(−θ²/(2σ²)) = 0.1  ⇒  σ = (θ) / √(2·ln 10)
+  const halfAngle = (fieldAngleDeg / 2) * DEG2RAD;
+  return halfAngle / Math.sqrt(2 * Math.LN10);
 }
 
 /** Illuminance (lux) from a single fixture at floor point (px, py). */
@@ -68,11 +67,13 @@ export function luxFromFixture(
   const dimFactor = placed.dimming / 100;
   if (dimFactor <= 0) return 0;
 
-  // `beamAngle` here is the 50 % (FWHM) angle used to derive the Gaussian σ.
-  // Zoom override (`currentBeamAngle`) is a FWHM value too (spec conventions).
-  // We intentionally do NOT use `fixture.fieldAngle` (10 % angle) here – that
-  // would make the Gaussian ~1.8× too wide and over-illuminate the beam edge.
-  let beamAngle = placed.currentBeamAngle ?? fixture.beamAngle;
+  // `beamAngle` here is the 10 %-intensity angle (field angle) used to derive
+  // the Gaussian σ such that I(θ=fieldAngle/2) = 10 % of I₀. This matches
+  // how the volumetric cone & 2D footprint are drawn (FixtureIcon2D /
+  // FixtureMesh3D both use fieldAngle) so the visible edge and the heatmap
+  // boundary coincide. The 50 % (FWHM) `fixture.beamAngle` is metadata only
+  // – we'd need a super-Gaussian to honour both 50 % and 10 % independently.
+  let beamAngle = placed.currentBeamAngle ?? fixture.fieldAngle;
   const ratio = fixture.beamRatioWH;
 
   beamAngle = effectiveBeamAngleWithFrost(beamAngle, placed.gelFilterIds);
