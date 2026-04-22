@@ -78,9 +78,10 @@ export default function HeatMapFloor3D({
     const tex = new THREE.CanvasTexture(canvas);
     tex.magFilter = THREE.LinearFilter;
     tex.minFilter = THREE.LinearFilter;
+    // Default flipY=true is correct: the plane is rotated -PI/2 around X, so
+    // canvas row 0 (low plan-y / py≈0) must land at UV v=1, which after the
+    // rotation sits at world z=0 — matching the 2D overlay orientation.
     tex.needsUpdate = true;
-    // Plane is rotated -PI/2 around X, which flips the V axis of the texture.
-    tex.flipY = false;
     setTexture((prev) => {
       prev?.dispose();
       return tex;
