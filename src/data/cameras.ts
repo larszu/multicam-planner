@@ -20,15 +20,15 @@ export const CAMERAS: Camera[] = [
   { id: 'sony-hdc-f5500', manufacturer: 'Sony', model: 'HDC-F5500', sensor: SENSORS.S35, mount: 'PL', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'Super 35mm broadcast camera' },
   { id: 'sony-venice', manufacturer: 'Sony', model: 'VENICE', sensor: SENSORS.FF, mount: 'PL', adaptedMounts: ['E'], resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'Full-frame CineAlta, PL native, E-mount via supplied adapter' },
   { id: 'sony-venice2', manufacturer: 'Sony', model: 'VENICE 2', sensor: { name: 'FF 8.6K (36.2×24.1)', widthMm: 36.2, heightMm: 24.1, cropFactor: 0.99 }, mount: 'PL', adaptedMounts: ['E'], resolutions: ['8.6K', '6K', '4K', 'HD'], type: 'cinema', notes: 'Dual base ISO 800/3200, PL native, E-mount adapter' },
-  { id: 'sony-pmw-f5', manufacturer: 'Sony', model: 'PMW-F5', sensor: SENSORS.S35, mount: 'FZ', adaptedMounts: ['PL', 'B4'], resolutions: ['4K', '2K', 'HD'], type: 'cinema', notes: 'FZ-mount native, PL via adapter, B4 via Sony LA-FZB1 (LAFZ-B1)' },
-  { id: 'sony-pmw-f55', manufacturer: 'Sony', model: 'PMW-F55', sensor: SENSORS.S35, mount: 'FZ', adaptedMounts: ['PL', 'B4'], resolutions: ['4K', '2K', 'HD'], type: 'cinema', notes: 'FZ-mount native, PL via adapter, B4 via Sony LA-FZB1 (LAFZ-B1) with crop to 2/3" area' },
-  { id: 'sony-fx6', manufacturer: 'Sony', model: 'FX6', sensor: SENSORS.FF, mount: 'E', resolutions: ['4K', 'HD'], type: 'cinema' },
-  { id: 'sony-fx3', manufacturer: 'Sony', model: 'FX3', sensor: SENSORS.FF, mount: 'E', resolutions: ['4K', 'HD'], type: 'cinema' },
-  { id: 'sony-fx9', manufacturer: 'Sony', model: 'PXW-FX9', sensor: SENSORS.FF, mount: 'E', resolutions: ['6K', '4K', 'HD'], type: 'cinema' },
-  { id: 'sony-fs7ii', manufacturer: 'Sony', model: 'PXW-FS7 II', sensor: SENSORS.S35, mount: 'E', resolutions: ['4K', 'HD'], type: 'cinema' },
-  { id: 'sony-a7siii', manufacturer: 'Sony', model: 'A7S III', sensor: SENSORS.FF, mount: 'E', resolutions: ['4K', 'HD'], type: 'mirrorless' },
-  { id: 'sony-a7iv', manufacturer: 'Sony', model: 'A7 IV', sensor: SENSORS.FF, mount: 'E', resolutions: ['4K', 'HD'], type: 'mirrorless' },
-  { id: 'sony-fr7', manufacturer: 'Sony', model: 'FR7', sensor: SENSORS.FF, mount: 'E', resolutions: ['4K', 'HD'], type: 'ptz', notes: 'Full-frame PTZ cinema camera' },
+  { id: 'sony-pmw-f5', manufacturer: 'Sony', model: 'PMW-F5', sensor: SENSORS.S35, mount: 'FZ', adaptedMounts: ['PL', 'B4', 'EF', 'NF'], resolutions: ['4K', '2K', 'HD'], type: 'cinema', notes: 'FZ-mount native, PL via adapter, B4 via Sony LA-FZB1 (LAFZ-B1), EF via Metabones FZ-EF CINE' },
+  { id: 'sony-pmw-f55', manufacturer: 'Sony', model: 'PMW-F55', sensor: SENSORS.S35, mount: 'FZ', adaptedMounts: ['PL', 'B4', 'EF', 'NF'], resolutions: ['4K', '2K', 'HD'], type: 'cinema', notes: 'FZ-mount native, PL via adapter, B4 via LAFZ-B1 (2/3" crop), EF via Metabones FZ-EF CINE' },
+  { id: 'sony-fx6', manufacturer: 'Sony', model: 'FX6', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF', 'NF'], resolutions: ['4K', 'HD'], type: 'cinema', notes: 'E-mount nativ; PL via Metabones PL → E CINE, EF via Metabones EF → E' },
+  { id: 'sony-fx3', manufacturer: 'Sony', model: 'FX3', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF', 'NF'], resolutions: ['4K', 'HD'], type: 'cinema', notes: 'E-mount nativ; PL via Metabones PL → E CINE, EF via Metabones EF → E' },
+  { id: 'sony-fx9', manufacturer: 'Sony', model: 'PXW-FX9', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF', 'NF'], resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'E-mount nativ; PL/EF via Adapter' },
+  { id: 'sony-fs7ii', manufacturer: 'Sony', model: 'PXW-FS7 II', sensor: SENSORS.S35, mount: 'E', adaptedMounts: ['PL', 'EF', 'NF'], resolutions: ['4K', 'HD'], type: 'cinema', notes: 'E-mount nativ; PL/EF via Adapter' },
+  { id: 'sony-a7siii', manufacturer: 'Sony', model: 'A7S III', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF', 'NF'], resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'sony-a7iv', manufacturer: 'Sony', model: 'A7 IV', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF', 'NF'], resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'sony-fr7', manufacturer: 'Sony', model: 'FR7', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF', 'NF'], resolutions: ['4K', 'HD'], type: 'ptz', notes: 'Full-frame PTZ, E-mount; PL/EF via Adapter' },
 
   // ── Sony ENG Camcorder ──
   { id: 'sony-pdw-700', manufacturer: 'Sony', model: 'PDW-700', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'eng', notes: 'XDCAM HD422, 2/3" 3-CCD' },
@@ -42,9 +42,9 @@ export const CAMERAS: Camera[] = [
   { id: 'sony-brc-h800', manufacturer: 'Sony', model: 'BRC-H800', sensor: SENSORS.HALF_INCH, mount: 'integrated', resolutions: ['HD'], type: 'ptz', notes: '1/2.5" Exmor R CMOS, 12x optical zoom PTZ' },
 
   // ── Canon Broadcast / Cinema ──
-  { id: 'canon-c500ii', manufacturer: 'Canon', model: 'C500 Mark II', sensor: SENSORS.FF, mount: 'EF', resolutions: ['5.9K', '4K', 'HD'], type: 'cinema' },
-  { id: 'canon-c300iii', manufacturer: 'Canon', model: 'C300 Mark III', sensor: SENSORS.S35, mount: 'EF', resolutions: ['4K', 'HD'], type: 'cinema' },
-  { id: 'canon-c70', manufacturer: 'Canon', model: 'C70', sensor: SENSORS.S35, mount: 'RF', resolutions: ['4K', 'HD'], type: 'cinema' },
+  { id: 'canon-c500ii', manufacturer: 'Canon', model: 'C500 Mark II', sensor: SENSORS.FF, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['5.9K', '4K', 'HD'], type: 'cinema', notes: 'EF nativ, PL via Canon Mount-Kit' },
+  { id: 'canon-c300iii', manufacturer: 'Canon', model: 'C300 Mark III', sensor: SENSORS.S35, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['4K', 'HD'], type: 'cinema', notes: 'EF nativ, PL via Canon Mount-Kit' },
+  { id: 'canon-c70', manufacturer: 'Canon', model: 'C70', sensor: SENSORS.S35, mount: 'RF', adaptedMounts: ['EF', 'PL'], resolutions: ['4K', 'HD'], type: 'cinema', notes: 'RF nativ; EF via Canon EF-EOS R 0.71×, PL via Adapter' },
   { id: 'canon-xf605', manufacturer: 'Canon', model: 'XF605', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder' },
   { id: 'canon-cr-n500', manufacturer: 'Canon', model: 'CR-N500', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
   { id: 'canon-cr-n300', manufacturer: 'Canon', model: 'CR-N300', sensor: SENSORS.HALF_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
@@ -53,7 +53,7 @@ export const CAMERAS: Camera[] = [
   { id: 'pana-ak-uc4000', manufacturer: 'Panasonic', model: 'AK-UC4000', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
   { id: 'pana-ak-uc3300', manufacturer: 'Panasonic', model: 'AK-UC3300', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
   { id: 'pana-ak-hc5000', manufacturer: 'Panasonic', model: 'AK-HC5000', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
-  { id: 'pana-eva1', manufacturer: 'Panasonic', model: 'AU-EVA1', sensor: SENSORS.S35, mount: 'EF', resolutions: ['5.7K', '4K', 'HD'], type: 'cinema' },
+  { id: 'pana-eva1', manufacturer: 'Panasonic', model: 'AU-EVA1', sensor: SENSORS.S35, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['5.7K', '4K', 'HD'], type: 'cinema', notes: 'EF nativ, PL via Adapter' },
   { id: 'pana-aw-ue150', manufacturer: 'Panasonic', model: 'AW-UE150', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
   { id: 'pana-aw-ue40', manufacturer: 'Panasonic', model: 'AW-UE40', sensor: SENSORS.HALF_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
 
@@ -65,7 +65,7 @@ export const CAMERAS: Camera[] = [
   { id: 'bmd-pocket6kpro', manufacturer: 'Blackmagic', model: 'Pocket Cinema 6K Pro', sensor: SENSORS.S35, mount: 'EF', resolutions: ['6K', '4K', 'HD'], type: 'cinema' },
   { id: 'bmd-pocket6k', manufacturer: 'Blackmagic', model: 'Pocket Cinema 6K G2', sensor: SENSORS.S35, mount: 'EF', resolutions: ['6K', '4K', 'HD'], type: 'cinema' },
   { id: 'bmd-pocket4k', manufacturer: 'Blackmagic', model: 'Pocket Cinema 4K', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'cinema' },
-  { id: 'bmd-cinema-camera-6k', manufacturer: 'Blackmagic', model: 'Cinema Camera 6K', sensor: SENSORS.FF, mount: 'L', resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'Full-frame, Leica L-mount' },
+  { id: 'bmd-cinema-camera-6k', manufacturer: 'Blackmagic', model: 'Cinema Camera 6K', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['EF', 'PL', 'NF'], resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'Full-frame, L-mount nativ; EF/PL/Nikon via Adapter' },
   { id: 'bmd-pyxis-6k', manufacturer: 'Blackmagic', model: 'PYXIS 6K', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['PL', 'EF'], resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'Full-frame box-style, L-mount native' },
   { id: 'bmd-studio4kplus', manufacturer: 'Blackmagic', model: 'Studio Camera 4K Plus', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'broadcast' },
   { id: 'bmd-studio4kpro', manufacturer: 'Blackmagic', model: 'Studio Camera 4K Pro G2', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'broadcast' },
@@ -81,11 +81,11 @@ export const CAMERAS: Camera[] = [
   { id: 'hitachi-sk-uhd7000', manufacturer: 'Hitachi', model: 'SK-UHD7000', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
 
   // ── ARRI ──
-  { id: 'arri-alexa-35', manufacturer: 'ARRI', model: 'ALEXA 35', sensor: { name: 'ARRI ALEV 4 (27.99×19.22)', widthMm: 27.99, heightMm: 19.22, cropFactor: 1.29 }, mount: 'PL', resolutions: ['4.6K', '4K', 'HD'], type: 'cinema' },
-  { id: 'arri-amira', manufacturer: 'ARRI', model: 'AMIRA', sensor: SENSORS.S35, mount: 'PL', resolutions: ['4K UHD', 'HD'], type: 'cinema' },
+  { id: 'arri-alexa-35', manufacturer: 'ARRI', model: 'ALEXA 35', sensor: { name: 'ARRI ALEV 4 (27.99×19.22)', widthMm: 27.99, heightMm: 19.22, cropFactor: 1.29 }, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['4.6K', '4K', 'HD'], type: 'cinema', notes: 'PL nativ (LPL optional), EF via ARRI EF-Mount' },
+  { id: 'arri-amira', manufacturer: 'ARRI', model: 'AMIRA', sensor: SENSORS.S35, mount: 'PL', adaptedMounts: ['EF', 'B4'], resolutions: ['4K UHD', 'HD'], type: 'cinema', notes: 'PL nativ, EF/B4 via ARRI Mount-Kits' },
 
   // ── RED ──
-  { id: 'red-v-raptor', manufacturer: 'RED', model: 'V-RAPTOR XL', sensor: { name: 'RED VV (40.96×21.6)', widthMm: 40.96, heightMm: 21.6, cropFactor: 0.88 }, mount: 'PL', resolutions: ['8K', '6K', '4K'], type: 'cinema' },
+  { id: 'red-v-raptor', manufacturer: 'RED', model: 'V-RAPTOR XL', sensor: { name: 'RED VV (40.96×21.6)', widthMm: 40.96, heightMm: 21.6, cropFactor: 0.88 }, mount: 'PL', adaptedMounts: ['EF', 'L'], resolutions: ['8K', '6K', '4K'], type: 'cinema', notes: 'PL nativ (LPL optional), EF/L via RED Mount' },
 
   // ── Marshall POV ──
   { id: 'marshall-cv568', manufacturer: 'Marshall', model: 'CV568', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'M12', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'POV camera, global shutter' },
@@ -150,10 +150,15 @@ const ADAPTER_RULES: AdapterRule[] = [
   { id: 'b4-ef-relay', lensMount: 'B4', cameraMounts: ['EF'], name: 'B4 → EF Relay Adapter', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD, autoRank: 10 },
 
   // ── PL → shorter flange mounts (mechanical, 0 stops) ──
-  { id: 'pl-fz', lensMount: 'PL', cameraMounts: ['FZ'], name: 'PL → FZ Adapter', lightLossStops: 0, autoRank: 10 },
+  { id: 'pl-fz', lensMount: 'PL', cameraMounts: ['FZ'], name: 'Sony LA-FZP1 (PL → FZ)', lightLossStops: 0, autoRank: 10 },
   { id: 'pl-e-cine', lensMount: 'PL', cameraMounts: ['E'], name: 'Metabones PL → E CINE Adapter', lightLossStops: 0, autoRank: 10 },
-  { id: 'pl-rf', lensMount: 'PL', cameraMounts: ['RF'], name: 'PL → RF Adapter', lightLossStops: 0, autoRank: 10 },
+  { id: 'pl-rf', lensMount: 'PL', cameraMounts: ['RF'], name: 'Canon PL → RF Adapter', lightLossStops: 0, autoRank: 10 },
   { id: 'pl-l', lensMount: 'PL', cameraMounts: ['L'], name: 'PL → L-mount Adapter', lightLossStops: 0, autoRank: 10 },
+  { id: 'pl-mft', lensMount: 'PL', cameraMounts: ['MFT'], name: 'PL → MFT Adapter (passiv)', lightLossStops: 0, autoRank: 8 },
+
+  // ── Canon EF → Sony FZ (F5 / F55) ──
+  { id: 'ef-fz-smart', lensMount: 'EF', cameraMounts: ['FZ'], name: 'Metabones EF → FZ Smart CINE Adapter', lightLossStops: 0, autoRank: 18 },
+  { id: 'ef-fz-sb-ultra', lensMount: 'EF', cameraMounts: ['FZ'], name: 'Metabones EF → FZ Speed Booster ULTRA 0.71×', lightLossStops: -1.0, isSpeedBooster: true, speedBoosterFactor: 0.71, autoRank: 4 },
 
   // ── Canon EF → Sony E (Metabones range) ──
   { id: 'ef-e-smart-v', lensMount: 'EF', cameraMounts: ['E'], name: 'Metabones EF → E Smart Adapter Mark V', lightLossStops: 0, autoRank: 20 },
@@ -179,6 +184,11 @@ const ADAPTER_RULES: AdapterRule[] = [
 
   // ── L-mount shorter flange targets ──
   { id: 'l-e', lensMount: 'L', cameraMounts: ['E'], name: 'L → E-mount Adapter', lightLossStops: 0, autoRank: 10 },
+
+  // ── Nikon F → further mounts ──
+  { id: 'nf-l', lensMount: 'NF', cameraMounts: ['L'], name: 'Nikon F → L-mount Adapter', lightLossStops: 0, autoRank: 10 },
+  { id: 'nf-rf', lensMount: 'NF', cameraMounts: ['RF'], name: 'Nikon F → RF Adapter', lightLossStops: 0, autoRank: 10 },
+  { id: 'nf-fz-smart', lensMount: 'NF', cameraMounts: ['FZ'], name: 'Metabones Nikon G → FZ CINE Adapter', lightLossStops: 0, autoRank: 10 },
 ];
 
 function stripAutoFields(rule: AdapterRule): AdapterInfo {
