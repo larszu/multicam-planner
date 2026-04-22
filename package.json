@@ -10,8 +10,8 @@
     "build": "tsc -b && vite build",
     "desktop": "electron .",
     "dist:win": "npm run build && electron-builder --win nsis portable",
-    "dist:mac": "npm run build && electron-builder --mac zip",
-    "dist:all": "npm run build && electron-builder -wm",
+    "dist:mac": "npm run build && electron-builder --mac zip --x64 --arm64",
+    "dist:all": "npm run build && electron-builder -wm --x64 --arm64",
     "preview": "vite preview",
     "lint": "eslint ."
   },
