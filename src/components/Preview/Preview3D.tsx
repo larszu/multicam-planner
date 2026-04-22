@@ -6,6 +6,8 @@ import type { VenueCamera, ReferencePerson, StageObjectType, Wall, Stage } from 
 import { getLiveCameraPosition } from '../../types';
 import { computeFov } from '../../utils/fov';
 import type { SensorSize } from '../../types';
+import { useStore } from '../../store/useStore';
+import FixtureMesh3D from '../Lighting/FixtureMesh3D';
 
 /**
  * Photorealistic WebGL preview from a virtual camera's point of view.
@@ -365,6 +367,9 @@ function StageSpotlight({ target }: { target: [number, number, number] }) {
 
 export default function Preview3D({ cam, cameras, persons, walls, stages, sensor, width, height }: Preview3DProps) {
   const live = getLiveCameraPosition(cam);
+  const appMode = useStore((s) => s.appMode);
+  const placedFixtures = useStore((s) => s.placedFixtures);
+  const customFixtures = useStore((s) => s.customFixtures);
 
   // Compute horizontal FOV from sensor + focal length; R3F expects vertical FOV
   const fovVerticalDeg = useMemo(() => {
@@ -435,7 +440,12 @@ export default function Preview3D({ cam, cameras, persons, walls, stages, sensor
           shadow-camera-bottom={-25}
         />
         <hemisphereLight args={['#8ab4ff', '#2a2d2f', 0.3]} />
-        {stageCenter && <StageSpotlight target={stageCenter} />}
+        {stageCenter && appMode !== 'lighting' && <StageSpotlight target={stageCenter} />}
+
+        {/* Lit by the actual rig in Licht-Modus */}
+        {appMode === 'lighting' && placedFixtures.map((pf) => (
+          <FixtureMesh3D key={pf.id} placed={pf} customFixtures={customFixtures} showVolumetric={false} />
+        ))}
 
         {/* HDRI-style environment for reflections */}
         <Environment preset="studio" background={false} />

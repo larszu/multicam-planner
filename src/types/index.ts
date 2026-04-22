@@ -225,4 +225,8 @@ export interface ProjectFile {
   persons: ReferencePerson[];
   backgroundPlan: BackgroundPlan | null;
   walls?: Wall[];
+  /** Lighting module */
+  placedFixtures?: import('./lighting').PlacedFixture[];
+  customFixtures?: import('./lighting').Fixture[];
+  fixtureGroups?: import('./lighting').FixtureGroup[];
 }

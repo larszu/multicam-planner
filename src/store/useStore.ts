@@ -641,6 +641,9 @@ export const useStore = create<AppState>((set, get) => ({
       persons: s.persons,
       walls: s.walls ?? [],
       backgroundPlan: s.backgroundPlan,
+      placedFixtures: s.placedFixtures,
+      customFixtures: s.customFixtures,
+      fixtureGroups: s.fixtureGroups,
     };
     const json = JSON.stringify(project, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
@@ -684,6 +687,11 @@ export const useStore = create<AppState>((set, get) => ({
       backgroundPlan: bgPlan,
       selectedCameraId: cameras[0]?.id ?? null,
       walls: project.walls ?? [],
+      placedFixtures: project.placedFixtures ?? [],
+      customFixtures: project.customFixtures ?? get().customFixtures,
+      fixtureGroups: project.fixtureGroups ?? [],
+      selectedFixtureId: null,
+      fixtureToPlace: null,
       projectVersion: project.projectVersion,
       lastSavedVersion: project.projectVersion,
     });
