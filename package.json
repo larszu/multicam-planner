@@ -1,7 +1,7 @@
 {
   "name": "multicam-planner",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Multicam Broadcast Camera & Lens Planner – FOV/DoF calculator, 2D/3D venue planner, dynamic preview",
   "main": "electron/main.cjs",
   "type": "module",

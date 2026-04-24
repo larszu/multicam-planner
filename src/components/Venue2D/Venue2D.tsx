@@ -17,11 +17,17 @@ export default function Venue2D() {
     persons, updatePerson, updateStage, backgroundPlan, setBackgroundPlan, walls, updateWall, addWall,
     appMode, placedFixtures, customFixtures, selectedFixtureId, selectFixture,
     fixtureToPlace, setFixtureToPlace, addPlacedFixture, movePlacedFixture, movePlacedFixtureAim,
-    heatMapEnabled, heatMapTargetLux, heatMapScale,
+    heatMapEnabled, heatMapTargetLux, heatMapScale, showGrid,
   } = useStore();
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
+
+  // Expose canvas capture for export
+  useEffect(() => {
+    (window as any).__capture2DExport = () => stageRef.current?.toCanvas() ?? null;
+    return () => { delete (window as any).__capture2DExport; };
+  }, []);
   const [containerSize, setContainerSize] = useState({ w: 800, h: 600 });
   const [zoom, setZoom] = useState(1);
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
@@ -376,13 +382,13 @@ export default function Venue2D() {
             opacity={backgroundPlan.opacity}
           />
         )}
-        {Array.from({ length: Math.floor(venue.widthM) + 1 }).map((_, i) => (
+        {showGrid && Array.from({ length: Math.floor(venue.widthM) + 1 }).map((_, i) => (
           <Group key={`vg-${i}`}>
             <Line points={[i * ppm, 0, i * ppm, H]} stroke="#1e2030" strokeWidth={1} />
             <Text x={i * ppm + 2} y={2} text={`${i}m`} fontSize={9} fill="#555" />
           </Group>
         ))}
-        {Array.from({ length: Math.floor(venue.heightM) + 1 }).map((_, i) => (
+        {showGrid && Array.from({ length: Math.floor(venue.heightM) + 1 }).map((_, i) => (
           <Group key={`hg-${i}`}>
             <Line points={[0, i * ppm, W, i * ppm]} stroke="#1e2030" strokeWidth={1} />
             <Text x={2} y={i * ppm + 2} text={`${i}m`} fontSize={9} fill="#555" />

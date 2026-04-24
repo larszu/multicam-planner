@@ -445,7 +445,7 @@ function CameraRig({
     }
     if (pitchRef.current) {
       pitchRef.current.rotation.order = 'YXZ';
-      pitchRef.current.rotation.set(THREE.MathUtils.degToRad(cam.tilt), 0, 0);
+      pitchRef.current.rotation.set(THREE.MathUtils.degToRad(-cam.tilt), 0, 0);
     }
   }, [cam.pan, cam.tilt, cam.x, cam.y, cam.z, cam.trackOffset]);
 
@@ -460,7 +460,7 @@ function CameraRig({
       }}
     >
       <group ref={liftRef} position={[0, cam.z, 0]}>
-        <group ref={pitchRef} rotation={[THREE.MathUtils.degToRad(cam.tilt), 0, 0]}>
+        <group ref={pitchRef} rotation={[THREE.MathUtils.degToRad(-cam.tilt), 0, 0]}>
           <FovPyramid cam={cam} isSelected={isSelected} />
         </group>
       </group>
@@ -698,6 +698,8 @@ export default function Venue3D() {
   const heatMapEnabled = useStore((s) => s.heatMapEnabled);
   const heatMapTargetLux = useStore((s) => s.heatMapTargetLux);
   const heatMapScale = useStore((s) => s.heatMapScale);
+  const showGrid = useStore((s) => s.showGrid);
+  const toggleShowGrid = useStore((s) => s.toggleShowGrid);
 
   const fixtureLookup = useCallback(
     (id: string) => getFixtureById(id, customFixtures),
@@ -711,7 +713,7 @@ export default function Venue3D() {
   }, [venue.widthM, venue.heightM]);
 
   return (
-    <div style={{ width: '100%', height: '100%', minHeight: 500, position: 'relative' }}>
+    <div data-venue3d="true" style={{ width: '100%', height: '100%', minHeight: 500, position: 'relative' }}>
       {/* Controls hint */}
       <div style={{
         position: 'absolute', bottom: 8, left: 8, zIndex: 10,
@@ -740,6 +742,22 @@ export default function Venue3D() {
         title={drag3DLocked ? 'Drag locked — click to unlock' : 'Click to lock drag (prevents accidental movement)'}
       >
         {drag3DLocked ? '🔒 Drag locked' : '🔓 Drag free'}
+      </button>
+
+      {/* Grid toggle button */}
+      <button
+        onClick={toggleShowGrid}
+        style={{
+          position: 'absolute', top: 8, right: 260, zIndex: 10,
+          background: showGrid ? '#22c55e22' : '#1e293bcc',
+          border: `1px solid ${showGrid ? '#22c55e' : '#334155'}`,
+          color: showGrid ? '#22c55e' : '#94a3b8',
+          padding: '6px 14px', borderRadius: 6, fontSize: 12, cursor: 'pointer',
+          backdropFilter: 'blur(4px)',
+        }}
+        title={showGrid ? 'Grid ausblenden' : 'Grid einblenden'}
+      >
+        {showGrid ? '▦ Grid' : '▦ Grid'}
       </button>
 
       {/* Reset View button */}
@@ -777,22 +795,24 @@ export default function Venue3D() {
         {backgroundPlan && <FloorPlanOverlay plan={backgroundPlan} />}
 
         {/* Grid — brighter lines */}
-        <Grid
-          args={[venue.widthM, venue.heightM]}
-          position={[venue.widthM / 2, 0.01, venue.heightM / 2]}
-          cellSize={1}
-          cellThickness={0.6}
-          cellColor="#3a4050"
-          sectionSize={5}
-          sectionThickness={1.5}
-          sectionColor="#4a5568"
-        />
+        {showGrid && (
+          <Grid
+            args={[venue.widthM, venue.heightM]}
+            position={[venue.widthM / 2, 0.01, venue.heightM / 2]}
+            cellSize={1}
+            cellThickness={0.6}
+            cellColor="#3a4050"
+            sectionSize={5}
+            sectionThickness={1.5}
+            sectionColor="#4a5568"
+          />
+        )}
 
         {/* Venue walls wireframe */}
         <VenueWalls widthM={venue.widthM} heightM={venue.heightM} />
 
         {/* Floor labels */}
-        <FloorLabels widthM={venue.widthM} heightM={venue.heightM} />
+        {showGrid && <FloorLabels widthM={venue.widthM} heightM={venue.heightM} />}
 
         {/* Stages */}
         {venue.stages.map((s) => (

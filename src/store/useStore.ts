@@ -6,7 +6,7 @@ import { LENSES } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
 import { getFixtureById } from '../data/fixtures';
 
-export const APP_VERSION = '0.2.0';
+export const APP_VERSION = '0.3.0';
 
 interface AppState {
   // Venue
@@ -88,6 +88,8 @@ interface AppState {
   toggleShowAllFov: () => void;
   drag3DLocked: boolean;
   toggleDrag3DLocked: () => void;
+  showGrid: boolean;
+  toggleShowGrid: () => void;
 
   // Layout UI
   sidebarCollapsed: boolean;
@@ -471,6 +473,8 @@ export const useStore = create<AppState>((set, get) => ({
   toggleShowAllFov: () => set((s) => ({ showAllFov: !s.showAllFov })),
   drag3DLocked: false,
   toggleDrag3DLocked: () => set((s) => ({ drag3DLocked: !s.drag3DLocked })),
+  showGrid: true,
+  toggleShowGrid: () => set((s) => ({ showGrid: !s.showGrid })),
 
   sidebarCollapsed: false,
   setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),

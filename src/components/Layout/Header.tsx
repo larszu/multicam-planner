@@ -83,6 +83,10 @@ export default function Header({
     window.dispatchEvent(new CustomEvent('multicam-export'));
   }, []);
 
+  const handleExportAll = useCallback(async () => {
+    window.dispatchEvent(new CustomEvent('multicam-export-all'));
+  }, []);
+
   return (
     <header className="h-14 bg-bc-panel border-b border-bc-border flex items-center justify-between px-2 sm:px-4 shrink-0 gap-3">
       <div className="flex items-center gap-2 text-white min-w-0 shrink-0">
@@ -242,9 +246,13 @@ export default function Header({
           <FiUpload size={14} />
           <span className="hidden sm:inline">Open</span>
         </button>
-        <button onClick={handleExport} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-bc-accent hover:text-white hover:bg-bc-accent/20 transition-colors" title="Export all views as PNG">
+        <button onClick={handleExport} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-bc-accent hover:text-white hover:bg-bc-accent/20 transition-colors" title="Export selected camera as PNG">
           <FiDownload size={14} />
           <span className="hidden sm:inline">Export</span>
+        </button>
+        <button onClick={handleExportAll} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-bc-green hover:text-white hover:bg-bc-green/20 transition-colors" title="Export alle Kameras als PNG">
+          <FiDownload size={14} />
+          <span className="hidden sm:inline">Alle</span>
         </button>
         <input ref={fileInputRef} type="file" accept=".mcplan,.json" className="hidden" onChange={handleFileChange} />
         <span className="text-xs text-gray-500 hidden lg:inline">v{APP_VERSION}</span>

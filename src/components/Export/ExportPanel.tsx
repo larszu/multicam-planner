@@ -36,16 +36,31 @@ export default function ExportPanel() {
     for (const c of canvases) {
       if (c.closest('[data-venue3d]')) return c;
     }
-    // Fallback: find the WebGL canvas
+    // Fallback: find any WebGL canvas that is NOT inside the preview
     for (const c of canvases) {
+      if (c.closest('[data-preview-3d]')) continue;
       const ctx = c.getContext('webgl2') || c.getContext('webgl');
       if (ctx) return c;
     }
     return null;
   }, []);
 
-  const generateExport = useCallback(async () => {
-    if (!cam) {
+  const capturePreviewCanvas = useCallback((): HTMLCanvasElement | null => {
+    const capture = (window as any).__capturePreviewCanvas;
+    if (typeof capture === 'function') {
+      try { return capture() as HTMLCanvasElement | null; } catch { /* fall through */ }
+    }
+    // Fallback: canvas inside preview container
+    const previewContainer = document.querySelector('[data-preview-3d]');
+    if (previewContainer) {
+      return previewContainer.querySelector('canvas') as HTMLCanvasElement | null;
+    }
+    return null;
+  }, []);
+
+  const generateExport = useCallback(async (targetCam?: VenueCamera) => {
+    const activeCam = targetCam ?? cam;
+    if (!activeCam) {
       alert('Please select a camera first.');
       return;
     }
@@ -53,15 +68,15 @@ export default function ExportPanel() {
     setExporting(true);
 
     try {
-      const camDef = getCameraById(cam.cameraId);
-      const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
+      const camDef = getCameraById(activeCam.cameraId);
+      const lensDef = getLensById(activeCam.lensId, useStore.getState().customLenses);
       if (!camDef || !lensDef) return;
 
-      const sensor = getEffectiveSensor(camDef, lensDef, { adapterId: cam.adapterId, useSpeedbooster: cam.useSpeedbooster });
-      const adapterInfo = getAdapterInfo(camDef, lensDef, { adapterId: cam.adapterId, useSpeedbooster: cam.useSpeedbooster });
-      const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
-      const dof = computeDof(sensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive);
-      const personPx = personHeightInFrame(sensor.heightMm, cam.focalLength * cam.extenderActive, cam.focusDistance);
+      const sensor = getEffectiveSensor(camDef, lensDef, { adapterId: activeCam.adapterId, useSpeedbooster: activeCam.useSpeedbooster });
+      const adapterInfo = getAdapterInfo(camDef, lensDef, { adapterId: activeCam.adapterId, useSpeedbooster: activeCam.useSpeedbooster });
+      const fov = computeFov(sensor, activeCam.focalLength, activeCam.focusDistance, activeCam.extenderActive);
+      const dof = computeDof(sensor, activeCam.focalLength, activeCam.aperture, activeCam.focusDistance, activeCam.extenderActive);
+      const personPx = personHeightInFrame(sensor.heightMm, activeCam.focalLength * activeCam.extenderActive, activeCam.focusDistance);
 
       // ── Layout constants ──
       const EW = 1920; // export width
@@ -87,7 +102,7 @@ export default function ExportPanel() {
       ctx.fillStyle = '#3b82f6';
       ctx.font = 'bold 28px sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText(`${cam.label} — ${camDef.manufacturer} ${camDef.model}`, padding, 36);
+      ctx.fillText(`${activeCam.label} — ${camDef.manufacturer} ${camDef.model}`, padding, 36);
       ctx.fillStyle = '#e5e7eb';
       ctx.font = '16px sans-serif';
       ctx.fillText(`Lens: ${lensDef.manufacturer} ${lensDef.model}`, padding, 60);
@@ -131,9 +146,7 @@ export default function ExportPanel() {
       // ── Capture views ──
       const plan2D = capture2DCanvas();
       const view3D = capture3DCanvas();
-      const previewCanvas = typeof (window as any).__capturePreviewCanvas === 'function'
-        ? (window as any).__capturePreviewCanvas()
-        : captureCanvas('canvas[width="640"]');
+      const previewCanvas = capturePreviewCanvas();
 
       // Row 1: 2D Plan + 3D View
       drawTile(plan2D, padding, headerH + padding, '2D Plan');
@@ -170,16 +183,23 @@ export default function ExportPanel() {
 
       ctx.font = '13px monospace';
       ctx.fillStyle = '#e5e7eb';
+      // Widest and tele FOV for zoom lenses
+      const fovWide = lensDef.focalLengthMin !== lensDef.focalLengthMax
+        ? computeFov(sensor, lensDef.focalLengthMin, activeCam.focusDistance, activeCam.extenderActive)
+        : null;
+      const fovTele = lensDef.focalLengthMin !== lensDef.focalLengthMax
+        ? computeFov(sensor, lensDef.focalLengthMax, activeCam.focusDistance, activeCam.extenderActive)
+        : null;
       const lines = [
         `Camera:      ${camDef.manufacturer} ${camDef.model}`,
         `Sensor:      ${sensor.name} (${sensor.widthMm.toFixed(1)}×${sensor.heightMm.toFixed(1)}mm, ×${sensor.cropFactor.toFixed(2)})`,
         `Mount:       ${camDef.mount}`,
         `Lens:        ${lensDef.manufacturer} ${lensDef.model}`,
-        `Focal Length: ${cam.focalLength}mm${cam.extenderActive > 1 ? ` (×${cam.extenderActive} = ${(cam.focalLength * cam.extenderActive).toFixed(0)}mm)` : ''}`,
-        `Aperture:    f/${cam.aperture}`,
-        `Focus Dist:  ${cam.focusDistance.toFixed(1)}m`,
-        `Position:    X=${cam.x.toFixed(1)}m Y=${cam.y.toFixed(1)}m Z=${cam.z.toFixed(1)}m`,
-        `Pan: ${cam.pan.toFixed(1)}°  Tilt: ${cam.tilt.toFixed(1)}°`,
+        `Focal Length: ${activeCam.focalLength}mm${activeCam.extenderActive > 1 ? ` (×${activeCam.extenderActive} = ${(activeCam.focalLength * activeCam.extenderActive).toFixed(0)}mm)` : ''}`,
+        `Aperture:    f/${activeCam.aperture}`,
+        `Focus Dist:  ${activeCam.focusDistance.toFixed(1)}m`,
+        `Position:    X=${activeCam.x.toFixed(1)}m Y=${activeCam.y.toFixed(1)}m Z=${activeCam.z.toFixed(1)}m`,
+        `Pan: ${activeCam.pan.toFixed(1)}°  Tilt: ${activeCam.tilt.toFixed(1)}°`,
         '',
         `FOV H:       ${fov.horizontalDeg.toFixed(2)}°`,
         `FOV V:       ${fov.verticalDeg.toFixed(2)}°`,
@@ -188,6 +208,8 @@ export default function ExportPanel() {
         `DoF:         ${dof.nearLimit < 0.01 ? '0' : dof.nearLimit.toFixed(2)}m – ${dof.farLimit === Infinity ? '∞' : dof.farLimit.toFixed(2) + 'm'}`,
         `Hyperfocal:  ${dof.hyperfocal.toFixed(2)}m`,
         `Person 1.8m: ${personPx.toFixed(0)}px / 1080 (${((personPx / 1080) * 100).toFixed(1)}%)`,
+        ...(fovWide ? [`Weitwinkel:  ${lensDef.focalLengthMin}mm → FOV ${fovWide.horizontalDeg.toFixed(1)}° H`] : []),
+        ...(fovTele ? [`Tele:        ${lensDef.focalLengthMax}mm → FOV ${fovTele.horizontalDeg.toFixed(1)}° H`] : []),
       ];
       if (adapterInfo) {
         const lossStr = adapterInfo.lightLossStops > 0 ? `−${adapterInfo.lightLossStops}T` : adapterInfo.lightLossStops < 0 ? `+${Math.abs(adapterInfo.lightLossStops)}T` : '0T';
@@ -196,7 +218,7 @@ export default function ExportPanel() {
 
       lines.forEach((line) => {
         if (line === '') { cy += 6; return; }
-        if (line.startsWith('FOV') || line.startsWith('DoF') || line.startsWith('Person')) {
+        if (line.startsWith('FOV') || line.startsWith('DoF') || line.startsWith('Person') || line.startsWith('Weitwinkel') || line.startsWith('Tele')) {
           ctx.fillStyle = '#22c55e';
         } else if (line.startsWith('Adapter')) {
           ctx.fillStyle = '#f59e0b';
@@ -229,7 +251,7 @@ export default function ExportPanel() {
         if (!cd || !ld) return;
         const sx = padding + 16 + col * colW;
         const sy = summaryY + 46 + row * 18;
-        const isSelected = c.id === cam.id;
+        const isSelected = c.id === activeCam.id;
         ctx.fillStyle = isSelected ? '#3b82f6' : '#9ca3af';
         ctx.font = isSelected ? 'bold 12px monospace' : '12px monospace';
         ctx.fillText(`${c.label}: ${cd.manufacturer} ${cd.model} + ${ld.model.substring(0, 30)}`, sx, sy);
@@ -243,20 +265,50 @@ export default function ExportPanel() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${cam.label.replace(/\s+/g, '_')}_${venue.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_v${projectVersion}.png`;
+        a.download = `${activeCam.label.replace(/\s+/g, '_')}_${venue.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_v${projectVersion}.png`;
         a.click();
         URL.revokeObjectURL(url);
       }, 'image/png');
     } finally {
       setExporting(false);
     }
-  }, [cam, cameras, venue, projectVersion, capture2DCanvas, capture3DCanvas, captureCanvas, persons]);
+  }, [cam, cameras, venue, projectVersion, capture2DCanvas, capture3DCanvas, capturePreviewCanvas, persons]);
+
+  // Multi-export: iterate through all cameras, select each, wait for render, then export
+  const generateExportAll = useCallback(async () => {
+    if (cameras.length === 0) {
+      alert('Keine Kameras im Projekt.');
+      return;
+    }
+    setExporting(true);
+    const { selectCamera } = useStore.getState();
+    const originalId = useStore.getState().selectedCameraId;
+    const snapshotCameras = useStore.getState().cameras;
+    try {
+      for (const c of snapshotCameras) {
+        selectCamera(c.id);
+        // Wait for React re-renders + WebGL frames to settle
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        await generateExport(c);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+    } finally {
+      selectCamera(originalId);
+      setExporting(false);
+    }
+  }, [cameras, generateExport]);
 
   useEffect(() => {
     const handler = () => generateExport();
     window.addEventListener('multicam-export', handler);
     return () => window.removeEventListener('multicam-export', handler);
   }, [generateExport]);
+
+  useEffect(() => {
+    const handler = () => generateExportAll();
+    window.addEventListener('multicam-export-all', handler);
+    return () => window.removeEventListener('multicam-export-all', handler);
+  }, [generateExportAll]);
 
   if (exporting) {
     return (

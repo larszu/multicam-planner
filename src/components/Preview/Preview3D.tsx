@@ -1,7 +1,7 @@
-import { Canvas } from '@react-three/fiber';
-import { PerspectiveCamera, Environment, ContactShadows, Text } from '@react-three/drei';
+import { Canvas, useThree } from '@react-three/fiber';
+import { PerspectiveCamera, Text } from '@react-three/drei';
 import * as THREE from 'three';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import type { VenueCamera, ReferencePerson, StageObjectType, Wall, Stage } from '../../types';
 import { getLiveCameraPosition } from '../../types';
 import { computeFov } from '../../utils/fov';
@@ -365,6 +365,15 @@ function StageSpotlight({ target }: { target: [number, number, number] }) {
   );
 }
 
+function CanvasExposer() {
+  const { gl } = useThree();
+  useEffect(() => {
+    (window as any).__capturePreviewCanvas = () => gl.domElement;
+    return () => { delete (window as any).__capturePreviewCanvas; };
+  }, [gl]);
+  return null;
+}
+
 export default function Preview3D({ cam, cameras, persons, walls, stages, sensor, width, height }: Preview3DProps) {
   const live = getLiveCameraPosition(cam);
   const appMode = useStore((s) => s.appMode);
@@ -416,7 +425,7 @@ export default function Preview3D({ cam, cameras, persons, walls, stages, sensor
     : null;
 
   return (
-    <div style={{ width, height, position: 'relative', background: '#000', borderRadius: 8, overflow: 'hidden' }}>
+    <div data-preview-3d="true" style={{ width, height, position: 'relative', background: '#000', borderRadius: 8, overflow: 'hidden' }}>
       <Canvas shadows dpr={[1, 2]} gl={{ antialias: true }}>
         <PerspectiveCamera
           makeDefault
@@ -439,6 +448,7 @@ export default function Preview3D({ cam, cameras, persons, walls, stages, sensor
           shadow-camera-top={25}
           shadow-camera-bottom={-25}
         />
+        <CanvasExposer />
         <hemisphereLight args={['#8ab4ff', '#2a2d2f', 0.3]} />
         {stageCenter && appMode !== 'lighting' && <StageSpotlight target={stageCenter} />}
 
@@ -447,15 +457,13 @@ export default function Preview3D({ cam, cameras, persons, walls, stages, sensor
           <FixtureMesh3D key={pf.id} placed={pf} customFixtures={customFixtures} showVolumetric={false} />
         ))}
 
-        {/* HDRI-style environment for reflections */}
-        <Environment preset="studio" background={false} />
+        {/* HDRI environment removed (photorealistic mode disabled) */}
 
         {/* Ground plane */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
           <planeGeometry args={[200, 200]} />
           <meshStandardMaterial color="#111827" roughness={0.9} />
         </mesh>
-        <ContactShadows position={[0, 0.01, 0]} opacity={0.55} scale={40} blur={2.4} far={8} />
 
         {/* Venue geometry */}
         {walls.map((w) => <WallMesh key={w.id} wall={w} />)}
