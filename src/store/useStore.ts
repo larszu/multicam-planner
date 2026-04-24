@@ -6,7 +6,7 @@ import { LENSES } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
 import { getFixtureById } from '../data/fixtures';
 
-export const APP_VERSION = '0.3.0';
+export const APP_VERSION = '0.3.1';
 
 interface AppState {
   // Venue

@@ -352,20 +352,6 @@ function CameraCard({ camId }: { camId: string }) {
             />
           </label>
 
-          {/* Aperture */}
-          <label className="block">
-            <span className="text-gray-400">Aperture: f/{cam.aperture.toFixed(1)}{adapterInfo && adapterInfo.lightLossStops !== 0 ? ` (eff. T${(cam.aperture * Math.pow(2, adapterInfo.lightLossStops / 2)).toFixed(1)})` : ''}</span>
-            <input
-              type="range"
-              className="w-full accent-bc-accent"
-              min={lensDef?.maxApertureWide ?? 1.4}
-              max={22}
-              step={0.1}
-              value={cam.aperture}
-              onChange={(e) => updateCamera(cam.id, { aperture: parseFloat(e.target.value) })}
-            />
-          </label>
-
           {/* Focus distance */}
           <label className="block">
             <div className="flex items-center justify-between gap-2">
@@ -392,27 +378,6 @@ function CameraCard({ camId }: { camId: string }) {
               value={cam.focusDistance}
               onChange={(e) => updateCamera(cam.id, { focusDistance: parseFloat(e.target.value) })}
             />
-            {/* Quick-focus buttons for each person */}
-            {persons.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1">
-                {persons.map((p) => {
-                  const dx = cam.x - p.x;
-                  const dy = cam.y - p.y;
-                  const dist = Math.hypot(dx, dy);
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => updateCamera(cam.id, { focusDistance: Math.round(dist * 10) / 10 })}
-                      className="px-1.5 py-0.5 rounded bg-bc-accent/20 text-bc-accent hover:bg-bc-accent/40 text-[10px] transition-colors"
-                      title={`Fokus auf ${p.label} (${dist.toFixed(1)}m)`}
-                    >
-                      🎯 {p.label} ({dist.toFixed(1)}m)
-                    </button>
-                  );
-                })}
-              </div>
-            )}
             <div className="flex items-center gap-1 text-[10px] text-gray-400 mt-0.5">
               <span className="shrink-0">Lock to</span>
               <select
@@ -458,6 +423,20 @@ function CameraCard({ camId }: { camId: string }) {
                 </div>
               );
             })()}
+          </label>
+
+          {/* Aperture */}
+          <label className="block">
+            <span className="text-gray-400">Aperture: f/{cam.aperture.toFixed(1)}{adapterInfo && adapterInfo.lightLossStops !== 0 ? ` (eff. T${(cam.aperture * Math.pow(2, adapterInfo.lightLossStops / 2)).toFixed(1)})` : ''}</span>
+            <input
+              type="range"
+              className="w-full accent-bc-accent"
+              min={lensDef?.maxApertureWide ?? 1.4}
+              max={22}
+              step={0.1}
+              value={cam.aperture}
+              onChange={(e) => updateCamera(cam.id, { aperture: parseFloat(e.target.value) })}
+            />
           </label>
 
           {/* Pan */}

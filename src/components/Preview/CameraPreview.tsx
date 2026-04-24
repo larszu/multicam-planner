@@ -8,7 +8,6 @@ import { getLiveCameraPosition } from '../../types';
 import { FiChevronDown, FiChevronUp, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { MOUNT_TYPE_LABELS } from '../../types';
 import type { CameraMountType } from '../../types';
-import Preview3D from './Preview3D';
 
 interface PreviewProps {
   undocked: boolean;
@@ -31,7 +30,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   const [showThirds, setShowThirds] = useState(false);
   const [showCrosshair, setShowCrosshair] = useState(true);
   const [showData, setShowData] = useState(true);
-  const [photorealistic, setPhotorealistic] = useState(false);
+
   const [previewSize, setPreviewSize] = useState({ w: 0, h: 0 });
 
   // Distance lock: automatically track focus distance to locked person
@@ -71,7 +70,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     canvas.style.width = `${cssW}px`;
     canvas.style.height = `${cssH}px`;
     ctx.scale(dpr, dpr);
-    // Share size with the optional photorealistic preview
+    // Share size with the preview canvas
     setPreviewSize((prev) => (prev.w === cssW && prev.h === cssH ? prev : { w: cssW, h: cssH }));
 
     // Logical size
@@ -813,34 +812,14 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           <canvas
             ref={canvasRef}
             className="w-full rounded-lg"
-            style={{ cursor: 'grab', display: photorealistic ? 'none' : 'block' }}
+            style={{ cursor: 'grab', display: 'block' }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onWheel={handleWheel}
           />
-          {photorealistic && previewSize.w > 0 && (
-            <div
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-              onWheel={handleWheel}
-              style={{ cursor: 'grab', position: 'absolute', inset: 0 }}
-            >
-              <Preview3D
-                cam={cam}
-                cameras={cameras}
-                persons={persons}
-                walls={walls}
-                stages={stages}
-                sensor={sensor}
-                width={previewSize.w}
-                height={previewSize.h}
-              />
-            </div>
-          )}
+
         </div>
 
         {/* Overlay toggle bar */}
@@ -851,7 +830,6 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
             ['Thirds', showThirds, setShowThirds],
             ['Crosshair', showCrosshair, setShowCrosshair],
             ['Data', showData, setShowData],
-            ['Photorealistic', photorealistic, setPhotorealistic],
           ] as [string, boolean, (v: boolean) => void][]).map(([label, on, set]) => (
             <button
               key={label}
@@ -890,6 +868,43 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           />
           <span className="text-xs text-gray-400 w-16 text-right font-mono">{lensDef?.focalLengthMax ?? '?'}mm</span>
         </div>
+
+        {/* Focus slider */}
+        <div className="flex items-center gap-3 px-2">
+          <span className="text-xs text-gray-400 w-16 font-mono">{cam.focusDistance.toFixed(1)}m</span>
+          <input
+            type="range"
+            min={0.5}
+            max={200}
+            step={0.5}
+            value={cam.focusDistance}
+            onChange={(e) => useStore.getState().updateCamera(cam.id, { focusDistance: parseFloat(e.target.value) })}
+            className="flex-1 accent-bc-accent"
+          />
+          <span className="text-xs text-gray-400 w-16 text-right font-mono">200m</span>
+        </div>
+
+        {/* Quick-focus buttons */}
+        {persons.length > 0 && (
+          <div className="flex flex-wrap gap-1 px-2">
+            {persons.map((p) => {
+              const dx = cam.x - p.x;
+              const dy = cam.y - p.y;
+              const dist = Math.hypot(dx, dy);
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => useStore.getState().updateCamera(cam.id, { focusDistance: Math.round(dist * 10) / 10 })}
+                  className="px-1.5 py-0.5 rounded bg-bc-accent/20 text-bc-accent hover:bg-bc-accent/40 text-[10px] transition-colors"
+                  title={`Fokus auf ${p.label} (${dist.toFixed(1)}m)`}
+                >
+                  🎯 {p.label} ({dist.toFixed(1)}m)
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Right: Data readout panel */}
