@@ -66,7 +66,7 @@ export default function ExportPanel() {
   }, []);
 
   /** Render a single export PNG for a given camera + optional focal length override. */
-  const renderOne = useCallback(async (targetCam: VenueCamera, opts?: { focalOverride?: number; variantLabel?: string }) => {
+  const renderOne = useCallback(async (targetCam: VenueCamera, opts?: { focalOverride?: number; variantLabel?: string; extraSettleMs?: number }) => {
     const camDef = getCameraById(targetCam.cameraId, useStore.getState().customCameras);
     const lensDef = getLensById(targetCam.lensId, useStore.getState().customLenses);
     if (!camDef || !lensDef) return;
@@ -87,7 +87,8 @@ export default function ExportPanel() {
 
     if (needSelectionChange) useStore.getState().selectCamera(targetCam.id);
     if (needFocalChange) useStore.getState().updateCamera(targetCam.id, { focalLength });
-    if (needSelectionChange || needFocalChange) await waitForPaint();
+    const extra = opts?.extraSettleMs ?? 0;
+    if (needSelectionChange || needFocalChange || extra > 0) await waitForPaint(250 + extra);
 
     // ── Layout constants ──
     const EW = 1920;
@@ -360,6 +361,23 @@ export default function ExportPanel() {
       } catch { /* fall through */ }
     }
 
+    // Frame the 3D view on the venue so the exported tile shows the whole stage
+    // area instead of whatever free-fly angle the user happened to leave it on.
+    // The previous camera state is saved and restored after the batch.
+    const framingApi = (window as any).__multicam3DFraming as
+      | { save: () => any; apply: (s: any) => void; fitVenue: (w: number, h: number) => void }
+      | undefined;
+    let savedFraming: any = null;
+    if (framingApi) {
+      try {
+        savedFraming = framingApi.save();
+        framingApi.fitVenue(state.venue.widthM, state.venue.heightM);
+        // Allow the framing change to render — the WebGL drawing buffer needs at
+        // least one paint at the new camera before the capture has visible content.
+        await waitForPaint(500);
+      } catch { savedFraming = null; }
+    }
+
     const originalSelected = state.selectedCameraId;
     const wantsWideTele = mode === 'widetele' || mode === 'all-widetele';
 
@@ -390,12 +408,19 @@ export default function ExportPanel() {
         await renderOne(jobs[i].cam, {
           focalOverride: jobs[i].focalOverride,
           variantLabel: jobs[i].variantLabel,
+          // The first capture in the batch needs extra settle time so the WebGL
+          // 3D canvas, freshly resized by the layout swap and the framing change,
+          // actually paints visible content before drawImage reads from it.
+          extraSettleMs: i === 0 ? 400 : 0,
         });
       }
     } finally {
       // Restore original selection (renderOne handles per-camera restore but final
       // cleanup ensures we land on whatever was selected before the batch).
       useStore.getState().selectCamera(originalSelected);
+      if (framingApi && savedFraming) {
+        try { framingApi.apply(savedFraming); } catch { /* ignore */ }
+      }
       if (restoreLayout) restoreLayout();
       setExporting(false);
       setExportProgress({ current: 0, total: 0 });

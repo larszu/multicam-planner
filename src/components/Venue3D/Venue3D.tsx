@@ -172,6 +172,43 @@ function FPSControls({ mouseLookEnabled }: { mouseLookEnabled: boolean }) {
     return () => window.removeEventListener('multicam-3d-reset', handleReset);
   }, [camera]);
 
+  // Expose a framing API for the export panel: save the current camera, frame the
+  // entire venue with a downward angle that fits the canvas, and restore later.
+  useEffect(() => {
+    (window as any).__multicam3DFraming = {
+      save: () => ({
+        pos: camera.position.toArray() as [number, number, number],
+        yaw: yaw.current,
+        pitch: pitch.current,
+      }),
+      apply: (state: { pos: [number, number, number]; yaw: number; pitch: number }) => {
+        camera.position.fromArray(state.pos);
+        yaw.current = state.yaw;
+        pitch.current = state.pitch;
+      },
+      fitVenue: (widthM: number, heightM: number) => {
+        // Position the camera above-behind the venue and aim at the floor centre.
+        // The result is a 3/4 overview where the whole stage area is visible
+        // even with the canvas constrained to the export tile's 16:9 ratio.
+        const diag = Math.sqrt(widthM * widthM + heightM * heightM);
+        const camX = widthM / 2;
+        const camY = diag * 0.55;
+        const camZ = heightM + diag * 0.4;
+        const targetX = widthM / 2;
+        const targetY = 0;
+        const targetZ = heightM / 2;
+        const dx = targetX - camX;
+        const dy = targetY - camY;
+        const dz = targetZ - camZ;
+        const horizDist = Math.sqrt(dx * dx + dz * dz);
+        camera.position.set(camX, camY, camZ);
+        yaw.current = Math.atan2(-dx, -dz);
+        pitch.current = Math.atan2(dy, horizDist);
+      },
+    };
+    return () => { delete (window as any).__multicam3DFraming; };
+  }, [camera]);
+
   useEffect(() => {
     const canvas = gl.domElement;
 

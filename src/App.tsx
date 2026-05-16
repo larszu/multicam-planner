@@ -394,10 +394,13 @@ export default function App() {
         setLayoutMode('grid');
         // Wait long enough for FlexLayout to mount the new tabsets, for
         // ResizeObservers to fire on each panel container, and for Konva/R3F to
-        // paint at least one frame at the new dimensions.
+        // paint at least one frame at the new dimensions. R3F in particular needs
+        // multiple paint cycles after a fresh resize before its WebGL drawing
+        // buffer holds the visible scene — bumping to ~700ms avoids the first
+        // capture coming out as an empty/black 3D tile.
         await new Promise<void>((resolve) => {
           requestAnimationFrame(() => requestAnimationFrame(() => {
-            setTimeout(resolve, 250);
+            setTimeout(resolve, 700);
           }));
         });
       }
