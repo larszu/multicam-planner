@@ -9,7 +9,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "desktop": "electron .",
-    "dist:win": "npm run build && electron-builder --win nsis portable",
+    "dist:win": "npm run build && electron-builder --win --publish never",
+    "dist:mac": "npm run build && electron-builder --mac --x64 --arm64 --publish never",
     "preview": "vite preview",
     "lint": "eslint ."
   },
@@ -35,6 +36,28 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
+    },
+    "mac": {
+      "category": "public.app-category.video",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "dmg": {
+      "writeUpdateInfo": false
     }
   },
   "dependencies": {
