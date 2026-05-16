@@ -57,6 +57,31 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Sync package.json version with the release tag
+        # electron-builder names artifacts (e.g. "MultiCam Planner Setup X.Y.Z.exe")
+        # using the version field in package.json — NOT the git tag. Without this
+        # step a release tagged v0.4.1 still produces "Setup 0.4.0.exe" if the
+        # last committed package.json was 0.4.0.
+        #
+        # Resolves the version source in this priority order:
+        #   1. release event              → github.event.release.tag_name
+        #   2. workflow_dispatch with tag → inputs.tag
+        #   3. workflow_dispatch w/o tag  → keep package.json as-is (manual test)
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            RAW="${{ github.event.release.tag_name }}"
+          else
+            RAW="${{ inputs.tag }}"
+          fi
+          if [ -n "$RAW" ]; then
+            VERSION="${RAW#v}"
+            echo "Setting package.json version to $VERSION (from tag $RAW)"
+            npm version "$VERSION" --no-git-tag-version --allow-same-version
+          else
+            echo "No tag supplied — keeping package.json version $(node -p "require('./package.json').version")"
+          fi
+
       - name: Build distributable
         run: npm run ${{ matrix.script }}
         env:
