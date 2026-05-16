@@ -1,8 +1,8 @@
 import { useStore } from '../../store/useStore';
-import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor } from '../../data/cameras';
+import { CAMERAS, SENSORS, getCameraById, getAdapterInfo, getEffectiveSensor } from '../../data/cameras';
 import { LENSES, getLensById, getCompatibleLenses } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
-import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiCamera } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { BackgroundPlan, StageObjectType, CameraMountType } from '../../types';
 import { MOUNT_TYPE_LABELS } from '../../types';
@@ -54,7 +54,8 @@ function CameraCard({ camId }: { camId: string }) {
   const [showNewLens, setShowNewLens] = useState(false);
   const [newLens, setNewLens] = useState({ manufacturer: '', model: '', focalMin: '10', focalMax: '100', aperture: '2.8', mount: 'B4', type: 'zoom' as 'zoom' | 'prime' });
 
-  const camDef = getCameraById(cam.cameraId);
+  const { customCameras } = useStore();
+  const camDef = getCameraById(cam.cameraId, customCameras);
   const lensDef = getLensById(cam.lensId) ?? customLenses.find((l) => l.id === cam.lensId);
   const allLenses = [...LENSES, ...customLenses];
   const compatLenses = camDef ? getCompatibleLenses(camDef.mount, camDef.adaptedMounts) : allLenses;
@@ -66,11 +67,12 @@ function CameraCard({ camId }: { camId: string }) {
   // Deduplicate by id
   const compatDeduped = [...new Map(allCompat.map((l) => [l.id, l])).values()];
   const grouped = groupByMount(sortFavoritesFirst(compatDeduped, favoriteLensIds));
-  const sortedCameras = sortFavoritesFirst(CAMERAS, favoriteCameraIds);
+  const sortedCameras = sortFavoritesFirst([...CAMERAS, ...customCameras], favoriteCameraIds);
+  const isCustomCamera = (id: string) => customCameras.some((c) => c.id === id);
 
   // Adapter & effective sensor
   const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, cam.useSpeedbooster) : null;
-  const effectiveSensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster) : camDef?.sensor;
+  const effectiveSensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex) : camDef?.sensor;
   const fov = effectiveSensor && lensDef ? computeFov(effectiveSensor, cam.focalLength, cam.focusDistance, cam.extenderActive) : null;
   const dof = effectiveSensor && lensDef ? computeDof(effectiveSensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive) : null;
 
@@ -155,7 +157,7 @@ function CameraCard({ camId }: { camId: string }) {
               className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
               value={cam.cameraId}
               onChange={(e) => {
-                const newCam = getCameraById(e.target.value);
+                const newCam = getCameraById(e.target.value, customCameras);
                 if (!newCam) return;
                 const lens = getCompatibleLenses(newCam.mount, newCam.adaptedMounts)[0];
                 const supportsExtender = cam.extenderActive === 1 || !!lens?.extenderFactors?.includes(cam.extenderActive);
@@ -167,14 +169,39 @@ function CameraCard({ camId }: { camId: string }) {
                   extenderActive: supportsExtender ? cam.extenderActive : 1,
                   // Speedbooster only valid on MFT cameras with EF lenses
                   useSpeedbooster: newCam.mount === 'MFT' && lens?.mount === 'EF' ? cam.useSpeedbooster : false,
+                  // Reset hardware sensor mode — each body has a different mode list
+                  sensorModeIndex: newCam.sensorModes && newCam.sensorModes.length > 0 ? 0 : undefined,
                 });
               }}
             >
               {sortedCameras.map((c) => (
-                <option key={c.id} value={c.id}>{favoriteCameraIds.includes(c.id) ? '* ' : ''}{c.manufacturer} {c.model} [{c.mount}]</option>
+                <option key={c.id} value={c.id}>{favoriteCameraIds.includes(c.id) ? '* ' : ''}{c.manufacturer} {c.model} [{c.mount}]{isCustomCamera(c.id) ? ' +custom' : ''}</option>
               ))}
             </select>
           </label>
+
+          {/* Hardware sensor mode (URSA B4 crop, VENICE windows, FX9 S35 etc.) */}
+          {camDef?.sensorModes && camDef.sensorModes.length > 1 && (
+            <label className="block">
+              <span className="text-gray-400">Sensor Mode</span>
+              <select
+                className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
+                value={cam.sensorModeIndex ?? 0}
+                onChange={(e) => updateCamera(cam.id, { sensorModeIndex: parseInt(e.target.value) })}
+                disabled={!!adapterInfo?.cropSensor}
+                title={adapterInfo?.cropSensor ? 'Adapter crop overrides the sensor mode' : 'Pick the camera body crop mode'}
+              >
+                {camDef.sensorModes.map((mode, idx) => (
+                  <option key={idx} value={idx}>{mode.name}</option>
+                ))}
+              </select>
+              {adapterInfo?.cropSensor && (
+                <span className="text-[10px] text-bc-yellow">
+                  Adapter forces {adapterInfo.cropSensor.name}
+                </span>
+              )}
+            </label>
+          )}
 
           {/* Lens selector grouped by mount */}
           <label className="block">
@@ -475,12 +502,25 @@ export default function Sidebar() {
     persons, addPerson, addStageObject, removePerson, updatePerson,
     backgroundPlan, setBackgroundPlan,
     walls, addWall, removeWall, updateWall,
+    customCameras, addCustomCamera, removeCustomCamera,
   } = useStore();
   const [venueOpen, setVenueOpen] = useState(false);
   const [stagesOpen, setStagesOpen] = useState(false);
   const [personsOpen, setPersonsOpen] = useState(false);
   const [wallsOpen, setWallsOpen] = useState(false);
   const [bgOpen, setBgOpen] = useState(false);
+  const [customCamsOpen, setCustomCamsOpen] = useState(false);
+  const [showAddCustomCam, setShowAddCustomCam] = useState(false);
+  const [newCustomCam, setNewCustomCam] = useState({
+    manufacturer: '',
+    model: '',
+    mount: 'EF',
+    type: 'cinema' as 'broadcast' | 'cinema' | 'ptz' | 'mirrorless' | 'camcorder' | 'eng',
+    sensorKey: 'S35',
+    sensorW: '',
+    sensorH: '',
+    sensorName: '',
+  });
   const [wallDrawMode, setWallDrawMode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [calibAxis, setCalibAxis] = useState<'x' | 'y' | null>(null);
@@ -924,6 +964,179 @@ export default function Sidebar() {
                   Remove Background
                 </button>
               </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Custom camera library */}
+      <div className="p-3 border-b border-bc-border">
+        <button
+          className="flex items-center justify-between w-full text-sm text-white font-semibold"
+          onClick={() => setCustomCamsOpen(!customCamsOpen)}
+        >
+          <span><FiCamera className="inline mr-1" size={13} />Custom Cameras ({customCameras.length})</span>
+          {customCamsOpen ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
+        </button>
+        {customCamsOpen && (
+          <div className="mt-2 space-y-2 text-xs">
+            {customCameras.length === 0 && !showAddCustomCam && (
+              <p className="text-gray-500 text-[10px]">No custom cameras. Add a body for non-listed gear.</p>
+            )}
+            {customCameras.map((c) => (
+              <div key={c.id} className="flex items-center gap-2 bg-bc-dark rounded p-1.5 border border-bc-border">
+                <span className="text-white text-xs flex-1 truncate">{c.manufacturer} {c.model}</span>
+                <span className="text-gray-500 text-[10px]">{c.mount}</span>
+                <button
+                  onClick={() => {
+                    if (cameras.some((vc) => vc.cameraId === c.id)) {
+                      alert(`Cannot remove "${c.manufacturer} ${c.model}" — it is used by ${cameras.filter((vc) => vc.cameraId === c.id).length} placed camera(s). Remove those first.`);
+                      return;
+                    }
+                    removeCustomCamera(c.id);
+                  }}
+                  className="p-0.5 hover:text-bc-red"
+                  title="Remove custom camera"
+                >
+                  <FiTrash2 size={11} />
+                </button>
+              </div>
+            ))}
+            {showAddCustomCam ? (
+              <div className="bg-bc-dark rounded p-2 border border-bc-border space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-300 font-medium text-[11px]">New Custom Camera</span>
+                  <button onClick={() => setShowAddCustomCam(false)} className="text-gray-500 hover:text-white text-xs">✕</button>
+                </div>
+                <div className="grid grid-cols-2 gap-1">
+                  <input
+                    placeholder="Manufacturer"
+                    className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                    value={newCustomCam.manufacturer}
+                    onChange={(e) => setNewCustomCam({ ...newCustomCam, manufacturer: e.target.value })}
+                  />
+                  <input
+                    placeholder="Model"
+                    className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                    value={newCustomCam.model}
+                    onChange={(e) => setNewCustomCam({ ...newCustomCam, model: e.target.value })}
+                  />
+                </div>
+                <label className="block">
+                  <span className="text-gray-500 text-[10px]">Sensor</span>
+                  <select
+                    className="block w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                    value={newCustomCam.sensorKey}
+                    onChange={(e) => setNewCustomCam({ ...newCustomCam, sensorKey: e.target.value })}
+                  >
+                    {Object.entries(SENSORS).map(([key, s]) => (
+                      <option key={key} value={key}>{s.name} ({s.widthMm}×{s.heightMm}mm)</option>
+                    ))}
+                    <option value="__custom__">Custom size…</option>
+                  </select>
+                </label>
+                {newCustomCam.sensorKey === '__custom__' && (
+                  <div className="grid grid-cols-3 gap-1">
+                    <input
+                      placeholder="Name"
+                      className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                      value={newCustomCam.sensorName}
+                      onChange={(e) => setNewCustomCam({ ...newCustomCam, sensorName: e.target.value })}
+                    />
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="Width mm"
+                      className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                      value={newCustomCam.sensorW}
+                      onChange={(e) => setNewCustomCam({ ...newCustomCam, sensorW: e.target.value })}
+                    />
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="Height mm"
+                      className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                      value={newCustomCam.sensorH}
+                      onChange={(e) => setNewCustomCam({ ...newCustomCam, sensorH: e.target.value })}
+                    />
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-1">
+                  <label>
+                    <span className="text-gray-500 text-[10px]">Mount</span>
+                    <select
+                      className="block w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                      value={newCustomCam.mount}
+                      onChange={(e) => setNewCustomCam({ ...newCustomCam, mount: e.target.value })}
+                    >
+                      {['B4', 'EF', 'PL', 'E', 'MFT', 'RF', 'L', 'FZ', 'integrated', 'M12'].map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    <span className="text-gray-500 text-[10px]">Type</span>
+                    <select
+                      className="block w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                      value={newCustomCam.type}
+                      onChange={(e) => setNewCustomCam({ ...newCustomCam, type: e.target.value as typeof newCustomCam.type })}
+                    >
+                      <option value="broadcast">Broadcast</option>
+                      <option value="cinema">Cinema</option>
+                      <option value="ptz">PTZ</option>
+                      <option value="mirrorless">Mirrorless</option>
+                      <option value="camcorder">Camcorder</option>
+                      <option value="eng">ENG</option>
+                    </select>
+                  </label>
+                </div>
+                <button
+                  onClick={() => {
+                    if (!newCustomCam.manufacturer.trim() || !newCustomCam.model.trim()) return;
+                    let sensor;
+                    if (newCustomCam.sensorKey === '__custom__') {
+                      const w = parseFloat(newCustomCam.sensorW);
+                      const h = parseFloat(newCustomCam.sensorH);
+                      if (!w || !h) { alert('Enter sensor width and height in mm.'); return; }
+                      // Diagonal-based crop factor against 43.27mm full-frame diagonal
+                      const diag = Math.sqrt(w * w + h * h);
+                      const cropFactor = 43.267 / diag;
+                      sensor = {
+                        name: newCustomCam.sensorName.trim() || `${w}×${h}mm`,
+                        widthMm: w,
+                        heightMm: h,
+                        cropFactor,
+                      };
+                    } else {
+                      sensor = SENSORS[newCustomCam.sensorKey];
+                    }
+                    addCustomCamera({
+                      manufacturer: newCustomCam.manufacturer.trim(),
+                      model: newCustomCam.model.trim(),
+                      sensor,
+                      mount: newCustomCam.mount,
+                      resolutions: ['HD'],
+                      type: newCustomCam.type,
+                    });
+                    setNewCustomCam({
+                      manufacturer: '', model: '', mount: 'EF', type: 'cinema',
+                      sensorKey: 'S35', sensorW: '', sensorH: '', sensorName: '',
+                    });
+                    setShowAddCustomCam(false);
+                  }}
+                  disabled={!newCustomCam.manufacturer.trim() || !newCustomCam.model.trim()}
+                  className="flex items-center gap-1 px-2 py-1 rounded bg-bc-green/20 text-bc-green text-xs hover:bg-bc-green/30 w-full justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <FiPlus size={12} /> Create custom camera
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowAddCustomCam(true)}
+                className="flex items-center gap-1 px-2 py-1 rounded bg-bc-accent/20 text-bc-accent text-xs hover:bg-bc-accent/30 w-full justify-center"
+              >
+                <FiPlus size={12} /> Add custom camera
+              </button>
             )}
           </div>
         )}

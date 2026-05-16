@@ -299,11 +299,11 @@ function StageMesh({ x, y, w, h, label }: { x: number; y: number; w: number; h: 
 }
 
 function FovPyramid({ cam, isSelected }: { cam: ReturnType<typeof useStore.getState>['cameras'][0]; isSelected: boolean }) {
-  const camDef = getCameraById(cam.cameraId);
+  const camDef = getCameraById(cam.cameraId, useStore.getState().customCameras);
   const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
   if (!camDef || !lensDef) return null;
 
-  const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster);
+  const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex);
   const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
   const fovMin = computeFov(sensor, lensDef.focalLengthMax, cam.focusDistance, cam.extenderActive);
   const fovMax = computeFov(sensor, lensDef.focalLengthMin, cam.focusDistance, cam.extenderActive);

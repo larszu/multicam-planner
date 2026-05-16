@@ -1,10 +1,10 @@
 import { create } from 'zustand';
-import type { VenueCamera, Venue, ViewTab, ReferencePerson, BackgroundPlan, Stage, ProjectFile, VenueTemplate, StageObjectType, Lens, Wall } from '../types';
+import type { VenueCamera, Venue, ViewTab, ReferencePerson, BackgroundPlan, Stage, ProjectFile, VenueTemplate, StageObjectType, Lens, Wall, Camera } from '../types';
 import { CAMERAS, CAMERA_COLORS } from '../data/cameras';
 import { LENSES } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
 
-export const APP_VERSION = '0.2.0';
+export const APP_VERSION = '0.4.0';
 
 interface AppState {
   // Venue
@@ -31,6 +31,12 @@ interface AppState {
   customLenses: Lens[];
   addCustomLens: (lens: Omit<Lens, 'id' | 'isCustom'>) => string;
   removeCustomLens: (id: string) => void;
+
+  // Custom cameras
+  customCameras: Camera[];
+  addCustomCamera: (camera: Omit<Camera, 'id'>) => string;
+  updateCustomCamera: (id: string, updates: Partial<Omit<Camera, 'id'>>) => void;
+  removeCustomCamera: (id: string) => void;
 
   // Cameras placed in venue
   cameras: VenueCamera[];
@@ -111,6 +117,17 @@ function loadCustomLenses(): Lens[] {
 }
 function saveCustomLensesStorage(lenses: Lens[]) {
   localStorage.setItem(CUSTOM_LENSES_KEY, JSON.stringify(lenses));
+}
+
+const CUSTOM_CAMERAS_KEY = 'multicam-custom-cameras';
+function loadCustomCameras(): Camera[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_CAMERAS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+function saveCustomCamerasStorage(cameras: Camera[]) {
+  localStorage.setItem(CUSTOM_CAMERAS_KEY, JSON.stringify(cameras));
 }
 
 const FAVORITE_CAMERAS_KEY = 'multicam-favorite-cameras';
@@ -265,6 +282,36 @@ export const useStore = create<AppState>((set, get) => ({
     });
   },
 
+  // ── Custom Cameras ──
+  customCameras: loadCustomCameras(),
+
+  addCustomCamera: (camera) => {
+    const id = `custom-cam-${Date.now()}`;
+    const full: Camera = { ...camera, id };
+    set((s) => {
+      const updated = [...s.customCameras, full];
+      saveCustomCamerasStorage(updated);
+      return { customCameras: updated, projectVersion: s.projectVersion + 1 };
+    });
+    return id;
+  },
+
+  updateCustomCamera: (id, updates) => {
+    set((s) => {
+      const updated = s.customCameras.map((c) => (c.id === id ? { ...c, ...updates } : c));
+      saveCustomCamerasStorage(updated);
+      return { customCameras: updated, projectVersion: s.projectVersion + 1 };
+    });
+  },
+
+  removeCustomCamera: (id) => {
+    set((s) => {
+      const updated = s.customCameras.filter((c) => c.id !== id);
+      saveCustomCamerasStorage(updated);
+      return { customCameras: updated, projectVersion: s.projectVersion + 1 };
+    });
+  },
+
   // ── Cameras ──
   cameras: [],
   favoriteCameraIds: loadFavoriteIds(FAVORITE_CAMERAS_KEY),
@@ -337,6 +384,7 @@ export const useStore = create<AppState>((set, get) => ({
         extenderActive: 1,
         useSpeedbooster: false,
         mountType: 'tripod',
+        sensorModeIndex: camDef.sensorModes && camDef.sensorModes.length > 0 ? 0 : undefined,
       };
       return { cameras: [...s.cameras, newCam], selectedCameraId: newCam.id, projectVersion: s.projectVersion + 1 };
     });

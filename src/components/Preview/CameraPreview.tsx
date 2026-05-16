@@ -27,6 +27,10 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   const [showThirds, setShowThirds] = useState(false);
   const [showCrosshair, setShowCrosshair] = useState(true);
   const [showData, setShowData] = useState(true);
+  const [focusPickMode, setFocusPickMode] = useState(false);
+  // Cache projected person positions during draw() so the click handler can hit-test
+  // without re-projecting everything itself.
+  const projectedPersons = useRef<{ id: string; sx: number; sy: number; topSy: number; dist: number }[]>([]);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -35,11 +39,11 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const camDef = getCameraById(cam.cameraId);
+    const camDef = getCameraById(cam.cameraId, useStore.getState().customCameras);
     const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
     if (!camDef || !lensDef) return;
 
-    const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster);
+    const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex);
 
     // HiDPI: size canvas to container at device pixel ratio
     const dpr = window.devicePixelRatio || 1;
@@ -116,28 +120,73 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       ctx.stroke();
     }
 
-    // ── Helper: world position to screen pixel ──
+    // ── Helpers: world ↔ camera-space ↔ screen ──
     const panRad = (cam.pan * Math.PI) / 180;
     const cosP = Math.cos(panRad);
     const sinP = Math.sin(panRad);
+    const fovHRad = (fov.horizontalDeg * Math.PI) / 360;
+    const fovVRad = (fov.verticalDeg * Math.PI) / 360;
+    const tiltRad = (cam.tilt * Math.PI) / 180;
+    const tiltShift = Math.tan(tiltRad);
+    const NEAR = 0.1;
 
-    const worldToScreen = (wx: number, wy: number, wz: number): { sx: number; sy: number; dist: number; behindCamera: boolean } => {
+    type CamPoint = { x: number; y: number; z: number };
+
+    const worldToCamera = (wx: number, wy: number, wz: number): CamPoint => {
       const c = cam!;
       const dx = wx - c.x;
       const dy = wy - c.y;
-      const localZ = dx * cosP + dy * sinP;
-      const localX = -dx * sinP + dy * cosP;
-      if (localZ <= 0.1) return { sx: -999, sy: -999, dist: 0, behindCamera: true };
-      const fovHRad = (fov.horizontalDeg * Math.PI) / 360;
-      const fovVRad = (fov.verticalDeg * Math.PI) / 360;
-      const screenX = W / 2 + (localX / (localZ * Math.tan(fovHRad))) * (W / 2);
-      const tiltRad = (c.tilt * Math.PI) / 180;
-      const apparentY = (wz - c.z) / localZ;
-      const tiltShift = Math.tan(tiltRad);
+      return {
+        x: -dx * sinP + dy * cosP,
+        y: wz - c.z,
+        z: dx * cosP + dy * sinP,
+      };
+    };
+
+    const cameraToScreen = (p: CamPoint) => {
+      const screenX = W / 2 + (p.x / (p.z * Math.tan(fovHRad))) * (W / 2);
+      const apparentY = p.y / p.z;
       // Positive tilt (look up) rotates the world DOWN in camera frame → subtract tiltShift
       // so that ground objects move toward the bottom of the screen as tilt increases.
       const screenY = H / 2 - ((apparentY - tiltShift) / Math.tan(fovVRad)) * (H / 2);
-      return { sx: screenX, sy: screenY, dist: localZ, behindCamera: false };
+      return { sx: screenX, sy: screenY, dist: p.z };
+    };
+
+    /** Sutherland–Hodgman polygon clipping against the near plane (z ≥ NEAR). */
+    const clipPolygonNear = (poly: CamPoint[]): CamPoint[] => {
+      const out: CamPoint[] = [];
+      for (let i = 0; i < poly.length; i++) {
+        const cur = poly[i];
+        const prev = poly[(i - 1 + poly.length) % poly.length];
+        const curIn = cur.z >= NEAR;
+        const prevIn = prev.z >= NEAR;
+        if (curIn) {
+          if (!prevIn) {
+            const t = (NEAR - prev.z) / (cur.z - prev.z);
+            out.push({
+              x: prev.x + t * (cur.x - prev.x),
+              y: prev.y + t * (cur.y - prev.y),
+              z: NEAR,
+            });
+          }
+          out.push(cur);
+        } else if (prevIn) {
+          const t = (NEAR - prev.z) / (cur.z - prev.z);
+          out.push({
+            x: prev.x + t * (cur.x - prev.x),
+            y: prev.y + t * (cur.y - prev.y),
+            z: NEAR,
+          });
+        }
+      }
+      return out;
+    };
+
+    const worldToScreen = (wx: number, wy: number, wz: number): { sx: number; sy: number; dist: number; behindCamera: boolean } => {
+      const camP = worldToCamera(wx, wy, wz);
+      if (camP.z <= NEAR) return { sx: -999, sy: -999, dist: 0, behindCamera: true };
+      const s = cameraToScreen(camP);
+      return { sx: s.sx, sy: s.sy, dist: s.dist, behindCamera: false };
     };
     const worldToScreenLocal = worldToScreen;
 
@@ -178,25 +227,28 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     }
 
     // ── Draw stages from venue ──
+    // Build the polygon in camera-space, then clip against the near plane so corners
+    // behind the camera become near-plane intersection points instead of being skipped
+    // (which previously turned the rectangle into a degenerate triangle).
     venue.stages.forEach((stage) => {
-      const corners = [
-        { x: stage.x, y: stage.y, z: 0 },
-        { x: stage.x + stage.width, y: stage.y, z: 0 },
-        { x: stage.x + stage.width, y: stage.y + stage.height, z: 0 },
-        { x: stage.x, y: stage.y + stage.height, z: 0 },
+      const camCorners = [
+        worldToCamera(stage.x, stage.y, 0),
+        worldToCamera(stage.x + stage.width, stage.y, 0),
+        worldToCamera(stage.x + stage.width, stage.y + stage.height, 0),
+        worldToCamera(stage.x, stage.y + stage.height, 0),
       ];
-      const projected = corners.map((c) => worldToScreen(c.x, c.y, c.z));
-      if (projected.every((p) => p.behindCamera)) return;
+      const clipped = clipPolygonNear(camCorners);
+      if (clipped.length < 3) return;
+
+      const projected = clipped.map((p) => cameraToScreen(p));
 
       ctx.strokeStyle = '#3b82f6aa';
       ctx.fillStyle = '#3b82f622';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      const validPts = projected.filter((p) => !p.behindCamera);
-      if (validPts.length < 2) return;
       ctx.moveTo(projected[0].sx, projected[0].sy);
       for (let i = 1; i < projected.length; i++) {
-        if (!projected[i].behindCamera) ctx.lineTo(projected[i].sx, projected[i].sy);
+        ctx.lineTo(projected[i].sx, projected[i].sy);
       }
       ctx.closePath();
       ctx.fill();
@@ -403,6 +455,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       }
     }
 
+    projectedPersons.current = [];
     persons.forEach((person) => {
       const feet = worldToScreen(person.x, person.y, 0);
       const head = worldToScreen(person.x, person.y, person.height);
@@ -422,6 +475,15 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       if (feetSx - objW > W) return;
       if (feetSy < 0 && headSy < 0) return;
       if (feetSy > H && headSy > H) return;
+
+      // Remember on-screen position for click-to-focus hit-testing
+      projectedPersons.current.push({
+        id: person.id,
+        sx: feetSx,
+        sy: feetSy,
+        topSy: headSy,
+        dist: feet.dist,
+      });
 
       drawPerson(feetSx, feetSy, headSy, feet.dist, person.objectType, `${person.label} (${person.height.toFixed(1)}m)`);
     });
@@ -611,28 +673,80 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   }, []);
 
   // ── PTZ Mouse Controls ──
+  const dragStart = useRef({ x: 0, y: 0 });
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     isDragging.current = true;
     lastMouse.current = { x: e.clientX, y: e.clientY };
-    (e.target as HTMLElement).style.cursor = 'grabbing';
-  }, []);
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    (e.target as HTMLElement).style.cursor = focusPickMode ? 'crosshair' : 'grabbing';
+  }, [focusPickMode]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging.current || !cam) return;
+    // In focus-pick mode the press is a click target — don't pan/tilt
+    if (focusPickMode) return;
     const dx = e.clientX - lastMouse.current.x;
     const dy = e.clientY - lastMouse.current.y;
     lastMouse.current = { x: e.clientX, y: e.clientY };
-    const panSens = 0.3;
-    const tiltSens = 0.2;
+
+    // FOV-scaled sensitivity so the scene moves 1:1 with the mouse: 1 px of cursor
+    // motion rotates the camera by exactly the angle that one pixel on the canvas
+    // spans. This keeps fine framing tractable at tight focal lengths and avoids
+    // sluggish dragging at wide angles.
+    const canvas = canvasRef.current;
+    const camDef = getCameraById(cam.cameraId, useStore.getState().customCameras);
+    const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
+    let panSens = 0.3;
+    let tiltSens = 0.2;
+    if (canvas && camDef && lensDef) {
+      const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex);
+      const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
+      const cssW = canvas.clientWidth || canvas.width;
+      const cssH = canvas.clientHeight || canvas.height;
+      if (cssW > 0) panSens = fov.horizontalDeg / cssW;
+      if (cssH > 0) tiltSens = fov.verticalDeg / cssH;
+    }
     const newPan = Math.max(-180, Math.min(180, cam.pan - dx * panSens));
     const newTilt = Math.max(-90, Math.min(45, cam.tilt + dy * tiltSens));
     useStore.getState().updateCamera(cam.id, { pan: newPan, tilt: newTilt });
-  }, [cam]);
+  }, [cam, focusPickMode]);
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    const wasDragging = isDragging.current;
     isDragging.current = false;
-    (e.target as HTMLElement).style.cursor = 'grab';
-  }, []);
+    (e.target as HTMLElement).style.cursor = focusPickMode ? 'crosshair' : 'grab';
+
+    if (!wasDragging || !cam) return;
+    const movedPx = Math.hypot(e.clientX - dragStart.current.x, e.clientY - dragStart.current.y);
+    if (!focusPickMode || movedPx > 4) return;
+
+    // ── Click-to-focus: hit-test against projected persons ──
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+
+    let best: { id: string; dist: number; pickDist: number } | null = null;
+    for (const p of projectedPersons.current) {
+      // Treat each person as a vertical bar of ~half its height in width
+      const personPxH = Math.abs(p.topSy - p.sy);
+      const halfW = Math.max(8, personPxH * 0.25);
+      const top = Math.min(p.topSy, p.sy);
+      const bottom = Math.max(p.topSy, p.sy);
+      // Allow generous vertical slop so labels/heads are easy to grab
+      const inX = cx >= p.sx - halfW && cx <= p.sx + halfW;
+      const inY = cy >= top - 8 && cy <= bottom + 12;
+      if (!inX || !inY) continue;
+      const cxDist = Math.abs(cx - p.sx);
+      if (!best || cxDist < best.pickDist) {
+        best = { id: p.id, dist: p.dist, pickDist: cxDist };
+      }
+    }
+    if (best) {
+      useStore.getState().updateCamera(cam.id, { focusDistance: Math.max(0.1, best.dist) });
+    }
+  }, [cam, focusPickMode]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (!cam) return;
@@ -654,9 +768,9 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   }
 
   // Computed data for readout (outside canvas)
-  const camDef = getCameraById(cam.cameraId);
+  const camDef = getCameraById(cam.cameraId, useStore.getState().customCameras);
   const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
-  const sensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster) : undefined;
+  const sensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex) : undefined;
   const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, cam.useSpeedbooster) : null;
   const fov = sensor ? computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive) : null;
   const dof = sensor ? computeDof(sensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive) : null;
@@ -681,7 +795,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           <canvas
             ref={canvasRef}
             className="w-full rounded-lg"
-            style={{ cursor: 'grab', display: 'block' }}
+            style={{ cursor: focusPickMode ? 'crosshair' : 'grab', display: 'block' }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -707,6 +821,13 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
               {label}
             </button>
           ))}
+          <button
+            onClick={() => setFocusPickMode((v) => !v)}
+            title={focusPickMode ? 'Click anywhere to leave focus-pick mode' : 'Pick a person in the preview to set focus distance'}
+            className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${focusPickMode ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
+          >
+            ◎ Focus pick {focusPickMode ? '· ON' : ''}
+          </button>
           {!undocked && (
             <button
               onClick={onUndock}
@@ -716,7 +837,9 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
               <FiExternalLink size={10} /> Float
             </button>
           )}
-          <span className="text-[10px] text-gray-600 ml-auto">Drag: Pan/Tilt · Scroll: Zoom</span>
+          <span className="text-[10px] text-gray-600 ml-auto">
+            {focusPickMode ? 'Click a person to set focus distance' : 'Drag: Pan/Tilt · Scroll: Zoom'}
+          </span>
         </div>
 
         {/* Zoom slider */}

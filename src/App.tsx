@@ -380,6 +380,43 @@ export default function App() {
     return () => mq.removeEventListener('change', handler);
   }, [setSidebarCollapsed]);
 
+  // ── Expose layout-prep hook for the export panel ──
+  // Capturing each panel requires it to be visible at non-zero size. In Focus mode
+  // only one tab is rendered visibly, so we switch to Grid for the duration of the
+  // export and restore the previous layout afterwards.
+  useEffect(() => {
+    (window as any).__multicamPrepareForExport = async () => {
+      const previousMode = layoutMode;
+      const previousFocusTab = focusTabId;
+      const previousModelJson = model.toJson();
+      if (previousMode !== 'grid') {
+        applyLayoutJson(createGridLayoutJson());
+        setLayoutMode('grid');
+        // Wait long enough for FlexLayout to mount the new tabsets, for
+        // ResizeObservers to fire on each panel container, and for Konva/R3F to
+        // paint at least one frame at the new dimensions.
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            setTimeout(resolve, 250);
+          }));
+        });
+      }
+      return {
+        restore: () => {
+          if (previousMode === 'focus') {
+            setLayoutMode('focus');
+            setFocusTabId(previousFocusTab);
+            applyLayoutJson(createFocusLayoutJson(previousFocusTab));
+          } else if (previousMode === 'custom') {
+            setLayoutMode('custom');
+            applyLayoutJson(previousModelJson);
+          }
+        },
+      };
+    };
+    return () => { delete (window as any).__multicamPrepareForExport; };
+  }, [applyLayoutJson, focusTabId, layoutMode, model]);
+
   return (
     <div className="h-screen flex flex-col bg-bc-dark text-gray-200">
       <Header
