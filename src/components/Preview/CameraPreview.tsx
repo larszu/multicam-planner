@@ -4,9 +4,7 @@ import { getLensById } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
 import { useRef, useEffect, useCallback, useState } from 'react';
 import type { StageObjectType } from '../../types';
-import { FiChevronDown, FiChevronUp, FiExternalLink, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import { MOUNT_TYPE_LABELS } from '../../types';
-import type { CameraMountType } from '../../types';
+import { FiExternalLink, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 interface PreviewProps {
   undocked: boolean;
@@ -867,11 +865,18 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
             <div className="text-gray-500 text-[10px]">{camDef.sensor.name} · {camDef.mount}</div>
             <div className="text-gray-400 text-[10px] mt-0.5">{camDef.manufacturer} {camDef.model}</div>
             <div className="text-gray-400 text-[10px]">{lensDef.manufacturer} {lensDef.model}</div>
-            <div className="text-gray-500 text-[10px] mt-0.5">{MOUNT_TYPE_LABELS[(cam.mountType ?? 'tripod') as CameraMountType]}</div>
             {adapterInfo && (
               <div className="text-yellow-400 text-[10px] mt-0.5">⚡ {adapterInfo.name}{lightLoss}</div>
             )}
           </div>
+
+          {/* Notes — only when filled */}
+          {cam.notes && cam.notes.trim() && (
+            <div className="bg-bc-dark rounded-lg border border-bc-border p-2">
+              <div className="text-[10px] text-gray-500 leading-tight mb-0.5">Notes</div>
+              <div className="text-[11px] text-gray-200 whitespace-pre-wrap leading-snug">{cam.notes}</div>
+            </div>
+          )}
 
           {/* Data cells */}
           <DataCell label="Focal Length" value={`${cam.focalLength.toFixed(1)}mm`} sub={cam.extenderActive > 1 ? `eff. ${(cam.focalLength * cam.extenderActive).toFixed(0)}mm` : `eq. ${fov.equivalentFocalLength.toFixed(0)}mm`} />
