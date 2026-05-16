@@ -1,6 +1,7 @@
 import { useStore, APP_VERSION } from '../../store/useStore';
 import { FiCamera, FiLayout, FiBox, FiMonitor, FiSliders, FiSave, FiUpload, FiDownload, FiChevronDown, FiX, FiCheck } from 'react-icons/fi';
 import { useRef, useCallback, useState, useEffect } from 'react';
+import type { ExportMode } from '../Export/ExportPanel';
 
 const tabs: { id: string; label: string; icon: React.ReactNode }[] = [
   { id: 'tab-2d', label: '2D Plan', icon: <FiLayout size={16} /> },
@@ -36,7 +37,9 @@ export default function Header({
   const [presetMenuOpen, setPresetMenuOpen] = useState(false);
   const [savePresetName, setSavePresetName] = useState('');
   const [showSaveInput, setShowSaveInput] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const presetMenuRef = useRef<HTMLDivElement>(null);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
   const saveInputRef = useRef<HTMLInputElement>(null);
 
   // Close preset menu on outside click
@@ -52,6 +55,18 @@ export default function Header({
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [presetMenuOpen]);
+
+  // Close export menu on outside click
+  useEffect(() => {
+    if (!exportMenuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setExportMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [exportMenuOpen]);
 
   // Auto-focus the save input when shown
   useEffect(() => {
@@ -78,9 +93,9 @@ export default function Header({
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, [loadProject]);
 
-  const handleExport = useCallback(async () => {
-    // Dispatch custom event that the ExportPanel will listen to
-    window.dispatchEvent(new CustomEvent('multicam-export'));
+  const handleExport = useCallback((mode: ExportMode = 'current') => {
+    setExportMenuOpen(false);
+    window.dispatchEvent(new CustomEvent('multicam-export', { detail: { mode } }));
   }, []);
 
   return (
@@ -224,10 +239,53 @@ export default function Header({
           <FiUpload size={14} />
           <span className="hidden sm:inline">Open</span>
         </button>
-        <button onClick={handleExport} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-bc-accent hover:text-white hover:bg-bc-accent/20 transition-colors" title="Export all views as PNG">
-          <FiDownload size={14} />
-          <span className="hidden sm:inline">Export</span>
-        </button>
+        <div className="relative" ref={exportMenuRef}>
+          <button
+            onClick={() => setExportMenuOpen((o) => !o)}
+            className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-bc-accent hover:text-white hover:bg-bc-accent/20 transition-colors"
+            title="Export views as PNG"
+          >
+            <FiDownload size={14} />
+            <span className="hidden sm:inline">Export</span>
+            <FiChevronDown size={12} />
+          </button>
+          {exportMenuOpen && (
+            <div className="absolute right-0 top-full mt-2 min-w-[260px] rounded-lg border border-bc-border bg-bc-panel shadow-2xl overflow-hidden z-30">
+              <button
+                type="button"
+                onClick={() => handleExport('current')}
+                className="w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-bc-border hover:text-white transition-colors"
+              >
+                <div className="font-medium">Current camera</div>
+                <div className="text-[10px] text-gray-500">Selected camera at current focal length</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExport('all')}
+                className="w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-bc-border hover:text-white transition-colors border-t border-bc-border"
+              >
+                <div className="font-medium">All cameras</div>
+                <div className="text-[10px] text-gray-500">One PNG per camera at its current focal length</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExport('widetele')}
+                className="w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-bc-border hover:text-white transition-colors border-t border-bc-border"
+              >
+                <div className="font-medium">Current — wide + tele</div>
+                <div className="text-[10px] text-gray-500">Selected camera at lens min and max focal length</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExport('all-widetele')}
+                className="w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-bc-border hover:text-white transition-colors border-t border-bc-border"
+              >
+                <div className="font-medium">All — wide + tele</div>
+                <div className="text-[10px] text-gray-500">Two PNGs per camera (lens min and max)</div>
+              </button>
+            </div>
+          )}
+        </div>
         <input ref={fileInputRef} type="file" accept=".mcplan,.json" className="hidden" onChange={handleFileChange} />
         <span className="text-xs text-gray-500 hidden lg:inline">v{APP_VERSION}</span>
       </div>

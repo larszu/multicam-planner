@@ -17,6 +17,13 @@ export interface Camera {
   resolutions: string[];
   type: 'broadcast' | 'cinema' | 'ptz' | 'mirrorless' | 'camcorder' | 'eng';
   notes?: string;
+  /**
+   * Optional list of selectable sensor crop modes the body can run in. The first
+   * entry is treated as the default and is interchangeable with `sensor`. Use this
+   * for cameras with hardware crop modes that aren't determined by the lens (e.g.
+   * URSA Broadcast B4 crop, VENICE 2 6K/4K windows, FX9 Super35 crop).
+   */
+  sensorModes?: SensorSize[];
 }
 
 // ── Adapter result ──
@@ -109,6 +116,11 @@ export interface VenueCamera {
   extenderActive: number; // 1 = none, 1.5, 2
   useSpeedbooster?: boolean; // EF Speedbooster on MFT cameras
   mountType?: CameraMountType;
+  /**
+   * Index into `Camera.sensorModes` selecting a hardware crop mode. Undefined or
+   * out-of-range falls back to the camera's default sensor.
+   */
+  sensorModeIndex?: number;
 }
 
 // ── Stage / target zone ──
