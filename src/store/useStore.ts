@@ -4,7 +4,7 @@ import { CAMERAS, CAMERA_COLORS } from '../data/cameras';
 import { LENSES } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
 
-export const APP_VERSION = '0.3.0';
+export const APP_VERSION = '0.4.0';
 
 interface AppState {
   // Venue
