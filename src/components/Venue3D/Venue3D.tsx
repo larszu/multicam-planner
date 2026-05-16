@@ -355,10 +355,10 @@ function FovPyramid({ cam, isSelected }: { cam: ReturnType<typeof useStore.getSt
     return geo;
   }, [isZoom, fovMax.horizontalDeg, fovMax.verticalDeg, cam.focusDistance]);
 
-  const tiltRad = (cam.tilt * Math.PI) / 180;
-
   return (
-    <group rotation={[tiltRad, -Math.PI / 2, 0]}>
+    // Tilt is applied by the parent `pitchRef` group in CameraRig — only reorient the
+    // pyramid (modeled along -Z) so it points along the camera's local +X (pan axis).
+    <group rotation={[0, -Math.PI / 2, 0]}>
       {/* Camera body */}
       <mesh>
         <boxGeometry args={[0.3, 0.2, 0.4]} />

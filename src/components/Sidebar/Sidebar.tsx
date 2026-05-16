@@ -158,10 +158,15 @@ function CameraCard({ camId }: { camId: string }) {
                 const newCam = getCameraById(e.target.value);
                 if (!newCam) return;
                 const lens = getCompatibleLenses(newCam.mount, newCam.adaptedMounts)[0];
+                const supportsExtender = cam.extenderActive === 1 || !!lens?.extenderFactors?.includes(cam.extenderActive);
                 updateCamera(cam.id, {
                   cameraId: e.target.value,
                   lensId: lens?.id ?? cam.lensId,
                   focalLength: lens?.focalLengthMin ?? cam.focalLength,
+                  aperture: lens?.maxApertureWide ?? cam.aperture,
+                  extenderActive: supportsExtender ? cam.extenderActive : 1,
+                  // Speedbooster only valid on MFT cameras with EF lenses
+                  useSpeedbooster: newCam.mount === 'MFT' && lens?.mount === 'EF' ? cam.useSpeedbooster : false,
                 });
               }}
             >
@@ -192,10 +197,15 @@ function CameraCard({ camId }: { camId: string }) {
               onChange={(e) => {
                 if (e.target.value === '__new__') { setShowNewLens(true); return; }
                 const lens = getLensById(e.target.value) ?? customLenses.find((l) => l.id === e.target.value);
+                const supportsExtender = cam.extenderActive === 1 || !!lens?.extenderFactors?.includes(cam.extenderActive);
                 updateCamera(cam.id, {
                   lensId: e.target.value,
                   focalLength: lens?.focalLengthMin ?? cam.focalLength,
                   aperture: lens?.maxApertureWide ?? cam.aperture,
+                  // Reset extender when switching to a lens that doesn't support the current value
+                  extenderActive: supportsExtender ? cam.extenderActive : 1,
+                  // Speedbooster only makes sense with an EF lens on an MFT body
+                  useSpeedbooster: camDef?.mount === 'MFT' && lens?.mount === 'EF' ? cam.useSpeedbooster : false,
                 });
               }}
             >
@@ -212,7 +222,24 @@ function CameraCard({ camId }: { camId: string }) {
           {/* Custom lens: delete button for active custom lens */}
           {lensDef?.isCustom && (
             <button
-              onClick={() => { removeCustomLens(cam.lensId); const first = compatDeduped.find(l => !l.isCustom); if (first) updateCamera(cam.id, { lensId: first.id, focalLength: first.focalLengthMin }); }}
+              onClick={() => {
+                // Pick a replacement BEFORE removing — prefer a built-in compatible lens,
+                // then fall back to any non-removed custom lens, and finally any LENSES entry.
+                const replacement =
+                  compatDeduped.find((l) => !l.isCustom && l.id !== cam.lensId) ??
+                  compatDeduped.find((l) => l.id !== cam.lensId) ??
+                  LENSES[0];
+                removeCustomLens(cam.lensId);
+                if (replacement) {
+                  const supportsExtender = cam.extenderActive === 1 || !!replacement.extenderFactors?.includes(cam.extenderActive);
+                  updateCamera(cam.id, {
+                    lensId: replacement.id,
+                    focalLength: replacement.focalLengthMin,
+                    aperture: replacement.maxApertureWide,
+                    extenderActive: supportsExtender ? cam.extenderActive : 1,
+                  });
+                }
+              }}
               className="text-[10px] text-bc-red hover:text-red-400 mt-0.5"
             >Remove custom lens "{lensDef.manufacturer} {lensDef.model}"</button>
           )}
@@ -445,7 +472,7 @@ export default function Sidebar() {
     cameras, addCamera, venue, setVenue, showAllFov, toggleShowAllFov, clearAll,
     pixelsPerMeter, setPixelsPerMeter,
     addStage, removeStage, updateStage,
-    persons, addPerson, addStageObject, removePerson,
+    persons, addPerson, addStageObject, removePerson, updatePerson,
     backgroundPlan, setBackgroundPlan,
     walls, addWall, removeWall, updateWall,
   } = useStore();
@@ -688,7 +715,7 @@ export default function Sidebar() {
                   p.objectType === 'mic-stand' ? '🎤' : '👤'
                 }</span>
                 <input className="bg-transparent text-white text-xs w-16 outline-none" value={p.label}
-                  onChange={(e) => useStore.getState().updatePerson(p.id, { label: e.target.value })} />
+                  onChange={(e) => updatePerson(p.id, { label: e.target.value })} />
                 <span className="text-gray-500">{p.height}m</span>
                 <span className="text-gray-500">({p.x.toFixed(1)}, {p.y.toFixed(1)})</span>
                 <button onClick={() => removePerson(p.id)} className="ml-auto p-0.5 hover:text-bc-red"><FiTrash2 size={11} /></button>

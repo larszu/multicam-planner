@@ -63,9 +63,11 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     const imgH = fov.imageHeightAtDistance;
 
     // ── Pan/Tilt offsets ──
-    const tiltOffsetPx = (cam.tilt / fov.verticalDeg) * H;
-    const cameraHeightFraction = cam.z / imgH;
-    const groundY = H * (0.5 - cameraHeightFraction) - tiltOffsetPx;
+    // For a level camera the horizon sits at H/2 regardless of camera height — cam.z only
+    // affects where individual objects project (handled in worldToScreen below).
+    // Positive tilt = looking up → horizon must move DOWN in the frame (larger y).
+    const tiltOffsetPx = (Math.tan((cam.tilt * Math.PI) / 180) / Math.tan((fov.verticalDeg / 2) * Math.PI / 180)) * (H / 2);
+    const groundY = H * 0.5 + tiltOffsetPx;
     const groundYClamped = Math.max(-H, Math.min(H * 2, groundY));
 
 
@@ -132,7 +134,9 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       const tiltRad = (c.tilt * Math.PI) / 180;
       const apparentY = (wz - c.z) / localZ;
       const tiltShift = Math.tan(tiltRad);
-      const screenY = H / 2 - ((apparentY + tiltShift) / Math.tan(fovVRad)) * (H / 2);
+      // Positive tilt (look up) rotates the world DOWN in camera frame → subtract tiltShift
+      // so that ground objects move toward the bottom of the screen as tilt increases.
+      const screenY = H / 2 - ((apparentY - tiltShift) / Math.tan(fovVRad)) * (H / 2);
       return { sx: screenX, sy: screenY, dist: localZ, behindCamera: false };
     };
     const worldToScreenLocal = worldToScreen;
