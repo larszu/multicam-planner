@@ -65,6 +65,7 @@ export default function Venue2D() {
   const [calibAutoResize, setCalibAutoResize] = useState(true);
   const [calibScaleLocked, setCalibScaleLocked] = useState(true);
   const [calibPoints, setCalibPoints] = useState<{ x: number; y: number }[]>([]);
+  const [calibCursor, setCalibCursor] = useState<{ x: number; y: number } | null>(null);
 
   const ppm = pixelsPerMeter;
   const W = venue.widthM * ppm;
@@ -186,6 +187,7 @@ export default function Venue2D() {
       setCalibAutoResize(autoResize ?? true);
       setCalibScaleLocked(scaleLocked ?? false);
       setCalibPoints([]);
+      setCalibCursor(null);
     };
     window.addEventListener('multicam-calibrate', handler);
     return () => window.removeEventListener('multicam-calibrate', handler);
@@ -264,16 +266,21 @@ export default function Venue2D() {
 
       setCalibActive(false);
       setCalibPoints([]);
+      setCalibCursor(null);
       window.dispatchEvent(new CustomEvent('multicam-calibrate-done'));
     }
   }, [addWall, backgroundPlan, calibActive, calibAutoResize, calibAxis, calibDistM, calibPoints, calibScaleLocked, drawingWall, getPointerWorldPoint, ppm, setBackgroundPlan, setVenue, snapPoint, venue, wallStart, walls.length]);
 
   const handleStageMouseMove = useCallback(() => {
-    if (!drawingWall || !wallStart) return;
     const point = getPointerWorldPoint();
     if (!point) return;
-    setWallCursor(snapPoint(wallStart, { x: point.xPx / ppm, y: point.yPx / ppm }));
-  }, [drawingWall, getPointerWorldPoint, ppm, snapPoint, wallStart]);
+    if (drawingWall && wallStart) {
+      setWallCursor(snapPoint(wallStart, { x: point.xPx / ppm, y: point.yPx / ppm }));
+    }
+    if (calibActive && calibPoints.length === 1) {
+      setCalibCursor({ x: point.xPx, y: point.yPx });
+    }
+  }, [calibActive, calibPoints.length, drawingWall, getPointerWorldPoint, ppm, snapPoint, wallStart]);
 
   const handleWallEndpointDragMove = useCallback((wall: Wall, end: 'start' | 'end', e: Konva.KonvaEventObject<DragEvent>) => {
     const node = e.target;
@@ -291,27 +298,37 @@ export default function Venue2D() {
 
   const handleCamDragEnd = useCallback(
     (cam: VenueCamera, e: Konva.KonvaEventObject<DragEvent>) => {
-      const newX = e.target.x() / ppm;
-      const newY = e.target.y() / ppm;
-      moveCamera(cam.id, Math.max(0, Math.min(venue.widthM, newX)), Math.max(0, Math.min(venue.heightM, newY)));
+      const newX = Math.max(0, Math.min(venue.widthM, e.target.x() / ppm));
+      const newY = Math.max(0, Math.min(venue.heightM, e.target.y() / ppm));
+      // Sync Konva's internal position back to the clamped value — otherwise the visual
+      // can stay at the out-of-bounds drag position when React doesn't re-render
+      // (e.g. when the clamped value equals the previous state).
+      e.target.position({ x: newX * ppm, y: newY * ppm });
+      moveCamera(cam.id, newX, newY);
     },
     [moveCamera, ppm, venue],
   );
 
   const handleStageDragEnd = useCallback(
     (stageId: string, e: Konva.KonvaEventObject<DragEvent>) => {
-      const newX = e.target.x() / ppm;
-      const newY = e.target.y() / ppm;
-      updateStage(stageId, { x: Math.max(0, newX), y: Math.max(0, newY) });
+      const stage = venue.stages.find((s) => s.id === stageId);
+      if (!stage) return;
+      const maxX = Math.max(0, venue.widthM - stage.width);
+      const maxY = Math.max(0, venue.heightM - stage.height);
+      const newX = Math.max(0, Math.min(maxX, e.target.x() / ppm));
+      const newY = Math.max(0, Math.min(maxY, e.target.y() / ppm));
+      e.target.position({ x: newX * ppm, y: newY * ppm });
+      updateStage(stageId, { x: newX, y: newY });
     },
-    [updateStage, ppm],
+    [updateStage, ppm, venue],
   );
 
   const handlePersonDragEnd = useCallback(
     (personId: string, e: Konva.KonvaEventObject<DragEvent>) => {
-      const newX = e.target.x() / ppm;
-      const newY = e.target.y() / ppm;
-      updatePerson(personId, { x: Math.max(0, Math.min(venue.widthM, newX)), y: Math.max(0, Math.min(venue.heightM, newY)) });
+      const newX = Math.max(0, Math.min(venue.widthM, e.target.x() / ppm));
+      const newY = Math.max(0, Math.min(venue.heightM, e.target.y() / ppm));
+      e.target.position({ x: newX * ppm, y: newY * ppm });
+      updatePerson(personId, { x: newX, y: newY });
     },
     [updatePerson, ppm, venue],
   );
@@ -484,8 +501,18 @@ export default function Venue2D() {
               <Text x={p.x + 8} y={p.y - 6} text={`P${i + 1}`} fontSize={11} fill="#22c55e" fontStyle="bold" listening={false} />
             </Group>
           ))}
-          {calibPoints.length === 1 && (
-            <Line points={[calibPoints[0].x, calibPoints[0].y, calibPoints[0].x, calibPoints[0].y]} stroke="#22c55e" strokeWidth={2} dash={[6, 4]} listening={false} />
+          {calibPoints.length === 1 && calibCursor && (
+            <Line
+              points={
+                calibAxis === 'x'
+                  ? [calibPoints[0].x, calibPoints[0].y, calibCursor.x, calibPoints[0].y]
+                  : [calibPoints[0].x, calibPoints[0].y, calibPoints[0].x, calibCursor.y]
+              }
+              stroke="#22c55e"
+              strokeWidth={2}
+              dash={[6, 4]}
+              listening={false}
+            />
           )}
         </Layer>
       )}

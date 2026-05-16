@@ -1,6 +1,3 @@
-import { useStore } from '../../store/useStore';
-import { CAMERAS } from '../../data/cameras';
-import { LENSES, getCompatibleLenses } from '../../data/lenses';
 import { SENSORS } from '../../data/cameras';
 import { computeFov, computeDof, personHeightInFrame } from '../../utils/fov';
 import { useState } from 'react';

@@ -163,29 +163,34 @@ export const useStore = create<AppState>((set, get) => ({
 
   // ── Stages ──
   addStage: (partial) => {
-    const { venue } = get();
-    const newStage: Stage = {
-      id: stageUid(),
-      x: partial?.x ?? venue.widthM / 2 - 3,
-      y: partial?.y ?? 0.5,
-      width: partial?.width ?? 6,
-      height: partial?.height ?? 3,
-      label: partial?.label ?? `Stage ${venue.stages.length + 1}`,
-    };
-    set((s) => ({ venue: { ...venue, stages: [...venue.stages, newStage] }, projectVersion: s.projectVersion + 1 }));
+    set((s) => {
+      const newStage: Stage = {
+        id: stageUid(),
+        x: partial?.x ?? s.venue.widthM / 2 - 3,
+        y: partial?.y ?? 0.5,
+        width: partial?.width ?? 6,
+        height: partial?.height ?? 3,
+        label: partial?.label ?? `Stage ${s.venue.stages.length + 1}`,
+      };
+      return {
+        venue: { ...s.venue, stages: [...s.venue.stages, newStage] },
+        projectVersion: s.projectVersion + 1,
+      };
+    });
   },
 
   removeStage: (id) => {
-    const { venue } = get();
-    set((s) => ({ venue: { ...venue, stages: venue.stages.filter((st) => st.id !== id) }, projectVersion: s.projectVersion + 1 }));
+    set((s) => ({
+      venue: { ...s.venue, stages: s.venue.stages.filter((st) => st.id !== id) },
+      projectVersion: s.projectVersion + 1,
+    }));
   },
 
   updateStage: (id, updates) => {
-    const { venue } = get();
     set((s) => ({
       venue: {
-        ...venue,
-        stages: venue.stages.map((st) => (st.id === id ? { ...st, ...updates } : st)),
+        ...s.venue,
+        stages: s.venue.stages.map((st) => (st.id === id ? { ...st, ...updates } : st)),
       },
       projectVersion: s.projectVersion + 1,
     }));
@@ -199,33 +204,35 @@ export const useStore = create<AppState>((set, get) => ({
   persons: [],
 
   addPerson: (x, y) => {
-    const { venue, persons } = get();
-    const newPerson: ReferencePerson = {
-      id: personUid(),
-      x: x ?? venue.widthM / 2,
-      y: y ?? venue.heightM / 2,
-      height: 1.8,
-      width: 0.5,
-      label: `Person ${persons.length + 1}`,
-      objectType: 'person',
-    };
-    set((s) => ({ persons: [...s.persons, newPerson], projectVersion: s.projectVersion + 1 }));
+    set((s) => {
+      const newPerson: ReferencePerson = {
+        id: personUid(),
+        x: x ?? s.venue.widthM / 2,
+        y: y ?? s.venue.heightM / 2,
+        height: 1.8,
+        width: 0.5,
+        label: `Person ${s.persons.length + 1}`,
+        objectType: 'person',
+      };
+      return { persons: [...s.persons, newPerson], projectVersion: s.projectVersion + 1 };
+    });
   },
 
   addStageObject: (objectType, x, y) => {
-    const { venue, persons } = get();
-    const preset = OBJECT_PRESETS[objectType] ?? OBJECT_PRESETS['custom'];
-    const count = persons.filter((p) => p.objectType === objectType).length;
-    const newObj: ReferencePerson = {
-      id: personUid(),
-      x: x ?? venue.widthM / 2,
-      y: y ?? venue.heightM / 2,
-      height: preset.height,
-      width: preset.width,
-      label: `${preset.label} ${count + 1}`,
-      objectType,
-    };
-    set((s) => ({ persons: [...s.persons, newObj], projectVersion: s.projectVersion + 1 }));
+    set((s) => {
+      const preset = OBJECT_PRESETS[objectType] ?? OBJECT_PRESETS['custom'];
+      const count = s.persons.filter((p) => p.objectType === objectType).length;
+      const newObj: ReferencePerson = {
+        id: personUid(),
+        x: x ?? s.venue.widthM / 2,
+        y: y ?? s.venue.heightM / 2,
+        height: preset.height,
+        width: preset.width,
+        label: `${preset.label} ${count + 1}`,
+        objectType,
+      };
+      return { persons: [...s.persons, newObj], projectVersion: s.projectVersion + 1 };
+    });
   },
 
   removePerson: (id) => set((s) => ({ persons: s.persons.filter((p) => p.id !== id), projectVersion: s.projectVersion + 1 })),
@@ -277,8 +284,10 @@ export const useStore = create<AppState>((set, get) => ({
     const { cameras, selectedCameraId } = get();
     if (cameras.length === 0) return;
     const idx = cameras.findIndex((c) => c.id === selectedCameraId);
-    const prev = cameras[(idx - 1 + cameras.length) % cameras.length];
-    set({ selectedCameraId: prev.id });
+    // When no camera is selected (idx === -1), wrap around to the last camera so
+    // "previous" feels like stepping backwards from the start of the list.
+    const prevIdx = idx < 0 ? cameras.length - 1 : (idx - 1 + cameras.length) % cameras.length;
+    set({ selectedCameraId: cameras[prevIdx].id });
   },
 
   toggleFavoriteCameraId: (id) => {
@@ -302,34 +311,35 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   addCamera: (cameraId, lensId) => {
-    const cam = cameraId ? CAMERAS.find((c) => c.id === cameraId) : CAMERAS[0];
-    const camDef = cam ?? CAMERAS[0];
-    const allLenses = [...LENSES, ...get().customLenses];
-    const lens = lensId
-      ? allLenses.find((l) => l.id === lensId)
-      : allLenses.find((l) => l.mount === camDef.mount) ?? allLenses[0];
-    const lensDef = lens ?? allLenses[0];
-    const { venue, cameras } = get();
-    const idx = cameras.length;
-    const newCam: VenueCamera = {
-      id: uid(),
-      label: `CAM ${idx + 1}`,
-      cameraId: camDef.id,
-      lensId: lensDef.id,
-      x: venue.widthM / 2,
-      y: venue.heightM * 0.75,
-      z: 1.5,
-      pan: -90,
-      tilt: 0,
-      focalLength: lensDef.focalLengthMin,
-      aperture: lensDef.maxApertureWide,
-      focusDistance: venue.heightM * 0.5,
-      color: CAMERA_COLORS[idx % CAMERA_COLORS.length],
-      extenderActive: 1,
-      useSpeedbooster: false,
-      mountType: 'tripod',
-    };
-    set((s) => ({ cameras: [...s.cameras, newCam], selectedCameraId: newCam.id, projectVersion: s.projectVersion + 1 }));
+    set((s) => {
+      const cam = cameraId ? CAMERAS.find((c) => c.id === cameraId) : CAMERAS[0];
+      const camDef = cam ?? CAMERAS[0];
+      const allLenses = [...LENSES, ...s.customLenses];
+      const lens = lensId
+        ? allLenses.find((l) => l.id === lensId)
+        : allLenses.find((l) => l.mount === camDef.mount) ?? allLenses[0];
+      const lensDef = lens ?? allLenses[0];
+      const idx = s.cameras.length;
+      const newCam: VenueCamera = {
+        id: uid(),
+        label: `CAM ${idx + 1}`,
+        cameraId: camDef.id,
+        lensId: lensDef.id,
+        x: s.venue.widthM / 2,
+        y: s.venue.heightM * 0.75,
+        z: 1.5,
+        pan: -90,
+        tilt: 0,
+        focalLength: lensDef.focalLengthMin,
+        aperture: lensDef.maxApertureWide,
+        focusDistance: s.venue.heightM * 0.5,
+        color: CAMERA_COLORS[idx % CAMERA_COLORS.length],
+        extenderActive: 1,
+        useSpeedbooster: false,
+        mountType: 'tripod',
+      };
+      return { cameras: [...s.cameras, newCam], selectedCameraId: newCam.id, projectVersion: s.projectVersion + 1 };
+    });
   },
 
   removeCamera: (id) =>
@@ -352,35 +362,37 @@ export const useStore = create<AppState>((set, get) => ({
     })),
 
   duplicateCamera: (id) => {
-    const { cameras } = get();
-    const src = cameras.find((c) => c.id === id);
-    if (!src) return;
-    const idx = cameras.length;
-    const dup: VenueCamera = {
-      ...src,
-      id: uid(),
-      label: `CAM ${idx + 1}`,
-      x: src.x + 1,
-      y: src.y + 1,
-      color: CAMERA_COLORS[idx % CAMERA_COLORS.length],
-    };
-    set((s) => ({ cameras: [...s.cameras, dup], selectedCameraId: dup.id, projectVersion: s.projectVersion + 1 }));
+    set((s) => {
+      const src = s.cameras.find((c) => c.id === id);
+      if (!src) return s;
+      const idx = s.cameras.length;
+      const dup: VenueCamera = {
+        ...src,
+        id: uid(),
+        label: `CAM ${idx + 1}`,
+        x: src.x + 1,
+        y: src.y + 1,
+        color: CAMERA_COLORS[idx % CAMERA_COLORS.length],
+      };
+      return { cameras: [...s.cameras, dup], selectedCameraId: dup.id, projectVersion: s.projectVersion + 1 };
+    });
   },
 
   // ── Walls ──
   walls: [],
   addWall: (wall) => {
-    const { venue } = get();
-    const w: Wall = {
-      id: uid('wall'),
-      x1: wall?.x1 ?? 0,
-      y1: wall?.y1 ?? venue.heightM / 2,
-      x2: wall?.x2 ?? venue.widthM,
-      y2: wall?.y2 ?? venue.heightM / 2,
-      height: wall?.height ?? 3,
-      label: wall?.label ?? 'Wall',
-    };
-    set((s) => ({ walls: [...s.walls, w], projectVersion: s.projectVersion + 1 }));
+    set((s) => {
+      const w: Wall = {
+        id: uid('wall'),
+        x1: wall?.x1 ?? 0,
+        y1: wall?.y1 ?? s.venue.heightM / 2,
+        x2: wall?.x2 ?? s.venue.widthM,
+        y2: wall?.y2 ?? s.venue.heightM / 2,
+        height: wall?.height ?? 3,
+        label: wall?.label ?? `Wall ${s.walls.length + 1}`,
+      };
+      return { walls: [...s.walls, w], projectVersion: s.projectVersion + 1 };
+    });
   },
   removeWall: (id) => set((s) => ({ walls: s.walls.filter((w) => w.id !== id), projectVersion: s.projectVersion + 1 })),
   updateWall: (id, updates) => set((s) => ({ walls: s.walls.map((w) => (w.id === id ? { ...w, ...updates } : w)), projectVersion: s.projectVersion + 1 })),
@@ -403,14 +415,18 @@ export const useStore = create<AppState>((set, get) => ({
     const tmpl = all.find((t) => t.id === templateId);
     if (!tmpl) return;
     nextId = 1;
+    stageId = 1;
+    personId = 1;
     const cams: VenueCamera[] = tmpl.cameras.map((c) => ({ ...c, id: uid(), useSpeedbooster: c.useSpeedbooster ?? false }));
-    set({
+    set((s) => ({
       venue: { ...tmpl.venue },
       cameras: cams,
       selectedCameraId: cams[0]?.id ?? null,
       persons: [],
+      walls: [],
       backgroundPlan: null,
-    });
+      projectVersion: s.projectVersion + 1,
+    }));
   },
 
   saveAsTemplate: (name, category) => {
