@@ -383,7 +383,6 @@ export const useStore = create<AppState>((set, get) => ({
         color: CAMERA_COLORS[idx % CAMERA_COLORS.length],
         extenderActive: 1,
         useSpeedbooster: false,
-        mountType: 'tripod',
         sensorModeIndex: camDef.sensorModes && camDef.sensorModes.length > 0 ? 0 : undefined,
       };
       return { cameras: [...s.cameras, newCam], selectedCameraId: newCam.id, projectVersion: s.projectVersion + 1 };
@@ -565,7 +564,11 @@ export const useStore = create<AppState>((set, get) => ({
     stageId = 1;
     personId = 1;
     // Re-assign IDs to avoid conflicts
-    const cameras = project.cameras.map((c) => ({ ...c, id: uid(), useSpeedbooster: c.useSpeedbooster ?? false, mountType: (c as any).mountType ?? 'tripod' }));
+    // Drop the deprecated mountType field if present in older project files
+    const cameras = project.cameras.map((c) => {
+      const { mountType: _drop, ...rest } = c as VenueCamera & { mountType?: string };
+      return { ...rest, id: uid(), useSpeedbooster: rest.useSpeedbooster ?? false };
+    });
     // Migrate old single-scale background plans to scaleX/scaleY
     let bgPlan = project.backgroundPlan;
     if (bgPlan && 'scale' in bgPlan && !('scaleX' in bgPlan)) {

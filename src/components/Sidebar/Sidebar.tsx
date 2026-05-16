@@ -4,8 +4,7 @@ import { LENSES, getLensById, getCompatibleLenses } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
 import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiCamera } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { BackgroundPlan, StageObjectType, CameraMountType } from '../../types';
-import { MOUNT_TYPE_LABELS } from '../../types';
+import type { BackgroundPlan, StageObjectType } from '../../types';
 import * as pdfjsLib from 'pdfjs-dist';
 
 /** Group lenses by mount for the dropdown */
@@ -421,8 +420,8 @@ function CameraCard({ camId }: { camId: string }) {
             </label>
           )}
 
-          {/* Position */}
-          <div className="grid grid-cols-3 gap-2">
+          {/* Position X / Y */}
+          <div className="grid grid-cols-2 gap-2">
             <label>
               <span className="text-gray-400">X (m)</span>
               <input
@@ -430,7 +429,7 @@ function CameraCard({ camId }: { camId: string }) {
                 className="w-full bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
                 value={cam.x}
                 step={0.5}
-                onChange={(e) => updateCamera(cam.id, { x: parseFloat(e.target.value) })}
+                onChange={(e) => updateCamera(cam.id, { x: parseFloat(e.target.value) || 0 })}
               />
             </label>
             <label>
@@ -440,33 +439,45 @@ function CameraCard({ camId }: { camId: string }) {
                 className="w-full bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
                 value={cam.y}
                 step={0.5}
-                onChange={(e) => updateCamera(cam.id, { y: parseFloat(e.target.value) })}
-              />
-            </label>
-            <label>
-              <span className="text-gray-400">Z (m)</span>
-              <input
-                type="number"
-                className="w-full bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
-                value={cam.z}
-                step={0.1}
-                onChange={(e) => updateCamera(cam.id, { z: parseFloat(e.target.value) })}
+                onChange={(e) => updateCamera(cam.id, { y: parseFloat(e.target.value) || 0 })}
               />
             </label>
           </div>
 
-          {/* Mount / Support type */}
+          {/* Camera height (Z) — slider for quick rough placement plus number input for precision */}
           <label className="block">
-            <span className="text-gray-400">Mount Type</span>
-            <select
-              className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
-              value={cam.mountType ?? 'tripod'}
-              onChange={(e) => updateCamera(cam.id, { mountType: e.target.value as CameraMountType })}
-            >
-              {Object.entries(MOUNT_TYPE_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>{v}</option>
-              ))}
-            </select>
+            <span className="text-gray-400">Height: {cam.z.toFixed(2)}m</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                className="flex-1 accent-bc-accent"
+                min={0}
+                max={20}
+                step={0.05}
+                value={Math.min(20, Math.max(0, cam.z))}
+                onChange={(e) => updateCamera(cam.id, { z: parseFloat(e.target.value) })}
+              />
+              <input
+                type="number"
+                className="w-16 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                value={cam.z}
+                step={0.1}
+                min={0}
+                onChange={(e) => updateCamera(cam.id, { z: Math.max(0, parseFloat(e.target.value) || 0) })}
+              />
+            </div>
+          </label>
+
+          {/* Notes — free-form, shown in export when filled */}
+          <label className="block">
+            <span className="text-gray-400">Notes</span>
+            <textarea
+              className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white text-xs resize-y min-h-[2.5rem]"
+              rows={2}
+              placeholder="Mount, operator, shot notes…"
+              value={cam.notes ?? ''}
+              onChange={(e) => updateCamera(cam.id, { notes: e.target.value })}
+            />
           </label>
 
           {/* DoF readout */}

@@ -52,19 +52,6 @@ export interface Lens {
 // ── Object type presets ──
 export type StageObjectType = 'person' | 'person-guitar' | 'drums' | 'keys' | 'mic-stand' | 'custom';
 
-// ── Camera mount/support type ──
-export type CameraMountType = 'tripod' | 'pedestal' | 'jib' | 'dolly' | 'gimbal' | 'handheld' | 'steadicam' | 'fixed';
-
-export const MOUNT_TYPE_LABELS: Record<CameraMountType, string> = {
-  tripod: 'Stativ',
-  pedestal: 'Studio Pedestal',
-  jib: 'Jib / Crane',
-  dolly: 'Dolly',
-  gimbal: 'Gimbal',
-  handheld: 'Handheld',
-  steadicam: 'Steadicam',
-  fixed: 'Fixed Mount',
-};
 
 // ── Venue wall ──
 export interface Wall {
@@ -115,12 +102,16 @@ export interface VenueCamera {
   color: string;
   extenderActive: number; // 1 = none, 1.5, 2
   useSpeedbooster?: boolean; // EF Speedbooster on MFT cameras
-  mountType?: CameraMountType;
   /**
    * Index into `Camera.sensorModes` selecting a hardware crop mode. Undefined or
    * out-of-range falls back to the camera's default sensor.
    */
   sensorModeIndex?: number;
+  /**
+   * Free-form notes for this camera placement (mount, operator, instructions,
+   * shot list, etc.). Shown in the sidebar and included in PNG exports when set.
+   */
+  notes?: string;
 }
 
 // ── Stage / target zone ──

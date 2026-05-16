@@ -236,6 +236,54 @@ export default function ExportPanel() {
       cy += lineH;
     });
 
+    // ── Notes (only if filled) ──
+    const notes = (targetCam.notes ?? '').trim();
+    if (notes) {
+      cy += 8;
+      ctx.fillStyle = '#3b82f6';
+      ctx.font = 'bold 13px monospace';
+      ctx.fillText('NOTES', cx, cy);
+      cy += lineH;
+
+      ctx.font = '12px monospace';
+      ctx.fillStyle = '#e5e7eb';
+      const noteMaxW = tileW - 40; // matches cx padding on both sides
+      const noteLineH = 16;
+
+      // Word-wrap inside the calc tile, respecting hard newlines in the user's text
+      const wrap = (text: string): string[] => {
+        const out: string[] = [];
+        for (const rawLine of text.split('\n')) {
+          if (!rawLine) { out.push(''); continue; }
+          const words = rawLine.split(/\s+/);
+          let cur = '';
+          for (const w of words) {
+            const test = cur ? `${cur} ${w}` : w;
+            if (ctx.measureText(test).width > noteMaxW && cur) {
+              out.push(cur);
+              cur = w;
+            } else {
+              cur = test;
+            }
+          }
+          if (cur) out.push(cur);
+        }
+        return out;
+      };
+
+      const tileBottom = calcY + tileH - 8;
+      const wrappedLines = wrap(notes);
+      for (const line of wrappedLines) {
+        if (cy > tileBottom) {
+          ctx.fillStyle = '#6b7280';
+          ctx.fillText('…', cx, cy);
+          break;
+        }
+        ctx.fillText(line, cx, cy);
+        cy += noteLineH;
+      }
+    }
+
     // ── Camera list summary ──
     const summaryY = headerH + padding + tileH + padding + tileH + padding;
     ctx.fillStyle = '#1a1d27';
