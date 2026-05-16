@@ -95,20 +95,29 @@ npm run desktop
 
 # Build Windows installer & portable
 npm run dist:win
+
+# Build macOS DMG + ZIP (x64 + arm64, must run on macOS)
+npm run dist:mac
 ```
+
+A GitHub Actions workflow (`.github/workflows/release-build.yml`) automatically
+builds Windows and macOS artifacts whenever a release is published and attaches
+the binaries (NSIS installer, portable .exe, DMG, ZIP) directly to the release
+page. It can also be triggered manually via the Actions tab for testing.
 
 ---
 
 ## 📜 Useful Scripts
 
-| Script             | Description                            |
-|--------------------|----------------------------------------|
-| npm run dev        | Start local Vite dev server            |
-| npm run build      | TypeScript check + production build    |
-| npm run desktop    | Launch Electron in dev mode            |
-| npm run dist:win   | Build Windows installer & portable     |
-| npm run preview    | Preview production build               |
-| npm run lint       | Run ESLint linter                      |
+| Script             | Description                                       |
+|--------------------|---------------------------------------------------|
+| npm run dev        | Start local Vite dev server                       |
+| npm run build      | TypeScript check + production build               |
+| npm run desktop    | Launch Electron in dev mode                       |
+| npm run dist:win   | Build Windows installer & portable                |
+| npm run dist:mac   | Build macOS DMG + ZIP (x64 + arm64, host = macOS) |
+| npm run preview    | Preview production build                          |
+| npm run lint       | Run ESLint linter                                 |
 
 ---
 
