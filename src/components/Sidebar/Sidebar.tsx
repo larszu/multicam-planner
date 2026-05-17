@@ -2,7 +2,7 @@ import { useStore } from '../../store/useStore';
 import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor } from '../../data/cameras';
 import { LENSES, getLensById, getCompatibleLenses } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
-import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiCamera, FiEdit2 } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2, FiRotateCcw } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { BackgroundPlan, StageObjectType, Camera } from '../../types';
 import { CustomCameraForm } from './CustomCameraForm';
@@ -55,6 +55,7 @@ function CameraCard({ camId }: { camId: string }) {
   const [showNewLens, setShowNewLens] = useState(false);
   const [newLens, setNewLens] = useState({ manufacturer: '', model: '', focalMin: '10', focalMax: '100', aperture: '2.8', mount: 'B4', type: 'zoom' as 'zoom' | 'prime' });
   const [showNewCustomCam, setShowNewCustomCam] = useState(false);
+  const [editingCustomCam, setEditingCustomCam] = useState<string | null>(null);
   const [showCalc, setShowCalc] = useState(false);
 
   const { customCameras, addCustomCamera } = useStore();
@@ -77,8 +78,16 @@ function CameraCard({ camId }: { camId: string }) {
   // Deduplicate by id
   const compatDeduped = [...new Map(allCompat.map((l) => [l.id, l])).values()];
   const grouped = groupByMount(sortFavoritesFirst(compatDeduped, favoriteLensIds));
-  const sortedCameras = sortFavoritesFirst([...CAMERAS, ...customCameras], favoriteCameraIds);
-  const isCustomCamera = (id: string) => customCameras.some((c) => c.id === id);
+  // Dedupe: when a built-in is shadowed (custom entry with the same id), only the
+  // custom version appears in the dropdown — the built-in is hidden behind it.
+  const customCameraIds = new Set(customCameras.map((c) => c.id));
+  const builtInCameraIds = new Set(CAMERAS.map((c) => c.id));
+  const visibleCameras = [...CAMERAS.filter((c) => !customCameraIds.has(c.id)), ...customCameras];
+  const sortedCameras = sortFavoritesFirst(visibleCameras, favoriteCameraIds);
+  const isCustomEntry = (id: string) => customCameraIds.has(id);
+  const isBuiltIn = (id: string) => builtInCameraIds.has(id);
+  const isBuiltInShadow = (id: string) => isCustomEntry(id) && isBuiltIn(id);
+  const isPureCustom = (id: string) => isCustomEntry(id) && !isBuiltIn(id);
 
   // Adapter & effective sensor
   const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, cam.useSpeedbooster, cam.activeMount) : null;
@@ -153,14 +162,69 @@ function CameraCard({ camId }: { camId: string }) {
             <span className="flex items-center justify-between gap-2 text-gray-400">
               <span>Camera ({camDef?.mount} mount, {camDef?.sensor.name})</span>
               {camDef && (
-                <button
-                  type="button"
-                  onClick={() => toggleFavoriteCameraId(camDef.id)}
-                  className={`p-1 rounded ${favoriteCameraIds.includes(camDef.id) ? 'text-bc-yellow' : 'text-gray-500 hover:text-bc-yellow'}`}
-                  title={favoriteCameraIds.includes(camDef.id) ? 'Remove camera favorite' : 'Favorite camera'}
-                >
-                  <FiStar size={12} fill={favoriteCameraIds.includes(camDef.id) ? 'currentColor' : 'none'} />
-                </button>
+                <span className="flex items-center gap-0.5">
+                  {/* Edit applies to every camera. For built-ins it creates a
+                      "modified built-in" shadow on save; for shadows or pure
+                      customs it updates the existing entry. */}
+                  <button
+                    type="button"
+                    onClick={() => setEditingCustomCam(camDef.id)}
+                    className="p-1 rounded text-gray-500 hover:text-bc-accent"
+                    title={isPureCustom(camDef.id)
+                      ? 'Edit this custom camera'
+                      : isBuiltInShadow(camDef.id)
+                        ? 'Continue editing this modified built-in'
+                        : 'Edit (creates a modified copy you can tweak — original stays untouched)'}
+                  >
+                    <FiEdit2 size={12} />
+                  </button>
+                  {isBuiltInShadow(camDef.id) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!confirm(`Reset "${camDef.manufacturer} ${camDef.model}" to its built-in defaults? Your changes will be lost.`)) return;
+                        useStore.getState().removeCustomCamera(camDef.id);
+                      }}
+                      className="p-1 rounded text-gray-500 hover:text-bc-yellow"
+                      title="Reset to the original built-in spec (discards your edits)"
+                    >
+                      <FiRotateCcw size={12} />
+                    </button>
+                  )}
+                  {isPureCustom(camDef.id) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const used = useStore.getState().cameras.filter((c) => c.cameraId === camDef.id).length;
+                        if (used > 1) {
+                          alert(`Cannot delete "${camDef.manufacturer} ${camDef.model}" — it is still used by ${used} placed camera(s).`);
+                          return;
+                        }
+                        if (!confirm(`Delete custom camera "${camDef.manufacturer} ${camDef.model}"?`)) return;
+                        // Swap this placement to the first built-in so the card stays valid
+                        const fallback = CAMERAS[0];
+                        updateCamera(cam.id, {
+                          cameraId: fallback.id,
+                          activeMount: fallback.mount,
+                          sensorModeIndex: fallback.sensorModes && fallback.sensorModes.length > 0 ? 0 : undefined,
+                        });
+                        useStore.getState().removeCustomCamera(camDef.id);
+                      }}
+                      className="p-1 rounded text-gray-500 hover:text-bc-red"
+                      title="Delete this custom camera"
+                    >
+                      <FiTrash2 size={12} />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => toggleFavoriteCameraId(camDef.id)}
+                    className={`p-1 rounded ${favoriteCameraIds.includes(camDef.id) ? 'text-bc-yellow' : 'text-gray-500 hover:text-bc-yellow'}`}
+                    title={favoriteCameraIds.includes(camDef.id) ? 'Remove camera favorite' : 'Favorite camera'}
+                  >
+                    <FiStar size={12} fill={favoriteCameraIds.includes(camDef.id) ? 'currentColor' : 'none'} />
+                  </button>
+                </span>
               )}
             </span>
             <select
@@ -187,9 +251,12 @@ function CameraCard({ camId }: { camId: string }) {
                 });
               }}
             >
-              {sortedCameras.map((c) => (
-                <option key={c.id} value={c.id}>{favoriteCameraIds.includes(c.id) ? '* ' : ''}{c.manufacturer} {c.model} [{c.mount}]{isCustomCamera(c.id) ? ' +custom' : ''}</option>
-              ))}
+              {sortedCameras.map((c) => {
+                const tag = isBuiltInShadow(c.id) ? ' (modified)' : isPureCustom(c.id) ? ' +custom' : '';
+                return (
+                  <option key={c.id} value={c.id}>{favoriteCameraIds.includes(c.id) ? '* ' : ''}{c.manufacturer} {c.model} [{c.mount}]{tag}</option>
+                );
+              })}
               <option value="__new_custom__">＋ Custom+ Add custom camera…</option>
             </select>
           </label>
@@ -214,6 +281,36 @@ function CameraCard({ camId }: { camId: string }) {
                   sensorModeIndex: spec.sensorModes && spec.sensorModes.length > 0 ? 0 : undefined,
                 });
                 setShowNewCustomCam(false);
+              }}
+            />
+          )}
+
+          {/* Inline edit form for the currently-selected custom camera */}
+          {editingCustomCam && editingCustomCam === camDef?.id && camDef && (
+            <CustomCameraForm
+              title={`Edit ${camDef.manufacturer} ${camDef.model}`}
+              submitLabel="Save changes"
+              initial={camDef}
+              onCancel={() => setEditingCustomCam(null)}
+              onSubmit={(spec) => {
+                useStore.getState().updateCustomCamera(camDef.id, spec);
+                // If the mount changed and the current lens no longer fits, swap to a compatible one
+                const stillCompatible = lensDef && (lensDef.mount === spec.mount || lensDef.mount === 'integrated');
+                if (!stillCompatible) {
+                  const next = getCompatibleLenses(spec.mount, spec.adaptedMounts)[0];
+                  if (next) {
+                    updateCamera(cam.id, {
+                      lensId: next.id,
+                      focalLength: next.focalLengthMin,
+                      aperture: next.maxApertureWide,
+                    });
+                  }
+                }
+                updateCamera(cam.id, {
+                  activeMount: spec.mount,
+                  sensorModeIndex: spec.sensorModes && spec.sensorModes.length > 0 ? 0 : undefined,
+                });
+                setEditingCustomCam(null);
               }}
             />
           )}
@@ -621,16 +718,12 @@ export default function Sidebar() {
     persons, addPerson, addStageObject, removePerson, updatePerson,
     backgroundPlan, setBackgroundPlan,
     walls, addWall, removeWall, updateWall,
-    customCameras, addCustomCamera, updateCustomCamera, removeCustomCamera,
   } = useStore();
   const [venueOpen, setVenueOpen] = useState(false);
   const [stagesOpen, setStagesOpen] = useState(false);
   const [personsOpen, setPersonsOpen] = useState(false);
   const [wallsOpen, setWallsOpen] = useState(false);
   const [bgOpen, setBgOpen] = useState(false);
-  const [customCamsOpen, setCustomCamsOpen] = useState(false);
-  const [showAddCustomCam, setShowAddCustomCam] = useState(false);
-  const [editingCustomCamId, setEditingCustomCamId] = useState<string | null>(null);
   const [wallDrawMode, setWallDrawMode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [calibAxis, setCalibAxis] = useState<'x' | 'y' | null>(null);
@@ -1079,90 +1172,6 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* Custom camera library */}
-      <div className="p-3 border-b border-bc-border">
-        <button
-          className="flex items-center justify-between w-full text-sm text-white font-semibold"
-          onClick={() => setCustomCamsOpen(!customCamsOpen)}
-        >
-          <span><FiCamera className="inline mr-1" size={13} />Custom Cameras ({customCameras.length})</span>
-          {customCamsOpen ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-        </button>
-        {customCamsOpen && (
-          <div className="mt-2 space-y-2 text-xs">
-            {customCameras.length === 0 && !showAddCustomCam && (
-              <p className="text-gray-500 text-[10px]">No custom cameras. Add a body for non-listed gear.</p>
-            )}
-            {customCameras.map((c) => {
-              const inUse = cameras.filter((vc) => vc.cameraId === c.id).length;
-              const isEditing = editingCustomCamId === c.id;
-              return (
-                <div key={c.id}>
-                  <div className="flex items-center gap-2 bg-bc-dark rounded p-1.5 border border-bc-border">
-                    <span className="text-white text-xs flex-1 truncate">{c.manufacturer} {c.model}</span>
-                    <span className="text-gray-500 text-[10px]">{c.mount}</span>
-                    {inUse > 0 && (
-                      <span className="text-bc-yellow text-[10px]" title={`Used by ${inUse} placed camera(s)`}>×{inUse}</span>
-                    )}
-                    <button
-                      onClick={() => setEditingCustomCamId(isEditing ? null : c.id)}
-                      className="p-0.5 hover:text-bc-accent"
-                      title="Edit custom camera"
-                    >
-                      <FiEdit2 size={11} />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (inUse > 0) {
-                          alert(`Cannot remove "${c.manufacturer} ${c.model}" — it is used by ${inUse} placed camera(s). Remove those first.`);
-                          return;
-                        }
-                        removeCustomCamera(c.id);
-                      }}
-                      className="p-0.5 hover:text-bc-red"
-                      title="Remove custom camera"
-                    >
-                      <FiTrash2 size={11} />
-                    </button>
-                  </div>
-                  {isEditing && (
-                    <div className="mt-1">
-                      <CustomCameraForm
-                        title={`Edit ${c.manufacturer} ${c.model}`}
-                        submitLabel="Save changes"
-                        initial={c as Camera}
-                        onCancel={() => setEditingCustomCamId(null)}
-                        onSubmit={(spec) => {
-                          updateCustomCamera(c.id, spec);
-                          setEditingCustomCamId(null);
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            {showAddCustomCam ? (
-              <CustomCameraForm
-                title="New Custom Camera"
-                submitLabel="Create custom camera"
-                onCancel={() => setShowAddCustomCam(false)}
-                onSubmit={(spec) => {
-                  addCustomCamera(spec);
-                  setShowAddCustomCam(false);
-                }}
-              />
-            ) : (
-              <button
-                onClick={() => setShowAddCustomCam(true)}
-                className="flex items-center gap-1 px-2 py-1 rounded bg-bc-accent/20 text-bc-accent text-xs hover:bg-bc-accent/30 w-full justify-center"
-              >
-                <FiPlus size={12} /> Add custom camera
-              </button>
-            )}
-          </div>
-        )}
-      </div>
 
       {/* Camera list */}
       <div className="flex-1 p-3 overflow-y-auto">

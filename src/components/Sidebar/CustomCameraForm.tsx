@@ -61,9 +61,15 @@ function detectSensorPreset(sensor?: SensorSize): string {
 export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'Create', title = 'New Custom Camera' }: CustomCameraFormProps) {
   const [manufacturer, setManufacturer] = useState(initial?.manufacturer ?? '');
   const [model, setModel] = useState(initial?.model ?? '');
+  // Mount: the initial value might be a known mount or a custom one (e.g. "Z",
+  // "PV", "M43-Box"). We track which mode we're in so the UI shows either the
+  // dropdown or the free-text input.
+  const initialMountIsKnown = !initial?.mount || (MOUNTS as readonly string[]).includes(initial.mount);
   const [mount, setMount] = useState<string>(initial?.mount ?? 'EF');
+  const [mountIsCustom, setMountIsCustom] = useState<boolean>(!initialMountIsKnown);
   const [type, setType] = useState<Camera['type']>(initial?.type ?? 'cinema');
   const [adaptedMounts, setAdaptedMounts] = useState<string[]>(initial?.adaptedMounts ?? []);
+  const [customAdapterDraft, setCustomAdapterDraft] = useState('');
 
   // Sensor: either a preset key or '__custom__' with explicit dimensions.
   const initialPreset = detectSensorPreset(initial?.sensor);
@@ -154,10 +160,18 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
   const applyAiResult = (data: any) => {
     if (data.manufacturer && !manufacturer.trim()) setManufacturer(String(data.manufacturer));
     if (data.model && !model.trim()) setModel(String(data.model));
-    if (data.mount && (MOUNTS as readonly string[]).includes(data.mount)) setMount(data.mount);
+    if (typeof data.mount === 'string' && data.mount.trim()) {
+      const m = data.mount.trim();
+      setMount(m);
+      setMountIsCustom(!(MOUNTS as readonly string[]).includes(m));
+    }
     if (data.type && TYPES.some((t) => t.value === data.type)) setType(data.type);
     if (Array.isArray(data.adaptedMounts)) {
-      setAdaptedMounts(data.adaptedMounts.filter((m: any) => typeof m === 'string' && (MOUNTS as readonly string[]).includes(m)));
+      setAdaptedMounts(
+        data.adaptedMounts
+          .filter((m: any) => typeof m === 'string' && m.trim().length > 0)
+          .map((m: string) => m.trim()),
+      );
     }
     if (data.sensor && typeof data.sensor.widthMm === 'number' && typeof data.sensor.heightMm === 'number') {
       setSensorKey('__custom__');
@@ -314,17 +328,23 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
           <span className="text-gray-500 text-[10px]">Native Mount</span>
           <select
             className="block w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
-            value={mount}
+            value={mountIsCustom ? '__custom__' : mount}
             onChange={(e) => {
-              const m = e.target.value;
-              // Drop the new native from the adapter list if it was checked
-              setMount(m);
-              setAdaptedMounts(adaptedMounts.filter((x) => x !== m));
+              const v = e.target.value;
+              if (v === '__custom__') {
+                setMountIsCustom(true);
+                setMount('');
+                return;
+              }
+              setMountIsCustom(false);
+              setMount(v);
+              setAdaptedMounts(adaptedMounts.filter((x) => x !== v));
             }}
           >
             {MOUNTS.map((m) => (
               <option key={m} value={m}>{m}</option>
             ))}
+            <option value="__custom__">Custom…</option>
           </select>
         </label>
         <label>
@@ -340,12 +360,32 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
           </select>
         </label>
       </div>
+      {mountIsCustom && (
+        <input
+          placeholder="Custom mount name (e.g. Z, PV, M4/3 Studio…)"
+          className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+          value={mount}
+          onChange={(e) => {
+            const v = e.target.value;
+            setMount(v);
+            setAdaptedMounts(adaptedMounts.filter((x) => x !== v));
+          }}
+        />
+      )}
 
       <div>
         <span className="text-gray-500 text-[10px]">Available adapters / mount plates</span>
         <div className="grid grid-cols-4 gap-1 mt-0.5">
-          {MOUNTS.filter((m) => m !== mount && m !== 'integrated' && m !== 'M12').map((m) => {
+          {/* Known mounts (excluding the native one) + any custom adapter mounts
+              the user has already added in this session. Custom adapter mounts
+              get a small × button so they can be removed from the list entirely
+              rather than just unchecked. */}
+          {[
+            ...MOUNTS.filter((m) => m !== mount && m !== 'integrated' && m !== 'M12'),
+            ...adaptedMounts.filter((m) => !(MOUNTS as readonly string[]).includes(m)),
+          ].map((m) => {
             const checked = adaptedMounts.includes(m);
+            const isCustomAdapter = !(MOUNTS as readonly string[]).includes(m);
             return (
               <label key={m} className="flex items-center gap-1 text-[10px] text-gray-300 cursor-pointer">
                 <input
@@ -358,10 +398,46 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
                     );
                   }}
                 />
-                {m}
+                <span className={isCustomAdapter ? 'text-bc-accent' : ''}>{m}</span>
               </label>
             );
           })}
+        </div>
+        <div className="flex items-center gap-1 mt-1">
+          <input
+            placeholder="Add custom adapter mount (e.g. Z, PV)"
+            className="flex-1 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[11px]"
+            value={customAdapterDraft}
+            onChange={(e) => setCustomAdapterDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter') return;
+              e.preventDefault();
+              const trimmed = customAdapterDraft.trim();
+              if (!trimmed || trimmed === mount || adaptedMounts.includes(trimmed)) {
+                setCustomAdapterDraft('');
+                return;
+              }
+              setAdaptedMounts([...adaptedMounts, trimmed]);
+              setCustomAdapterDraft('');
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              const trimmed = customAdapterDraft.trim();
+              if (!trimmed || trimmed === mount || adaptedMounts.includes(trimmed)) {
+                setCustomAdapterDraft('');
+                return;
+              }
+              setAdaptedMounts([...adaptedMounts, trimmed]);
+              setCustomAdapterDraft('');
+            }}
+            disabled={!customAdapterDraft.trim()}
+            className="px-2 py-0.5 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30 disabled:opacity-40"
+            title="Add this name as a selectable adapter mount"
+          >
+            <FiPlus size={10} />
+          </button>
         </div>
       </div>
 

@@ -114,7 +114,9 @@ export const CAMERAS: Camera[] = [
 ];
 
 export function getCameraById(id: string, customCameras?: Camera[]): Camera | undefined {
-  return CAMERAS.find((c) => c.id === id) ?? customCameras?.find((c) => c.id === id);
+  // Custom entries take precedence — when the user edits a built-in we shadow
+  // it with a customCameras entry that has the same id, and that should win.
+  return customCameras?.find((c) => c.id === id) ?? CAMERAS.find((c) => c.id === id);
 }
 
 export function getCamerasByType(type: Camera['type']): Camera[] {
