@@ -25,7 +25,14 @@
       "electron/**/*",
       "package.json"
     ],
+    "extraResources": [
+      {
+        "from": "build/icon.png",
+        "to": "icon.png"
+      }
+    ],
     "win": {
+      "icon": "build/icon.png",
       "target": [
         "nsis",
         "portable"
@@ -35,9 +42,13 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "installerIcon": "build/icon.png",
+      "uninstallerIcon": "build/icon.png",
+      "installerHeaderIcon": "build/icon.png"
     },
     "mac": {
+      "icon": "build/icon.png",
       "category": "public.app-category.video",
       "target": [
         {
