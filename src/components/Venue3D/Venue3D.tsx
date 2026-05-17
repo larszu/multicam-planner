@@ -1,3 +1,4 @@
+import React from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Grid, Text, PerspectiveCamera, Html, TransformControls } from '@react-three/drei';
 import { useStore } from '../../store/useStore';
@@ -82,7 +83,9 @@ function DraggableOnFloor({ children, x, z, onDragEnd, onClick }: {
 
 /* ── Floor grid with visible metre labels ── */
 function FloorLabels({ widthM, heightM }: { widthM: number; heightM: number }) {
-  const labels: JSX.Element[] = [];
+  // React 19 moved JSX out of the global namespace — the equivalent type now
+  // lives at React.JSX.Element.
+  const labels: React.JSX.Element[] = [];
   // X-axis labels every 5m
   for (let x = 0; x <= widthM; x += 5) {
     labels.push(
