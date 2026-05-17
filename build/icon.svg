@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" shape-rendering="geometricPrecision">
+  <!-- ─────────────────────────────────────────────────────────
+       MultiCam Planner app icon
+       Top-down stage view with three cameras + FOV cones,
+       echoing the app's 2D plan colour scheme.
+       ───────────────────────────────────────────────────────── -->
+
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="65%">
+      <stop offset="0%"  stop-color="#1a2236"/>
+      <stop offset="60%" stop-color="#10162a"/>
+      <stop offset="100%" stop-color="#070a14"/>
+    </radialGradient>
+    <linearGradient id="stage" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#1e3a8a" stop-opacity="0.65"/>
+    </linearGradient>
+    <linearGradient id="ringR" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff8888"/>
+      <stop offset="100%" stop-color="#ef4444"/>
+    </linearGradient>
+    <linearGradient id="ringG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#86efac"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+    <linearGradient id="ringB" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#93c5fd"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded square background (matches macOS / Windows tile shape) -->
+  <rect x="0" y="0" width="1024" height="1024" rx="208" fill="url(#bg)"/>
+
+  <!-- Subtle floor grid -->
+  <g stroke="#1e2540" stroke-width="2" opacity="0.55">
+    <line x1="120" y1="220" x2="904" y2="220"/>
+    <line x1="120" y1="350" x2="904" y2="350"/>
+    <line x1="120" y1="480" x2="904" y2="480"/>
+    <line x1="120" y1="610" x2="904" y2="610"/>
+    <line x1="120" y1="740" x2="904" y2="740"/>
+    <line x1="120" y1="870" x2="904" y2="870"/>
+    <line x1="180" y1="160" x2="180" y2="920"/>
+    <line x1="310" y1="160" x2="310" y2="920"/>
+    <line x1="440" y1="160" x2="440" y2="920"/>
+    <line x1="570" y1="160" x2="570" y2="920"/>
+    <line x1="700" y1="160" x2="700" y2="920"/>
+    <line x1="830" y1="160" x2="830" y2="920"/>
+  </g>
+
+  <!-- Stage in the upper area -->
+  <rect x="288" y="180" width="448" height="170" rx="22"
+        fill="url(#stage)" stroke="#3b82f6" stroke-width="6"/>
+
+  <!-- FOV cones (rendered behind cameras, lightly filled) -->
+  <!-- Left camera (red) -->
+  <path d="M 220 760 L 268 350 L 472 268 Z"
+        fill="#ef4444" fill-opacity="0.18"
+        stroke="#ef4444" stroke-width="5" stroke-opacity="0.85"
+        stroke-linejoin="round"/>
+  <!-- Centre camera (blue) -->
+  <path d="M 512 870 L 388 350 L 636 350 Z"
+        fill="#3b82f6" fill-opacity="0.18"
+        stroke="#3b82f6" stroke-width="5" stroke-opacity="0.85"
+        stroke-linejoin="round"/>
+  <!-- Right camera (green) -->
+  <path d="M 804 760 L 756 350 L 552 268 Z"
+        fill="#22c55e" fill-opacity="0.18"
+        stroke="#22c55e" stroke-width="5" stroke-opacity="0.85"
+        stroke-linejoin="round"/>
+
+  <!-- Camera markers as right-angled isosceles triangles.
+       The 90° angle (apex) sits at the lens position where the FOV cone
+       emanates; the two equal legs extend back from there at 45° each side
+       of the rear axis, so the hypotenuse forms the back of the camera body
+       and the triangle visually "aims" at the stage along the FOV bisector. -->
+  <g>
+    <polygon points="220,760 242,847 133,782"
+             fill="url(#ringR)" stroke="#fff" stroke-width="6"
+             stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="220" cy="760" r="9" fill="#fff" fill-opacity="0.95"/>
+  </g>
+  <g>
+    <polygon points="512,870 576,934 448,934"
+             fill="url(#ringB)" stroke="#fff" stroke-width="6"
+             stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="512" cy="870" r="9" fill="#fff" fill-opacity="0.95"/>
+  </g>
+  <g>
+    <polygon points="804,760 891,782 782,847"
+             fill="url(#ringG)" stroke="#fff" stroke-width="6"
+             stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="804" cy="760" r="9" fill="#fff" fill-opacity="0.95"/>
+  </g>
+
+  <!-- Inner border to give the icon a slight bezel feel -->
+  <rect x="0" y="0" width="1024" height="1024" rx="208"
+        fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="6"/>
+</svg>

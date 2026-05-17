@@ -9,6 +9,11 @@ function createMainWindow() {
     minHeight: 720,
     autoHideMenuBar: true,
     backgroundColor: '#0f1117',
+    // Window icon for dev mode + Linux taskbar. On Windows/macOS the packaged
+    // build also embeds the icon via electron-builder's build.win.icon /
+    // build.mac.icon config, but setting it here makes `npm run desktop` show
+    // the right icon too.
+    icon: path.join(__dirname, '..', 'build', 'icon.png'),
     webPreferences: {
       contextIsolation: true,
       sandbox: true,
