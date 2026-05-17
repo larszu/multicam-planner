@@ -315,7 +315,20 @@ export const useStore = create<AppState>((set, get) => ({
 
   updateCustomCamera: (id, updates) => {
     set((s) => {
-      const updated = s.customCameras.map((c) => (c.id === id ? { ...c, ...updates } : c));
+      const exists = s.customCameras.some((c) => c.id === id);
+      if (exists) {
+        const updated = s.customCameras.map((c) => (c.id === id ? { ...c, ...updates } : c));
+        saveCustomCamerasStorage(updated);
+        return { customCameras: updated, projectVersion: s.projectVersion + 1 };
+      }
+      // Editing a built-in camera for the first time — create a custom shadow
+      // with the same id so getCameraById (which prefers customCameras) returns
+      // the modified version from now on. Removing the shadow restores the
+      // original built-in.
+      const builtin = CAMERAS.find((c) => c.id === id);
+      if (!builtin) return s;
+      const shadow: Camera = { ...builtin, ...updates };
+      const updated = [...s.customCameras, shadow];
       saveCustomCamerasStorage(updated);
       return { customCameras: updated, projectVersion: s.projectVersion + 1 };
     });
