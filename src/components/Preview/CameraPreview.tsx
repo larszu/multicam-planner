@@ -632,20 +632,18 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       }
 
       // ── Depth of Field blur ──
-      // Persons inside [near, far] render sharp. Anything outside is blurred
-      // proportional to how far past the limit they are, capped so it stays
-      // legible. Locked subject always renders sharp regardless of DoF.
+      // Smooth falloff scaled by focal length / aperture, so a fast tele blurs
+      // backgrounds aggressively while a wide-stopped-down lens stays sharp.
+      // Locked subject (focus-pinned in the operator's frame) always renders
+      // sharp regardless of distance.
       let blurPx = 0;
       if (cam.lockedPersonId !== person.id) {
-        if (feetProj.dist < dof.nearLimit) {
-          blurPx = Math.min(10, (dof.nearLimit - feetProj.dist) * 4);
-        } else if (dof.farLimit !== Infinity && feetProj.dist > dof.farLimit) {
-          blurPx = Math.min(10, (feetProj.dist - dof.farLimit) * 1.2);
-        }
+        const outOfFocus = Math.abs(feetProj.dist - cam.focusDistance);
+        blurPx = Math.min(12, outOfFocus * (cam.focalLength / 50) / Math.max(1, cam.aperture) * 0.6);
       }
-      if (blurPx > 0.1) ctx.filter = `blur(${blurPx.toFixed(1)}px)`;
+      if (blurPx > 0.5) ctx.filter = `blur(${blurPx.toFixed(1)}px)`;
       drawPerson(feetSx, feetSy, headSy, feetProj.dist, person.objectType, `${person.label} (${person.height.toFixed(1)}m)`, person.color);
-      if (blurPx > 0.1) ctx.filter = 'none';
+      if (blurPx > 0.5) ctx.filter = 'none';
     });
 
     ctx.restore();
