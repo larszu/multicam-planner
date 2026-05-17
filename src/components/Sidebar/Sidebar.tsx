@@ -2,7 +2,7 @@ import { useStore } from '../../store/useStore';
 import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor } from '../../data/cameras';
 import { LENSES, getLensById, getCompatibleLenses } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
-import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiCamera, FiEdit2 } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { BackgroundPlan, StageObjectType, Camera } from '../../types';
 import { CustomCameraForm } from './CustomCameraForm';
@@ -621,16 +621,12 @@ export default function Sidebar() {
     persons, addPerson, addStageObject, removePerson, updatePerson,
     backgroundPlan, setBackgroundPlan,
     walls, addWall, removeWall, updateWall,
-    customCameras, addCustomCamera, updateCustomCamera, removeCustomCamera,
   } = useStore();
   const [venueOpen, setVenueOpen] = useState(false);
   const [stagesOpen, setStagesOpen] = useState(false);
   const [personsOpen, setPersonsOpen] = useState(false);
   const [wallsOpen, setWallsOpen] = useState(false);
   const [bgOpen, setBgOpen] = useState(false);
-  const [customCamsOpen, setCustomCamsOpen] = useState(false);
-  const [showAddCustomCam, setShowAddCustomCam] = useState(false);
-  const [editingCustomCamId, setEditingCustomCamId] = useState<string | null>(null);
   const [wallDrawMode, setWallDrawMode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [calibAxis, setCalibAxis] = useState<'x' | 'y' | null>(null);
@@ -1079,90 +1075,6 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* Custom camera library */}
-      <div className="p-3 border-b border-bc-border">
-        <button
-          className="flex items-center justify-between w-full text-sm text-white font-semibold"
-          onClick={() => setCustomCamsOpen(!customCamsOpen)}
-        >
-          <span><FiCamera className="inline mr-1" size={13} />Custom Cameras ({customCameras.length})</span>
-          {customCamsOpen ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-        </button>
-        {customCamsOpen && (
-          <div className="mt-2 space-y-2 text-xs">
-            {customCameras.length === 0 && !showAddCustomCam && (
-              <p className="text-gray-500 text-[10px]">No custom cameras. Add a body for non-listed gear.</p>
-            )}
-            {customCameras.map((c) => {
-              const inUse = cameras.filter((vc) => vc.cameraId === c.id).length;
-              const isEditing = editingCustomCamId === c.id;
-              return (
-                <div key={c.id}>
-                  <div className="flex items-center gap-2 bg-bc-dark rounded p-1.5 border border-bc-border">
-                    <span className="text-white text-xs flex-1 truncate">{c.manufacturer} {c.model}</span>
-                    <span className="text-gray-500 text-[10px]">{c.mount}</span>
-                    {inUse > 0 && (
-                      <span className="text-bc-yellow text-[10px]" title={`Used by ${inUse} placed camera(s)`}>×{inUse}</span>
-                    )}
-                    <button
-                      onClick={() => setEditingCustomCamId(isEditing ? null : c.id)}
-                      className="p-0.5 hover:text-bc-accent"
-                      title="Edit custom camera"
-                    >
-                      <FiEdit2 size={11} />
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (inUse > 0) {
-                          alert(`Cannot remove "${c.manufacturer} ${c.model}" — it is used by ${inUse} placed camera(s). Remove those first.`);
-                          return;
-                        }
-                        removeCustomCamera(c.id);
-                      }}
-                      className="p-0.5 hover:text-bc-red"
-                      title="Remove custom camera"
-                    >
-                      <FiTrash2 size={11} />
-                    </button>
-                  </div>
-                  {isEditing && (
-                    <div className="mt-1">
-                      <CustomCameraForm
-                        title={`Edit ${c.manufacturer} ${c.model}`}
-                        submitLabel="Save changes"
-                        initial={c as Camera}
-                        onCancel={() => setEditingCustomCamId(null)}
-                        onSubmit={(spec) => {
-                          updateCustomCamera(c.id, spec);
-                          setEditingCustomCamId(null);
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            {showAddCustomCam ? (
-              <CustomCameraForm
-                title="New Custom Camera"
-                submitLabel="Create custom camera"
-                onCancel={() => setShowAddCustomCam(false)}
-                onSubmit={(spec) => {
-                  addCustomCamera(spec);
-                  setShowAddCustomCam(false);
-                }}
-              />
-            ) : (
-              <button
-                onClick={() => setShowAddCustomCam(true)}
-                className="flex items-center gap-1 px-2 py-1 rounded bg-bc-accent/20 text-bc-accent text-xs hover:bg-bc-accent/30 w-full justify-center"
-              >
-                <FiPlus size={12} /> Add custom camera
-              </button>
-            )}
-          </div>
-        )}
-      </div>
 
       {/* Camera list */}
       <div className="flex-1 p-3 overflow-y-auto">
