@@ -487,7 +487,12 @@ function CameraRig({
       liftRef.current.position.set(0, cam.z, 0);
     }
     if (pitchRef.current) {
-      pitchRef.current.rotation.set(THREE.MathUtils.degToRad(cam.tilt), 0, 0);
+      // Tilt rotates around the camera's LOCAL right axis. Once the inner
+      // FovPyramid group reorients the model from -Z to +X, the camera's right
+      // axis lines up with the parent group's Z (+Z in world for default pan).
+      // Rotating around X here would tumble the pyramid around its forward
+      // axis (= roll), so the pitch rotation has to go on Z.
+      pitchRef.current.rotation.set(0, 0, THREE.MathUtils.degToRad(cam.tilt));
     }
   }, [cam.pan, cam.tilt, cam.x, cam.y, cam.z]);
 
@@ -515,8 +520,8 @@ function CameraRig({
 
   const commitTilt = useCallback(() => {
     if (!pitchRef.current) return;
-    const nextTilt = Math.max(-90, Math.min(45, THREE.MathUtils.radToDeg(pitchRef.current.rotation.x)));
-    pitchRef.current.rotation.set(THREE.MathUtils.degToRad(nextTilt), 0, 0);
+    const nextTilt = Math.max(-90, Math.min(45, THREE.MathUtils.radToDeg(pitchRef.current.rotation.z)));
+    pitchRef.current.rotation.set(0, 0, THREE.MathUtils.degToRad(nextTilt));
     updateCamera(cam.id, { tilt: nextTilt });
   }, [cam.id, updateCamera]);
 
@@ -586,9 +591,9 @@ function CameraRig({
           <TransformControls object={liftRef.current} mode="translate" showX={false} showY showZ={false} size={0.9} onMouseUp={commitHeight} />
         )}
 
-        <group ref={pitchRef} rotation={[THREE.MathUtils.degToRad(cam.tilt), 0, 0]}>
+        <group ref={pitchRef} rotation={[0, 0, THREE.MathUtils.degToRad(cam.tilt)]}>
           {isSelected && isUnlocked && editMode === 'tilt' && pitchRef.current && (
-            <TransformControls object={pitchRef.current} mode="rotate" showX showY={false} showZ={false} size={0.9} onMouseUp={commitTilt} />
+            <TransformControls object={pitchRef.current} mode="rotate" showX={false} showY={false} showZ size={0.9} onMouseUp={commitTilt} />
           )}
           {/* Reorient the pyramid (modelled along -Z) so it points along the
               camera's pan axis. Applying this group AFTER pitchRef means pitch
