@@ -2,7 +2,7 @@ import { useStore } from '../../store/useStore';
 import { getCameraById, getEffectiveSensor, getAdapterInfo } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useLayoutEffect, useCallback, useState } from 'react';
 import type { StageObjectType } from '../../types';
 import { FiExternalLink, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
@@ -653,11 +653,20 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
 
   }, [cam, venue, persons, cameras, showGrid, showSafeAreas, showThirds, showCrosshair]);
 
-  useEffect(() => {
+  // Repaint synchronously after every render so pan/tilt drags update the canvas
+  // on the very next browser frame. The earlier `useEffect` variant was being
+  // batched by React under fast drag input, so the 2D/3D views (which bind
+  // declaratively to the store) updated immediately while the imperatively-
+  // painted canvas lagged or skipped frames.
+  useLayoutEffect(() => {
     draw();
-    // Redraw on resize
+  }, [draw]);
+
+  // Resize observer lives in a normal effect — not time-critical.
+  useEffect(() => {
+    if (!wrapRef.current) return;
     const ro = new ResizeObserver(() => draw());
-    if (wrapRef.current) ro.observe(wrapRef.current);
+    ro.observe(wrapRef.current);
     return () => ro.disconnect();
   }, [draw]);
 
