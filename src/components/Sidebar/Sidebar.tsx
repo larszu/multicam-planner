@@ -1,6 +1,6 @@
 import { useStore } from '../../store/useStore';
 import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor } from '../../data/cameras';
-import { LENSES, getLensById, getCompatibleLenses } from '../../data/lenses';
+import { LENSES, getLensById, getCompatibleLenses, pickInitialMountAndLens } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
 import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2, FiRotateCcw } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
@@ -66,18 +66,28 @@ function CameraCard({ camId }: { camId: string }) {
   // the body's mount plate (e.g. URSA Broadcast B4 → EF), only lenses for
   // that plate are physically attachable.
   const activeMount = cam.activeMount ?? camDef?.mount;
+  // Strict: only lenses that physically attach to the active mount.
   const compatLenses = camDef ? getCompatibleLenses(camDef.mount, camDef.adaptedMounts, cam.activeMount) : allLenses;
-  const allCompat = [...compatLenses, ...customLenses.filter((l) => {
-    if (!camDef) return true;
-    if (cam.activeMount && cam.activeMount !== camDef.mount) {
-      return l.mount === cam.activeMount || l.mount === 'universal';
-    }
-    const mounts = new Set([camDef.mount, ...(camDef.adaptedMounts ?? [])]);
-    return mounts.has(l.mount) || l.mount === 'universal';
-  })];
+  const allCompat = [
+    ...compatLenses,
+    ...customLenses.filter((l) => !activeMount || l.mount === activeMount || l.mount === 'universal' || l.mount === 'integrated'),
+  ];
   // Deduplicate by id
   const compatDeduped = [...new Map(allCompat.map((l) => [l.id, l])).values()];
-  const grouped = groupByMount(sortFavoritesFirst(compatDeduped, favoriteLensIds));
+  // If the currently-selected lens is incompatible with the active mount (e.g.
+  // a B4 lens left over from an older project where FZ mode silently auto-
+  // applied the LA-FZB1), keep it visible in the dropdown so the user can see
+  // and fix it, but mark it as a mismatch.
+  const lensMismatch = !!(
+    lensDef && activeMount &&
+    lensDef.mount !== 'integrated' &&
+    lensDef.mount !== 'universal' &&
+    lensDef.mount !== activeMount
+  );
+  const dropdownLenses = lensMismatch && lensDef
+    ? [...compatDeduped, lensDef]
+    : compatDeduped;
+  const grouped = groupByMount(sortFavoritesFirst(dropdownLenses, favoriteLensIds));
   // Dedupe: when a built-in is shadowed (custom entry with the same id), only the
   // custom version appears in the dropdown — the built-in is hidden behind it.
   const customCameraIds = new Set(customCameras.map((c) => c.id));
@@ -142,6 +152,19 @@ function CameraCard({ camId }: { camId: string }) {
           title={adapterInfo.notes ?? 'Adapter automatically applied — see Mount section below for details.'}
         >
           ⚡ {adapterInfo.name}{adapterInfo.lightLossStops > 0 ? ` (−${adapterInfo.lightLossStops}T)` : ''}{adapterInfo.lightLossStops < 0 ? ` (+${Math.abs(adapterInfo.lightLossStops)}T gain)` : ''}{adapterInfo.cropSensor ? ` → ${adapterInfo.cropSensor.name}` : ''}
+        </div>
+      )}
+      {/* Lens-mount mismatch warning — the picked lens doesn't physically fit
+          the active mount. Calculations are computed against the body's bare
+          sensor (no auto-adapter), so the displayed values won't match reality
+          until the user either switches the Mount selector to the lens's mount
+          or picks a different lens. */}
+      {lensMismatch && lensDef && (
+        <div
+          className="text-xs mt-0.5 text-bc-red cursor-help"
+          title={`Switch the Mount selector below to "${lensDef.mount}" (if available) to fit the matching adapter / plate, or pick a lens that matches the current "${activeMount}" mount.`}
+        >
+          ⚠ Lens mount {lensDef.mount} ≠ active mount {activeMount} — incompatible
         </div>
       )}
       {/* Speed Booster toggle — only for EF lens on MFT camera */}
@@ -237,7 +260,11 @@ function CameraCard({ camId }: { camId: string }) {
                 if (e.target.value === '__new_custom__') { setShowNewCustomCam(true); return; }
                 const newCam = getCameraById(e.target.value, customCameras);
                 if (!newCam) return;
-                const lens = getCompatibleLenses(newCam.mount, newCam.adaptedMounts)[0];
+                // Pick a mount + first compatible lens. Falls back through the
+                // adaptedMounts list if the native mount has no compatible
+                // lenses (e.g. PMW-F5's FZ).
+                const pick = pickInitialMountAndLens(newCam.mount, newCam.adaptedMounts, customLenses);
+                const lens = pick.lens;
                 const supportsExtender = cam.extenderActive === 1 || !!lens?.extenderFactors?.includes(cam.extenderActive);
                 updateCamera(cam.id, {
                   cameraId: e.target.value,
@@ -245,12 +272,11 @@ function CameraCard({ camId }: { camId: string }) {
                   focalLength: lens?.focalLengthMin ?? cam.focalLength,
                   aperture: lens?.maxApertureWide ?? cam.aperture,
                   extenderActive: supportsExtender ? cam.extenderActive : 1,
-                  // Speedbooster only valid on MFT cameras with EF lenses
-                  useSpeedbooster: newCam.mount === 'MFT' && lens?.mount === 'EF' ? cam.useSpeedbooster : false,
+                  // Speedbooster only valid on MFT cameras with EF mount fitted
+                  useSpeedbooster: newCam.mount === 'MFT' && pick.mount === 'EF' ? cam.useSpeedbooster : false,
                   // Reset hardware sensor mode — each body has a different mode list
                   sensorModeIndex: newCam.sensorModes && newCam.sensorModes.length > 0 ? 0 : undefined,
-                  // Reset active mount to the new body's native mount
-                  activeMount: newCam.mount,
+                  activeMount: pick.mount,
                 });
               }}
             >
