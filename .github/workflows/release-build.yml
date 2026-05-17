@@ -21,6 +21,12 @@ on:
 permissions:
   contents: write
 
+# Opt the @v4-pinned actions in this file (softprops/action-gh-release, upload-artifact)
+# into the Node 24 runtime ahead of the June 2nd, 2026 forced cutover, so the
+# deprecation warning doesn't keep firing on every run.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   build:
     name: Build (${{ matrix.os }})
@@ -46,12 +52,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
