@@ -640,18 +640,28 @@ function FloorPlanOverlay({ plan }: { plan: BackgroundPlan }) {
   );
 }
 
-function PersonMesh({ x, z, height, label, objectType }: { x: number; z: number; height: number; label: string; objectType?: StageObjectType }) {
+function PersonMesh({ x, z, height, label, objectType, color }: { x: number; z: number; height: number; label: string; objectType?: StageObjectType; color?: string }) {
   const type = objectType ?? 'person';
-  const color = type === 'drums' ? '#ef4444' : type === 'keys' ? '#8b5cf6' : type === 'person-guitar' ? '#f97316' : type === 'mic-stand' ? '#6b7280' : '#f59e0b';
+  const defaultColor =
+    type === 'drums' ? '#ef4444' :
+    type === 'keys' ? '#8b5cf6' :
+    type === 'person-guitar' ? '#f97316' :
+    type === 'sitting-person' ? '#38bdf8' :
+    type === 'mic-stand' ? '#6b7280' :
+    type === 'chair' ? '#a16207' :
+    type === 'table' ? '#a16207' :
+    type === 'lectern' ? '#7c3aed' :
+    type === 'schneetiger' ? '#e0f2fe' :
+    '#f59e0b';
+  const col = color ?? defaultColor;
 
   return (
     <group position={[x, height / 2, z]}>
       {type === 'drums' ? (
         <>
-          {/* Drum kit - wider base, shorter */}
           <mesh position={[0, -height * 0.15, 0]}>
             <cylinderGeometry args={[0.5, 0.6, height * 0.5, 12]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.2} opacity={0.6} transparent />
+            <meshStandardMaterial color={col} emissive={col} emissiveIntensity={0.2} opacity={0.6} transparent />
           </mesh>
           <mesh position={[-0.3, height * 0.1, 0]}>
             <cylinderGeometry args={[0.2, 0.2, 0.05, 12]} />
@@ -664,12 +674,10 @@ function PersonMesh({ x, z, height, label, objectType }: { x: number; z: number;
         </>
       ) : type === 'keys' ? (
         <>
-          {/* Keyboard on stand */}
           <mesh position={[0, -height * 0.1, 0]}>
             <boxGeometry args={[1.2, height * 0.15, 0.4]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.2} opacity={0.6} transparent />
+            <meshStandardMaterial color={col} emissive={col} emissiveIntensity={0.2} opacity={0.6} transparent />
           </mesh>
-          {/* Stand legs */}
           <mesh position={[-0.4, -height * 0.35, 0]}>
             <cylinderGeometry args={[0.03, 0.03, height * 0.5, 6]} />
             <meshStandardMaterial color="#9ca3af" opacity={0.5} transparent />
@@ -679,17 +687,107 @@ function PersonMesh({ x, z, height, label, objectType }: { x: number; z: number;
             <meshStandardMaterial color="#9ca3af" opacity={0.5} transparent />
           </mesh>
         </>
-      ) : (
+      ) : type === 'chair' ? (
         <>
-          {/* Body */}
-          <mesh position={[0, -height * 0.1, 0]}>
-            <cylinderGeometry args={[0.15, 0.15, height * 0.65, 8]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.2} opacity={0.6} transparent />
+          <mesh position={[0, -height * 0.05, 0]}>
+            <boxGeometry args={[0.5, 0.05, 0.5]} />
+            <meshStandardMaterial color={col} opacity={0.75} transparent />
+          </mesh>
+          <mesh position={[0, height * 0.25, -0.22]}>
+            <boxGeometry args={[0.5, height * 0.55, 0.05]} />
+            <meshStandardMaterial color={col} opacity={0.75} transparent />
+          </mesh>
+          {[[-0.22, -0.22], [0.22, -0.22], [-0.22, 0.22], [0.22, 0.22]].map(([lx, lz], i) => (
+            <mesh key={i} position={[lx, -height * 0.3, lz]}>
+              <boxGeometry args={[0.04, height * 0.5, 0.04]} />
+              <meshStandardMaterial color="#57534e" />
+            </mesh>
+          ))}
+        </>
+      ) : type === 'table' ? (
+        <>
+          <mesh position={[0, height * 0.35, 0]}>
+            <boxGeometry args={[1.4, 0.06, 0.8]} />
+            <meshStandardMaterial color={col} opacity={0.8} transparent />
+          </mesh>
+          {[[-0.65, -0.35], [0.65, -0.35], [-0.65, 0.35], [0.65, 0.35]].map(([lx, lz], i) => (
+            <mesh key={i} position={[lx, -height * 0.07, lz]}>
+              <boxGeometry args={[0.06, height * 0.8, 0.06]} />
+              <meshStandardMaterial color="#57534e" />
+            </mesh>
+          ))}
+        </>
+      ) : type === 'lectern' ? (
+        <>
+          {/* Slanted top */}
+          <mesh position={[0, height * 0.42, 0]} rotation={[-0.3, 0, 0]}>
+            <boxGeometry args={[0.7, 0.05, 0.45]} />
+            <meshStandardMaterial color={col} opacity={0.85} transparent />
+          </mesh>
+          {/* Column */}
+          <mesh position={[0, -height * 0.05, 0]}>
+            <boxGeometry args={[0.35, height * 0.85, 0.35]} />
+            <meshStandardMaterial color={col} opacity={0.65} transparent />
+          </mesh>
+        </>
+      ) : type === 'sitting-person' ? (
+        <>
+          {/* Torso shorter, lower */}
+          <mesh position={[0, -height * 0.05, 0]}>
+            <cylinderGeometry args={[0.18, 0.18, height * 0.45, 8]} />
+            <meshStandardMaterial color={col} emissive={col} emissiveIntensity={0.2} opacity={0.6} transparent />
           </mesh>
           {/* Head */}
+          <mesh position={[0, height * 0.32, 0]}>
+            <sphereGeometry args={[0.15, 8, 8]} />
+            <meshStandardMaterial color={col} emissive={col} emissiveIntensity={0.2} opacity={0.6} transparent />
+          </mesh>
+          {/* Legs flat */}
+          <mesh position={[0, -height * 0.4, 0.25]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.1, 0.1, 0.5, 6]} />
+            <meshStandardMaterial color={col} opacity={0.5} transparent />
+          </mesh>
+        </>
+      ) : type === 'schneetiger' ? (
+        <>
+          {/* Body */}
+          <mesh position={[0, -height * 0.05, 0]}>
+            <boxGeometry args={[1.5, height * 0.25, 0.6]} />
+            <meshStandardMaterial color={col} opacity={0.95} transparent />
+          </mesh>
+          {/* Head */}
+          <mesh position={[0.85, height * 0.12, 0]}>
+            <sphereGeometry args={[0.22, 12, 12]} />
+            <meshStandardMaterial color={col} opacity={0.95} transparent />
+          </mesh>
+          {/* Tail */}
+          <mesh position={[-0.85, -0.05, 0]} rotation={[0, 0, 0.4]}>
+            <cylinderGeometry args={[0.04, 0.04, 0.8, 6]} />
+            <meshStandardMaterial color={col} />
+          </mesh>
+          {/* Legs */}
+          {[[-0.55, -0.22], [0.55, -0.22], [-0.55, 0.22], [0.55, 0.22]].map(([lx, lz], i) => (
+            <mesh key={i} position={[lx, -height * 0.35, lz]}>
+              <cylinderGeometry args={[0.08, 0.08, height * 0.4, 6]} />
+              <meshStandardMaterial color={col} />
+            </mesh>
+          ))}
+          {/* Stripe band hint */}
+          <mesh position={[0, height * 0.13, 0]}>
+            <boxGeometry args={[1.51, 0.03, 0.61]} />
+            <meshStandardMaterial color="#1f2937" opacity={0.6} transparent />
+          </mesh>
+        </>
+      ) : (
+        <>
+          {/* Generic person (or guitarist / mic-stand) */}
+          <mesh position={[0, -height * 0.1, 0]}>
+            <cylinderGeometry args={[0.15, 0.15, height * 0.65, 8]} />
+            <meshStandardMaterial color={col} emissive={col} emissiveIntensity={0.2} opacity={0.6} transparent />
+          </mesh>
           <mesh position={[0, height * 0.3, 0]}>
             <sphereGeometry args={[0.15, 8, 8]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.2} opacity={0.6} transparent />
+            <meshStandardMaterial color={col} emissive={col} emissiveIntensity={0.2} opacity={0.6} transparent />
           </mesh>
           {type === 'person-guitar' && (
             <mesh position={[0.2, -height * 0.05, 0.15]} rotation={[0, 0, 0.3]}>
@@ -705,8 +803,7 @@ function PersonMesh({ x, z, height, label, objectType }: { x: number; z: number;
           )}
         </>
       )}
-      {/* Label */}
-      <Text position={[0, height * 0.5, 0]} fontSize={0.22} color={color} anchorX="center"
+      <Text position={[0, height * 0.5, 0]} fontSize={0.22} color={col} anchorX="center"
         outlineWidth={0.015} outlineColor="#000000">
         {label} ({height}m)
       </Text>
@@ -836,7 +933,7 @@ export default function Venue3D() {
             z={p.y}
             onDragEnd={(nx, nz) => updatePerson(p.id, { x: nx, y: nz })}
           >
-            <PersonMesh x={0} z={0} height={p.height} label={p.label} objectType={p.objectType} />
+            <PersonMesh x={0} z={0} height={p.height} label={p.label} objectType={p.objectType} color={p.color} />
           </DraggableOnFloor>
         ))}
 

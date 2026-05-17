@@ -65,7 +65,44 @@ export interface Lens {
 }
 
 // ── Object type presets ──
-export type StageObjectType = 'person' | 'person-guitar' | 'drums' | 'keys' | 'mic-stand' | 'custom';
+export type StageObjectType =
+  | 'person' | 'person-guitar' | 'sitting-person' | 'drums' | 'keys'
+  | 'mic-stand' | 'chair' | 'table' | 'lectern' | 'schneetiger' | 'custom';
+
+// ── Camera mount / support type (physical rig) ──
+// Re-introduced from the older dev tree because each mount imposes a real
+// height range and (for jib / dolly) a track length used by the live track
+// slider. Without it Z is unconstrained, which is fine for typing but loses
+// the "this rig physically can't go that high" check.
+export type CameraMountType = 'tripod' | 'pedestal' | 'jib' | 'dolly' | 'gimbal' | 'handheld' | 'steadicam' | 'fixed';
+
+export const MOUNT_TYPE_LABELS: Record<CameraMountType, string> = {
+  tripod: 'Stativ',
+  pedestal: 'Studio Pedestal',
+  jib: 'Jib / Crane',
+  dolly: 'Dolly',
+  gimbal: 'Gimbal',
+  handheld: 'Handheld',
+  steadicam: 'Steadicam',
+  fixed: 'Fixed Mount',
+};
+
+/**
+ * Per-mount-type ergonomic ranges in metres. `pump` is the recommended single
+ * height-slider step (column pump for pedestal, jib lift step, etc.). `track`
+ * is the maximum live-motion travel along the rig (used by the dolly travel
+ * and jib swing sliders); undefined for static rigs.
+ */
+export const MOUNT_HEIGHT_RANGE: Record<CameraMountType, { min: number; max: number; pump: number; track?: number }> = {
+  tripod:    { min: 0.5, max: 2.2, pump: 0.05 },
+  pedestal:  { min: 0.6, max: 1.8, pump: 0.4 },
+  jib:       { min: 0.3, max: 6.0, pump: 1.5, track: 3.5 },
+  dolly:     { min: 0.4, max: 1.9, pump: 0.1, track: 6.0 },
+  gimbal:    { min: 0.8, max: 1.9, pump: 0.6 },
+  handheld:  { min: 1.0, max: 1.9, pump: 0.8 },
+  steadicam: { min: 0.3, max: 2.0, pump: 0.5 },
+  fixed:     { min: 0.0, max: 12.0, pump: 0.0 },
+};
 
 
 // ── Venue wall ──
@@ -86,6 +123,8 @@ export interface ReferencePerson {
   width: number; // metres (footprint width)
   label: string;
   objectType: StageObjectType;
+  /** Optional custom accent colour (hex). Falls back to type default. */
+  color?: string;
 }
 
 // ── Background floor plan ──
@@ -129,6 +168,38 @@ export interface VenueCamera {
    * `camera.adaptedMounts`.
    */
   activeMount?: string;
+  /**
+   * Physical rig the camera is mounted on. Determines the Z (height) slider
+   * range via `MOUNT_HEIGHT_RANGE` and whether the live track slider is shown
+   * (jib swing, dolly travel).
+   */
+  mountType?: CameraMountType;
+  /**
+   * Preview drag-direction overrides. Persisted per camera so an operator with
+   * a preferred swing direction keeps it across sessions.
+   * `invertPreviewH` flips the pan direction, `invertPreviewV` flips tilt.
+   */
+  invertPreviewH?: boolean;
+  invertPreviewV?: boolean;
+  /**
+   * Focus lock: when set, the preview keeps the focus distance pinned to the
+   * named ReferencePerson. Re-pans and re-tilts but the distance follows the
+   * subject automatically.
+   */
+  lockedPersonId?: string;
+  /**
+   * Distance lock: when set, the camera holds this exact subject distance while
+   * dollying — moving the camera adjusts pan/tilt to keep the same target in
+   * focus. Independent of `lockedPersonId` (a fixed distance, not a fixed
+   * subject).
+   */
+  lockedDistance?: number;
+  /**
+   * Live-motion offset for jib swing or dolly travel (metres along the rig's
+   * `track`). 0 = parked, positive = travelled. Renders as a coloured arc /
+   * line in the 2D plan so the operator can see the swept area.
+   */
+  trackOffset?: number;
   /**
    * Free-form notes for this camera placement (mount, operator, instructions,
    * shot list, etc.). Shown in the sidebar and included in PNG exports when set.

@@ -277,7 +277,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       return Math.max(-SAFE, Math.min(SAFE, v));
     }
 
-    const drawPerson = (cx: number, feetY: number, headY: number, dist: number, objectType?: StageObjectType, label?: string) => {
+    const drawPerson = (cx: number, feetY: number, headY: number, dist: number, objectType?: StageObjectType, label?: string, customColor?: string) => {
       const pxH = Math.abs(headY - feetY);
       if (pxH < 1) return;
       const type = objectType ?? 'person';
@@ -353,6 +353,97 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         ctx.beginPath();
         ctx.ellipse(cx, headY + pxH * 0.05, pxH * 0.04, pxH * 0.06, 0, 0, Math.PI * 2);
         ctx.fill(); ctx.stroke();
+      } else if (type === 'chair') {
+        const c = customColor ?? '#a16207';
+        const seatW = pxH * 0.6;
+        const seatY = feetY - pxH * 0.55;
+        const backH = pxH * 0.65;
+        // Legs
+        ctx.strokeStyle = '#57534e'; ctx.lineWidth = Math.max(1, pxH * 0.04);
+        ctx.beginPath(); ctx.moveTo(cx - seatW / 2, seatY); ctx.lineTo(cx - seatW / 2, feetY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + seatW / 2, seatY); ctx.lineTo(cx + seatW / 2, feetY); ctx.stroke();
+        // Seat
+        ctx.fillStyle = c + 'aa'; ctx.strokeStyle = c; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.rect(cx - seatW / 2, seatY, seatW, pxH * 0.08); ctx.fill(); ctx.stroke();
+        // Backrest
+        ctx.beginPath(); ctx.rect(cx - seatW * 0.45, seatY - backH, seatW * 0.9, backH); ctx.fill(); ctx.stroke();
+      } else if (type === 'table') {
+        const c = customColor ?? '#a16207';
+        const topW = pxH * 1.4;
+        const topY = feetY - pxH * 0.75;
+        ctx.strokeStyle = '#57534e'; ctx.lineWidth = Math.max(1, pxH * 0.05);
+        ctx.beginPath(); ctx.moveTo(cx - topW / 2 + pxH * 0.06, topY + pxH * 0.04); ctx.lineTo(cx - topW / 2 + pxH * 0.06, feetY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + topW / 2 - pxH * 0.06, topY + pxH * 0.04); ctx.lineTo(cx + topW / 2 - pxH * 0.06, feetY); ctx.stroke();
+        ctx.fillStyle = c + 'cc'; ctx.strokeStyle = c; ctx.lineWidth = 1.3;
+        ctx.beginPath(); ctx.rect(cx - topW / 2, topY, topW, pxH * 0.08); ctx.fill(); ctx.stroke();
+      } else if (type === 'lectern') {
+        const c = customColor ?? '#7c3aed';
+        const w = pxH * 0.55;
+        ctx.fillStyle = c + 'bb'; ctx.strokeStyle = c; ctx.lineWidth = 1.3;
+        ctx.beginPath(); ctx.rect(cx - w / 2, feetY - pxH * 0.85, w, pxH * 0.85); ctx.fill(); ctx.stroke();
+        // Slanted top
+        ctx.fillStyle = '#1f2937cc'; ctx.strokeStyle = '#475569';
+        ctx.beginPath();
+        ctx.moveTo(cx - w * 0.6, feetY - pxH * 0.95);
+        ctx.lineTo(cx + w * 0.6, feetY - pxH * 0.8);
+        ctx.lineTo(cx + w * 0.6, feetY - pxH * 0.72);
+        ctx.lineTo(cx - w * 0.6, feetY - pxH * 0.87);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+      } else if (type === 'sitting-person') {
+        const c = customColor ?? '#38bdf8';
+        const pxW = pxH * 0.3;
+        const headR = pxH * 0.11;
+        // Stool hint
+        ctx.strokeStyle = '#57534e'; ctx.lineWidth = Math.max(1, pxH * 0.03);
+        ctx.beginPath(); ctx.moveTo(cx - pxW * 0.6, feetY - pxH * 0.05); ctx.lineTo(cx - pxW * 0.6, feetY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + pxW * 0.6, feetY - pxH * 0.05); ctx.lineTo(cx + pxW * 0.6, feetY); ctx.stroke();
+        // Torso (short)
+        ctx.fillStyle = c + '55'; ctx.strokeStyle = c; ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(cx - pxW * 0.55, feetY - pxH * 0.5);
+        ctx.lineTo(cx + pxW * 0.55, feetY - pxH * 0.5);
+        ctx.lineTo(cx + pxW * 0.4, feetY - pxH * 0.05);
+        ctx.lineTo(cx - pxW * 0.4, feetY - pxH * 0.05);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        // Head
+        ctx.fillStyle = '#d4a57488'; ctx.strokeStyle = c;
+        ctx.beginPath(); ctx.arc(cx, headY + headR + pxH * 0.05, headR, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        // Thighs horizontal
+        ctx.strokeStyle = c + '88'; ctx.lineWidth = Math.max(1, pxH * 0.04);
+        ctx.beginPath(); ctx.moveTo(cx - pxW * 0.3, feetY - pxH * 0.1); ctx.lineTo(cx + pxW * 0.8, feetY - pxH * 0.1); ctx.stroke();
+      } else if (type === 'schneetiger') {
+        const c = customColor ?? '#e0f2fe';
+        const bodyW = pxH * 1.3;
+        const bodyH = pxH * 0.5;
+        const bodyY = feetY - bodyH * 1.3;
+        // Legs
+        ctx.strokeStyle = c; ctx.lineWidth = Math.max(1.5, pxH * 0.06);
+        ctx.beginPath(); ctx.moveTo(cx - bodyW * 0.35, bodyY + bodyH); ctx.lineTo(cx - bodyW * 0.35, feetY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + bodyW * 0.35, bodyY + bodyH); ctx.lineTo(cx + bodyW * 0.35, feetY); ctx.stroke();
+        // Body
+        ctx.fillStyle = c + 'cc'; ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        if (pxH > 10) ctx.roundRect(cx - bodyW / 2, bodyY, bodyW, bodyH, bodyH * 0.4);
+        else ctx.rect(cx - bodyW / 2, bodyY, bodyW, bodyH);
+        ctx.fill(); ctx.stroke();
+        // Stripes
+        ctx.strokeStyle = '#1f2937aa'; ctx.lineWidth = Math.max(1, pxH * 0.02);
+        for (let i = 1; i < 5; i++) {
+          const sx = cx - bodyW / 2 + (bodyW * i) / 5;
+          ctx.beginPath(); ctx.moveTo(sx, bodyY + bodyH * 0.1); ctx.lineTo(sx + pxH * 0.04, bodyY + bodyH * 0.9); ctx.stroke();
+        }
+        // Head
+        ctx.fillStyle = c + 'dd'; ctx.strokeStyle = '#334155';
+        const hr = pxH * 0.18;
+        ctx.beginPath(); ctx.arc(cx + bodyW * 0.45, bodyY + bodyH * 0.3, hr, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        // Ears
+        ctx.fillStyle = c;
+        ctx.beginPath(); ctx.moveTo(cx + bodyW * 0.45 - hr * 0.5, bodyY + bodyH * 0.3 - hr); ctx.lineTo(cx + bodyW * 0.45 - hr * 0.2, bodyY + bodyH * 0.3 - hr * 1.5); ctx.lineTo(cx + bodyW * 0.45, bodyY + bodyH * 0.3 - hr); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(cx + bodyW * 0.45 + hr * 0.5, bodyY + bodyH * 0.3 - hr); ctx.lineTo(cx + bodyW * 0.45 + hr * 0.2, bodyY + bodyH * 0.3 - hr * 1.5); ctx.lineTo(cx + bodyW * 0.45, bodyY + bodyH * 0.3 - hr); ctx.closePath(); ctx.fill();
+        // Tail
+        ctx.strokeStyle = c; ctx.lineWidth = Math.max(1.5, pxH * 0.05);
+        ctx.beginPath(); ctx.moveTo(cx - bodyW * 0.5, bodyY + bodyH * 0.3); ctx.quadraticCurveTo(cx - bodyW * 0.85, bodyY, cx - bodyW * 0.75, bodyY - bodyH * 0.4); ctx.stroke();
       } else {
         // Person (or person-guitar) - realistic silhouette
         const pxW = pxH * 0.28;
@@ -363,8 +454,8 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         const waistY = feetY - pxH * 0.42;
         const hipW = pxW * 0.4;
 
-        const bodyColor = type === 'person-guitar' ? '#f97316' : '#22c55e';
-        const bodyFill = type === 'person-guitar' ? '#f9731644' : '#22c55e44';
+        const bodyColor = customColor ?? (type === 'person-guitar' ? '#f97316' : '#22c55e');
+        const bodyFill = bodyColor + '44';
         const skinColor = '#d4a574';
 
         // Head (skin-colored circle)
@@ -445,7 +536,18 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       // Label
       if (label && feetY > 0 && feetY < H - 5 && cx > -50 && cx < W + 50 && dist > 0) {
         const fontSize = Math.max(7, Math.min(11, 120 / dist));
-        const labelColor = type === 'drums' ? '#ef4444' : type === 'keys' ? '#8b5cf6' : type === 'person-guitar' ? '#f97316' : type === 'mic-stand' ? '#9ca3af' : '#22c55e';
+        const labelColor = customColor ?? (
+          type === 'drums' ? '#ef4444' :
+          type === 'keys' ? '#8b5cf6' :
+          type === 'person-guitar' ? '#f97316' :
+          type === 'mic-stand' ? '#9ca3af' :
+          type === 'chair' ? '#a16207' :
+          type === 'table' ? '#a16207' :
+          type === 'lectern' ? '#7c3aed' :
+          type === 'sitting-person' ? '#38bdf8' :
+          type === 'schneetiger' ? '#e0f2fe' :
+          '#22c55e'
+        );
         ctx.fillStyle = labelColor;
         ctx.font = `${fontSize}px monospace`;
         ctx.textAlign = 'center';
@@ -493,7 +595,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         dist: feetProj.dist,
       });
 
-      drawPerson(feetSx, feetSy, headSy, feetProj.dist, person.objectType, `${person.label} (${person.height.toFixed(1)}m)`);
+      drawPerson(feetSx, feetSy, headSy, feetProj.dist, person.objectType, `${person.label} (${person.height.toFixed(1)}m)`, person.color);
     });
 
     ctx.restore();

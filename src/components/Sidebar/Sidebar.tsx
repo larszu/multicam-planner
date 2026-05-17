@@ -1,4 +1,4 @@
-import { useStore } from '../../store/useStore';
+import { useStore, OBJECT_PRESETS } from '../../store/useStore';
 import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor } from '../../data/cameras';
 import { LENSES, getLensById, getCompatibleLenses, pickInitialMountAndLens } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
@@ -1001,27 +1001,45 @@ export default function Sidebar() {
         </button>
         {personsOpen && (
           <div className="mt-2 space-y-2 text-xs">
-            {persons.map((p) => (
-              <div key={p.id} className="flex items-center gap-2 bg-bc-dark rounded p-1.5 border border-bc-border">
-                <span className="text-gray-500 text-[10px] w-6">{
-                  p.objectType === 'drums' ? '🥁' :
-                  p.objectType === 'keys' ? '🎹' :
-                  p.objectType === 'person-guitar' ? '🎸' :
-                  p.objectType === 'mic-stand' ? '🎤' : '👤'
-                }</span>
-                <input className="bg-transparent text-white text-xs w-16 outline-none" value={p.label}
-                  onChange={(e) => updatePerson(p.id, { label: e.target.value })} />
-                <span className="text-gray-500">{p.height}m</span>
-                <span className="text-gray-500">({p.x.toFixed(1)}, {p.y.toFixed(1)})</span>
-                <button onClick={() => removePerson(p.id)} className="ml-auto p-0.5 hover:text-bc-red"><FiTrash2 size={11} /></button>
-              </div>
-            ))}
+            {persons.map((p) => {
+              const icon =
+                p.objectType === 'drums' ? '🥁' :
+                p.objectType === 'keys' ? '🎹' :
+                p.objectType === 'person-guitar' ? '🎸' :
+                p.objectType === 'mic-stand' ? '🎤' :
+                p.objectType === 'sitting-person' ? '🪑' :
+                p.objectType === 'chair' ? '💺' :
+                p.objectType === 'table' ? '🪑' :
+                p.objectType === 'lectern' ? '🎙️' :
+                p.objectType === 'schneetiger' ? '🐅' :
+                p.objectType === 'custom' ? '◇' : '👤';
+              return (
+                <div key={p.id} className="flex items-center gap-2 bg-bc-dark rounded p-1.5 border border-bc-border">
+                  <span className="text-gray-500 text-[10px] w-6 text-center">{icon}</span>
+                  <input className="bg-transparent text-white text-xs w-16 outline-none" value={p.label}
+                    onChange={(e) => updatePerson(p.id, { label: e.target.value })} />
+                  <span className="text-gray-500">{p.height}m</span>
+                  <input
+                    type="color"
+                    className="w-5 h-5 rounded border border-bc-border cursor-pointer bg-transparent"
+                    value={p.color ?? (OBJECT_PRESETS[p.objectType]?.color ?? '#f59e0b')}
+                    onChange={(e) => updatePerson(p.id, { color: e.target.value })}
+                    title="Custom accent colour"
+                  />
+                  <span className="text-gray-500">({p.x.toFixed(1)}, {p.y.toFixed(1)})</span>
+                  <button onClick={() => removePerson(p.id)} className="ml-auto p-0.5 hover:text-bc-red"><FiTrash2 size={11} /></button>
+                </div>
+              );
+            })}
             <div className="grid grid-cols-3 gap-1">
               <button onClick={() => addPerson()} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
                 <FiUser size={10} /> Person
               </button>
               <button onClick={() => addStageObject('person-guitar')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
                 🎸 Guitarist
+              </button>
+              <button onClick={() => addStageObject('sitting-person')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                🪑 Seated
               </button>
               <button onClick={() => addStageObject('drums')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
                 🥁 Drums
@@ -1031,6 +1049,18 @@ export default function Sidebar() {
               </button>
               <button onClick={() => addStageObject('mic-stand')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
                 🎤 Mic Stand
+              </button>
+              <button onClick={() => addStageObject('chair')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                💺 Chair
+              </button>
+              <button onClick={() => addStageObject('table')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                🟫 Table
+              </button>
+              <button onClick={() => addStageObject('lectern')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                🎙️ Lectern
+              </button>
+              <button onClick={() => addStageObject('schneetiger')} className="col-span-3 flex items-center justify-center gap-1 px-1 py-1 rounded bg-sky-500/20 text-sky-300 text-[10px] hover:bg-sky-500/30">
+                🐅 Schneetiger
               </button>
             </div>
           </div>
