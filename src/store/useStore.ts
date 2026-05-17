@@ -4,7 +4,10 @@ import { CAMERAS, CAMERA_COLORS } from '../data/cameras';
 import { LENSES } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
 
-export const APP_VERSION = '0.4.0';
+// Injected by Vite from package.json. In a release build that came through
+// the GitHub Actions workflow this matches the git release tag exactly,
+// because the workflow runs `npm version <tag>` before invoking the build.
+export const APP_VERSION = __APP_VERSION__;
 
 interface AppState {
   // Venue
