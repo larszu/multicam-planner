@@ -18,15 +18,25 @@ export const CAMERAS: Camera[] = [
   { id: 'sony-hdc-3500', manufacturer: 'Sony', model: 'HDC-3500', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
   { id: 'sony-hdc-5500', manufacturer: 'Sony', model: 'HDC-5500', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
   { id: 'sony-hdc-f5500', manufacturer: 'Sony', model: 'HDC-F5500', sensor: SENSORS.S35, mount: 'PL', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'Super 35mm broadcast camera' },
-  { id: 'sony-venice', manufacturer: 'Sony', model: 'VENICE', sensor: SENSORS.FF, mount: 'PL', adaptedMounts: ['E'], resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'Full-frame CineAlta, PL native, E-mount via supplied adapter' },
+  { id: 'sony-venice', manufacturer: 'Sony', model: 'VENICE', sensor: SENSORS.FF, mount: 'PL', adaptedMounts: ['E'], resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'Full-frame CineAlta, PL native, E-mount via supplied adapter', mountAdapters: {
+    E: { name: 'Sony VENICE E-mount Adapter', lightLossStops: 0, notes: 'Sony ships VENICE with both a PL mount block and an E-mount block; swapping between them is a mechanical change with no optical relay and no light loss. The same full-frame sensor area is used.' },
+  } },
   { id: 'sony-venice2', manufacturer: 'Sony', model: 'VENICE 2', sensor: { name: 'FF 8.6K (36.2×24.1)', widthMm: 36.2, heightMm: 24.1, cropFactor: 0.99 }, mount: 'PL', adaptedMounts: ['E'], resolutions: ['8.6K', '6K', '4K', 'HD'], type: 'cinema', notes: 'Dual base ISO 800/3200, PL native, E-mount adapter', sensorModes: [
     { name: 'FF 8.6K (36.2×24.1)', widthMm: 36.2, heightMm: 24.1, cropFactor: 0.99 },
     { name: 'FF 6K 3:2 (35.9×24.0)', widthMm: 35.9, heightMm: 24.0, cropFactor: 1.0 },
     { name: 'S35 5.8K (24.8×13.1)', widthMm: 24.8, heightMm: 13.1, cropFactor: 1.46 },
     { name: 'S35 4K 4:3 (19.0×14.2)', widthMm: 19.0, heightMm: 14.2, cropFactor: 1.89 },
-  ] },
-  { id: 'sony-pmw-f5', manufacturer: 'Sony', model: 'PMW-F5', sensor: SENSORS.S35, mount: 'FZ', adaptedMounts: ['PL', 'B4'], resolutions: ['4K', '2K', 'HD'], type: 'cinema', notes: 'FZ-mount native, PL via adapter, B4 via Sony LA-FZB1 (LAFZ-B1)' },
-  { id: 'sony-pmw-f55', manufacturer: 'Sony', model: 'PMW-F55', sensor: SENSORS.S35, mount: 'FZ', adaptedMounts: ['PL', 'B4'], resolutions: ['4K', '2K', 'HD'], type: 'cinema', notes: 'FZ-mount native, PL via adapter, B4 via Sony LA-FZB1 (LAFZ-B1) with crop to 2/3" area' },
+  ], mountAdapters: {
+    E: { name: 'Sony VENICE 2 E-mount Adapter', lightLossStops: 0, notes: 'Mechanical mount-block swap, no optical relay. The full sensor area stays available — choose the desired window via the Sensor Mode dropdown.' },
+  } },
+  { id: 'sony-pmw-f5', manufacturer: 'Sony', model: 'PMW-F5', sensor: SENSORS.S35, mount: 'FZ', adaptedMounts: ['PL', 'B4'], resolutions: ['4K', '2K', 'HD'], type: 'cinema', notes: 'FZ-mount native, PL via adapter, B4 via Sony LA-FZB1 (LAFZ-B1)', mountAdapters: {
+    PL: { name: 'Sony VCT-FZ55B PL Adapter', lightLossStops: 0, notes: 'Mechanical PL-to-FZ adapter. No optical relay, no light loss; the full Super-35 sensor is used.' },
+    B4: { name: 'Sony LA-FZB1 / LA-FZB2', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD, notes: 'B4 mount adapter with internal 2× relay optics. Crops the Super-35 sensor down to the 2/3" image circle the B4 lens projects, and costs ~1 T-stop of light through the relay glass.' },
+  } },
+  { id: 'sony-pmw-f55', manufacturer: 'Sony', model: 'PMW-F55', sensor: SENSORS.S35, mount: 'FZ', adaptedMounts: ['PL', 'B4'], resolutions: ['4K', '2K', 'HD'], type: 'cinema', notes: 'FZ-mount native, PL via adapter, B4 via Sony LA-FZB1 (LAFZ-B1) with crop to 2/3" area', mountAdapters: {
+    PL: { name: 'Sony VCT-FZ55B PL Adapter', lightLossStops: 0, notes: 'Mechanical PL-to-FZ adapter. No optical relay, no light loss; the full Super-35 sensor is used.' },
+    B4: { name: 'Sony LA-FZB1 / LA-FZB2', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD, notes: 'B4 mount adapter with internal 2× relay optics. Crops the Super-35 sensor down to the 2/3" image circle the B4 lens projects, and costs ~1 T-stop of light through the relay glass.' },
+  } },
   { id: 'sony-fx6', manufacturer: 'Sony', model: 'FX6', sensor: SENSORS.FF, mount: 'E', resolutions: ['4K', 'HD'], type: 'cinema' },
   { id: 'sony-fx3', manufacturer: 'Sony', model: 'FX3', sensor: SENSORS.FF, mount: 'E', resolutions: ['4K', 'HD'], type: 'cinema' },
   { id: 'sony-fx9', manufacturer: 'Sony', model: 'PXW-FX9', sensor: SENSORS.FF, mount: 'E', resolutions: ['6K', '4K', 'HD'], type: 'cinema', sensorModes: [
@@ -69,25 +79,39 @@ export const CAMERAS: Camera[] = [
   { id: 'bmd-ursa-broadcast-g2', manufacturer: 'Blackmagic', model: 'URSA Broadcast G2', sensor: { name: 'BMD 6K (23.1×12.99)', widthMm: 23.1, heightMm: 12.99, cropFactor: 1.56 }, mount: 'B4', adaptedMounts: ['EF', 'PL'], resolutions: ['6K', '4K', 'HD'], type: 'broadcast', notes: 'B4 native, EF/PL via adapter. Broadcast camera with cinema sensor.', sensorModes: [
     { name: '6K Full (23.1×12.99)', widthMm: 23.1, heightMm: 12.99, cropFactor: 1.56 },
     { name: '4K UHD S16 crop (12.4×6.97)', widthMm: 12.4, heightMm: 6.97, cropFactor: 2.91 },
-    { name: '2/3" B4 crop (9.6×5.4)', widthMm: 9.6, heightMm: 5.4, cropFactor: 3.93 },
-  ] },
+  ], mountAdapters: {
+    B4: { name: 'Built-in B4 relay (2/3" mount plate)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD, notes: 'The URSA Broadcast G2\'s B4 mount has internal relay optics that crop the 6K sensor to a 2/3" image area to match the B4 lens\'s smaller image circle. Costs ~1 T-stop. Swap to the EF or PL plate to use the full Super-35-ish sensor.' },
+    EF: { name: 'URSA Mini EF Mount Plate', lightLossStops: 0, notes: 'Removes the B4 relay so the full 6K image area is available. EF lenses sit native — no light loss, no extra crop.' },
+    PL: { name: 'URSA Mini PL Mount Plate', lightLossStops: 0, notes: 'Removes the B4 relay so the full 6K image area is available. PL cine lenses sit native — no light loss, no extra crop.' },
+  } },
   { id: 'bmd-ursa-12k', manufacturer: 'Blackmagic', model: 'URSA Mini Pro 12K', sensor: SENSORS.S35, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['12K', '8K', '4K'], type: 'cinema', sensorModes: [
     { name: '12K Full S35 (27.03×14.25)', widthMm: 27.03, heightMm: 14.25, cropFactor: 1.33 },
     { name: '12K 8:1 Open Gate (27.03×19.04)', widthMm: 27.03, heightMm: 19.04, cropFactor: 1.30 },
     { name: '8K S16 crop (18.0×9.5)', widthMm: 18.0, heightMm: 9.5, cropFactor: 2.0 },
     { name: '6K S16 crop (13.5×7.13)', widthMm: 13.5, heightMm: 7.13, cropFactor: 2.66 },
-  ] },
-  { id: 'bmd-ursa-g2', manufacturer: 'Blackmagic', model: 'URSA Mini Pro G2', sensor: SENSORS.S35, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['4.6K', '4K', 'HD'], type: 'cinema' },
-  { id: 'bmd-ursa-46k', manufacturer: 'Blackmagic', model: 'URSA Mini Pro 4.6K', sensor: SENSORS.S35, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['4.6K', '4K', 'HD'], type: 'cinema' },
+  ], mountAdapters: {
+    EF: { name: 'URSA Mini EF Mount Plate', lightLossStops: 0, notes: 'Mechanical swap of the PL block for the EF block — no optical relay, no light loss. The same full sensor area is available; choose the desired crop via the Sensor Mode dropdown.' },
+  } },
+  { id: 'bmd-ursa-g2', manufacturer: 'Blackmagic', model: 'URSA Mini Pro G2', sensor: SENSORS.S35, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['4.6K', '4K', 'HD'], type: 'cinema', mountAdapters: {
+    EF: { name: 'URSA Mini EF Mount Plate', lightLossStops: 0, notes: 'Passive mechanical mount-plate swap. Full Super-35 sensor area available either way.' },
+  } },
+  { id: 'bmd-ursa-46k', manufacturer: 'Blackmagic', model: 'URSA Mini Pro 4.6K', sensor: SENSORS.S35, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['4.6K', '4K', 'HD'], type: 'cinema', mountAdapters: {
+    EF: { name: 'URSA Mini EF Mount Plate', lightLossStops: 0, notes: 'Passive mechanical mount-plate swap. Full Super-35 sensor area available either way.' },
+  } },
   { id: 'bmd-pocket6kpro', manufacturer: 'Blackmagic', model: 'Pocket Cinema 6K Pro', sensor: SENSORS.S35, mount: 'EF', resolutions: ['6K', '4K', 'HD'], type: 'cinema' },
   { id: 'bmd-pocket6k', manufacturer: 'Blackmagic', model: 'Pocket Cinema 6K G2', sensor: SENSORS.S35, mount: 'EF', resolutions: ['6K', '4K', 'HD'], type: 'cinema' },
   { id: 'bmd-pocket4k', manufacturer: 'Blackmagic', model: 'Pocket Cinema 4K', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'cinema' },
   { id: 'bmd-cinema-camera-6k', manufacturer: 'Blackmagic', model: 'Cinema Camera 6K', sensor: SENSORS.FF, mount: 'L', resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'Full-frame, Leica L-mount' },
-  { id: 'bmd-pyxis-6k', manufacturer: 'Blackmagic', model: 'PYXIS 6K', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['PL', 'EF'], resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'Full-frame box-style, L-mount native' },
+  { id: 'bmd-pyxis-6k', manufacturer: 'Blackmagic', model: 'PYXIS 6K', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['PL', 'EF'], resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'Full-frame box-style, L-mount native', mountAdapters: {
+    PL: { name: 'PYXIS PL Mount (interchangeable)', lightLossStops: 0, notes: 'Passive PL mount block for the PYXIS 6K. Mechanical change only — full-frame 6K sensor area is used either way.' },
+    EF: { name: 'PYXIS EF Mount (interchangeable)', lightLossStops: 0, notes: 'Passive EF mount block for the PYXIS 6K. Electronic aperture control is supported. No optical penalty.' },
+  } },
   { id: 'bmd-studio4kplus', manufacturer: 'Blackmagic', model: 'Studio Camera 4K Plus', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'broadcast' },
   { id: 'bmd-studio4kpro', manufacturer: 'Blackmagic', model: 'Studio Camera 4K Pro G2', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'broadcast' },
   { id: 'bmd-studio6kpro', manufacturer: 'Blackmagic', model: 'Studio Camera 6K Pro', sensor: SENSORS.S35, mount: 'EF', resolutions: ['6K', '4K', 'HD'], type: 'broadcast' },
-  { id: 'bmd-micro-studio-4k-g2', manufacturer: 'Blackmagic', model: 'Micro Studio Camera 4K G2', sensor: SENSORS.MFT, mount: 'MFT', adaptedMounts: ['EF'], resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'Micro form factor, MFT native, EF via adapter or EF Speedbooster' },
+  { id: 'bmd-micro-studio-4k-g2', manufacturer: 'Blackmagic', model: 'Micro Studio Camera 4K G2', sensor: SENSORS.MFT, mount: 'MFT', adaptedMounts: ['EF'], resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'Micro form factor, MFT native, EF via adapter or EF Speedbooster', mountAdapters: {
+    EF: { name: 'EF → MFT Adapter (passive)', lightLossStops: 0, notes: 'Standard EF-to-MFT adapter — purely mechanical, no glass, manual aperture control only. For light gain + wider FOV, enable Speed Booster instead.' },
+  } },
 
   // ── Grass Valley ──
   { id: 'gv-ldx-100', manufacturer: 'Grass Valley', model: 'LDX 100', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
@@ -125,9 +149,14 @@ export function getCamerasByType(type: Camera['type']): Camera[] {
 
 /**
  * Determine if an adapter is needed and its effects.
- * B4 lenses on non-B4 cameras → relay optics, crop to 2/3", ~1 stop loss.
- * PL/EF → FZ/E are simple spacers with no optical penalty.
- * EF → MFT with speedbooster: 0.71x focal reducer, +1 stop gain.
+ *
+ * Priority:
+ *   1. Body-defined adapter for the active mount (`camera.mountAdapters[active]`).
+ *      Covers cases like the Sony PMW-F5 with the LA-FZB1 fitted, or the URSA
+ *      Broadcast G2's built-in B4 relay — even though `lens.mount === activeMount`
+ *      there's still real optical impact from the mount plate itself.
+ *   2. Lens-based adapter for a lens whose mount differs from the active mount
+ *      (e.g. a B4 lens on a Sony FX6 in E-mount mode → B4→E relay).
  *
  * `activeMount` overrides the camera's native mount for the purpose of adapter
  * detection. This models swappable-mount bodies like the URSA Broadcast G2 —
@@ -136,48 +165,59 @@ export function getCamerasByType(type: Camera['type']): Camera[] {
  */
 export function getAdapterInfo(camera: Camera, lens: Lens, useSpeedbooster = false, activeMount?: string): AdapterInfo | null {
   const effectiveMount = activeMount ?? camera.mount;
-  if (lens.mount === effectiveMount) return null; // native
-  if (lens.mount === 'integrated') return null;
 
-  // B4 → any larger-sensor camera: relay optics needed, crop to 2/3"
+  // 1. Speedbooster takes precedence — it's a real EF→MFT relay regardless of
+  // any per-mount info.
+  if (useSpeedbooster && lens.mount === 'EF' && effectiveMount === 'MFT') {
+    return {
+      name: 'Metabones EF→MFT Speed Booster 0.71×',
+      lightLossStops: -1.0,
+      cropSensor: { name: 'MFT + Speed Booster (S35 equiv)', widthMm: 17.3 / 0.71, heightMm: 13 / 0.71, cropFactor: 2.0 * 0.71 },
+      notes: 'Focal reducer: widens FOV by 0.71×, gains ~1 T-stop of light, and the effective image area approaches Super-35.',
+    };
+  }
+
+  // 2. Body-defined mount adapter — the LA-FZB1 on PMW-F5/F55 in B4 mode,
+  // URSA Broadcast G2 with the B4 mount plate (built-in relay), URSA Mini Pro
+  // with its EF plate, VENICE with the supplied E-mount, etc.
+  const mountAdapter = camera.mountAdapters?.[effectiveMount];
+
+  if (lens.mount === effectiveMount) return mountAdapter ?? null;
+  if (lens.mount === 'integrated') return mountAdapter ?? null;
+
+  // B4 → any larger-sensor camera: relay optics needed, crop to 2/3", ~1T loss.
+  // Real-world products: Sony LA-FZB1/FZB2 (for FZ-mount Sony cinema), MTF
+  // Services B4→PL/EF, Abakus B4→E-mount, IBE Optics B4→PL, etc. All work the
+  // same way — relay group, B4 lens projects a 2/3" image circle onto the
+  // sensor with ~1 T-stop loss.
   if (lens.mount === 'B4') {
-    if (effectiveMount === 'FZ') return { name: 'Sony LA-FZB1/FZB2', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
-    if (effectiveMount === 'E') return { name: 'B4 → E-mount Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
-    if (effectiveMount === 'PL') return { name: 'B4 → PL Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
-    if (effectiveMount === 'EF') return { name: 'B4 → EF Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
-    return null;
+    if (effectiveMount === 'FZ') return { name: 'Sony LA-FZB1/FZB2', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD, notes: 'Relay adapter with internal 2× optics. B4 lens projects a 2/3" image circle, crops the FZ Super-35 sensor to the 2/3" area, ~1 T-stop loss.' };
+    if (effectiveMount === 'E') return { name: 'B4 → E-mount Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD, notes: 'Generic B4→E relay adapter (e.g. Abakus 1097, MTF Services). Crops to 2/3" image area, ~1 T-stop loss through the relay glass.' };
+    if (effectiveMount === 'PL') return { name: 'B4 → PL Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD, notes: 'Relay adapter (e.g. IBE Optics B4→PL, MTF Services). 2/3" effective image area, ~1 T-stop loss.' };
+    if (effectiveMount === 'EF') return { name: 'B4 → EF Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD, notes: 'Relay adapter for EF-mount bodies. Crops to 2/3" area, ~1 T-stop loss.' };
+    return mountAdapter ?? null;
   }
 
   // PL → shorter flange mounts (spacer adapters, no optics)
   if (lens.mount === 'PL') {
-    if (effectiveMount === 'FZ') return { name: 'PL → FZ Adapter', lightLossStops: 0 };
-    if (effectiveMount === 'E') return { name: 'PL → E-mount Adapter', lightLossStops: 0 };
-    if (effectiveMount === 'RF') return { name: 'PL → RF Adapter', lightLossStops: 0 };
-    return null;
+    if (effectiveMount === 'FZ') return { name: 'PL → FZ Adapter', lightLossStops: 0, notes: 'Passive mechanical spacer. PL has a longer flange distance than FZ, so an empty barrel keeps the lens at the right distance. No optical penalty.' };
+    if (effectiveMount === 'E') return { name: 'PL → E-mount Adapter', lightLossStops: 0, notes: 'Passive mechanical adapter (e.g. Metabones PL→E, Wooden Camera, IBE Optics). PL flange distance is longer than E, so an empty barrel works without any glass.' };
+    if (effectiveMount === 'RF') return { name: 'PL → RF Adapter', lightLossStops: 0, notes: 'Passive mechanical PL-to-RF adapter. No optical penalty; full sensor area available.' };
+    return mountAdapter ?? null;
   }
 
-  // EF → shorter flange mounts
+  // EF → shorter flange mounts (Speedbooster case is handled at the top).
   if (lens.mount === 'EF') {
-    if (effectiveMount === 'E') return { name: 'EF → E-mount Adapter', lightLossStops: 0 };
-    if (effectiveMount === 'RF') return { name: 'Canon EF → RF Adapter', lightLossStops: 0 };
-    if (effectiveMount === 'MFT') {
-      if (useSpeedbooster) {
-        // Metabones Speed Booster Ultra 0.71x: widens FOV by 0.71x, gains ~1 stop
-        return {
-          name: 'Metabones EF→MFT Speed Booster 0.71×',
-          lightLossStops: -1.0, // gain
-          cropSensor: { name: 'MFT + Speed Booster (S35 equiv)', widthMm: 17.3 / 0.71, heightMm: 13 / 0.71, cropFactor: 2.0 * 0.71 },
-        };
-      }
-      return { name: 'EF → MFT Adapter', lightLossStops: 0 };
-    }
-    return null;
+    if (effectiveMount === 'E') return { name: 'EF → E-mount Adapter', lightLossStops: 0, notes: 'Passive EF-to-E adapter (e.g. Metabones Mark V, Sigma MC-11). Mechanical only; some models pass aperture/AF data electronically. No optical penalty.' };
+    if (effectiveMount === 'RF') return { name: 'Canon EF → RF Adapter', lightLossStops: 0, notes: 'Canon\'s official EF→RF mount adapter (or third-party equivalents). Pure mechanical extension, no glass, full electronic compatibility.' };
+    if (effectiveMount === 'MFT') return { name: 'EF → MFT Adapter', lightLossStops: 0, notes: 'Standard passive EF-to-MFT adapter — manual aperture control only on most models. For light gain and wider FOV, enable Speed Booster instead.' };
+    return mountAdapter ?? null;
   }
 
   // Nikon F → shorter flange mounts
   if (lens.mount === 'NF') {
-    if (effectiveMount === 'E') return { name: 'Nikon F → E-mount Adapter', lightLossStops: 0 };
-    return null;
+    if (effectiveMount === 'E') return { name: 'Nikon F → E-mount Adapter', lightLossStops: 0, notes: 'Passive Nikon-F to E-mount adapter. Manual aperture only on screwdriver-AF lenses; G/E lenses need an aperture-control variant.' };
+    return mountAdapter ?? null;
   }
 
   return null;
