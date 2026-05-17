@@ -4,7 +4,7 @@ import { getLensById } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
 import { useRef, useEffect, useLayoutEffect, useCallback, useState } from 'react';
 import type { StageObjectType } from '../../types';
-import { FiExternalLink, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiUnlock, FiLock } from 'react-icons/fi';
 
 interface PreviewProps {
   undocked: boolean;
@@ -29,6 +29,24 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   // Cache projected person positions during draw() so the click handler can hit-test
   // without re-projecting everything itself.
   const projectedPersons = useRef<{ id: string; sx: number; sy: number; topSy: number; dist: number }[]>([]);
+
+  // ── Locked-person focus tracker ──
+  // When cam.lockedPersonId is set, the focus distance follows that target as
+  // the camera or the subject moves. Pan/tilt are NOT changed here — the
+  // operator still aims manually. Useful for live events where the subject
+  // walks around but the operator already has them framed.
+  useEffect(() => {
+    if (!cam?.lockedPersonId) return;
+    const target = persons.find((p) => p.id === cam.lockedPersonId);
+    if (!target) return;
+    const dx = target.x - cam.x;
+    const dy = target.y - cam.y;
+    const dz = target.height * 0.5 - cam.z; // aim at the subject's centre, not the feet
+    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (Math.abs(dist - cam.focusDistance) > 0.05) {
+      useStore.getState().updateCamera(cam.id, { focusDistance: Math.max(0.1, dist) });
+    }
+  }, [cam?.lockedPersonId, cam?.x, cam?.y, cam?.z, cam?.focusDistance, cam?.id, persons]);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -556,6 +574,9 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     }
 
     projectedPersons.current = [];
+    let inFramePersons = 0;
+    let totalInFront = 0;
+    let nearestCrosshair: { id: string; label: string; dist: number; sx: number; sy: number } | null = null;
     persons.forEach((person) => {
       // Project via worldToCamera + cameraToScreen directly so a person who is
       // physically in front of the camera but within the projection NEAR plane
@@ -566,6 +587,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       const feetCam = worldToCamera(person.x, person.y, 0);
       // Genuinely behind the camera — no chance of being visible
       if (feetCam.z <= 0.001) return;
+      totalInFront++;
       const headCam = worldToCamera(person.x, person.y, person.height);
       const feetProj = cameraToScreen(feetCam);
       const headProj = cameraToScreen(headCam);
@@ -586,6 +608,8 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       if (feetSy < 0 && headSy < 0) return;
       if (feetSy > H && headSy > H) return;
 
+      inFramePersons++;
+
       // Remember on-screen position for click-to-focus hit-testing
       projectedPersons.current.push({
         id: person.id,
@@ -595,7 +619,30 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         dist: feetProj.dist,
       });
 
+      // Track person nearest the screen centre (crosshair) for distance overlay
+      const torsoSy = (feetSy + headSy) / 2;
+      const centreDist = Math.hypot(feetSx - W / 2, torsoSy - H / 2);
+      if (centreDist < Math.min(W, H) * 0.18) {
+        if (!nearestCrosshair || centreDist < Math.hypot(nearestCrosshair.sx - W / 2, nearestCrosshair.sy - H / 2)) {
+          nearestCrosshair = { id: person.id, label: person.label, dist: feetProj.dist, sx: feetSx, sy: torsoSy };
+        }
+      }
+
+      // ── Depth of Field blur ──
+      // Persons inside [near, far] render sharp. Anything outside is blurred
+      // proportional to how far past the limit they are, capped so it stays
+      // legible. Locked subject always renders sharp regardless of DoF.
+      let blurPx = 0;
+      if (cam.lockedPersonId !== person.id) {
+        if (feetProj.dist < dof.nearLimit) {
+          blurPx = Math.min(10, (dof.nearLimit - feetProj.dist) * 4);
+        } else if (dof.farLimit !== Infinity && feetProj.dist > dof.farLimit) {
+          blurPx = Math.min(10, (feetProj.dist - dof.farLimit) * 1.2);
+        }
+      }
+      if (blurPx > 0.1) ctx.filter = `blur(${blurPx.toFixed(1)}px)`;
       drawPerson(feetSx, feetSy, headSy, feetProj.dist, person.objectType, `${person.label} (${person.height.toFixed(1)}m)`, person.color);
+      if (blurPx > 0.1) ctx.filter = 'none';
     });
 
     ctx.restore();
@@ -619,38 +666,6 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       ctx.textAlign = 'center';
       ctx.fillText(otherCam.label, pos.sx, pos.sy - sz / 2 - 3);
     });
-
-    // ── Reference person at centre of view ──
-    const refPersonH = 1.8;
-    const scale = H * 0.6 / imgH;
-    const pxHeight = refPersonH * scale;
-    const pxWidth = pxHeight * 0.35;
-    const personX = W / 2;
-    const personBottom = groundYClamped;
-
-    if (groundYClamped > 0 && groundYClamped < H) {
-      // Body
-      ctx.fillStyle = cam.color + '55';
-      ctx.strokeStyle = cam.color + 'aa';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.roundRect(personX - pxWidth / 2, personBottom - pxHeight, pxWidth, pxHeight * 0.7, 4);
-      ctx.fill();
-      ctx.stroke();
-
-      // Head
-      const headR = pxWidth * 0.45;
-      ctx.beginPath();
-      ctx.arc(personX, personBottom - pxHeight - headR * 0.2, headR, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      // Person height label
-      ctx.fillStyle = '#ffffff88';
-      ctx.font = '10px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText('1.80m ref', personX + pxWidth / 2 + 4, personBottom - pxHeight / 2);
-    }
 
     // ═══ RULERS ═══
     const rulerH = 22;
@@ -733,6 +748,51 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(W / 2 - 18, H / 2); ctx.lineTo(W / 2 + 18, H / 2); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(W / 2, H / 2 - 18); ctx.lineTo(W / 2, H / 2 + 18); ctx.stroke();
+
+      // Distance readout under the crosshair: focus distance + nearest in-frame
+      // subject. Helps the operator verify pull-focus while panning.
+      const lines: string[] = [`focus ${cam.focusDistance.toFixed(1)}m`];
+      if (nearestCrosshair) {
+        const n = nearestCrosshair as { label: string; dist: number };
+        lines.push(`${n.label}: ${n.dist.toFixed(1)}m`);
+      }
+      ctx.fillStyle = '#000000aa';
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      const lineH = 12;
+      const boxW = 120;
+      const boxH = lines.length * lineH + 6;
+      ctx.fillRect(W / 2 - boxW / 2, H / 2 + 22, boxW, boxH);
+      ctx.fillStyle = '#cbd5e1';
+      lines.forEach((t, i) => ctx.fillText(t, W / 2, H / 2 + 22 + lineH * (i + 1) - 1));
+    }
+
+    // ── Coverage indicator (top-left badge) ──
+    // Subtle warning when subjects exist but aren't framed. Locked subject
+    // off-frame gets a stronger red badge because that's almost always wrong.
+    if (totalInFront > 0) {
+      const offFrame = totalInFront - inFramePersons;
+      const lockedTarget = cam.lockedPersonId ? persons.find((p) => p.id === cam.lockedPersonId) : null;
+      const lockedOff = lockedTarget ? !projectedPersons.current.some((p) => p.id === lockedTarget.id) : false;
+      let badgeText: string;
+      let badgeColor: string;
+      if (lockedOff) {
+        badgeText = `⚠ ${lockedTarget!.label} OUT OF FRAME`;
+        badgeColor = '#ef4444';
+      } else if (offFrame > 0) {
+        badgeText = `${inFramePersons}/${totalInFront} in frame`;
+        badgeColor = '#fbbf24';
+      } else {
+        badgeText = `${inFramePersons} in frame`;
+        badgeColor = '#22c55e';
+      }
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'left';
+      const tw = ctx.measureText(badgeText).width + 12;
+      ctx.fillStyle = '#000000aa';
+      ctx.fillRect(4, 4, tw, 18);
+      ctx.fillStyle = badgeColor;
+      ctx.fillText(badgeText, 10, 16);
     }
 
     // ═══ VIGNETTE ═══
@@ -808,10 +868,11 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     const dy = e.clientY - lastMouse.current.y;
     lastMouse.current = { x: e.clientX, y: e.clientY };
 
-    // FOV-scaled sensitivity so the scene moves 1:1 with the mouse: 1 px of cursor
-    // motion rotates the camera by exactly the angle that one pixel on the canvas
-    // spans. This keeps fine framing tractable at tight focal lengths and avoids
-    // sluggish dragging at wide angles.
+    // FOV-scaled sensitivity so the scene moves 1:1 with the mouse: 1 px of
+    // cursor motion rotates the camera by the angle one pixel on the canvas
+    // spans. Per-camera invert flags reverse the direction without touching
+    // sensitivity. Pan & tilt wrap into [-180, 180) so the camera can spin
+    // through ±180° instead of hitting a hard clamp.
     const canvas = canvasRef.current;
     const camDef = getCameraById(cam.cameraId, useStore.getState().customCameras);
     const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
@@ -825,8 +886,15 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       if (cssW > 0) panSens = fov.horizontalDeg / cssW;
       if (cssH > 0) tiltSens = fov.verticalDeg / cssH;
     }
-    const newPan = Math.max(-180, Math.min(180, cam.pan - dx * panSens));
-    const newTilt = Math.max(-90, Math.min(45, cam.tilt + dy * tiltSens));
+    const invH = cam.invertPreviewH ? -1 : 1;
+    const invV = cam.invertPreviewV ? -1 : 1;
+    const wrap180 = (v: number) => {
+      let w = ((v + 180) % 360 + 360) % 360 - 180;
+      if (w === 180) w = -180;
+      return w;
+    };
+    const newPan = wrap180(cam.pan - dx * panSens * invH);
+    const newTilt = Math.max(-90, Math.min(45, cam.tilt + dy * tiltSens * invV));
     useStore.getState().updateCamera(cam.id, { pan: newPan, tilt: newTilt });
   }, [cam, focusPickMode]);
 
@@ -941,19 +1009,52 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
             </button>
           ))}
           <button
+            onClick={() => useStore.getState().updateCamera(cam.id, { invertPreviewH: !cam.invertPreviewH })}
+            title="Flip horizontal pan direction"
+            className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${cam.invertPreviewH ? 'border-bc-accent text-bc-accent bg-bc-accent/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
+          >
+            ↔ Invert H
+          </button>
+          <button
+            onClick={() => useStore.getState().updateCamera(cam.id, { invertPreviewV: !cam.invertPreviewV })}
+            title="Flip vertical tilt direction"
+            className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${cam.invertPreviewV ? 'border-bc-accent text-bc-accent bg-bc-accent/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
+          >
+            ↕ Invert V
+          </button>
+          <button
             onClick={() => setFocusPickMode((v) => !v)}
             title={focusPickMode ? 'Click anywhere to leave focus-pick mode' : 'Pick a person in the preview to set focus distance'}
             className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${focusPickMode ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
           >
             ◎ Focus pick {focusPickMode ? '· ON' : ''}
           </button>
-          {!undocked && (
+          {cam.lockedPersonId && (
             <button
-              onClick={onUndock}
-              className="px-2 py-0.5 rounded text-[10px] font-medium border border-bc-border text-gray-500 hover:text-gray-300 hover:border-gray-400 flex items-center gap-1"
-              title="Undock preview into floating window"
+              onClick={() => useStore.getState().updateCamera(cam.id, { lockedPersonId: undefined })}
+              title="Release focus lock"
+              className="px-2 py-0.5 rounded text-[10px] font-medium border border-bc-yellow text-bc-yellow bg-bc-yellow/10 flex items-center gap-1"
             >
-              <FiExternalLink size={10} /> Float
+              <FiLock size={10} /> Unlock {persons.find((p) => p.id === cam.lockedPersonId)?.label ?? 'subject'}
+            </button>
+          )}
+          {!cam.lockedPersonId && projectedPersons.current.length > 0 && (
+            <button
+              onClick={() => {
+                // Lock to the projected person nearest the crosshair (centre).
+                const W = canvasRef.current?.clientWidth ?? 0;
+                const H = canvasRef.current?.clientHeight ?? 0;
+                let best: { id: string; d: number } | null = null;
+                for (const p of projectedPersons.current) {
+                  const d = Math.hypot(p.sx - W / 2, p.sy - H / 2);
+                  if (!best || d < best.d) best = { id: p.id, d };
+                }
+                if (best) useStore.getState().updateCamera(cam.id, { lockedPersonId: best.id });
+              }}
+              title="Lock focus distance to the subject closest to the crosshair"
+              className="px-2 py-0.5 rounded text-[10px] font-medium border border-bc-border text-gray-500 hover:text-gray-300 flex items-center gap-1"
+            >
+              <FiUnlock size={10} /> Lock subject
             </button>
           )}
           <span className="text-[10px] text-gray-600 ml-auto">
