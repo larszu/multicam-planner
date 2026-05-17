@@ -2,7 +2,7 @@ import { useStore } from '../../store/useStore';
 import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor } from '../../data/cameras';
 import { LENSES, getLensById, getCompatibleLenses } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
-import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2 } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { BackgroundPlan, StageObjectType, Camera } from '../../types';
 import { CustomCameraForm } from './CustomCameraForm';
@@ -55,6 +55,7 @@ function CameraCard({ camId }: { camId: string }) {
   const [showNewLens, setShowNewLens] = useState(false);
   const [newLens, setNewLens] = useState({ manufacturer: '', model: '', focalMin: '10', focalMax: '100', aperture: '2.8', mount: 'B4', type: 'zoom' as 'zoom' | 'prime' });
   const [showNewCustomCam, setShowNewCustomCam] = useState(false);
+  const [editingCustomCam, setEditingCustomCam] = useState<string | null>(null);
   const [showCalc, setShowCalc] = useState(false);
 
   const { customCameras, addCustomCamera } = useStore();
@@ -153,14 +154,53 @@ function CameraCard({ camId }: { camId: string }) {
             <span className="flex items-center justify-between gap-2 text-gray-400">
               <span>Camera ({camDef?.mount} mount, {camDef?.sensor.name})</span>
               {camDef && (
-                <button
-                  type="button"
-                  onClick={() => toggleFavoriteCameraId(camDef.id)}
-                  className={`p-1 rounded ${favoriteCameraIds.includes(camDef.id) ? 'text-bc-yellow' : 'text-gray-500 hover:text-bc-yellow'}`}
-                  title={favoriteCameraIds.includes(camDef.id) ? 'Remove camera favorite' : 'Favorite camera'}
-                >
-                  <FiStar size={12} fill={favoriteCameraIds.includes(camDef.id) ? 'currentColor' : 'none'} />
-                </button>
+                <span className="flex items-center gap-0.5">
+                  {/* Edit + delete buttons appear only for user-created cameras —
+                      built-ins can't be modified anyway. */}
+                  {isCustomCamera(camDef.id) && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setEditingCustomCam(camDef.id)}
+                        className="p-1 rounded text-gray-500 hover:text-bc-accent"
+                        title="Edit this custom camera"
+                      >
+                        <FiEdit2 size={12} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const used = useStore.getState().cameras.filter((c) => c.cameraId === camDef.id).length;
+                          if (used > 1) {
+                            alert(`Cannot delete "${camDef.manufacturer} ${camDef.model}" — it is still used by ${used} placed camera(s).`);
+                            return;
+                          }
+                          if (!confirm(`Delete custom camera "${camDef.manufacturer} ${camDef.model}"?`)) return;
+                          // Swap this placement to the first built-in so the card stays valid
+                          const fallback = CAMERAS[0];
+                          updateCamera(cam.id, {
+                            cameraId: fallback.id,
+                            activeMount: fallback.mount,
+                            sensorModeIndex: fallback.sensorModes && fallback.sensorModes.length > 0 ? 0 : undefined,
+                          });
+                          useStore.getState().removeCustomCamera(camDef.id);
+                        }}
+                        className="p-1 rounded text-gray-500 hover:text-bc-red"
+                        title="Delete this custom camera"
+                      >
+                        <FiTrash2 size={12} />
+                      </button>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => toggleFavoriteCameraId(camDef.id)}
+                    className={`p-1 rounded ${favoriteCameraIds.includes(camDef.id) ? 'text-bc-yellow' : 'text-gray-500 hover:text-bc-yellow'}`}
+                    title={favoriteCameraIds.includes(camDef.id) ? 'Remove camera favorite' : 'Favorite camera'}
+                  >
+                    <FiStar size={12} fill={favoriteCameraIds.includes(camDef.id) ? 'currentColor' : 'none'} />
+                  </button>
+                </span>
               )}
             </span>
             <select
@@ -214,6 +254,36 @@ function CameraCard({ camId }: { camId: string }) {
                   sensorModeIndex: spec.sensorModes && spec.sensorModes.length > 0 ? 0 : undefined,
                 });
                 setShowNewCustomCam(false);
+              }}
+            />
+          )}
+
+          {/* Inline edit form for the currently-selected custom camera */}
+          {editingCustomCam && editingCustomCam === camDef?.id && camDef && (
+            <CustomCameraForm
+              title={`Edit ${camDef.manufacturer} ${camDef.model}`}
+              submitLabel="Save changes"
+              initial={camDef}
+              onCancel={() => setEditingCustomCam(null)}
+              onSubmit={(spec) => {
+                useStore.getState().updateCustomCamera(camDef.id, spec);
+                // If the mount changed and the current lens no longer fits, swap to a compatible one
+                const stillCompatible = lensDef && (lensDef.mount === spec.mount || lensDef.mount === 'integrated');
+                if (!stillCompatible) {
+                  const next = getCompatibleLenses(spec.mount, spec.adaptedMounts)[0];
+                  if (next) {
+                    updateCamera(cam.id, {
+                      lensId: next.id,
+                      focalLength: next.focalLengthMin,
+                      aperture: next.maxApertureWide,
+                    });
+                  }
+                }
+                updateCamera(cam.id, {
+                  activeMount: spec.mount,
+                  sensorModeIndex: spec.sensorModes && spec.sensorModes.length > 0 ? 0 : undefined,
+                });
+                setEditingCustomCam(null);
               }}
             />
           )}
