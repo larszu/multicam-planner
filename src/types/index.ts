@@ -48,6 +48,13 @@ export interface AdapterInfo {
   notes?: string;
 }
 
+// ── Lens image circle ──
+// Format the lens actually projects (independent of its mount). E.g. an EF-S
+// lens reports `mount: 'EF'` but only fills an APS-C circle. Used by the
+// coverage check so an EF-S lens on a 5D body flags as vignetting even
+// though the mount fits.
+export type LensImageCircle = 'FF' | 'S35' | 'APSC' | 'MFT' | '2/3' | '1' | 'integrated';
+
 // ── Lens ──
 export interface Lens {
   id: string;
@@ -58,6 +65,10 @@ export interface Lens {
   maxApertureWide: number;
   maxApertureTele?: number;
   mount: string;
+  /** Image circle actually projected by the lens. Falls back to a per-mount
+   * heuristic when omitted. Set explicitly for crop lenses on full-frame
+   * mounts (Sigma DC, Tamron Di III-A, Canon EF-S, Sony E APS-C). */
+  imageCircle?: LensImageCircle;
   extenderFactors?: number[];
   type: 'zoom' | 'prime' | 'integrated';
   isCustom?: boolean;

@@ -268,18 +268,17 @@ export function getEffectiveAperture(camera: Camera, lens: Lens, aperture: numbe
 }
 
 // ── Lens image circle (mm) by mount ──
-// Rough nominal projected circle diameter from each lens family. Used by
+// Rough nominal projected circle diameter for each lens family. Used by
 // getCoverageStatus to warn when a lens can't fully cover the effective
-// sensor (vignetting). These are heuristic defaults — a Canon EF-S lens
-// projects an APS-C circle but reports `mount: 'EF'`, so the heuristic
-// over-estimates in that case. Good enough for the common "is the body
-// even compatible" sanity check.
+// sensor (vignetting). A lens that publishes a smaller circle than its
+// mount suggests (Sigma DC, Tamron Di III-A, Canon EF-S, Sony E APS-C)
+// should set `Lens.imageCircle` to override this default.
 const MOUNT_IMAGE_CIRCLE_MM: Record<string, number> = {
   PL:   31.4,  // Super-35 image circle
   LPL:  46.3,  // Full-frame / VistaVision
   EF:   43.3,
   RF:   43.3,
-  E:    43.3,  // FE-mount lenses; old E (APS-C only) lenses cover ~28.2
+  E:    43.3,  // FE-mount lenses; APS-C E glass overridden via Lens.imageCircle
   L:    43.3,
   NF:   43.3,
   FZ:   31.4,  // Sony FZ is S35-class
@@ -289,6 +288,17 @@ const MOUNT_IMAGE_CIRCLE_MM: Record<string, number> = {
   M12:  8.0,   // POV / industrial — well under 1/2"
   integrated: 0,
   universal: 43.3,
+};
+
+// Explicit image-circle diameters in mm, keyed by Lens.imageCircle kind.
+const IMAGE_CIRCLE_KIND_MM: Record<string, number> = {
+  FF:   43.3,
+  S35:  31.4,
+  APSC: 28.2,
+  MFT:  21.6,
+  '2/3': 11.0,
+  '1':  16.0,
+  integrated: 0,
 };
 
 export type CoverageStatus = 'ok' | 'marginal' | 'vignette';
@@ -310,7 +320,12 @@ export function getCoverageStatus(camera: Camera, lens: Lens, useSpeedbooster = 
   // Adapter with a cropSensor (B4 relay, Speedbooster) re-projects the lens
   // onto its own sensor area. The effective image circle is then bounded by
   // that adapter's crop, not by the bare lens.
-  let circle = MOUNT_IMAGE_CIRCLE_MM[lens.mount] ?? 43.3;
+  // Explicit `lens.imageCircle` overrides the per-mount heuristic so that
+  // crop-format glass on a full-frame mount (Sigma DC, EF-S etc.) flags
+  // correctly.
+  let circle = lens.imageCircle
+    ? IMAGE_CIRCLE_KIND_MM[lens.imageCircle] ?? 43.3
+    : MOUNT_IMAGE_CIRCLE_MM[lens.mount] ?? 43.3;
   if (adapter?.cropSensor) {
     const adapterDiag = Math.hypot(adapter.cropSensor.widthMm, adapter.cropSensor.heightMm);
     circle = Math.min(circle, adapterDiag);
