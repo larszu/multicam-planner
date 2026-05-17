@@ -123,7 +123,7 @@ page. It can also be triggered manually via the Actions tab for testing.
 
 ## ❤️ Support / Donate
 
-If CablePlanner saves you time on your next show, consider buying me a coffee:
+If MulticamPlanner saves you time on your next show, consider buying me a coffee:
 
 <p>
   <a href="https://paypal.me/larszumpe">
