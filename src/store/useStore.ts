@@ -76,11 +76,13 @@ interface AppState {
 
   // Templates
   customTemplates: VenueTemplate[];
+  hiddenTemplateIds: string[];
   loadTemplate: (templateId: string) => void;
   saveAsTemplate: (name: string, category: VenueTemplate['category']) => void;
   updateTemplate: (id: string, updates: Partial<Pick<VenueTemplate, 'name' | 'category'>>) => void;
   overwriteTemplate: (id: string) => void;
   deleteTemplate: (id: string) => void;
+  restoreBuiltInTemplates: () => void;
   clearAll: () => void;
 
   // Project versioning
@@ -106,6 +108,18 @@ function loadCustomTemplates(): VenueTemplate[] {
 }
 function saveCustomTemplates(templates: VenueTemplate[]) {
   localStorage.setItem(CUSTOM_TEMPLATES_KEY, JSON.stringify(templates));
+}
+
+const HIDDEN_TEMPLATES_KEY = 'multicam-hidden-templates';
+function loadHiddenTemplateIds(): string[] {
+  try {
+    const raw = localStorage.getItem(HIDDEN_TEMPLATES_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
+  } catch { return []; }
+}
+function saveHiddenTemplateIds(ids: string[]) {
+  localStorage.setItem(HIDDEN_TEMPLATES_KEY, JSON.stringify(ids));
 }
 
 const CUSTOM_LENSES_KEY = 'multicam-custom-lenses';
@@ -457,10 +471,14 @@ export const useStore = create<AppState>((set, get) => ({
   setPixelsPerMeter: (ppm) => set({ pixelsPerMeter: ppm }),
 
   customTemplates: loadCustomTemplates(),
+  hiddenTemplateIds: loadHiddenTemplateIds(),
 
   loadTemplate: (templateId) => {
-    const all = [...TEMPLATES, ...get().customTemplates];
-    const tmpl = all.find((t) => t.id === templateId);
+    // Custom shadow takes precedence over the built-in original so an "edited"
+    // built-in loads the edited venue/cameras.
+    const { customTemplates } = get();
+    const tmpl = customTemplates.find((t) => t.id === templateId)
+      ?? TEMPLATES.find((t) => t.id === templateId);
     if (!tmpl) return;
     nextId = 1;
     stageId = 1;
@@ -491,27 +509,76 @@ export const useStore = create<AppState>((set, get) => ({
     set({ customTemplates: updated });
   },
 
+  // ── Templates: built-in vs custom ──
+  // Built-in templates live in src/data/templates.ts (read-only at runtime).
+  // To let the user delete/rename/overwrite them as if they were editable, we
+  // shadow them: a customTemplates entry with the same id replaces the built-in
+  // in the dedup'd list, and a hiddenTemplateIds entry hides a built-in entirely
+  // (used when the user deletes one that was never shadowed).
   updateTemplate: (id, updates) => {
     const { customTemplates } = get();
-    const updated = customTemplates.map((t) => (t.id === id ? { ...t, ...updates } : t));
+    if (customTemplates.some((t) => t.id === id)) {
+      const updated = customTemplates.map((t) => (t.id === id ? { ...t, ...updates } : t));
+      saveCustomTemplates(updated);
+      set({ customTemplates: updated });
+      return;
+    }
+    // Editing a built-in for the first time — create a custom shadow with the
+    // same id so future lookups (loadTemplate, overwriteTemplate, deleteTemplate)
+    // find it in customTemplates.
+    const original = TEMPLATES.find((t) => t.id === id);
+    if (!original) return;
+    const shadow: VenueTemplate = { ...original, ...updates };
+    const updated = [...customTemplates, shadow];
     saveCustomTemplates(updated);
     set({ customTemplates: updated });
   },
 
   overwriteTemplate: (id) => {
     const { venue, cameras, customTemplates } = get();
-    const updated = customTemplates.map((t) =>
-      t.id === id ? { ...t, venue: { ...venue }, cameras: cameras.map(({ id: _id, ...rest }) => rest) } : t,
-    );
+    const camerasStripped = cameras.map(({ id: _id, ...rest }) => rest);
+    if (customTemplates.some((t) => t.id === id)) {
+      const updated = customTemplates.map((t) =>
+        t.id === id ? { ...t, venue: { ...venue }, cameras: camerasStripped } : t,
+      );
+      saveCustomTemplates(updated);
+      set({ customTemplates: updated });
+      return;
+    }
+    // Overwriting a built-in for the first time — create a custom shadow.
+    const original = TEMPLATES.find((t) => t.id === id);
+    if (!original) return;
+    const shadow: VenueTemplate = {
+      ...original,
+      venue: { ...venue },
+      cameras: camerasStripped,
+    };
+    const updated = [...customTemplates, shadow];
     saveCustomTemplates(updated);
     set({ customTemplates: updated });
   },
 
   deleteTemplate: (id) => {
-    const { customTemplates } = get();
+    const { customTemplates, hiddenTemplateIds } = get();
+    const wasCustom = customTemplates.some((t) => t.id === id);
     const updated = customTemplates.filter((t) => t.id !== id);
-    saveCustomTemplates(updated);
-    set({ customTemplates: updated });
+    if (wasCustom) saveCustomTemplates(updated);
+
+    const isStillBuiltIn = TEMPLATES.some((t) => t.id === id);
+    // If the underlying id is also a built-in, hide it so it doesn't pop back
+    // into the list when the custom shadow is removed.
+    if (isStillBuiltIn && !hiddenTemplateIds.includes(id)) {
+      const nextHidden = [...hiddenTemplateIds, id];
+      saveHiddenTemplateIds(nextHidden);
+      set({ customTemplates: updated, hiddenTemplateIds: nextHidden });
+    } else {
+      set({ customTemplates: updated });
+    }
+  },
+
+  restoreBuiltInTemplates: () => {
+    saveHiddenTemplateIds([]);
+    set({ hiddenTemplateIds: [] });
   },
 
   clearAll: () => {
