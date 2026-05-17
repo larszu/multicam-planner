@@ -343,7 +343,7 @@ function FovPyramid({ cam, isSelected }: { cam: ReturnType<typeof useStore.getSt
   const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
   if (!camDef || !lensDef) return null;
 
-  const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex);
+  const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex, cam.activeMount);
   const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
   const fovMin = computeFov(sensor, lensDef.focalLengthMax, cam.focusDistance, cam.extenderActive);
   const fovMax = computeFov(sensor, lensDef.focalLengthMin, cam.focusDistance, cam.extenderActive);
@@ -396,9 +396,13 @@ function FovPyramid({ cam, isSelected }: { cam: ReturnType<typeof useStore.getSt
   }, [isZoom, fovMax.horizontalDeg, fovMax.verticalDeg, cam.focusDistance]);
 
   return (
-    // Tilt is applied by the parent `pitchRef` group in CameraRig — only reorient the
-    // pyramid (modeled along -Z) so it points along the camera's local +X (pan axis).
-    <group rotation={[0, -Math.PI / 2, 0]}>
+    // The pyramid mesh is modelled looking along -Z. Both the pitch (rotate-X)
+    // and the camera-orientation rotate-Y(-90°) used to live on this group, but
+    // R3F applies child transforms before parent ones — so the Y rotation
+    // landed BEFORE the X rotation, leaving pitch acting around the pyramid's
+    // own axis (i.e. rolling it). The reorientation is now applied one level
+    // up in CameraRig, AFTER the parent pitchRef, so pitch stays pitch.
+    <group>
       {/* Camera body */}
       <mesh>
         <boxGeometry args={[0.3, 0.2, 0.4]} />
@@ -586,7 +590,13 @@ function CameraRig({
           {isSelected && isUnlocked && editMode === 'tilt' && pitchRef.current && (
             <TransformControls object={pitchRef.current} mode="rotate" showX showY={false} showZ={false} size={0.9} onMouseUp={commitTilt} />
           )}
-          <FovPyramid cam={cam} isSelected={isSelected} />
+          {/* Reorient the pyramid (modelled along -Z) so it points along the
+              camera's pan axis. Applying this group AFTER pitchRef means pitch
+              acts on the camera's right axis (X) before reorientation, giving a
+              proper pitch instead of roll. */}
+          <group rotation={[0, -Math.PI / 2, 0]}>
+            <FovPyramid cam={cam} isSelected={isSelected} />
+          </group>
         </group>
       </group>
     </group>

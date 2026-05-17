@@ -126,33 +126,39 @@ export function getCamerasByType(type: Camera['type']): Camera[] {
  * B4 lenses on non-B4 cameras → relay optics, crop to 2/3", ~1 stop loss.
  * PL/EF → FZ/E are simple spacers with no optical penalty.
  * EF → MFT with speedbooster: 0.71x focal reducer, +1 stop gain.
+ *
+ * `activeMount` overrides the camera's native mount for the purpose of adapter
+ * detection. This models swappable-mount bodies like the URSA Broadcast G2 —
+ * with the EF mount plate fitted, an EF lens is native (no adapter), and the
+ * built-in 2/3" relay crop that comes with the B4 plate no longer applies.
  */
-export function getAdapterInfo(camera: Camera, lens: Lens, useSpeedbooster = false): AdapterInfo | null {
-  if (lens.mount === camera.mount) return null; // native
+export function getAdapterInfo(camera: Camera, lens: Lens, useSpeedbooster = false, activeMount?: string): AdapterInfo | null {
+  const effectiveMount = activeMount ?? camera.mount;
+  if (lens.mount === effectiveMount) return null; // native
   if (lens.mount === 'integrated') return null;
 
   // B4 → any larger-sensor camera: relay optics needed, crop to 2/3"
   if (lens.mount === 'B4') {
-    if (camera.mount === 'FZ') return { name: 'Sony LA-FZB1/FZB2', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
-    if (camera.mount === 'E') return { name: 'B4 → E-mount Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
-    if (camera.mount === 'PL') return { name: 'B4 → PL Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
-    if (camera.mount === 'EF') return { name: 'B4 → EF Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
+    if (effectiveMount === 'FZ') return { name: 'Sony LA-FZB1/FZB2', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
+    if (effectiveMount === 'E') return { name: 'B4 → E-mount Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
+    if (effectiveMount === 'PL') return { name: 'B4 → PL Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
+    if (effectiveMount === 'EF') return { name: 'B4 → EF Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD };
     return null;
   }
 
   // PL → shorter flange mounts (spacer adapters, no optics)
   if (lens.mount === 'PL') {
-    if (camera.mount === 'FZ') return { name: 'PL → FZ Adapter', lightLossStops: 0 };
-    if (camera.mount === 'E') return { name: 'PL → E-mount Adapter', lightLossStops: 0 };
-    if (camera.mount === 'RF') return { name: 'PL → RF Adapter', lightLossStops: 0 };
+    if (effectiveMount === 'FZ') return { name: 'PL → FZ Adapter', lightLossStops: 0 };
+    if (effectiveMount === 'E') return { name: 'PL → E-mount Adapter', lightLossStops: 0 };
+    if (effectiveMount === 'RF') return { name: 'PL → RF Adapter', lightLossStops: 0 };
     return null;
   }
 
   // EF → shorter flange mounts
   if (lens.mount === 'EF') {
-    if (camera.mount === 'E') return { name: 'EF → E-mount Adapter', lightLossStops: 0 };
-    if (camera.mount === 'RF') return { name: 'Canon EF → RF Adapter', lightLossStops: 0 };
-    if (camera.mount === 'MFT') {
+    if (effectiveMount === 'E') return { name: 'EF → E-mount Adapter', lightLossStops: 0 };
+    if (effectiveMount === 'RF') return { name: 'Canon EF → RF Adapter', lightLossStops: 0 };
+    if (effectiveMount === 'MFT') {
       if (useSpeedbooster) {
         // Metabones Speed Booster Ultra 0.71x: widens FOV by 0.71x, gains ~1 stop
         return {
@@ -168,7 +174,7 @@ export function getAdapterInfo(camera: Camera, lens: Lens, useSpeedbooster = fal
 
   // Nikon F → shorter flange mounts
   if (lens.mount === 'NF') {
-    if (camera.mount === 'E') return { name: 'Nikon F → E-mount Adapter', lightLossStops: 0 };
+    if (effectiveMount === 'E') return { name: 'Nikon F → E-mount Adapter', lightLossStops: 0 };
     return null;
   }
 
@@ -182,8 +188,8 @@ export function getAdapterInfo(camera: Camera, lens: Lens, useSpeedbooster = fal
  *   2. Camera hardware sensor mode (URSA B4 crop, VENICE window, FX9 S35 etc.)
  *   3. Camera default sensor
  */
-export function getEffectiveSensor(camera: Camera, lens: Lens, useSpeedbooster = false, sensorModeIndex?: number): SensorSize {
-  const adapter = getAdapterInfo(camera, lens, useSpeedbooster);
+export function getEffectiveSensor(camera: Camera, lens: Lens, useSpeedbooster = false, sensorModeIndex?: number, activeMount?: string): SensorSize {
+  const adapter = getAdapterInfo(camera, lens, useSpeedbooster, activeMount);
   if (adapter?.cropSensor) return adapter.cropSensor;
   if (
     sensorModeIndex !== undefined &&
@@ -199,8 +205,8 @@ export function getEffectiveSensor(camera: Camera, lens: Lens, useSpeedbooster =
 /**
  * Get effective aperture accounting for adapter light loss.
  */
-export function getEffectiveAperture(camera: Camera, lens: Lens, aperture: number, useSpeedbooster = false): number {
-  const adapter = getAdapterInfo(camera, lens, useSpeedbooster);
+export function getEffectiveAperture(camera: Camera, lens: Lens, aperture: number, useSpeedbooster = false, activeMount?: string): number {
+  const adapter = getAdapterInfo(camera, lens, useSpeedbooster, activeMount);
   if (!adapter || adapter.lightLossStops === 0) return aperture;
   // Each stop doubles the area, so T-number increases by 2^(stops/2)
   // Negative lightLossStops = gain (speedbooster)

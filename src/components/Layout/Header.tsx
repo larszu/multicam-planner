@@ -104,9 +104,15 @@ export default function Header({
         <FiCamera size={20} className="text-bc-accent shrink-0" />
         <span className="font-bold text-sm hidden sm:inline">MultiCam Planner</span>
         <span className="text-xs text-gray-500 ml-2 hidden lg:inline">— {venue.name}</span>
-        <span className={`text-xs ml-2 px-1.5 py-0.5 rounded shrink-0 ${unsaved ? 'bg-bc-yellow/20 text-bc-yellow' : 'bg-bc-green/20 text-bc-green'}`}>
-          v{projectVersion}{unsaved ? ' •' : ''}
-        </span>
+        {/* Minimal unsaved-changes indicator (no project-version counter). */}
+        {unsaved && (
+          <span
+            className="text-xs ml-2 px-1.5 py-0.5 rounded shrink-0 bg-bc-yellow/20 text-bc-yellow"
+            title="There are unsaved changes — use Save to write a .mcplan file"
+          >
+            ● unsaved
+          </span>
+        )}
       </div>
 
       <nav className="flex gap-2 min-w-0 flex-1 justify-center items-center">

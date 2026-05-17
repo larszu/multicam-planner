@@ -41,7 +41,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
     if (!camDef || !lensDef) return;
 
-    const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex);
+    const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex, cam.activeMount);
 
     // HiDPI: size canvas to container at device pixel ratio
     const dpr = window.devicePixelRatio || 1;
@@ -455,14 +455,24 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
 
     projectedPersons.current = [];
     persons.forEach((person) => {
-      const feet = worldToScreen(person.x, person.y, 0);
-      const head = worldToScreen(person.x, person.y, person.height);
-      if (feet.behindCamera) return;
+      // Project via worldToCamera + cameraToScreen directly so a person who is
+      // physically in front of the camera but within the projection NEAR plane
+      // (i.e. very close — < 10 cm) still gets drawn. worldToScreen treats
+      // anything inside NEAR as "behindCamera" which would otherwise make the
+      // person vanish when zooming in tight, even though they should just
+      // become huge.
+      const feetCam = worldToCamera(person.x, person.y, 0);
+      // Genuinely behind the camera — no chance of being visible
+      if (feetCam.z <= 0.001) return;
+      const headCam = worldToCamera(person.x, person.y, person.height);
+      const feetProj = cameraToScreen(feetCam);
+      const headProj = cameraToScreen(headCam);
 
-      // Clamp projected positions to finite safe range
-      const feetSx = clampScreen(feet.sx, 1);
-      const feetSy = clampScreen(feet.sy, 1);
-      const headSy = clampScreen(head.sy, -1);
+      // Clamp projected positions to finite safe range so huge close-up values
+      // don't blow up the canvas drawing.
+      const feetSx = clampScreen(feetProj.sx, 1);
+      const feetSy = clampScreen(feetProj.sy, 1);
+      const headSy = clampScreen(headProj.sy, -1);
 
       const pxH = Math.abs(headSy - feetSy);
       if (pxH < 1) return;
@@ -480,10 +490,10 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         sx: feetSx,
         sy: feetSy,
         topSy: headSy,
-        dist: feet.dist,
+        dist: feetProj.dist,
       });
 
-      drawPerson(feetSx, feetSy, headSy, feet.dist, person.objectType, `${person.label} (${person.height.toFixed(1)}m)`);
+      drawPerson(feetSx, feetSy, headSy, feetProj.dist, person.objectType, `${person.label} (${person.height.toFixed(1)}m)`);
     });
 
     ctx.restore();
@@ -697,7 +707,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     let panSens = 0.3;
     let tiltSens = 0.2;
     if (canvas && camDef && lensDef) {
-      const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex);
+      const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex, cam.activeMount);
       const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
       const cssW = canvas.clientWidth || canvas.width;
       const cssH = canvas.clientHeight || canvas.height;
@@ -768,8 +778,8 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   // Computed data for readout (outside canvas)
   const camDef = getCameraById(cam.cameraId, useStore.getState().customCameras);
   const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
-  const sensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex) : undefined;
-  const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, cam.useSpeedbooster) : null;
+  const sensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex, cam.activeMount) : undefined;
+  const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, cam.useSpeedbooster, cam.activeMount) : null;
   const fov = sensor ? computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive) : null;
   const dof = sensor ? computeDof(sensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive) : null;
   const lightLoss = adapterInfo ? (adapterInfo.lightLossStops > 0 ? ` (−${adapterInfo.lightLossStops}T)` : adapterInfo.lightLossStops < 0 ? ` (+${Math.abs(adapterInfo.lightLossStops)}T)` : '') : '';
