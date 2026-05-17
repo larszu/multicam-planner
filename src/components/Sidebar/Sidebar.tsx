@@ -1,5 +1,5 @@
 import { useStore, OBJECT_PRESETS } from '../../store/useStore';
-import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor } from '../../data/cameras';
+import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor, getCoverageStatus } from '../../data/cameras';
 import { LENSES, getLensById, getCompatibleLenses, pickInitialMountAndLens } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
 import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2, FiRotateCcw } from 'react-icons/fi';
@@ -103,6 +103,7 @@ function CameraCard({ camId }: { camId: string }) {
   // Adapter & effective sensor
   const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, cam.useSpeedbooster, cam.activeMount) : null;
   const effectiveSensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex, cam.activeMount) : camDef?.sensor;
+  const coverage = camDef && lensDef ? getCoverageStatus(camDef, lensDef, cam.useSpeedbooster, cam.activeMount, cam.sensorModeIndex) : null;
   const fov = effectiveSensor && lensDef ? computeFov(effectiveSensor, cam.focalLength, cam.focusDistance, cam.extenderActive) : null;
   const dof = effectiveSensor && lensDef ? computeDof(effectiveSensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive) : null;
 
@@ -407,6 +408,20 @@ function CameraCard({ camId }: { camId: string }) {
                 );
               })()}
             </label>
+          )}
+
+          {/* Image-circle coverage warning */}
+          {coverage && coverage.status !== 'ok' && (
+            <div
+              className={`mt-1 p-2 rounded text-[10px] leading-snug border ${
+                coverage.status === 'vignette'
+                  ? 'border-bc-red/60 bg-bc-red/10 text-red-300'
+                  : 'border-bc-yellow/60 bg-bc-yellow/10 text-bc-yellow'
+              }`}
+              title={`Lens image circle vs sensor diagonal: ${(coverage.ratio * 100).toFixed(0)} %`}
+            >
+              {coverage.status === 'vignette' ? '⛔' : '⚠️'} {coverage.message}
+            </div>
           )}
 
           {/* Hardware sensor mode (URSA B4 crop, VENICE windows, FX9 S35 etc.) */}

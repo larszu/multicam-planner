@@ -267,6 +267,65 @@ export function getEffectiveAperture(camera: Camera, lens: Lens, aperture: numbe
   return aperture * Math.pow(2, adapter.lightLossStops / 2);
 }
 
+// ── Lens image circle (mm) by mount ──
+// Rough nominal projected circle diameter from each lens family. Used by
+// getCoverageStatus to warn when a lens can't fully cover the effective
+// sensor (vignetting). These are heuristic defaults — a Canon EF-S lens
+// projects an APS-C circle but reports `mount: 'EF'`, so the heuristic
+// over-estimates in that case. Good enough for the common "is the body
+// even compatible" sanity check.
+const MOUNT_IMAGE_CIRCLE_MM: Record<string, number> = {
+  PL:   31.4,  // Super-35 image circle
+  LPL:  46.3,  // Full-frame / VistaVision
+  EF:   43.3,
+  RF:   43.3,
+  E:    43.3,  // FE-mount lenses; old E (APS-C only) lenses cover ~28.2
+  L:    43.3,
+  NF:   43.3,
+  FZ:   31.4,  // Sony FZ is S35-class
+  MFT:  21.6,
+  X:    28.2,  // Fujifilm X is APS-C
+  B4:   11.0,  // 2/3" broadcast
+  M12:  8.0,   // POV / industrial — well under 1/2"
+  integrated: 0,
+  universal: 43.3,
+};
+
+export type CoverageStatus = 'ok' | 'marginal' | 'vignette';
+export interface CoverageResult {
+  status: CoverageStatus;
+  ratio: number;
+  message?: string;
+}
+
+/**
+ * Compare the lens image circle (inferred from its mount) against the
+ * effective sensor diagonal so the UI can warn about vignetting. B4 lenses
+ * on a Super-35 body without the right relay adapter, for example, leave
+ * massive black corners; this catches that mid-setup.
+ */
+export function getCoverageStatus(camera: Camera, lens: Lens, useSpeedbooster = false, activeMount?: string, sensorModeIndex?: number): CoverageResult {
+  if (lens.mount === 'integrated') return { status: 'ok', ratio: 1 };
+  const adapter = getAdapterInfo(camera, lens, useSpeedbooster, activeMount);
+  // Adapter with a cropSensor (B4 relay, Speedbooster) re-projects the lens
+  // onto its own sensor area. The effective image circle is then bounded by
+  // that adapter's crop, not by the bare lens.
+  let circle = MOUNT_IMAGE_CIRCLE_MM[lens.mount] ?? 43.3;
+  if (adapter?.cropSensor) {
+    const adapterDiag = Math.hypot(adapter.cropSensor.widthMm, adapter.cropSensor.heightMm);
+    circle = Math.min(circle, adapterDiag);
+  }
+  const sensor = getEffectiveSensor(camera, lens, useSpeedbooster, sensorModeIndex, activeMount);
+  const sensorDiag = Math.hypot(sensor.widthMm, sensor.heightMm);
+  if (sensorDiag <= 0) return { status: 'ok', ratio: 1 };
+  const ratio = circle / sensorDiag;
+  if (ratio >= 1.0) return { status: 'ok', ratio };
+  if (ratio >= 0.9) {
+    return { status: 'marginal', ratio, message: `Image circle tight (${(ratio * 100).toFixed(0)} %) — corners may darken.` };
+  }
+  return { status: 'vignette', ratio, message: `Lens cannot cover sensor (${(ratio * 100).toFixed(0)} %) — heavy vignetting / crop needed.` };
+}
+
 export const CAMERA_COLORS = [
   '#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7',
   '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#8b5cf6',
