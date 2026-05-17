@@ -343,7 +343,7 @@ function FovPyramid({ cam, isSelected }: { cam: ReturnType<typeof useStore.getSt
   const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
   if (!camDef || !lensDef) return null;
 
-  const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex);
+  const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex, cam.activeMount);
   const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
   const fovMin = computeFov(sensor, lensDef.focalLengthMax, cam.focusDistance, cam.extenderActive);
   const fovMax = computeFov(sensor, lensDef.focalLengthMin, cam.focusDistance, cam.extenderActive);

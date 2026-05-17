@@ -384,6 +384,7 @@ export const useStore = create<AppState>((set, get) => ({
         extenderActive: 1,
         useSpeedbooster: false,
         sensorModeIndex: camDef.sensorModes && camDef.sensorModes.length > 0 ? 0 : undefined,
+        activeMount: camDef.mount,
       };
       return { cameras: [...s.cameras, newCam], selectedCameraId: newCam.id, projectVersion: s.projectVersion + 1 };
     });

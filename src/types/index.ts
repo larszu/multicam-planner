@@ -108,6 +108,13 @@ export interface VenueCamera {
    */
   sensorModeIndex?: number;
   /**
+   * Currently mounted lens mount on a swappable-mount body (e.g. URSA Broadcast
+   * G2 can swap between B4 / EF / PL mount plates). Defaults to the camera's
+   * native `mount` when undefined. Must be either `camera.mount` or one of
+   * `camera.adaptedMounts`.
+   */
+  activeMount?: string;
+  /**
    * Free-form notes for this camera placement (mount, operator, instructions,
    * shot list, etc.). Shown in the sidebar and included in PNG exports when set.
    */

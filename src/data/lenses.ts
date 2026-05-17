@@ -256,8 +256,17 @@ export function getLensesByMount(mount: string): Lens[] {
   return LENSES.filter((l) => l.mount === mount);
 }
 
-export function getCompatibleLenses(cameraMount: string, adaptedMounts?: string[]): Lens[] {
+export function getCompatibleLenses(cameraMount: string, adaptedMounts?: string[], activeMount?: string): Lens[] {
   if (cameraMount === 'integrated') return LENSES.filter((l) => l.mount === 'integrated');
+
+  // When the user has explicitly swapped to a non-native mount plate (e.g. an
+  // URSA Broadcast G2 in EF mode), only lenses matching that mount can physically
+  // attach — the adaptedMounts list is the menu of plates available, not lenses
+  // mountable simultaneously.
+  if (activeMount && activeMount !== cameraMount) {
+    return LENSES.filter((l) => l.mount === activeMount || l.mount === 'integrated');
+  }
+
   const mounts = new Set([cameraMount, ...(adaptedMounts ?? [])]);
   return LENSES.filter((l) => mounts.has(l.mount) || l.mount === 'integrated');
 }

@@ -41,7 +41,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
     if (!camDef || !lensDef) return;
 
-    const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex);
+    const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex, cam.activeMount);
 
     // HiDPI: size canvas to container at device pixel ratio
     const dpr = window.devicePixelRatio || 1;
@@ -697,7 +697,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     let panSens = 0.3;
     let tiltSens = 0.2;
     if (canvas && camDef && lensDef) {
-      const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex);
+      const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex, cam.activeMount);
       const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
       const cssW = canvas.clientWidth || canvas.width;
       const cssH = canvas.clientHeight || canvas.height;
@@ -768,8 +768,8 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   // Computed data for readout (outside canvas)
   const camDef = getCameraById(cam.cameraId, useStore.getState().customCameras);
   const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
-  const sensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex) : undefined;
-  const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, cam.useSpeedbooster) : null;
+  const sensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex, cam.activeMount) : undefined;
+  const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, cam.useSpeedbooster, cam.activeMount) : null;
   const fov = sensor ? computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive) : null;
   const dof = sensor ? computeDof(sensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive) : null;
   const lightLoss = adapterInfo ? (adapterInfo.lightLossStops > 0 ? ` (−${adapterInfo.lightLossStops}T)` : adapterInfo.lightLossStops < 0 ? ` (+${Math.abs(adapterInfo.lightLossStops)}T)` : '') : '';
