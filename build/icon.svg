@@ -52,45 +52,43 @@
   <rect x="288" y="180" width="448" height="170" rx="22"
         fill="url(#stage)" stroke="#3b82f6" stroke-width="6"/>
 
-  <!-- FOV cones (rendered behind cameras, lightly filled) -->
-  <!-- Left camera (red) -->
-  <path d="M 220 760 L 268 350 L 472 268 Z"
+  <!-- FOV cones — proper isosceles triangles with equal-length edges so each
+       cone reads as a symmetric wedge rather than a skewed quad. The side
+       cones tilt only ~8° toward the stage instead of pointing all the way
+       at its centre, which keeps the red and green wedges from looking
+       lopsided. -->
+  <!-- Left camera (red) — bisector −82°, ±15° spread, length 480 -->
+  <path d="M 220 760 L 408 318 L 161 283 Z"
         fill="#ef4444" fill-opacity="0.18"
         stroke="#ef4444" stroke-width="5" stroke-opacity="0.85"
         stroke-linejoin="round"/>
-  <!-- Centre camera (blue) -->
-  <path d="M 512 870 L 388 350 L 636 350 Z"
+  <!-- Centre camera (blue) — bisector −90°, ±20° spread, length 570 -->
+  <path d="M 512 870 L 707 334 L 317 334 Z"
         fill="#3b82f6" fill-opacity="0.18"
         stroke="#3b82f6" stroke-width="5" stroke-opacity="0.85"
         stroke-linejoin="round"/>
-  <!-- Right camera (green) -->
-  <path d="M 804 760 L 756 350 L 552 268 Z"
+  <!-- Right camera (green) — bisector −98°, ±15° spread, length 480 -->
+  <path d="M 804 760 L 863 283 L 616 318 Z"
         fill="#22c55e" fill-opacity="0.18"
         stroke="#22c55e" stroke-width="5" stroke-opacity="0.85"
         stroke-linejoin="round"/>
 
-  <!-- Camera markers as right-angled isosceles triangles.
-       The 90° angle (apex) sits at the lens position where the FOV cone
-       emanates; the two equal legs extend back from there at 45° each side
-       of the rear axis, so the hypotenuse forms the back of the camera body
-       and the triangle visually "aims" at the stage along the FOV bisector. -->
+  <!-- Camera markers — circular dots with a coloured ring and a soft inner
+       highlight, sitting exactly at each cone's apex. -->
   <g>
-    <polygon points="220,760 242,847 133,782"
-             fill="url(#ringR)" stroke="#fff" stroke-width="6"
-             stroke-linejoin="round" stroke-linecap="round"/>
-    <circle cx="220" cy="760" r="9" fill="#fff" fill-opacity="0.95"/>
+    <circle cx="220" cy="760" r="38" fill="url(#ringR)"/>
+    <circle cx="220" cy="760" r="38" fill="none" stroke="#fff" stroke-width="6" stroke-opacity="0.95"/>
+    <circle cx="220" cy="760" r="13" fill="#fff" fill-opacity="0.55"/>
   </g>
   <g>
-    <polygon points="512,870 576,934 448,934"
-             fill="url(#ringB)" stroke="#fff" stroke-width="6"
-             stroke-linejoin="round" stroke-linecap="round"/>
-    <circle cx="512" cy="870" r="9" fill="#fff" fill-opacity="0.95"/>
+    <circle cx="512" cy="870" r="38" fill="url(#ringB)"/>
+    <circle cx="512" cy="870" r="38" fill="none" stroke="#fff" stroke-width="6" stroke-opacity="0.95"/>
+    <circle cx="512" cy="870" r="13" fill="#fff" fill-opacity="0.55"/>
   </g>
   <g>
-    <polygon points="804,760 891,782 782,847"
-             fill="url(#ringG)" stroke="#fff" stroke-width="6"
-             stroke-linejoin="round" stroke-linecap="round"/>
-    <circle cx="804" cy="760" r="9" fill="#fff" fill-opacity="0.95"/>
+    <circle cx="804" cy="760" r="38" fill="url(#ringG)"/>
+    <circle cx="804" cy="760" r="38" fill="none" stroke="#fff" stroke-width="6" stroke-opacity="0.95"/>
+    <circle cx="804" cy="760" r="13" fill="#fff" fill-opacity="0.55"/>
   </g>
 
   <!-- Inner border to give the icon a slight bezel feel -->
