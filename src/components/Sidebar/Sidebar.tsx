@@ -1,10 +1,11 @@
-import { useStore } from '../../store/useStore';
-import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor } from '../../data/cameras';
+import { useStore, OBJECT_PRESETS } from '../../store/useStore';
+import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor, getCoverageStatus } from '../../data/cameras';
 import { LENSES, getLensById, getCompatibleLenses, pickInitialMountAndLens } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
 import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2, FiRotateCcw } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { BackgroundPlan, StageObjectType, Camera } from '../../types';
+import type { BackgroundPlan, StageObjectType, Camera, CameraMountType } from '../../types';
+import { MOUNT_TYPE_LABELS, MOUNT_HEIGHT_RANGE } from '../../types';
 import { CustomCameraForm } from './CustomCameraForm';
 import { CalculationBreakdown } from './CalculationBreakdown';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -102,6 +103,7 @@ function CameraCard({ camId }: { camId: string }) {
   // Adapter & effective sensor
   const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, cam.useSpeedbooster, cam.activeMount) : null;
   const effectiveSensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex, cam.activeMount) : camDef?.sensor;
+  const coverage = camDef && lensDef ? getCoverageStatus(camDef, lensDef, cam.useSpeedbooster, cam.activeMount, cam.sensorModeIndex) : null;
   const fov = effectiveSensor && lensDef ? computeFov(effectiveSensor, cam.focalLength, cam.focusDistance, cam.extenderActive) : null;
   const dof = effectiveSensor && lensDef ? computeDof(effectiveSensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive) : null;
 
@@ -408,6 +410,20 @@ function CameraCard({ camId }: { camId: string }) {
             </label>
           )}
 
+          {/* Image-circle coverage warning */}
+          {coverage && coverage.status !== 'ok' && (
+            <div
+              className={`mt-1 p-2 rounded text-[10px] leading-snug border ${
+                coverage.status === 'vignette'
+                  ? 'border-bc-red/60 bg-bc-red/10 text-red-300'
+                  : 'border-bc-yellow/60 bg-bc-yellow/10 text-bc-yellow'
+              }`}
+              title={`Lens image circle vs sensor diagonal: ${(coverage.ratio * 100).toFixed(0)} %`}
+            >
+              {coverage.status === 'vignette' ? '⛔' : '⚠️'} {coverage.message}
+            </div>
+          )}
+
           {/* Hardware sensor mode (URSA B4 crop, VENICE windows, FX9 S35 etc.) */}
           {camDef?.sensorModes && camDef.sensorModes.length > 1 && (
             <label className="block">
@@ -673,29 +689,86 @@ function CameraCard({ camId }: { camId: string }) {
             </label>
           </div>
 
-          {/* Camera height (Z) — slider for quick rough placement plus number input for precision */}
+          {/* Mount type — physical rig the camera sits on. Determines the
+              ergonomic height range below and whether a live-motion track slider
+              (jib swing / dolly travel) appears. */}
           <label className="block">
-            <span className="text-gray-400">Height: {cam.z.toFixed(2)}m</span>
-            <div className="flex items-center gap-2">
-              <input
-                type="range"
-                className="flex-1 accent-bc-accent"
-                min={0}
-                max={20}
-                step={0.05}
-                value={Math.min(20, Math.max(0, cam.z))}
-                onChange={(e) => updateCamera(cam.id, { z: parseFloat(e.target.value) })}
-              />
-              <input
-                type="number"
-                className="w-16 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-white text-xs"
-                value={cam.z}
-                step={0.1}
-                min={0}
-                onChange={(e) => updateCamera(cam.id, { z: Math.max(0, parseFloat(e.target.value) || 0) })}
-              />
-            </div>
+            <span className="text-gray-400">Mount</span>
+            <select
+              className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
+              value={cam.mountType ?? 'tripod'}
+              onChange={(e) => {
+                const newMount = e.target.value as CameraMountType;
+                const range = MOUNT_HEIGHT_RANGE[newMount];
+                // Clamp Z into the new ergonomic range so changing to a tripod
+                // doesn't leave the camera at 6 m from a jib config.
+                const clampedZ = Math.max(range.min, Math.min(range.max, cam.z));
+                updateCamera(cam.id, { mountType: newMount, z: clampedZ, trackOffset: range.track ? 0 : undefined });
+              }}
+            >
+              {(Object.keys(MOUNT_TYPE_LABELS) as CameraMountType[]).map((m) => (
+                <option key={m} value={m}>{MOUNT_TYPE_LABELS[m]}</option>
+              ))}
+            </select>
           </label>
+
+          {/* Camera height (Z) — bounded by the mount's ergonomic range */}
+          {(() => {
+            const range = MOUNT_HEIGHT_RANGE[cam.mountType ?? 'tripod'];
+            return (
+              <label className="block">
+                <span className="text-gray-400">Height: {cam.z.toFixed(2)}m <span className="text-[10px] text-gray-600">({range.min}–{range.max}m)</span></span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range"
+                    className="flex-1 accent-bc-accent"
+                    min={range.min}
+                    max={range.max}
+                    step={range.pump > 0 ? range.pump : 0.05}
+                    value={Math.min(range.max, Math.max(range.min, cam.z))}
+                    onChange={(e) => updateCamera(cam.id, { z: parseFloat(e.target.value) })}
+                  />
+                  <input
+                    type="number"
+                    className="w-16 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                    value={cam.z}
+                    step={0.1}
+                    min={range.min}
+                    max={range.max}
+                    onChange={(e) => updateCamera(cam.id, { z: Math.max(range.min, Math.min(range.max, parseFloat(e.target.value) || 0)) })}
+                  />
+                </div>
+              </label>
+            );
+          })()}
+
+          {/* Live track slider — only for rigs with travel (jib swing, dolly track) */}
+          {(() => {
+            const range = MOUNT_HEIGHT_RANGE[cam.mountType ?? 'tripod'];
+            if (!range.track) return null;
+            const offset = cam.trackOffset ?? 0;
+            return (
+              <label className="block">
+                <span className="text-gray-400">Track: {offset.toFixed(2)}m <span className="text-[10px] text-gray-600">(0–{range.track}m)</span></span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range"
+                    className="flex-1 accent-bc-yellow"
+                    min={-range.track}
+                    max={range.track}
+                    step={0.05}
+                    value={offset}
+                    onChange={(e) => updateCamera(cam.id, { trackOffset: parseFloat(e.target.value) })}
+                  />
+                  <button
+                    onClick={() => updateCamera(cam.id, { trackOffset: 0 })}
+                    className="text-[10px] text-gray-500 hover:text-white px-1.5 py-0.5 rounded border border-bc-border"
+                    title="Park rig at zero"
+                  >park</button>
+                </div>
+              </label>
+            );
+          })()}
 
           {/* Notes — free-form, shown in export when filled */}
           <label className="block">
@@ -1001,27 +1074,45 @@ export default function Sidebar() {
         </button>
         {personsOpen && (
           <div className="mt-2 space-y-2 text-xs">
-            {persons.map((p) => (
-              <div key={p.id} className="flex items-center gap-2 bg-bc-dark rounded p-1.5 border border-bc-border">
-                <span className="text-gray-500 text-[10px] w-6">{
-                  p.objectType === 'drums' ? '🥁' :
-                  p.objectType === 'keys' ? '🎹' :
-                  p.objectType === 'person-guitar' ? '🎸' :
-                  p.objectType === 'mic-stand' ? '🎤' : '👤'
-                }</span>
-                <input className="bg-transparent text-white text-xs w-16 outline-none" value={p.label}
-                  onChange={(e) => updatePerson(p.id, { label: e.target.value })} />
-                <span className="text-gray-500">{p.height}m</span>
-                <span className="text-gray-500">({p.x.toFixed(1)}, {p.y.toFixed(1)})</span>
-                <button onClick={() => removePerson(p.id)} className="ml-auto p-0.5 hover:text-bc-red"><FiTrash2 size={11} /></button>
-              </div>
-            ))}
+            {persons.map((p) => {
+              const icon =
+                p.objectType === 'drums' ? '🥁' :
+                p.objectType === 'keys' ? '🎹' :
+                p.objectType === 'person-guitar' ? '🎸' :
+                p.objectType === 'mic-stand' ? '🎤' :
+                p.objectType === 'sitting-person' ? '🪑' :
+                p.objectType === 'chair' ? '💺' :
+                p.objectType === 'table' ? '🪑' :
+                p.objectType === 'lectern' ? '🎙️' :
+                p.objectType === 'schneetiger' ? '🐅' :
+                p.objectType === 'custom' ? '◇' : '👤';
+              return (
+                <div key={p.id} className="flex items-center gap-2 bg-bc-dark rounded p-1.5 border border-bc-border">
+                  <span className="text-gray-500 text-[10px] w-6 text-center">{icon}</span>
+                  <input className="bg-transparent text-white text-xs w-16 outline-none" value={p.label}
+                    onChange={(e) => updatePerson(p.id, { label: e.target.value })} />
+                  <span className="text-gray-500">{p.height}m</span>
+                  <input
+                    type="color"
+                    className="w-5 h-5 rounded border border-bc-border cursor-pointer bg-transparent"
+                    value={p.color ?? (OBJECT_PRESETS[p.objectType]?.color ?? '#f59e0b')}
+                    onChange={(e) => updatePerson(p.id, { color: e.target.value })}
+                    title="Custom accent colour"
+                  />
+                  <span className="text-gray-500">({p.x.toFixed(1)}, {p.y.toFixed(1)})</span>
+                  <button onClick={() => removePerson(p.id)} className="ml-auto p-0.5 hover:text-bc-red"><FiTrash2 size={11} /></button>
+                </div>
+              );
+            })}
             <div className="grid grid-cols-3 gap-1">
               <button onClick={() => addPerson()} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
                 <FiUser size={10} /> Person
               </button>
               <button onClick={() => addStageObject('person-guitar')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
                 🎸 Guitarist
+              </button>
+              <button onClick={() => addStageObject('sitting-person')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                🪑 Seated
               </button>
               <button onClick={() => addStageObject('drums')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
                 🥁 Drums
@@ -1031,6 +1122,18 @@ export default function Sidebar() {
               </button>
               <button onClick={() => addStageObject('mic-stand')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
                 🎤 Mic Stand
+              </button>
+              <button onClick={() => addStageObject('chair')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                💺 Chair
+              </button>
+              <button onClick={() => addStageObject('table')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                🟫 Table
+              </button>
+              <button onClick={() => addStageObject('lectern')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                🎙️ Lectern
+              </button>
+              <button onClick={() => addStageObject('schneetiger')} className="col-span-3 flex items-center justify-center gap-1 px-1 py-1 rounded bg-sky-500/20 text-sky-300 text-[10px] hover:bg-sky-500/30">
+                🐅 Schneetiger
               </button>
             </div>
           </div>

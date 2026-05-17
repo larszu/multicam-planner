@@ -4,6 +4,8 @@ import { getCameraById, getEffectiveSensor } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov } from '../../utils/fov';
 import type { VenueCamera, Wall } from '../../types';
+import { MOUNT_HEIGHT_RANGE } from '../../types';
+import { effectiveCameraPos } from '../../utils/camera';
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import type Konva from 'konva';
 
@@ -298,12 +300,21 @@ export default function Venue2D() {
 
   const handleCamDragEnd = useCallback(
     (cam: VenueCamera, e: Konva.KonvaEventObject<DragEvent>) => {
-      const newX = Math.max(0, Math.min(venue.widthM, e.target.x() / ppm));
-      const newY = Math.max(0, Math.min(venue.heightM, e.target.y() / ppm));
-      // Sync Konva's internal position back to the clamped value — otherwise the visual
-      // can stay at the out-of-bounds drag position when React doesn't re-render
-      // (e.g. when the clamped value equals the previous state).
-      e.target.position({ x: newX * ppm, y: newY * ppm });
+      // The drag operates on the *effective* (track-offset-adjusted) marker.
+      // Subtract the offset back out so cam.x/cam.y stores the parked position.
+      const dropX = e.target.x() / ppm;
+      const dropY = e.target.y() / ppm;
+      const offset = cam.trackOffset ?? 0;
+      const panRad = (cam.pan * Math.PI) / 180;
+      const parkedX = dropX - Math.cos(panRad) * offset;
+      const parkedY = dropY - Math.sin(panRad) * offset;
+      const newX = Math.max(0, Math.min(venue.widthM, parkedX));
+      const newY = Math.max(0, Math.min(venue.heightM, parkedY));
+      // Snap the visual back to the (possibly clamped) effective position.
+      e.target.position({
+        x: (newX + Math.cos(panRad) * offset) * ppm,
+        y: (newY + Math.sin(panRad) * offset) * ppm,
+      });
       moveCamera(cam.id, newX, newY);
     },
     [moveCamera, ppm, venue],
@@ -470,18 +481,63 @@ export default function Venue2D() {
         )}
 
         {/* Persons */}
-        {persons.map((p) => (
-          <Group key={p.id} x={p.x * ppm} y={p.y * ppm} draggable onDragEnd={(e) => handlePersonDragEnd(p.id, e)}>
-            <Circle radius={6} fill="#f59e0b" stroke="#fff" strokeWidth={1} opacity={0.8} />
-            <Text x={-20} y={8} text={`${p.label} (${p.height}m)`} fontSize={9} fill="#f59e0b" align="center" width={40} />
-          </Group>
-        ))}
+        {persons.map((p) => {
+          const type = p.objectType ?? 'person';
+          const col = p.color ?? (
+            type === 'drums' ? '#ef4444' :
+            type === 'keys' ? '#8b5cf6' :
+            type === 'person-guitar' ? '#f97316' :
+            type === 'sitting-person' ? '#38bdf8' :
+            type === 'mic-stand' ? '#9ca3af' :
+            type === 'chair' ? '#a16207' :
+            type === 'table' ? '#a16207' :
+            type === 'lectern' ? '#7c3aed' :
+            type === 'schneetiger' ? '#e0f2fe' :
+            '#f59e0b'
+          );
+          const footW = Math.max(6, p.width * ppm);
+          return (
+            <Group key={p.id} x={p.x * ppm} y={p.y * ppm} draggable onDragEnd={(e) => handlePersonDragEnd(p.id, e)}>
+              {type === 'table' || type === 'drums' || type === 'keys' ? (
+                <Rect x={-footW / 2} y={-footW / 4} width={footW} height={footW / 2} fill={col} opacity={0.55} stroke={col} strokeWidth={1} cornerRadius={2} />
+              ) : type === 'schneetiger' ? (
+                <Rect x={-footW / 2} y={-footW / 4} width={footW} height={footW / 2} fill={col} opacity={0.85} stroke="#1f2937" strokeWidth={1} cornerRadius={footW / 4} />
+              ) : (
+                <Circle radius={Math.max(5, footW / 3)} fill={col} stroke="#fff" strokeWidth={1} opacity={0.85} />
+              )}
+              <Text x={-26} y={8} text={`${p.label} (${p.height}m)`} fontSize={9} fill={col} align="center" width={52} />
+            </Group>
+          );
+        })}
 
-        {/* Camera icons (on top) */}
+        {/* Track range — dashed line showing the rig's full travel envelope.
+            Drawn before the camera icon so the camera marker sits on top. */}
+        {cameras.map((cam) => {
+          const range = MOUNT_HEIGHT_RANGE[cam.mountType ?? 'tripod'];
+          if (!range.track) return null;
+          if (!showAllFov && cam.id !== selectedCameraId) return null;
+          const panRad = (cam.pan * Math.PI) / 180;
+          const dx = Math.cos(panRad) * range.track * ppm;
+          const dy = Math.sin(panRad) * range.track * ppm;
+          const x0 = cam.x * ppm;
+          const y0 = cam.y * ppm;
+          return (
+            <Line
+              key={`track-${cam.id}`}
+              points={[x0 - dx, y0 - dy, x0 + dx, y0 + dy]}
+              stroke={cam.color} strokeWidth={1.5} dash={[4, 4]} opacity={0.6} listening={false}
+            />
+          );
+        })}
+
+        {/* Camera icons (on top). Position uses effectiveCameraPos so the
+            live-track slider (jib swing / dolly travel) visibly moves the
+            marker along the track line. */}
         {cameras.map((cam) => {
           const isSelected = cam.id === selectedCameraId;
+          const pos = effectiveCameraPos(cam);
           return (
-            <Group key={`cam-${cam.id}`} x={cam.x * ppm} y={cam.y * ppm} draggable={!drawingWall} onDragEnd={(e) => handleCamDragEnd(cam, e)} onClick={() => selectCamera(cam.id)} onTap={() => selectCamera(cam.id)}>
+            <Group key={`cam-${cam.id}`} x={pos.x * ppm} y={pos.y * ppm} draggable={!drawingWall} onDragEnd={(e) => handleCamDragEnd(cam, e)} onClick={() => selectCamera(cam.id)} onTap={() => selectCamera(cam.id)}>
               <Circle radius={isSelected ? 10 : 8} fill={cam.color} stroke={isSelected ? '#fff' : cam.color} strokeWidth={isSelected ? 3 : 1} shadowColor={cam.color} shadowBlur={isSelected ? 12 : 0} />
               <Line points={[0, 0, 14 * Math.cos((cam.pan * Math.PI) / 180), 14 * Math.sin((cam.pan * Math.PI) / 180)]} stroke={cam.color} strokeWidth={2} />
               <Text x={-16} y={12} text={cam.label} fontSize={11} fill="#fff" fontStyle="bold" align="center" width={32} />

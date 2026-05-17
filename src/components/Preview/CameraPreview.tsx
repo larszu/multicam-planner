@@ -2,9 +2,10 @@ import { useStore } from '../../store/useStore';
 import { getCameraById, getEffectiveSensor, getAdapterInfo } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
+import { effectiveCameraPos } from '../../utils/camera';
 import { useRef, useEffect, useLayoutEffect, useCallback, useState } from 'react';
 import type { StageObjectType } from '../../types';
-import { FiExternalLink, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiUnlock, FiLock } from 'react-icons/fi';
 
 interface PreviewProps {
   undocked: boolean;
@@ -29,6 +30,25 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   // Cache projected person positions during draw() so the click handler can hit-test
   // without re-projecting everything itself.
   const projectedPersons = useRef<{ id: string; sx: number; sy: number; topSy: number; dist: number }[]>([]);
+
+  // ── Locked-person focus tracker ──
+  // When cam.lockedPersonId is set, the focus distance follows that target as
+  // the camera or the subject moves. Pan/tilt are NOT changed here — the
+  // operator still aims manually. Useful for live events where the subject
+  // walks around but the operator already has them framed.
+  useEffect(() => {
+    if (!cam?.lockedPersonId) return;
+    const target = persons.find((p) => p.id === cam.lockedPersonId);
+    if (!target) return;
+    const pos = effectiveCameraPos(cam);
+    const dx = target.x - pos.x;
+    const dy = target.y - pos.y;
+    const dz = target.height * 0.5 - cam.z; // aim at the subject's centre, not the feet
+    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (Math.abs(dist - cam.focusDistance) > 0.05) {
+      useStore.getState().updateCamera(cam.id, { focusDistance: Math.max(0.1, dist) });
+    }
+  }, [cam?.lockedPersonId, cam?.x, cam?.y, cam?.z, cam?.focusDistance, cam?.id, cam?.trackOffset, cam?.pan, persons, cam]);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -130,10 +150,11 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
 
     type CamPoint = { x: number; y: number; z: number };
 
+    const camPos = effectiveCameraPos(cam!);
     const worldToCamera = (wx: number, wy: number, wz: number): CamPoint => {
       const c = cam!;
-      const dx = wx - c.x;
-      const dy = wy - c.y;
+      const dx = wx - camPos.x;
+      const dy = wy - camPos.y;
       return {
         x: -dx * sinP + dy * cosP,
         y: wz - c.z,
@@ -195,7 +216,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       // Depth lines (horizontal, converging)
       for (let d = 1; d <= 20; d++) {
         const dist = d * 2; // every 2m
-        const screenPt = worldToScreenLocal(cam.x, cam.y + dist, 0);
+        const screenPt = worldToScreenLocal(camPos.x, camPos.y + dist, 0);
         if (screenPt.behindCamera || screenPt.sy < groundYClamped - 2) continue;
         const alpha = Math.max(0.02, 0.12 - d * 0.005);
         ctx.strokeStyle = `rgba(120,160,220,${alpha})`;
@@ -209,9 +230,9 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       const vanishX = W / 2;
       for (let i = -10; i <= 10; i++) {
         if (i === 0) continue;
-        const worldX = cam.x + i * 2;
-        const nearPt = worldToScreenLocal(worldX, cam.y + 2, 0);
-        const farPt = worldToScreenLocal(worldX, cam.y + 40, 0);
+        const worldX = camPos.x + i * 2;
+        const nearPt = worldToScreenLocal(worldX, camPos.y + 2, 0);
+        const farPt = worldToScreenLocal(worldX, camPos.y + 40, 0);
         if (nearPt.behindCamera && farPt.behindCamera) continue;
         const alpha = Math.max(0.02, 0.08 - Math.abs(i) * 0.006);
         ctx.strokeStyle = `rgba(120,160,220,${alpha})`;
@@ -277,7 +298,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       return Math.max(-SAFE, Math.min(SAFE, v));
     }
 
-    const drawPerson = (cx: number, feetY: number, headY: number, dist: number, objectType?: StageObjectType, label?: string) => {
+    const drawPerson = (cx: number, feetY: number, headY: number, dist: number, objectType?: StageObjectType, label?: string, customColor?: string) => {
       const pxH = Math.abs(headY - feetY);
       if (pxH < 1) return;
       const type = objectType ?? 'person';
@@ -353,6 +374,97 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         ctx.beginPath();
         ctx.ellipse(cx, headY + pxH * 0.05, pxH * 0.04, pxH * 0.06, 0, 0, Math.PI * 2);
         ctx.fill(); ctx.stroke();
+      } else if (type === 'chair') {
+        const c = customColor ?? '#a16207';
+        const seatW = pxH * 0.6;
+        const seatY = feetY - pxH * 0.55;
+        const backH = pxH * 0.65;
+        // Legs
+        ctx.strokeStyle = '#57534e'; ctx.lineWidth = Math.max(1, pxH * 0.04);
+        ctx.beginPath(); ctx.moveTo(cx - seatW / 2, seatY); ctx.lineTo(cx - seatW / 2, feetY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + seatW / 2, seatY); ctx.lineTo(cx + seatW / 2, feetY); ctx.stroke();
+        // Seat
+        ctx.fillStyle = c + 'aa'; ctx.strokeStyle = c; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.rect(cx - seatW / 2, seatY, seatW, pxH * 0.08); ctx.fill(); ctx.stroke();
+        // Backrest
+        ctx.beginPath(); ctx.rect(cx - seatW * 0.45, seatY - backH, seatW * 0.9, backH); ctx.fill(); ctx.stroke();
+      } else if (type === 'table') {
+        const c = customColor ?? '#a16207';
+        const topW = pxH * 1.4;
+        const topY = feetY - pxH * 0.75;
+        ctx.strokeStyle = '#57534e'; ctx.lineWidth = Math.max(1, pxH * 0.05);
+        ctx.beginPath(); ctx.moveTo(cx - topW / 2 + pxH * 0.06, topY + pxH * 0.04); ctx.lineTo(cx - topW / 2 + pxH * 0.06, feetY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + topW / 2 - pxH * 0.06, topY + pxH * 0.04); ctx.lineTo(cx + topW / 2 - pxH * 0.06, feetY); ctx.stroke();
+        ctx.fillStyle = c + 'cc'; ctx.strokeStyle = c; ctx.lineWidth = 1.3;
+        ctx.beginPath(); ctx.rect(cx - topW / 2, topY, topW, pxH * 0.08); ctx.fill(); ctx.stroke();
+      } else if (type === 'lectern') {
+        const c = customColor ?? '#7c3aed';
+        const w = pxH * 0.55;
+        ctx.fillStyle = c + 'bb'; ctx.strokeStyle = c; ctx.lineWidth = 1.3;
+        ctx.beginPath(); ctx.rect(cx - w / 2, feetY - pxH * 0.85, w, pxH * 0.85); ctx.fill(); ctx.stroke();
+        // Slanted top
+        ctx.fillStyle = '#1f2937cc'; ctx.strokeStyle = '#475569';
+        ctx.beginPath();
+        ctx.moveTo(cx - w * 0.6, feetY - pxH * 0.95);
+        ctx.lineTo(cx + w * 0.6, feetY - pxH * 0.8);
+        ctx.lineTo(cx + w * 0.6, feetY - pxH * 0.72);
+        ctx.lineTo(cx - w * 0.6, feetY - pxH * 0.87);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+      } else if (type === 'sitting-person') {
+        const c = customColor ?? '#38bdf8';
+        const pxW = pxH * 0.3;
+        const headR = pxH * 0.11;
+        // Stool hint
+        ctx.strokeStyle = '#57534e'; ctx.lineWidth = Math.max(1, pxH * 0.03);
+        ctx.beginPath(); ctx.moveTo(cx - pxW * 0.6, feetY - pxH * 0.05); ctx.lineTo(cx - pxW * 0.6, feetY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + pxW * 0.6, feetY - pxH * 0.05); ctx.lineTo(cx + pxW * 0.6, feetY); ctx.stroke();
+        // Torso (short)
+        ctx.fillStyle = c + '55'; ctx.strokeStyle = c; ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(cx - pxW * 0.55, feetY - pxH * 0.5);
+        ctx.lineTo(cx + pxW * 0.55, feetY - pxH * 0.5);
+        ctx.lineTo(cx + pxW * 0.4, feetY - pxH * 0.05);
+        ctx.lineTo(cx - pxW * 0.4, feetY - pxH * 0.05);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        // Head
+        ctx.fillStyle = '#d4a57488'; ctx.strokeStyle = c;
+        ctx.beginPath(); ctx.arc(cx, headY + headR + pxH * 0.05, headR, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        // Thighs horizontal
+        ctx.strokeStyle = c + '88'; ctx.lineWidth = Math.max(1, pxH * 0.04);
+        ctx.beginPath(); ctx.moveTo(cx - pxW * 0.3, feetY - pxH * 0.1); ctx.lineTo(cx + pxW * 0.8, feetY - pxH * 0.1); ctx.stroke();
+      } else if (type === 'schneetiger') {
+        const c = customColor ?? '#e0f2fe';
+        const bodyW = pxH * 1.3;
+        const bodyH = pxH * 0.5;
+        const bodyY = feetY - bodyH * 1.3;
+        // Legs
+        ctx.strokeStyle = c; ctx.lineWidth = Math.max(1.5, pxH * 0.06);
+        ctx.beginPath(); ctx.moveTo(cx - bodyW * 0.35, bodyY + bodyH); ctx.lineTo(cx - bodyW * 0.35, feetY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx + bodyW * 0.35, bodyY + bodyH); ctx.lineTo(cx + bodyW * 0.35, feetY); ctx.stroke();
+        // Body
+        ctx.fillStyle = c + 'cc'; ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        if (pxH > 10) ctx.roundRect(cx - bodyW / 2, bodyY, bodyW, bodyH, bodyH * 0.4);
+        else ctx.rect(cx - bodyW / 2, bodyY, bodyW, bodyH);
+        ctx.fill(); ctx.stroke();
+        // Stripes
+        ctx.strokeStyle = '#1f2937aa'; ctx.lineWidth = Math.max(1, pxH * 0.02);
+        for (let i = 1; i < 5; i++) {
+          const sx = cx - bodyW / 2 + (bodyW * i) / 5;
+          ctx.beginPath(); ctx.moveTo(sx, bodyY + bodyH * 0.1); ctx.lineTo(sx + pxH * 0.04, bodyY + bodyH * 0.9); ctx.stroke();
+        }
+        // Head
+        ctx.fillStyle = c + 'dd'; ctx.strokeStyle = '#334155';
+        const hr = pxH * 0.18;
+        ctx.beginPath(); ctx.arc(cx + bodyW * 0.45, bodyY + bodyH * 0.3, hr, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        // Ears
+        ctx.fillStyle = c;
+        ctx.beginPath(); ctx.moveTo(cx + bodyW * 0.45 - hr * 0.5, bodyY + bodyH * 0.3 - hr); ctx.lineTo(cx + bodyW * 0.45 - hr * 0.2, bodyY + bodyH * 0.3 - hr * 1.5); ctx.lineTo(cx + bodyW * 0.45, bodyY + bodyH * 0.3 - hr); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(cx + bodyW * 0.45 + hr * 0.5, bodyY + bodyH * 0.3 - hr); ctx.lineTo(cx + bodyW * 0.45 + hr * 0.2, bodyY + bodyH * 0.3 - hr * 1.5); ctx.lineTo(cx + bodyW * 0.45, bodyY + bodyH * 0.3 - hr); ctx.closePath(); ctx.fill();
+        // Tail
+        ctx.strokeStyle = c; ctx.lineWidth = Math.max(1.5, pxH * 0.05);
+        ctx.beginPath(); ctx.moveTo(cx - bodyW * 0.5, bodyY + bodyH * 0.3); ctx.quadraticCurveTo(cx - bodyW * 0.85, bodyY, cx - bodyW * 0.75, bodyY - bodyH * 0.4); ctx.stroke();
       } else {
         // Person (or person-guitar) - realistic silhouette
         const pxW = pxH * 0.28;
@@ -363,8 +475,8 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         const waistY = feetY - pxH * 0.42;
         const hipW = pxW * 0.4;
 
-        const bodyColor = type === 'person-guitar' ? '#f97316' : '#22c55e';
-        const bodyFill = type === 'person-guitar' ? '#f9731644' : '#22c55e44';
+        const bodyColor = customColor ?? (type === 'person-guitar' ? '#f97316' : '#22c55e');
+        const bodyFill = bodyColor + '44';
         const skinColor = '#d4a574';
 
         // Head (skin-colored circle)
@@ -445,7 +557,18 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       // Label
       if (label && feetY > 0 && feetY < H - 5 && cx > -50 && cx < W + 50 && dist > 0) {
         const fontSize = Math.max(7, Math.min(11, 120 / dist));
-        const labelColor = type === 'drums' ? '#ef4444' : type === 'keys' ? '#8b5cf6' : type === 'person-guitar' ? '#f97316' : type === 'mic-stand' ? '#9ca3af' : '#22c55e';
+        const labelColor = customColor ?? (
+          type === 'drums' ? '#ef4444' :
+          type === 'keys' ? '#8b5cf6' :
+          type === 'person-guitar' ? '#f97316' :
+          type === 'mic-stand' ? '#9ca3af' :
+          type === 'chair' ? '#a16207' :
+          type === 'table' ? '#a16207' :
+          type === 'lectern' ? '#7c3aed' :
+          type === 'sitting-person' ? '#38bdf8' :
+          type === 'schneetiger' ? '#e0f2fe' :
+          '#22c55e'
+        );
         ctx.fillStyle = labelColor;
         ctx.font = `${fontSize}px monospace`;
         ctx.textAlign = 'center';
@@ -454,6 +577,9 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     }
 
     projectedPersons.current = [];
+    let inFramePersons = 0;
+    let totalInFront = 0;
+    let nearestCrosshair: { id: string; label: string; dist: number; sx: number; sy: number } | null = null;
     persons.forEach((person) => {
       // Project via worldToCamera + cameraToScreen directly so a person who is
       // physically in front of the camera but within the projection NEAR plane
@@ -464,6 +590,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       const feetCam = worldToCamera(person.x, person.y, 0);
       // Genuinely behind the camera — no chance of being visible
       if (feetCam.z <= 0.001) return;
+      totalInFront++;
       const headCam = worldToCamera(person.x, person.y, person.height);
       const feetProj = cameraToScreen(feetCam);
       const headProj = cameraToScreen(headCam);
@@ -484,6 +611,8 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       if (feetSy < 0 && headSy < 0) return;
       if (feetSy > H && headSy > H) return;
 
+      inFramePersons++;
+
       // Remember on-screen position for click-to-focus hit-testing
       projectedPersons.current.push({
         id: person.id,
@@ -493,7 +622,28 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         dist: feetProj.dist,
       });
 
-      drawPerson(feetSx, feetSy, headSy, feetProj.dist, person.objectType, `${person.label} (${person.height.toFixed(1)}m)`);
+      // Track person nearest the screen centre (crosshair) for distance overlay
+      const torsoSy = (feetSy + headSy) / 2;
+      const centreDist = Math.hypot(feetSx - W / 2, torsoSy - H / 2);
+      if (centreDist < Math.min(W, H) * 0.18) {
+        if (!nearestCrosshair || centreDist < Math.hypot(nearestCrosshair.sx - W / 2, nearestCrosshair.sy - H / 2)) {
+          nearestCrosshair = { id: person.id, label: person.label, dist: feetProj.dist, sx: feetSx, sy: torsoSy };
+        }
+      }
+
+      // ── Depth of Field blur ──
+      // Smooth falloff scaled by focal length / aperture, so a fast tele blurs
+      // backgrounds aggressively while a wide-stopped-down lens stays sharp.
+      // Locked subject (focus-pinned in the operator's frame) always renders
+      // sharp regardless of distance.
+      let blurPx = 0;
+      if (cam.lockedPersonId !== person.id) {
+        const outOfFocus = Math.abs(feetProj.dist - cam.focusDistance);
+        blurPx = Math.min(12, outOfFocus * (cam.focalLength / 50) / Math.max(1, cam.aperture) * 0.6);
+      }
+      if (blurPx > 0.5) ctx.filter = `blur(${blurPx.toFixed(1)}px)`;
+      drawPerson(feetSx, feetSy, headSy, feetProj.dist, person.objectType, `${person.label} (${person.height.toFixed(1)}m)`, person.color);
+      if (blurPx > 0.5) ctx.filter = 'none';
     });
 
     ctx.restore();
@@ -517,38 +667,6 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       ctx.textAlign = 'center';
       ctx.fillText(otherCam.label, pos.sx, pos.sy - sz / 2 - 3);
     });
-
-    // ── Reference person at centre of view ──
-    const refPersonH = 1.8;
-    const scale = H * 0.6 / imgH;
-    const pxHeight = refPersonH * scale;
-    const pxWidth = pxHeight * 0.35;
-    const personX = W / 2;
-    const personBottom = groundYClamped;
-
-    if (groundYClamped > 0 && groundYClamped < H) {
-      // Body
-      ctx.fillStyle = cam.color + '55';
-      ctx.strokeStyle = cam.color + 'aa';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.roundRect(personX - pxWidth / 2, personBottom - pxHeight, pxWidth, pxHeight * 0.7, 4);
-      ctx.fill();
-      ctx.stroke();
-
-      // Head
-      const headR = pxWidth * 0.45;
-      ctx.beginPath();
-      ctx.arc(personX, personBottom - pxHeight - headR * 0.2, headR, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      // Person height label
-      ctx.fillStyle = '#ffffff88';
-      ctx.font = '10px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText('1.80m ref', personX + pxWidth / 2 + 4, personBottom - pxHeight / 2);
-    }
 
     // ═══ RULERS ═══
     const rulerH = 22;
@@ -631,6 +749,51 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(W / 2 - 18, H / 2); ctx.lineTo(W / 2 + 18, H / 2); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(W / 2, H / 2 - 18); ctx.lineTo(W / 2, H / 2 + 18); ctx.stroke();
+
+      // Distance readout under the crosshair: focus distance + nearest in-frame
+      // subject. Helps the operator verify pull-focus while panning.
+      const lines: string[] = [`focus ${cam.focusDistance.toFixed(1)}m`];
+      if (nearestCrosshair) {
+        const n = nearestCrosshair as { label: string; dist: number };
+        lines.push(`${n.label}: ${n.dist.toFixed(1)}m`);
+      }
+      ctx.fillStyle = '#000000aa';
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      const lineH = 12;
+      const boxW = 120;
+      const boxH = lines.length * lineH + 6;
+      ctx.fillRect(W / 2 - boxW / 2, H / 2 + 22, boxW, boxH);
+      ctx.fillStyle = '#cbd5e1';
+      lines.forEach((t, i) => ctx.fillText(t, W / 2, H / 2 + 22 + lineH * (i + 1) - 1));
+    }
+
+    // ── Coverage indicator (top-left badge) ──
+    // Subtle warning when subjects exist but aren't framed. Locked subject
+    // off-frame gets a stronger red badge because that's almost always wrong.
+    if (totalInFront > 0) {
+      const offFrame = totalInFront - inFramePersons;
+      const lockedTarget = cam.lockedPersonId ? persons.find((p) => p.id === cam.lockedPersonId) : null;
+      const lockedOff = lockedTarget ? !projectedPersons.current.some((p) => p.id === lockedTarget.id) : false;
+      let badgeText: string;
+      let badgeColor: string;
+      if (lockedOff) {
+        badgeText = `⚠ ${lockedTarget!.label} OUT OF FRAME`;
+        badgeColor = '#ef4444';
+      } else if (offFrame > 0) {
+        badgeText = `${inFramePersons}/${totalInFront} in frame`;
+        badgeColor = '#fbbf24';
+      } else {
+        badgeText = `${inFramePersons} in frame`;
+        badgeColor = '#22c55e';
+      }
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'left';
+      const tw = ctx.measureText(badgeText).width + 12;
+      ctx.fillStyle = '#000000aa';
+      ctx.fillRect(4, 4, tw, 18);
+      ctx.fillStyle = badgeColor;
+      ctx.fillText(badgeText, 10, 16);
     }
 
     // ═══ VIGNETTE ═══
@@ -706,10 +869,11 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     const dy = e.clientY - lastMouse.current.y;
     lastMouse.current = { x: e.clientX, y: e.clientY };
 
-    // FOV-scaled sensitivity so the scene moves 1:1 with the mouse: 1 px of cursor
-    // motion rotates the camera by exactly the angle that one pixel on the canvas
-    // spans. This keeps fine framing tractable at tight focal lengths and avoids
-    // sluggish dragging at wide angles.
+    // FOV-scaled sensitivity so the scene moves 1:1 with the mouse: 1 px of
+    // cursor motion rotates the camera by the angle one pixel on the canvas
+    // spans. Per-camera invert flags reverse the direction without touching
+    // sensitivity. Pan & tilt wrap into [-180, 180) so the camera can spin
+    // through ±180° instead of hitting a hard clamp.
     const canvas = canvasRef.current;
     const camDef = getCameraById(cam.cameraId, useStore.getState().customCameras);
     const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
@@ -723,8 +887,15 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       if (cssW > 0) panSens = fov.horizontalDeg / cssW;
       if (cssH > 0) tiltSens = fov.verticalDeg / cssH;
     }
-    const newPan = Math.max(-180, Math.min(180, cam.pan - dx * panSens));
-    const newTilt = Math.max(-90, Math.min(45, cam.tilt + dy * tiltSens));
+    const invH = cam.invertPreviewH ? -1 : 1;
+    const invV = cam.invertPreviewV ? -1 : 1;
+    const wrap180 = (v: number) => {
+      let w = ((v + 180) % 360 + 360) % 360 - 180;
+      if (w === 180) w = -180;
+      return w;
+    };
+    const newPan = wrap180(cam.pan - dx * panSens * invH);
+    const newTilt = Math.max(-90, Math.min(45, cam.tilt + dy * tiltSens * invV));
     useStore.getState().updateCamera(cam.id, { pan: newPan, tilt: newTilt });
   }, [cam, focusPickMode]);
 
@@ -839,19 +1010,52 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
             </button>
           ))}
           <button
+            onClick={() => useStore.getState().updateCamera(cam.id, { invertPreviewH: !cam.invertPreviewH })}
+            title="Flip horizontal pan direction"
+            className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${cam.invertPreviewH ? 'border-bc-accent text-bc-accent bg-bc-accent/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
+          >
+            ↔ Invert H
+          </button>
+          <button
+            onClick={() => useStore.getState().updateCamera(cam.id, { invertPreviewV: !cam.invertPreviewV })}
+            title="Flip vertical tilt direction"
+            className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${cam.invertPreviewV ? 'border-bc-accent text-bc-accent bg-bc-accent/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
+          >
+            ↕ Invert V
+          </button>
+          <button
             onClick={() => setFocusPickMode((v) => !v)}
             title={focusPickMode ? 'Click anywhere to leave focus-pick mode' : 'Pick a person in the preview to set focus distance'}
             className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${focusPickMode ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
           >
             ◎ Focus pick {focusPickMode ? '· ON' : ''}
           </button>
-          {!undocked && (
+          {cam.lockedPersonId && (
             <button
-              onClick={onUndock}
-              className="px-2 py-0.5 rounded text-[10px] font-medium border border-bc-border text-gray-500 hover:text-gray-300 hover:border-gray-400 flex items-center gap-1"
-              title="Undock preview into floating window"
+              onClick={() => useStore.getState().updateCamera(cam.id, { lockedPersonId: undefined })}
+              title="Release focus lock"
+              className="px-2 py-0.5 rounded text-[10px] font-medium border border-bc-yellow text-bc-yellow bg-bc-yellow/10 flex items-center gap-1"
             >
-              <FiExternalLink size={10} /> Float
+              <FiLock size={10} /> Unlock {persons.find((p) => p.id === cam.lockedPersonId)?.label ?? 'subject'}
+            </button>
+          )}
+          {!cam.lockedPersonId && projectedPersons.current.length > 0 && (
+            <button
+              onClick={() => {
+                // Lock to the projected person nearest the crosshair (centre).
+                const W = canvasRef.current?.clientWidth ?? 0;
+                const H = canvasRef.current?.clientHeight ?? 0;
+                let best: { id: string; d: number } | null = null;
+                for (const p of projectedPersons.current) {
+                  const d = Math.hypot(p.sx - W / 2, p.sy - H / 2);
+                  if (!best || d < best.d) best = { id: p.id, d };
+                }
+                if (best) useStore.getState().updateCamera(cam.id, { lockedPersonId: best.id });
+              }}
+              title="Lock focus distance to the subject closest to the crosshair"
+              className="px-2 py-0.5 rounded text-[10px] font-medium border border-bc-border text-gray-500 hover:text-gray-300 flex items-center gap-1"
+            >
+              <FiUnlock size={10} /> Lock subject
             </button>
           )}
           <span className="text-[10px] text-gray-600 ml-auto">
