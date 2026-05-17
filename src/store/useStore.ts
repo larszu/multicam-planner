@@ -429,6 +429,7 @@ export const useStore = create<AppState>((set, get) => ({
         useSpeedbooster: false,
         sensorModeIndex: camDef.sensorModes && camDef.sensorModes.length > 0 ? 0 : undefined,
         activeMount,
+        mountType: 'tripod',
       };
       return { cameras: [...s.cameras, newCam], selectedCameraId: newCam.id, projectVersion: s.projectVersion + 1 };
     });
@@ -661,12 +662,15 @@ export const useStore = create<AppState>((set, get) => ({
     nextId = 1;
     stageId = 1;
     personId = 1;
-    // Re-assign IDs to avoid conflicts
-    // Drop the deprecated mountType field if present in older project files
-    const cameras = project.cameras.map((c) => {
-      const { mountType: _drop, ...rest } = c as VenueCamera & { mountType?: string };
-      return { ...rest, id: uid(), useSpeedbooster: rest.useSpeedbooster ?? false };
-    });
+    // Re-assign IDs to avoid conflicts. mountType is preserved (re-added in
+     // this version) and defaults to 'tripod' for older project files that
+    // never had it.
+    const cameras = project.cameras.map((c) => ({
+      ...c,
+      id: uid(),
+      useSpeedbooster: c.useSpeedbooster ?? false,
+      mountType: c.mountType ?? 'tripod',
+    }));
     // Migrate old single-scale background plans to scaleX/scaleY
     let bgPlan = project.backgroundPlan;
     if (bgPlan && 'scale' in bgPlan && !('scaleX' in bgPlan)) {

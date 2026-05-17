@@ -2,6 +2,7 @@ import { useStore } from '../../store/useStore';
 import { getCameraById, getEffectiveSensor, getAdapterInfo } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
+import { effectiveCameraPos } from '../../utils/camera';
 import { useRef, useEffect, useLayoutEffect, useCallback, useState } from 'react';
 import type { StageObjectType } from '../../types';
 import { FiChevronLeft, FiChevronRight, FiUnlock, FiLock } from 'react-icons/fi';
@@ -39,14 +40,15 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     if (!cam?.lockedPersonId) return;
     const target = persons.find((p) => p.id === cam.lockedPersonId);
     if (!target) return;
-    const dx = target.x - cam.x;
-    const dy = target.y - cam.y;
+    const pos = effectiveCameraPos(cam);
+    const dx = target.x - pos.x;
+    const dy = target.y - pos.y;
     const dz = target.height * 0.5 - cam.z; // aim at the subject's centre, not the feet
     const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
     if (Math.abs(dist - cam.focusDistance) > 0.05) {
       useStore.getState().updateCamera(cam.id, { focusDistance: Math.max(0.1, dist) });
     }
-  }, [cam?.lockedPersonId, cam?.x, cam?.y, cam?.z, cam?.focusDistance, cam?.id, persons]);
+  }, [cam?.lockedPersonId, cam?.x, cam?.y, cam?.z, cam?.focusDistance, cam?.id, cam?.trackOffset, cam?.pan, persons, cam]);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -148,10 +150,11 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
 
     type CamPoint = { x: number; y: number; z: number };
 
+    const camPos = effectiveCameraPos(cam!);
     const worldToCamera = (wx: number, wy: number, wz: number): CamPoint => {
       const c = cam!;
-      const dx = wx - c.x;
-      const dy = wy - c.y;
+      const dx = wx - camPos.x;
+      const dy = wy - camPos.y;
       return {
         x: -dx * sinP + dy * cosP,
         y: wz - c.z,
@@ -213,7 +216,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       // Depth lines (horizontal, converging)
       for (let d = 1; d <= 20; d++) {
         const dist = d * 2; // every 2m
-        const screenPt = worldToScreenLocal(cam.x, cam.y + dist, 0);
+        const screenPt = worldToScreenLocal(camPos.x, camPos.y + dist, 0);
         if (screenPt.behindCamera || screenPt.sy < groundYClamped - 2) continue;
         const alpha = Math.max(0.02, 0.12 - d * 0.005);
         ctx.strokeStyle = `rgba(120,160,220,${alpha})`;
@@ -227,9 +230,9 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       const vanishX = W / 2;
       for (let i = -10; i <= 10; i++) {
         if (i === 0) continue;
-        const worldX = cam.x + i * 2;
-        const nearPt = worldToScreenLocal(worldX, cam.y + 2, 0);
-        const farPt = worldToScreenLocal(worldX, cam.y + 40, 0);
+        const worldX = camPos.x + i * 2;
+        const nearPt = worldToScreenLocal(worldX, camPos.y + 2, 0);
+        const farPt = worldToScreenLocal(worldX, camPos.y + 40, 0);
         if (nearPt.behindCamera && farPt.behindCamera) continue;
         const alpha = Math.max(0.02, 0.08 - Math.abs(i) * 0.006);
         ctx.strokeStyle = `rgba(120,160,220,${alpha})`;

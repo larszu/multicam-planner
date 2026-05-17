@@ -5,6 +5,7 @@ import { useStore } from '../../store/useStore';
 import { getCameraById, getEffectiveSensor } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov } from '../../utils/fov';
+import { effectiveCameraPos } from '../../utils/camera';
 import * as THREE from 'three';
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import type { BackgroundPlan, StageObjectType } from '../../types';
@@ -479,8 +480,9 @@ function CameraRig({
   const pitchRef = useRef<THREE.Group>(null);
 
   useEffect(() => {
+    const pos = effectiveCameraPos(cam);
     if (baseRef.current) {
-      baseRef.current.position.set(cam.x, 0, cam.y);
+      baseRef.current.position.set(pos.x, 0, pos.y);
       baseRef.current.rotation.set(0, THREE.MathUtils.degToRad(-cam.pan), 0);
     }
     if (liftRef.current) {
@@ -494,15 +496,22 @@ function CameraRig({
       // axis (= roll), so the pitch rotation has to go on Z.
       pitchRef.current.rotation.set(0, 0, THREE.MathUtils.degToRad(cam.tilt));
     }
-  }, [cam.pan, cam.tilt, cam.x, cam.y, cam.z]);
+  }, [cam.pan, cam.tilt, cam.x, cam.y, cam.z, cam.trackOffset, cam]);
 
   const commitMove = useCallback(() => {
     if (!baseRef.current) return;
-    const nextX = Math.max(0, Math.min(venueWidth, baseRef.current.position.x));
-    const nextY = Math.max(0, Math.min(venueHeight, baseRef.current.position.z));
-    baseRef.current.position.set(nextX, 0, nextY);
+    // TransformControls drag operates on the *effective* (offset) position,
+    // so back out the trackOffset to recover the parked position before
+    // clamping into the venue bounds.
+    const offset = cam.trackOffset ?? 0;
+    const panRad = (cam.pan * Math.PI) / 180;
+    const dropX = baseRef.current.position.x - Math.cos(panRad) * offset;
+    const dropY = baseRef.current.position.z - Math.sin(panRad) * offset;
+    const nextX = Math.max(0, Math.min(venueWidth, dropX));
+    const nextY = Math.max(0, Math.min(venueHeight, dropY));
+    baseRef.current.position.set(nextX + Math.cos(panRad) * offset, 0, nextY + Math.sin(panRad) * offset);
     moveCamera(cam.id, nextX, nextY);
-  }, [cam.id, moveCamera, venueHeight, venueWidth]);
+  }, [cam.id, cam.pan, cam.trackOffset, moveCamera, venueHeight, venueWidth]);
 
   const commitHeight = useCallback(() => {
     if (!liftRef.current) return;
