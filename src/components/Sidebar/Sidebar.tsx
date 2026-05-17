@@ -137,7 +137,10 @@ function CameraCard({ camId }: { camId: string }) {
       )}
       {/* Adapter badge */}
       {adapterInfo && (
-        <div className="text-xs mt-0.5 text-bc-yellow">
+        <div
+          className="text-xs mt-0.5 text-bc-yellow cursor-help"
+          title={adapterInfo.notes ?? 'Adapter automatically applied — see Mount section below for details.'}
+        >
           ⚡ {adapterInfo.name}{adapterInfo.lightLossStops > 0 ? ` (−${adapterInfo.lightLossStops}T)` : ''}{adapterInfo.lightLossStops < 0 ? ` (+${Math.abs(adapterInfo.lightLossStops)}T gain)` : ''}{adapterInfo.cropSensor ? ` → ${adapterInfo.cropSensor.name}` : ''}
         </div>
       )}
@@ -353,6 +356,29 @@ function CameraCard({ camId }: { camId: string }) {
                   <option key={m} value={m}>{m} (mount plate / adapter)</option>
                 ))}
               </select>
+              {/* Detail card for the active mount adapter, if the body defines one.
+                  Shows the adapter's name, optical effects, and a notes blurb so
+                  the user knows exactly which piece of glass / plate is modelled. */}
+              {(() => {
+                const ma = activeMount ? camDef.mountAdapters?.[activeMount] : undefined;
+                if (!ma) return null;
+                return (
+                  <div className="mt-1 p-2 rounded bg-bc-dark border border-bc-yellow/40 text-[10px] leading-snug">
+                    <div className="flex items-center gap-1 text-bc-yellow font-semibold">
+                      ⚡ {ma.name}
+                    </div>
+                    <div className="text-gray-400 mt-0.5">
+                      {ma.lightLossStops > 0 && <span>Light loss: −{ma.lightLossStops}T · </span>}
+                      {ma.lightLossStops < 0 && <span>Light gain: +{Math.abs(ma.lightLossStops)}T · </span>}
+                      {ma.lightLossStops === 0 && <span>No light loss · </span>}
+                      {ma.cropSensor ? <span>Forces {ma.cropSensor.name}</span> : <span>No sensor crop</span>}
+                    </div>
+                    {ma.notes && (
+                      <div className="text-gray-500 mt-1 italic">{ma.notes}</div>
+                    )}
+                  </div>
+                );
+              })()}
             </label>
           )}
 

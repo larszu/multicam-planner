@@ -24,6 +24,19 @@ export interface Camera {
    * URSA Broadcast B4 crop, VENICE 2 6K/4K windows, FX9 Super35 crop).
    */
   sensorModes?: SensorSize[];
+  /**
+   * Per-mount adapter metadata for the body's swappable mount plates. Keyed by
+   * mount name (matching `mount` or any entry in `adaptedMounts`). When the user
+   * sets `VenueCamera.activeMount` to one of these, the adapter is automatically
+   * applied to FOV / DoF / aperture calculations and the badge displays its
+   * name + notes.
+   *
+   * Use this for adapters with real optical impact (relay/crop/light loss like
+   * Sony LA-FZB1 for FZ→B4, or the URSA Broadcast G2's built-in 2/3" relay on
+   * the B4 mount). Passive mount plates can also be listed here for clarity —
+   * the badge will show the adapter name with 0 stops loss and no crop.
+   */
+  mountAdapters?: Record<string, AdapterInfo>;
 }
 
 // ── Adapter result ──
@@ -31,6 +44,8 @@ export interface AdapterInfo {
   name: string;
   lightLossStops: number; // T-stop loss (0 = no loss, 1 = ~1 stop)
   cropSensor?: SensorSize; // forced sensor crop (e.g. 2/3" when using B4 adapter)
+  /** Free-form background info displayed in the camera card when the adapter is active. */
+  notes?: string;
 }
 
 // ── Lens ──
