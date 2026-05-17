@@ -62,7 +62,9 @@ export const CAMERAS: Camera[] = [
   // ── Canon Broadcast / Cinema ──
   { id: 'canon-c500ii', manufacturer: 'Canon', model: 'C500 Mark II', sensor: SENSORS.FF, mount: 'EF', resolutions: ['5.9K', '4K', 'HD'], type: 'cinema' },
   { id: 'canon-c300iii', manufacturer: 'Canon', model: 'C300 Mark III', sensor: SENSORS.S35, mount: 'EF', resolutions: ['4K', 'HD'], type: 'cinema' },
-  { id: 'canon-c70', manufacturer: 'Canon', model: 'C70', sensor: SENSORS.S35, mount: 'RF', resolutions: ['4K', 'HD'], type: 'cinema' },
+  { id: 'canon-c70', manufacturer: 'Canon', model: 'C70', sensor: SENSORS.S35, mount: 'RF', adaptedMounts: ['EF'], resolutions: ['4K', 'HD'], type: 'cinema', mountAdapters: {
+    EF: { name: 'Canon EF→RF Mount Adapter', lightLossStops: 0, notes: 'Passive Canon-official EF-to-RF adapter (also third-party clones). Mechanical extension only — full electronic compatibility with EF lenses, no light loss.' },
+  } },
   { id: 'canon-xf605', manufacturer: 'Canon', model: 'XF605', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder' },
   { id: 'canon-cr-n500', manufacturer: 'Canon', model: 'CR-N500', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
   { id: 'canon-cr-n300', manufacturer: 'Canon', model: 'CR-N300', sensor: SENSORS.HALF_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
@@ -101,7 +103,10 @@ export const CAMERAS: Camera[] = [
   { id: 'bmd-pocket6kpro', manufacturer: 'Blackmagic', model: 'Pocket Cinema 6K Pro', sensor: SENSORS.S35, mount: 'EF', resolutions: ['6K', '4K', 'HD'], type: 'cinema' },
   { id: 'bmd-pocket6k', manufacturer: 'Blackmagic', model: 'Pocket Cinema 6K G2', sensor: SENSORS.S35, mount: 'EF', resolutions: ['6K', '4K', 'HD'], type: 'cinema' },
   { id: 'bmd-pocket4k', manufacturer: 'Blackmagic', model: 'Pocket Cinema 4K', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'cinema' },
-  { id: 'bmd-cinema-camera-6k', manufacturer: 'Blackmagic', model: 'Cinema Camera 6K', sensor: SENSORS.FF, mount: 'L', resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'Full-frame, Leica L-mount' },
+  { id: 'bmd-cinema-camera-6k', manufacturer: 'Blackmagic', model: 'Cinema Camera 6K', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['EF', 'PL'], resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'Full-frame, Leica L-mount', mountAdapters: {
+    EF: { name: 'EF → L Adapter', lightLossStops: 0, notes: 'Passive EF-to-L adapter (Sigma MC-21, Novoflex, etc.). Mechanical only — full-frame sensor area available, no light loss.' },
+    PL: { name: 'PL → L Adapter', lightLossStops: 0, notes: 'Passive PL-to-L adapter. PL has a longer flange distance than L, so an empty barrel fits between them. No optical penalty.' },
+  } },
   { id: 'bmd-pyxis-6k', manufacturer: 'Blackmagic', model: 'PYXIS 6K', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['PL', 'EF'], resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'Full-frame box-style, L-mount native', mountAdapters: {
     PL: { name: 'PYXIS PL Mount (interchangeable)', lightLossStops: 0, notes: 'Passive PL mount block for the PYXIS 6K. Mechanical change only — full-frame 6K sensor area is used either way.' },
     EF: { name: 'PYXIS EF Mount (interchangeable)', lightLossStops: 0, notes: 'Passive EF mount block for the PYXIS 6K. Electronic aperture control is supported. No optical penalty.' },
@@ -148,79 +153,36 @@ export function getCamerasByType(type: Camera['type']): Camera[] {
 }
 
 /**
- * Determine if an adapter is needed and its effects.
+ * Determine the adapter currently fitted on the camera, if any.
  *
- * Priority:
- *   1. Body-defined adapter for the active mount (`camera.mountAdapters[active]`).
- *      Covers cases like the Sony PMW-F5 with the LA-FZB1 fitted, or the URSA
- *      Broadcast G2's built-in B4 relay — even though `lens.mount === activeMount`
- *      there's still real optical impact from the mount plate itself.
- *   2. Lens-based adapter for a lens whose mount differs from the active mount
- *      (e.g. a B4 lens on a Sony FX6 in E-mount mode → B4→E relay).
- *
- * `activeMount` overrides the camera's native mount for the purpose of adapter
- * detection. This models swappable-mount bodies like the URSA Broadcast G2 —
- * with the EF mount plate fitted, an EF lens is native (no adapter), and the
- * built-in 2/3" relay crop that comes with the B4 plate no longer applies.
+ * Strict model:
+ *   - The user picks the mount plate via the camera's Mount selector
+ *     (`VenueCamera.activeMount`). Whatever adapter is needed to convert from
+ *     `camera.mount` to `activeMount` is described in
+ *     `camera.mountAdapters[activeMount]`.
+ *   - The lens MUST match `activeMount`. There is no automatic "you picked a
+ *     B4 lens so we'll assume you also fitted the LA-FZB1" — that path made
+ *     the calculator silently apply optical penalties the user never opted
+ *     into. Lens-mount mismatches are surfaced as an incompatibility warning
+ *     in the UI instead.
+ *   - Speedbooster is a special EF→MFT focal reducer that swaps in for the
+ *     passive EF mount plate on MFT bodies. When `useSpeedbooster` is on and
+ *     the body is MFT with EF as the active mount, the Speedbooster info
+ *     supersedes the body's mountAdapter entry.
  */
-export function getAdapterInfo(camera: Camera, lens: Lens, useSpeedbooster = false, activeMount?: string): AdapterInfo | null {
+export function getAdapterInfo(camera: Camera, _lens: Lens, useSpeedbooster = false, activeMount?: string): AdapterInfo | null {
   const effectiveMount = activeMount ?? camera.mount;
 
-  // 1. Speedbooster takes precedence — it's a real EF→MFT relay regardless of
-  // any per-mount info.
-  if (useSpeedbooster && lens.mount === 'EF' && effectiveMount === 'MFT') {
+  if (useSpeedbooster && camera.mount === 'MFT' && effectiveMount === 'EF') {
     return {
       name: 'Metabones EF→MFT Speed Booster 0.71×',
       lightLossStops: -1.0,
       cropSensor: { name: 'MFT + Speed Booster (S35 equiv)', widthMm: 17.3 / 0.71, heightMm: 13 / 0.71, cropFactor: 2.0 * 0.71 },
-      notes: 'Focal reducer: widens FOV by 0.71×, gains ~1 T-stop of light, and the effective image area approaches Super-35.',
+      notes: 'Focal reducer that replaces the passive EF→MFT plate. Widens FOV by 0.71×, gains ~1 T-stop of light, and the effective image area approaches Super-35.',
     };
   }
 
-  // 2. Body-defined mount adapter — the LA-FZB1 on PMW-F5/F55 in B4 mode,
-  // URSA Broadcast G2 with the B4 mount plate (built-in relay), URSA Mini Pro
-  // with its EF plate, VENICE with the supplied E-mount, etc.
-  const mountAdapter = camera.mountAdapters?.[effectiveMount];
-
-  if (lens.mount === effectiveMount) return mountAdapter ?? null;
-  if (lens.mount === 'integrated') return mountAdapter ?? null;
-
-  // B4 → any larger-sensor camera: relay optics needed, crop to 2/3", ~1T loss.
-  // Real-world products: Sony LA-FZB1/FZB2 (for FZ-mount Sony cinema), MTF
-  // Services B4→PL/EF, Abakus B4→E-mount, IBE Optics B4→PL, etc. All work the
-  // same way — relay group, B4 lens projects a 2/3" image circle onto the
-  // sensor with ~1 T-stop loss.
-  if (lens.mount === 'B4') {
-    if (effectiveMount === 'FZ') return { name: 'Sony LA-FZB1/FZB2', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD, notes: 'Relay adapter with internal 2× optics. B4 lens projects a 2/3" image circle, crops the FZ Super-35 sensor to the 2/3" area, ~1 T-stop loss.' };
-    if (effectiveMount === 'E') return { name: 'B4 → E-mount Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD, notes: 'Generic B4→E relay adapter (e.g. Abakus 1097, MTF Services). Crops to 2/3" image area, ~1 T-stop loss through the relay glass.' };
-    if (effectiveMount === 'PL') return { name: 'B4 → PL Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD, notes: 'Relay adapter (e.g. IBE Optics B4→PL, MTF Services). 2/3" effective image area, ~1 T-stop loss.' };
-    if (effectiveMount === 'EF') return { name: 'B4 → EF Adapter (relay)', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD, notes: 'Relay adapter for EF-mount bodies. Crops to 2/3" area, ~1 T-stop loss.' };
-    return mountAdapter ?? null;
-  }
-
-  // PL → shorter flange mounts (spacer adapters, no optics)
-  if (lens.mount === 'PL') {
-    if (effectiveMount === 'FZ') return { name: 'PL → FZ Adapter', lightLossStops: 0, notes: 'Passive mechanical spacer. PL has a longer flange distance than FZ, so an empty barrel keeps the lens at the right distance. No optical penalty.' };
-    if (effectiveMount === 'E') return { name: 'PL → E-mount Adapter', lightLossStops: 0, notes: 'Passive mechanical adapter (e.g. Metabones PL→E, Wooden Camera, IBE Optics). PL flange distance is longer than E, so an empty barrel works without any glass.' };
-    if (effectiveMount === 'RF') return { name: 'PL → RF Adapter', lightLossStops: 0, notes: 'Passive mechanical PL-to-RF adapter. No optical penalty; full sensor area available.' };
-    return mountAdapter ?? null;
-  }
-
-  // EF → shorter flange mounts (Speedbooster case is handled at the top).
-  if (lens.mount === 'EF') {
-    if (effectiveMount === 'E') return { name: 'EF → E-mount Adapter', lightLossStops: 0, notes: 'Passive EF-to-E adapter (e.g. Metabones Mark V, Sigma MC-11). Mechanical only; some models pass aperture/AF data electronically. No optical penalty.' };
-    if (effectiveMount === 'RF') return { name: 'Canon EF → RF Adapter', lightLossStops: 0, notes: 'Canon\'s official EF→RF mount adapter (or third-party equivalents). Pure mechanical extension, no glass, full electronic compatibility.' };
-    if (effectiveMount === 'MFT') return { name: 'EF → MFT Adapter', lightLossStops: 0, notes: 'Standard passive EF-to-MFT adapter — manual aperture control only on most models. For light gain and wider FOV, enable Speed Booster instead.' };
-    return mountAdapter ?? null;
-  }
-
-  // Nikon F → shorter flange mounts
-  if (lens.mount === 'NF') {
-    if (effectiveMount === 'E') return { name: 'Nikon F → E-mount Adapter', lightLossStops: 0, notes: 'Passive Nikon-F to E-mount adapter. Manual aperture only on screwdriver-AF lenses; G/E lenses need an aperture-control variant.' };
-    return mountAdapter ?? null;
-  }
-
-  return null;
+  return camera.mountAdapters?.[effectiveMount] ?? null;
 }
 
 /**

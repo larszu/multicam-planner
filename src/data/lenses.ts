@@ -256,17 +256,46 @@ export function getLensesByMount(mount: string): Lens[] {
   return LENSES.filter((l) => l.mount === mount);
 }
 
-export function getCompatibleLenses(cameraMount: string, adaptedMounts?: string[], activeMount?: string): Lens[] {
+/**
+ * Returns the set of lenses that can physically attach to the camera given the
+ * currently fitted mount plate. The mount is determined as `activeMount` if the
+ * user has explicitly selected one, otherwise `cameraMount` (the body's native
+ * mount).
+ *
+ * IMPORTANT: this is strict. We do NOT auto-include lenses for other mounts
+ * (e.g. B4 lenses for an FZ-native PMW-F5) just because `adaptedMounts` lists
+ * them — those mounts are the *menu of plates the user can switch to*, not
+ * lenses mountable simultaneously. Picking a B4 lens on a PMW-F5 requires the
+ * user to first switch the Mount selector to "B4 (LA-FZB1)".
+ *
+ * `universal` and `integrated` lenses are returned unconditionally because they
+ * either have no mount (PTZ integrated) or are intentionally cross-mount stubs.
+ */
+export function getCompatibleLenses(cameraMount: string, _adaptedMounts?: string[], activeMount?: string): Lens[] {
   if (cameraMount === 'integrated') return LENSES.filter((l) => l.mount === 'integrated');
+  const target = activeMount ?? cameraMount;
+  return LENSES.filter((l) => l.mount === target || l.mount === 'universal' || l.mount === 'integrated');
+}
 
-  // When the user has explicitly swapped to a non-native mount plate (e.g. an
-  // URSA Broadcast G2 in EF mode), only lenses matching that mount can physically
-  // attach — the adaptedMounts list is the menu of plates available, not lenses
-  // mountable simultaneously.
-  if (activeMount && activeMount !== cameraMount) {
-    return LENSES.filter((l) => l.mount === activeMount || l.mount === 'integrated');
+/**
+ * Pick a sensible default mount + first matching lens for placing a camera or
+ * switching to a different body. Tries the camera's native mount first, then
+ * each entry in `adaptedMounts`, until it finds a mount with at least one
+ * compatible lens. For a Sony PMW-F5 — which has zero FZ-native lenses in the
+ * built-in DB — this falls back to PL (with the passive PL plate fitted) or
+ * B4 (with the LA-FZB1) instead of dropping the user into an empty dropdown.
+ */
+export function pickInitialMountAndLens(
+  cameraMount: string,
+  adaptedMounts?: string[],
+  extraLenses: Lens[] = [],
+): { mount: string; lens: Lens | undefined } {
+  const candidates = [cameraMount, ...(adaptedMounts ?? [])];
+  for (const m of candidates) {
+    const builtIn = getCompatibleLenses(cameraMount, adaptedMounts, m)[0];
+    const custom = extraLenses.find((l) => l.mount === m || l.mount === 'universal' || l.mount === 'integrated');
+    const lens = builtIn ?? custom;
+    if (lens) return { mount: m, lens };
   }
-
-  const mounts = new Set([cameraMount, ...(adaptedMounts ?? [])]);
-  return LENSES.filter((l) => mounts.has(l.mount) || l.mount === 'integrated');
+  return { mount: cameraMount, lens: undefined };
 }

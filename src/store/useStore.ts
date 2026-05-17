@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { VenueCamera, Venue, ViewTab, ReferencePerson, BackgroundPlan, Stage, ProjectFile, VenueTemplate, StageObjectType, Lens, Wall, Camera } from '../types';
 import { CAMERAS, CAMERA_COLORS } from '../data/cameras';
-import { LENSES } from '../data/lenses';
+import { LENSES, pickInitialMountAndLens } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
 
 // Injected by Vite from package.json. In a release build that came through
@@ -392,10 +392,17 @@ export const useStore = create<AppState>((set, get) => ({
       const cam = cameraId ? CAMERAS.find((c) => c.id === cameraId) : CAMERAS[0];
       const camDef = cam ?? CAMERAS[0];
       const allLenses = [...LENSES, ...s.customLenses];
-      const lens = lensId
-        ? allLenses.find((l) => l.id === lensId)
-        : allLenses.find((l) => l.mount === camDef.mount) ?? allLenses[0];
-      const lensDef = lens ?? allLenses[0];
+      // If a specific lens was requested, honour it. Otherwise pick a default
+      // mount + lens combination that's actually usable (e.g. PMW-F5 has zero
+      // FZ-native lenses, so we default to PL instead of dropping the user
+      // into an empty dropdown).
+      let activeMount = camDef.mount;
+      let lensDef = lensId ? allLenses.find((l) => l.id === lensId) : undefined;
+      if (!lensDef) {
+        const pick = pickInitialMountAndLens(camDef.mount, camDef.adaptedMounts, s.customLenses);
+        activeMount = pick.mount;
+        lensDef = pick.lens ?? allLenses[0];
+      }
       const idx = s.cameras.length;
       const newCam: VenueCamera = {
         id: uid(),
@@ -414,7 +421,7 @@ export const useStore = create<AppState>((set, get) => ({
         extenderActive: 1,
         useSpeedbooster: false,
         sensorModeIndex: camDef.sensorModes && camDef.sensorModes.length > 0 ? 0 : undefined,
-        activeMount: camDef.mount,
+        activeMount,
       };
       return { cameras: [...s.cameras, newCam], selectedCameraId: newCam.id, projectVersion: s.projectVersion + 1 };
     });
