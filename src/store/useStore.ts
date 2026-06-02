@@ -3,6 +3,7 @@ import type { VenueCamera, Venue, ViewTab, ReferencePerson, BackgroundPlan, Stag
 import { CAMERAS, CAMERA_COLORS } from '../data/cameras';
 import { LENSES, pickInitialMountAndLens } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
+import { loadJSON, saveJSON } from '../utils/storage';
 
 // Injected by Vite from package.json. In a release build that came through
 // the GitHub Actions workflow this matches the git release tag exactly,
@@ -104,64 +105,47 @@ function uid(prefix = 'cam'): string {
 
 const CUSTOM_TEMPLATES_KEY = 'multicam-custom-templates';
 function loadCustomTemplates(): VenueTemplate[] {
-  try {
-    const raw = localStorage.getItem(CUSTOM_TEMPLATES_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
+  return loadJSON<VenueTemplate[]>(CUSTOM_TEMPLATES_KEY, []);
 }
 function saveCustomTemplates(templates: VenueTemplate[]) {
-  localStorage.setItem(CUSTOM_TEMPLATES_KEY, JSON.stringify(templates));
+  saveJSON(CUSTOM_TEMPLATES_KEY, templates);
 }
 
 const HIDDEN_TEMPLATES_KEY = 'multicam-hidden-templates';
 function loadHiddenTemplateIds(): string[] {
-  try {
-    const raw = localStorage.getItem(HIDDEN_TEMPLATES_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
-  } catch { return []; }
+  const parsed = loadJSON<string[]>(HIDDEN_TEMPLATES_KEY, []);
+  return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
 }
 function saveHiddenTemplateIds(ids: string[]) {
-  localStorage.setItem(HIDDEN_TEMPLATES_KEY, JSON.stringify(ids));
+  saveJSON(HIDDEN_TEMPLATES_KEY, ids);
 }
 
 const CUSTOM_LENSES_KEY = 'multicam-custom-lenses';
 function loadCustomLenses(): Lens[] {
-  try {
-    const raw = localStorage.getItem(CUSTOM_LENSES_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
+  return loadJSON<Lens[]>(CUSTOM_LENSES_KEY, []);
 }
 function saveCustomLensesStorage(lenses: Lens[]) {
-  localStorage.setItem(CUSTOM_LENSES_KEY, JSON.stringify(lenses));
+  saveJSON(CUSTOM_LENSES_KEY, lenses);
 }
 
 const CUSTOM_CAMERAS_KEY = 'multicam-custom-cameras';
 function loadCustomCameras(): Camera[] {
-  try {
-    const raw = localStorage.getItem(CUSTOM_CAMERAS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
+  return loadJSON<Camera[]>(CUSTOM_CAMERAS_KEY, []);
 }
 function saveCustomCamerasStorage(cameras: Camera[]) {
-  localStorage.setItem(CUSTOM_CAMERAS_KEY, JSON.stringify(cameras));
+  saveJSON(CUSTOM_CAMERAS_KEY, cameras);
 }
 
 const FAVORITE_CAMERAS_KEY = 'multicam-favorite-cameras';
 const FAVORITE_LENSES_KEY = 'multicam-favorite-lenses';
 
 function loadFavoriteIds(key: string): string[] {
-  try {
-    const raw = localStorage.getItem(key);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === 'string') : [];
-  } catch {
-    return [];
-  }
+  const parsed = loadJSON<string[]>(key, []);
+  return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === 'string') : [];
 }
 
 function saveFavoriteIds(key: string, ids: string[]) {
-  localStorage.setItem(key, JSON.stringify(ids));
+  saveJSON(key, ids);
 }
 
 let stageId = 1;
@@ -671,13 +655,12 @@ export const useStore = create<AppState>((set, get) => ({
       useSpeedbooster: c.useSpeedbooster ?? false,
       mountType: c.mountType ?? 'tripod',
     }));
-    // Migrate old single-scale background plans to scaleX/scaleY
     let bgPlan = project.backgroundPlan;
     if (bgPlan && 'scale' in bgPlan && !('scaleX' in bgPlan)) {
-      const s = (bgPlan as any).scale as number;
-      const { ...rest } = bgPlan as any;
-      delete rest.scale;
-      bgPlan = { ...rest, scaleX: s, scaleY: s } as BackgroundPlan;
+      const legacy = bgPlan as BackgroundPlan & { scale?: number };
+      const s = legacy.scale ?? 1;
+      const { scale: _, ...rest } = legacy;
+      bgPlan = { ...rest, scaleX: s, scaleY: s };
     }
     set({
       venue: project.venue,

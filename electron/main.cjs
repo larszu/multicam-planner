@@ -1,5 +1,7 @@
-const { app, BrowserWindow, shell } = require('electron');
+const { app, BrowserWindow, shell, session } = require('electron');
 const path = require('path');
+
+const ALLOWED_EXTERNAL_PROTOCOLS = ['https:', 'mailto:'];
 
 function createMainWindow() {
   const mainWindow = new BrowserWindow({
@@ -9,10 +11,6 @@ function createMainWindow() {
     minHeight: 720,
     autoHideMenuBar: true,
     backgroundColor: '#0f1117',
-    // Window icon for dev mode + Linux taskbar. On Windows/macOS the packaged
-    // build also embeds the icon via electron-builder's build.win.icon /
-    // build.mac.icon config, but setting it here makes `npm run desktop` show
-    // the right icon too.
     icon: path.join(__dirname, '..', 'build', 'icon.png'),
     webPreferences: {
       contextIsolation: true,
@@ -24,8 +22,32 @@ function createMainWindow() {
   mainWindow.loadFile(indexPath);
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+    try {
+      const parsed = new URL(url);
+      if (ALLOWED_EXTERNAL_PROTOCOLS.includes(parsed.protocol)) {
+        shell.openExternal(url);
+      }
+    } catch { /* malformed URL — ignore */ }
     return { action: 'deny' };
+  });
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith('file://')) {
+      event.preventDefault();
+    }
+  });
+
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
+          "img-src 'self' data: blob:; connect-src 'self' https://generativelanguage.googleapis.com; " +
+          "font-src 'self' data:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+        ],
+      },
+    });
   });
 }
 

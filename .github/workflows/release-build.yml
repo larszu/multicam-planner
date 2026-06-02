@@ -63,6 +63,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Audit dependencies
+        run: npm audit --audit-level=high || true
+
       - name: Sync package.json version with the release tag
         # electron-builder names artifacts (e.g. "MultiCam Planner Setup X.Y.Z.exe")
         # using the version field in package.json — NOT the git tag. Without this

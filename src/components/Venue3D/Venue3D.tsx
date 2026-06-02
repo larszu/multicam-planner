@@ -7,6 +7,8 @@ import { getLensById } from '../../data/lenses';
 import { computeFov } from '../../utils/fov';
 import { effectiveCameraPos } from '../../utils/camera';
 import * as THREE from 'three';
+import { getExportRegistry } from '../../store/exportRegistry';
+import type { FramingState } from '../../store/exportRegistry';
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import type { BackgroundPlan, StageObjectType } from '../../types';
 
@@ -25,7 +27,7 @@ function DraggableOnFloor({ children, x, z, onDragEnd, onClick }: {
 
   const handlePointerDown = useCallback((e: any) => {
     e.stopPropagation();
-    (e.target as any).setPointerCapture?.(e.pointerId);
+    (e.target as Element).setPointerCapture?.(e.pointerId);
     isDragging.current = true;
     // Calculate offset between pointer hit and group position
     const raycaster = e.ray ? new THREE.Raycaster(e.ray.origin, e.ray.direction) : null;
@@ -49,7 +51,7 @@ function DraggableOnFloor({ children, x, z, onDragEnd, onClick }: {
   const handlePointerUp = useCallback((e: any) => {
     if (!isDragging.current) return;
     isDragging.current = false;
-    (e.target as any).releasePointerCapture?.(e.pointerId);
+    (e.target as Element).releasePointerCapture?.(e.pointerId);
     if (groupRef.current && onDragEnd) {
       onDragEnd(groupRef.current.position.x, groupRef.current.position.z);
     }
@@ -176,24 +178,20 @@ function FPSControls({ mouseLookEnabled }: { mouseLookEnabled: boolean }) {
     return () => window.removeEventListener('multicam-3d-reset', handleReset);
   }, [camera]);
 
-  // Expose a framing API for the export panel: save the current camera, frame the
-  // entire venue with a downward angle that fits the canvas, and restore later.
   useEffect(() => {
-    (window as any).__multicam3DFraming = {
-      save: () => ({
+    const registry = getExportRegistry();
+    registry.framing3D = {
+      save: (): FramingState => ({
         pos: camera.position.toArray() as [number, number, number],
         yaw: yaw.current,
         pitch: pitch.current,
       }),
-      apply: (state: { pos: [number, number, number]; yaw: number; pitch: number }) => {
+      apply: (state: FramingState) => {
         camera.position.fromArray(state.pos);
         yaw.current = state.yaw;
         pitch.current = state.pitch;
       },
       fitVenue: (widthM: number, heightM: number) => {
-        // Position the camera above-behind the venue and aim at the floor centre.
-        // The result is a 3/4 overview where the whole stage area is visible
-        // even with the canvas constrained to the export tile's 16:9 ratio.
         const diag = Math.sqrt(widthM * widthM + heightM * heightM);
         const camX = widthM / 2;
         const camY = diag * 0.55;
@@ -210,7 +208,7 @@ function FPSControls({ mouseLookEnabled }: { mouseLookEnabled: boolean }) {
         pitch.current = Math.atan2(dy, horizDist);
       },
     };
-    return () => { delete (window as any).__multicam3DFraming; };
+    return () => { registry.framing3D = null; };
   }, [camera]);
 
   useEffect(() => {

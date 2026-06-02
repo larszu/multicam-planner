@@ -3,6 +3,7 @@ import { useStore, APP_VERSION } from '../../store/useStore';
 import { getCameraById, getEffectiveSensor, getAdapterInfo } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov, computeDof, personHeightInFrame } from '../../utils/fov';
+import { getExportRegistry } from '../../store/exportRegistry';
 import type { VenueCamera } from '../../types';
 
 export type ExportMode = 'current' | 'all' | 'widetele' | 'all-widetele';
@@ -27,10 +28,10 @@ export default function ExportPanel() {
   const { cameras, selectedCameraId, venue, projectVersion } = useStore();
 
   const capture2DCanvas = useCallback((): HTMLCanvasElement | null => {
-    const capture = (window as any).__capture2DExport;
-    if (typeof capture === 'function') {
+    const registry = getExportRegistry();
+    if (typeof registry.capture2DExport === 'function') {
       try {
-        return capture() as HTMLCanvasElement | null;
+        return registry.capture2DExport();
       } catch { /* fall through */ }
     }
     return document.querySelector('.konvajs-content canvas') as HTMLCanvasElement | null;
@@ -49,9 +50,9 @@ export default function ExportPanel() {
   }, []);
 
   const capturePreviewCanvas = useCallback((): HTMLCanvasElement | null => {
-    const fn = (window as any).__capturePreviewCanvas;
-    if (typeof fn === 'function') {
-      try { return fn() as HTMLCanvasElement | null; } catch { /* fall through */ }
+    const registry = getExportRegistry();
+    if (typeof registry.capturePreviewCanvas === 'function') {
+      try { return registry.capturePreviewCanvas(); } catch { /* fall through */ }
     }
     return null;
   }, []);
@@ -349,25 +350,17 @@ export default function ExportPanel() {
 
     setExporting(true);
 
-    // Prepare layout (force Grid so all panels render at proper size)
     let restoreLayout: (() => void) | null = null;
-    const prepFn = (window as any).__multicamPrepareForExport as
-      | (() => Promise<{ restore: () => void } | null>)
-      | undefined;
-    if (typeof prepFn === 'function') {
+    const registry = getExportRegistry();
+    if (typeof registry.prepareForExport === 'function') {
       try {
-        const prep = await prepFn();
+        const prep = await registry.prepareForExport();
         if (prep) restoreLayout = prep.restore;
       } catch { /* fall through */ }
     }
 
-    // Frame the 3D view on the venue so the exported tile shows the whole stage
-    // area instead of whatever free-fly angle the user happened to leave it on.
-    // The previous camera state is saved and restored after the batch.
-    const framingApi = (window as any).__multicam3DFraming as
-      | { save: () => any; apply: (s: any) => void; fitVenue: (w: number, h: number) => void }
-      | undefined;
-    let savedFraming: any = null;
+    const framingApi = registry.framing3D;
+    let savedFraming: import('../../store/exportRegistry').FramingState | null = null;
     if (framingApi) {
       try {
         savedFraming = framingApi.save();
