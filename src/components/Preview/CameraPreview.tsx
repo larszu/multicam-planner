@@ -3,6 +3,7 @@ import { getCameraById, getEffectiveSensor, getAdapterInfo } from '../../data/ca
 import { getLensById } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
 import { effectiveCameraPos } from '../../utils/camera';
+import { getExportRegistry } from '../../store/exportRegistry';
 import { useRef, useEffect, useLayoutEffect, useCallback, useState } from 'react';
 import type { StageObjectType } from '../../types';
 import { FiChevronLeft, FiChevronRight, FiUnlock, FiLock } from 'react-icons/fi';
@@ -834,7 +835,8 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   }, [draw]);
 
   useEffect(() => {
-    (window as any).__capturePreviewCanvas = () => {
+    const registry = getExportRegistry();
+    registry.capturePreviewCanvas = () => {
       const source = canvasRef.current;
       if (!source || source.width === 0 || source.height === 0) return null;
 
@@ -847,9 +849,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       return copy;
     };
 
-    return () => {
-      delete (window as any).__capturePreviewCanvas;
-    };
+    return () => { registry.capturePreviewCanvas = null; };
   }, []);
 
   // ── PTZ Mouse Controls ──

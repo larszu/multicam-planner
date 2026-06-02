@@ -6,6 +6,7 @@ import { computeFov } from '../../utils/fov';
 import type { VenueCamera, Wall } from '../../types';
 import { MOUNT_HEIGHT_RANGE } from '../../types';
 import { effectiveCameraPos } from '../../utils/camera';
+import { getExportRegistry } from '../../store/exportRegistry';
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import type Konva from 'konva';
 
@@ -79,11 +80,9 @@ export default function Venue2D() {
   const worldW = Math.max(W, bgExtentW);
   const worldH = Math.max(H, bgExtentH);
 
-  // Expose stage ref and venue pixel dims for export capture
   useEffect(() => {
-    (window as any).__konvaStage = stageRef.current;
-    (window as any).__konvaVenueSize = { w: worldW, h: worldH };
-    (window as any).__capture2DExport = () => {
+    const registry = getExportRegistry();
+    registry.capture2DExport = () => {
       const stage = stageRef.current;
       if (!stage) return null;
       try {
@@ -98,11 +97,7 @@ export default function Venue2D() {
         return null;
       }
     };
-    return () => {
-      (window as any).__konvaStage = null;
-      (window as any).__konvaVenueSize = null;
-      delete (window as any).__capture2DExport;
-    };
+    return () => { registry.capture2DExport = null; };
   }, [worldW, worldH]);
 
   // Measure container and auto-fit zoom

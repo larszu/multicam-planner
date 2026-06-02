@@ -857,13 +857,22 @@ export default function Sidebar() {
   const [autoResize, setAutoResize] = useState(true);
   const [scaleLocked, setScaleLocked] = useState(true);
 
+  const MAX_PDF_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
+  const MAX_PDF_PAGES = 100;
+
   /** Convert a PDF first page to a data URL at 2× DPI */
   const pdfToDataUrl = useCallback(async (file: File): Promise<{ dataUrl: string; width: number; height: number }> => {
+    if (file.size > MAX_PDF_SIZE_BYTES) {
+      throw new Error(`PDF too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 50 MB.`);
+    }
     pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
     const arrayBuf = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuf }).promise;
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuf, isEvalSupported: false } as Parameters<typeof pdfjsLib.getDocument>[0]).promise;
+    if (pdf.numPages > MAX_PDF_PAGES) {
+      throw new Error(`PDF has ${pdf.numPages} pages (max ${MAX_PDF_PAGES}). Use a single-page floor plan.`);
+    }
     const page = await pdf.getPage(1);
-    const scale = 2; // 2× for crisp rendering
+    const scale = 2;
     const viewport = page.getViewport({ scale });
     const canvas = document.createElement('canvas');
     canvas.width = viewport.width;
@@ -896,8 +905,8 @@ export default function Sidebar() {
         };
         setBackgroundPlan(plan);
       } catch (err) {
-        alert('Failed to render PDF. Make sure it is a valid PDF file.');
-        console.error(err);
+        const msg = err instanceof Error ? err.message : 'Unknown error';
+        alert(`Failed to render PDF: ${msg}`);
       }
     } else {
       const reader = new FileReader();

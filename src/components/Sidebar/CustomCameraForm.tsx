@@ -150,14 +150,14 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
       const prompt = buildPrompt(manufacturer, model);
       const data = await callGemini(apiKey, prompt);
       applyAiResult(data);
-    } catch (err: any) {
-      setAiError(err?.message ?? 'AI request failed');
+    } catch (err: unknown) {
+      setAiError(err instanceof Error ? err.message : 'AI request failed');
     } finally {
       setAiLoading(false);
     }
   };
 
-  const applyAiResult = (data: any) => {
+  const applyAiResult = (data: GeminiCameraResult) => {
     if (data.manufacturer && !manufacturer.trim()) setManufacturer(String(data.manufacturer));
     if (data.model && !model.trim()) setModel(String(data.model));
     if (typeof data.mount === 'string' && data.mount.trim()) {
@@ -165,12 +165,12 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
       setMount(m);
       setMountIsCustom(!(MOUNTS as readonly string[]).includes(m));
     }
-    if (data.type && TYPES.some((t) => t.value === data.type)) setType(data.type);
+    if (data.type && TYPES.some((t) => t.value === data.type)) setType(data.type as Camera['type']);
     if (Array.isArray(data.adaptedMounts)) {
       setAdaptedMounts(
         data.adaptedMounts
-          .filter((m: any) => typeof m === 'string' && m.trim().length > 0)
-          .map((m: string) => m.trim()),
+          .filter((m): m is string => typeof m === 'string' && m.trim().length > 0)
+          .map((m) => m.trim()),
       );
     }
     if (data.sensor && typeof data.sensor.widthMm === 'number' && typeof data.sensor.heightMm === 'number') {
@@ -182,8 +182,9 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
     if (Array.isArray(data.sensorModes)) {
       setModes(
         data.sensorModes
-          .filter((m: any) => m && typeof m.widthMm === 'number' && typeof m.heightMm === 'number')
-          .map((m: any) => ({
+          .filter((m): m is { name?: string; widthMm: number; heightMm: number } =>
+            !!m && typeof m.widthMm === 'number' && typeof m.heightMm === 'number')
+          .map((m) => ({
             name: String(m.name ?? ''),
             widthMm: String(m.widthMm),
             heightMm: String(m.heightMm),
@@ -536,11 +537,21 @@ function buildPrompt(manufacturer: string, model: string): string {
   ].join('\n');
 }
 
-async function callGemini(apiKey: string, prompt: string): Promise<any> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+interface GeminiCameraResult {
+  manufacturer?: string;
+  model?: string;
+  sensor?: { name?: string; widthMm: number; heightMm: number };
+  mount?: string;
+  adaptedMounts?: string[];
+  type?: string;
+  sensorModes?: { name?: string; widthMm: number; heightMm: number }[];
+}
+
+async function callGemini(apiKey: string, prompt: string): Promise<GeminiCameraResult> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
   const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
     body: JSON.stringify({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: {
@@ -554,13 +565,17 @@ async function callGemini(apiKey: string, prompt: string): Promise<any> {
     throw new Error(`Gemini ${response.status}: ${text.slice(0, 200) || response.statusText}`);
   }
   const data = await response.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) throw new Error('Gemini returned an empty response');
+  let parsed: unknown;
   try {
-    return JSON.parse(text);
+    parsed = JSON.parse(text);
   } catch {
-    // Some responses include code fences even with responseMimeType=application/json
     const stripped = text.replace(/^```(?:json)?/i, '').replace(/```\s*$/, '').trim();
-    return JSON.parse(stripped);
+    parsed = JSON.parse(stripped);
   }
+  if (typeof parsed !== 'object' || parsed === null) {
+    throw new Error('Gemini returned a non-object response');
+  }
+  return parsed as GeminiCameraResult;
 }

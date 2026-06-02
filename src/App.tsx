@@ -7,6 +7,9 @@ import CameraPreview from './components/Preview/CameraPreview';
 import Calculator from './components/Sidebar/Calculator';
 import TemplateSelector from './components/Templates/TemplateSelector';
 import ExportPanel from './components/Export/ExportPanel';
+import ErrorBoundary from './components/ErrorBoundary';
+import { getExportRegistry } from './store/exportRegistry';
+import { loadJSON, saveJSON } from './utils/storage';
 import { Suspense, useState, useRef, useCallback, useEffect } from 'react';
 import { FiChevronLeft, FiChevronRight, FiMaximize2, FiMinimize2, FiMinus, FiX } from 'react-icons/fi';
 import { Layout, Model, TabNode, Actions } from 'flexlayout-react';
@@ -130,11 +133,7 @@ function createGridLayoutJson(): IJsonModel {
 }
 
 function loadUserLayoutPresets(): Record<string, IJsonModel> {
-  try {
-    return JSON.parse(localStorage.getItem(LAYOUT_PRESETS_KEY) ?? '{}') as Record<string, IJsonModel>;
-  } catch {
-    return {};
-  }
+  return loadJSON<Record<string, IJsonModel>>(LAYOUT_PRESETS_KEY, {});
 }
 
 function LoadingFallback() {
@@ -149,9 +148,11 @@ function LoadingFallback() {
 function useLayoutModel() {
   return useState(() => {
     try {
-      const saved = localStorage.getItem(LAYOUT_STORAGE_KEY);
       const savedVersion = Number(localStorage.getItem(LAYOUT_VERSION_KEY) ?? '0');
-      if (saved && savedVersion === CURRENT_LAYOUT_VERSION) return Model.fromJson(JSON.parse(saved));
+      if (savedVersion === CURRENT_LAYOUT_VERSION) {
+        const saved = loadJSON<IJsonModel | null>(LAYOUT_STORAGE_KEY, null);
+        if (saved) return Model.fromJson(saved);
+      }
     } catch { /* ignore corrupt data */ }
     return Model.fromJson(createFocusLayoutJson());
   });
@@ -168,10 +169,8 @@ export default function App() {
   const layoutRef = useRef<Layout>(null);
 
   const persistLayout = useCallback((nextModel: Model) => {
-    try {
-      localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(nextModel.toJson()));
-      localStorage.setItem(LAYOUT_VERSION_KEY, String(CURRENT_LAYOUT_VERSION));
-    } catch { /* quota exceeded etc */ }
+    saveJSON(LAYOUT_STORAGE_KEY, nextModel.toJson());
+    saveJSON(LAYOUT_VERSION_KEY, CURRENT_LAYOUT_VERSION);
   }, []);
 
   const applyLayoutJson = useCallback((json: IJsonModel) => {
@@ -231,18 +230,14 @@ export default function App() {
     };
 
     setUserLayoutPresets(nextPresets);
-    try {
-      localStorage.setItem(LAYOUT_PRESETS_KEY, JSON.stringify(nextPresets));
-    } catch { /* quota exceeded etc */ }
+    saveJSON(LAYOUT_PRESETS_KEY, nextPresets);
   }, [model, userLayoutPresets]);
 
   const handleDeleteLayoutPreset = useCallback((presetId: string) => {
     const nextPresets = { ...userLayoutPresets };
     delete nextPresets[presetId];
     setUserLayoutPresets(nextPresets);
-    try {
-      localStorage.setItem(LAYOUT_PRESETS_KEY, JSON.stringify(nextPresets));
-    } catch { /* quota exceeded etc */ }
+    saveJSON(LAYOUT_PRESETS_KEY, nextPresets);
   }, [userLayoutPresets]);
 
 
@@ -380,24 +375,15 @@ export default function App() {
     return () => mq.removeEventListener('change', handler);
   }, [setSidebarCollapsed]);
 
-  // ── Expose layout-prep hook for the export panel ──
-  // Capturing each panel requires it to be visible at non-zero size. In Focus mode
-  // only one tab is rendered visibly, so we switch to Grid for the duration of the
-  // export and restore the previous layout afterwards.
   useEffect(() => {
-    (window as any).__multicamPrepareForExport = async () => {
+    const registry = getExportRegistry();
+    registry.prepareForExport = async () => {
       const previousMode = layoutMode;
       const previousFocusTab = focusTabId;
       const previousModelJson = model.toJson();
       if (previousMode !== 'grid') {
         applyLayoutJson(createGridLayoutJson());
         setLayoutMode('grid');
-        // Wait long enough for FlexLayout to mount the new tabsets, for
-        // ResizeObservers to fire on each panel container, and for Konva/R3F to
-        // paint at least one frame at the new dimensions. R3F in particular needs
-        // multiple paint cycles after a fresh resize before its WebGL drawing
-        // buffer holds the visible scene — bumping to ~700ms avoids the first
-        // capture coming out as an empty/black 3D tile.
         await new Promise<void>((resolve) => {
           requestAnimationFrame(() => requestAnimationFrame(() => {
             setTimeout(resolve, 700);
@@ -417,10 +403,11 @@ export default function App() {
         },
       };
     };
-    return () => { delete (window as any).__multicamPrepareForExport; };
+    return () => { registry.prepareForExport = null; };
   }, [applyLayoutJson, focusTabId, layoutMode, model]);
 
   return (
+    <ErrorBoundary>
     <div className="h-screen flex flex-col bg-bc-dark text-gray-200">
       <Header
         onSelectTab={handleSelectTab}
@@ -481,5 +468,6 @@ export default function App() {
 
       <ExportPanel />
     </div>
+    </ErrorBoundary>
   );
 }
