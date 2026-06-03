@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<title>MultiCam-Planner — App-Struktur</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    overflow: hidden;
+    height: 100vh;
+  }
+  #app {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    height: 100vh;
+  }
+  aside {
+    background: #1e293b;
+    border-right: 1px solid #334155;
+    padding: 14px;
+    overflow-y: auto;
+    font-size: 12px;
+  }
+  aside h1 {
+    margin: 0 0 4px;
+    font-size: 14px;
+    color: #f1f5f9;
+  }
+  aside .subtitle {
+    color: #94a3b8;
+    margin-bottom: 14px;
+    font-size: 11px;
+  }
+  aside h2 {
+    font-size: 12px;
+    margin: 16px 0 6px;
+    color: #cbd5e1;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  aside .layer-btn {
+    display: block;
+    width: 100%;
+    margin: 3px 0;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    background: #334155;
+    color: #f1f5f9;
+    text-align: left;
+    cursor: pointer;
+    font-size: 11px;
+    transition: background 0.15s;
+  }
+  aside .layer-btn:hover { background: #475569; }
+  aside .layer-btn.active { background: #0ea5e9; color: #fff; }
+  aside .flow {
+    margin: 6px 0;
+    padding: 8px;
+    background: #0f172a;
+    border-left: 3px solid #38bdf8;
+    border-radius: 3px;
+  }
+  aside .flow-name {
+    font-weight: 600;
+    color: #38bdf8;
+    margin-bottom: 4px;
+    font-size: 11px;
+  }
+  aside .flow ol {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 10px;
+    color: #cbd5e1;
+    line-height: 1.4;
+  }
+  aside .flow ol li { margin: 1px 0; }
+  aside .legend {
+    background: #0f172a;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 10px;
+  }
+  aside .legend .row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 3px 0;
+  }
+  aside .legend .swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+  }
+  aside .legend .edge-key {
+    width: 24px;
+    height: 0;
+    border-top: 2px solid #94a3b8;
+  }
+  aside .legend .edge-key.dashed { border-top-style: dashed; }
+  aside .legend .edge-key.dotted { border-top-style: dotted; }
+  aside .note {
+    margin-top: 10px;
+    padding: 8px;
+    background: #0f172a;
+    border-left: 3px solid #f59e0b;
+    border-radius: 3px;
+    font-size: 10px;
+    color: #cbd5e1;
+    line-height: 1.5;
+  }
+  main {
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
+  }
+  svg {
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+  }
+  svg:active { cursor: grabbing; }
+  .node {
+    cursor: pointer;
+  }
+  .node rect {
+    transition: stroke 0.15s, filter 0.15s;
+  }
+  .node:hover rect {
+    filter: brightness(1.15);
+    stroke: #f59e0b !important;
+    stroke-width: 2.5px;
+  }
+  .node text {
+    fill: #f8fafc;
+    font-size: 10px;
+    font-weight: 500;
+    pointer-events: none;
+  }
+  .node text.subtitle {
+    fill: #cbd5e1;
+    font-size: 8px;
+    font-weight: 400;
+  }
+  .edge {
+    fill: none;
+    stroke-width: 1.2;
+    opacity: 0.5;
+    transition: opacity 0.15s, stroke-width 0.15s;
+  }
+  .edge:hover {
+    opacity: 1;
+    stroke-width: 2.2;
+  }
+  .edge.imports { stroke: #94a3b8; }
+  .edge.uses-store { stroke: #10b981; stroke-dasharray: 4,3; }
+  .edge.event { stroke: #eab308; stroke-dasharray: 6,3; }
+  .edge.renders { stroke: #38bdf8; }
+  .edge.http { stroke: #ec4899; }
+  .edge.dimmed { opacity: 0.08; }
+  .node.dimmed rect { opacity: 0.2; }
+  .node.dimmed text { opacity: 0.2; }
+  .group-bg {
+    fill: rgba(15, 23, 42, 0.4);
+    stroke: rgba(148, 163, 184, 0.2);
+    stroke-width: 1;
+    stroke-dasharray: 4, 4;
+  }
+  .group-label {
+    fill: #94a3b8;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  #tooltip {
+    position: fixed;
+    background: #1e293b;
+    border: 1px solid #475569;
+    color: #f1f5f9;
+    padding: 8px 10px;
+    border-radius: 4px;
+    pointer-events: none;
+    font-size: 11px;
+    max-width: 280px;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+  }
+  #tooltip .tt-label {
+    font-weight: 600;
+    color: #f8fafc;
+    margin-bottom: 4px;
+  }
+  #tooltip .tt-file {
+    color: #64748b;
+    font-family: monospace;
+    font-size: 10px;
+    margin-bottom: 4px;
+  }
+  #tooltip .tt-purpose {
+    color: #cbd5e1;
+    line-height: 1.4;
+  }
+  #controls {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    padding: 6px;
+    display: flex;
+    gap: 4px;
+    z-index: 10;
+  }
+  #controls button {
+    border: none;
+    background: #334155;
+    color: #f1f5f9;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px;
+  }
+  #controls button:hover { background: #475569; }
+  #header {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    padding: 8px 12px;
+    z-index: 10;
+    font-size: 11px;
+    color: #cbd5e1;
+  }
+  #header strong { color: #f8fafc; }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside>
+    <h1>MultiCam-Planner</h1>
+    <div class="subtitle">
+      App-Struktur · v0.4.0 · ~23 Module · ~8.2k LOC<br>
+      <small style="color:#64748b">Reine Client-App: React + Vite + Electron. Kein Backend, kein Preload-Bridge, keine IPC. Merge-Leitfaden: <a href="./MERGE_INTO_CABLE_PLANNER.md" style="color:#94a3b8">MERGE_INTO_CABLE_PLANNER.md</a>.</small>
+    </div>
+
+    <h2>Layer-Filter</h2>
+    <button class="layer-btn active" data-layer="all">Alle anzeigen</button>
+    <button class="layer-btn" data-layer="main" style="background:#7f1d1d">Main Process</button>
+    <button class="layer-btn" data-layer="renderer" style="background:#1e40af">Renderer</button>
+    <button class="layer-btn" data-layer="external" style="background:#831843">External API</button>
+
+    <h2>Edge-Legende</h2>
+    <div class="legend">
+      <div class="row"><span class="edge-key" style="border-color:#38bdf8"></span> renders</div>
+      <div class="row"><span class="edge-key" style="border-color:#94a3b8"></span> imports</div>
+      <div class="row"><span class="edge-key dashed" style="border-color:#10b981"></span> uses-store (zustand)</div>
+      <div class="row"><span class="edge-key dashed" style="border-color:#eab308"></span> event (window CustomEvent)</div>
+      <div class="row"><span class="edge-key" style="border-color:#ec4899"></span> http (fetch)</div>
+    </div>
+
+    <div class="note">
+      <strong>Merge-Hinweis:</strong> Im Gegensatz zum Cable-Planner gibt es hier
+      <em>keinen</em> Preload/Bridge-Layer und <em>keine</em> IPC. Datei-Speicherung läuft
+      über Browser-Blob-Download, Persistenz über <code>localStorage</code>, und die
+      AI-Anbindung ruft Gemini direkt per <code>fetch</code> aus dem Renderer auf.
+      Diese drei Punkte sind die Hauptbaustellen beim Merge.
+    </div>
+
+    <h2>User-Flows</h2>
+    <div id="flows-list"></div>
+  </aside>
+
+  <main>
+    <div id="header">
+      <strong>MultiCam-Planner</strong> · Klick auf Node = Details · Scroll = Zoom · Drag = Pan
+    </div>
+    <div id="controls">
+      <button id="btn-fit">Fit</button>
+      <button id="btn-zoom-in">+</button>
+      <button id="btn-zoom-out">−</button>
+    </div>
+    <svg id="graph" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
+        </marker>
+      </defs>
+      <g id="viewport"></g>
+    </svg>
+    <div id="tooltip"></div>
+  </main>
+</div>
+
+<script>
+const DATA = {
+  "layers": [
+    { "id": "main",     "label": "Main Process (Electron)", "color": "#7f1d1d", "col": 0 },
+    { "id": "renderer", "label": "Renderer (React)",        "color": "#1e40af", "col": 1 },
+    { "id": "external", "label": "External API",            "color": "#831843", "col": 2 }
+  ],
+  "modules": [
+    // ── Main Process ───────────────────────────────────────
+    { "id": "electron-main", "label": "Window Manager", "layer": "main", "group": "Core", "purpose": "BrowserWindow (contextIsolation+sandbox). loadFile(dist/index.html). CSP-Header-Injection via session.onHeadersReceived. shell.openExternal nur https:/mailto:. will-navigate-Guard. KEIN Preload, KEINE IPC.", "file": "electron/main.cjs" },
+
+    // ── Renderer: Layout ───────────────────────────────────
+    { "id": "app-root",          "label": "App Root",            "layer": "renderer", "group": "Layout",  "purpose": "FlexLayout-Docking mit 4 Panels (2D/3D/Preview/Calculator), Focus/Grid/Custom-Modi, Layout-Presets (localStorage), ErrorBoundary, Export-Prep-Hook.", "file": "src/App.tsx" },
+    { "id": "header",            "label": "Header",              "layer": "renderer", "group": "Layout",  "purpose": "Toolbar: Layout-Modi, Presets, Save/Load .mcplan, Export-Menü (dispatch 'multicam-export'), Versions-/Unsaved-Anzeige.", "file": "src/components/Layout/Header.tsx" },
+    { "id": "error-boundary",    "label": "Error Boundary",      "layer": "renderer", "group": "Layout",  "purpose": "React class-component error boundary am App-Root mit Reload-Button.", "file": "src/components/ErrorBoundary.tsx" },
+
+    // ── Renderer: Sidebar ──────────────────────────────────
+    { "id": "sidebar",           "label": "Sidebar",             "layer": "renderer", "group": "Sidebar", "purpose": "Venue-Settings, Stages, Personen/Objekte, Wände, Grundriss-Upload (PDF via pdfjs-dist, Limits 50MB/100 Seiten), Kalibrierung, pro-Kamera-Karten.", "file": "src/components/Sidebar/Sidebar.tsx" },
+    { "id": "custom-camera-form","label": "Custom Camera Form",  "layer": "renderer", "group": "Sidebar", "purpose": "Custom-Kamera anlegen/editieren: Sensor-Presets, Mounts, Sensor-Modi. Gemini-AI-Autofill (Key in localStorage, x-goog-api-key Header).", "file": "src/components/Sidebar/CustomCameraForm.tsx" },
+    { "id": "calc-breakdown",    "label": "Calculation Breakdown","layer": "renderer","group": "Sidebar", "purpose": "Schritt-für-Schritt-Erklärung der FOV/DoF-Berechnung für die ausgewählte Kamera.", "file": "src/components/Sidebar/CalculationBreakdown.tsx" },
+    { "id": "calculator",        "label": "Calculator",          "layer": "renderer", "group": "Sidebar", "purpose": "Eigenständiges FOV/DoF-Rechner-Panel mit eigenen Eingaben (Sensor, Brennweite, Distanz). Nutzt NICHT den Store.", "file": "src/components/Sidebar/Calculator.tsx" },
+    { "id": "template-selector", "label": "Template Selector",   "layer": "renderer", "group": "Sidebar", "purpose": "Built-in + Custom Venue-Templates laden, speichern, überschreiben, ausblenden.", "file": "src/components/Templates/TemplateSelector.tsx" },
+
+    // ── Renderer: Canvas / Views ───────────────────────────
+    { "id": "venue-2d",          "label": "Venue 2D",            "layer": "renderer", "group": "Canvas",  "purpose": "Konva 2D-Plan: FOV-Kegel (Wedge), Pan/Zoom, Drag von Kameras/Stages/Personen, Wand-Zeichnen, Track-Linien, Grundriss-Overlay, Kalibrierung.", "file": "src/components/Venue2D/Venue2D.tsx" },
+    { "id": "venue-3d",          "label": "Venue 3D",            "layer": "renderer", "group": "Canvas",  "purpose": "@react-three/fiber 3D-Venue: FPS-Steuerung (WASD/Maus), TransformControls-Gizmos (Move/Height/Pan/Tilt), FOV-Pyramiden, Wand- & Personen-Meshes, Grundriss-Textur.", "file": "src/components/Venue3D/Venue3D.tsx" },
+    { "id": "preview",           "label": "Camera Preview",      "layer": "renderer", "group": "Canvas",  "purpose": "Canvas-2D Perspektiv-Preview: Boden-Grid, Stages, Personen mit DoF-Blur, Lineale, Safe-Areas, Drittel, Fadenkreuz, PTZ-Maus, Focus-Pick/Lock.", "file": "src/components/Preview/CameraPreview.tsx" },
+    { "id": "export-panel",      "label": "Export Panel",        "layer": "renderer", "group": "Canvas",  "purpose": "Hört auf 'multicam-export'. Composite-PNG aus 2D + 3D + Preview + Calculator-Daten. Erzwingt Grid-Layout, fängt Canvases via Export-Registry ab.", "file": "src/components/Export/ExportPanel.tsx" },
+
+    // ── Renderer: Store ────────────────────────────────────
+    { "id": "use-store",         "label": "App Store",           "layer": "renderer", "group": "Store",   "purpose": "Einziger zustand-Store: venue, cameras, customLenses, customCameras, persons, walls, templates, favorites, Projekt-Versionierung, save/loadProject.", "file": "src/store/useStore.ts" },
+    { "id": "export-registry",   "label": "Export Registry",     "layer": "renderer", "group": "Store",   "purpose": "Typisierte Capture-/Framing-Registry (capture2D/Preview, prepareForExport, framing3D). Ersetzt die früheren window.*-Globals.", "file": "src/store/exportRegistry.ts" },
+
+    // ── Renderer: Data ─────────────────────────────────────
+    { "id": "data-cameras",      "label": "Camera DB",           "layer": "renderer", "group": "Data",    "purpose": "Kamera-Katalog, SENSORS, CAMERA_COLORS, getCameraById, getEffectiveSensor, getAdapterInfo (Crop-Modi, Speedbooster, Adapter).", "file": "src/data/cameras.ts" },
+    { "id": "data-lenses",       "label": "Lens DB",             "layer": "renderer", "group": "Data",    "purpose": "Objektiv-Katalog, getLensById, Mount-Matching, pickInitialMountAndLens, Image-Circle-Coverage.", "file": "src/data/lenses.ts" },
+    { "id": "data-templates",    "label": "Templates DB",        "layer": "renderer", "group": "Data",    "purpose": "Built-in Venue-Templates (Sport, Concert, Church, Conference).", "file": "src/data/templates.ts" },
+
+    // ── Renderer: Utils ────────────────────────────────────
+    { "id": "util-fov",          "label": "FOV / DoF Math",      "layer": "renderer", "group": "Utils",   "purpose": "Reine Optik-Mathematik: horizontalFov/verticalFov/diagonalFov, computeFov, hyperfocalDistance, circleOfConfusion, computeDof, personHeightInFrame, fovConePoints.", "file": "src/utils/fov.ts" },
+    { "id": "util-camera",       "label": "Camera Pos",          "layer": "renderer", "group": "Utils",   "purpose": "effectiveCameraPos: parkende Position + Track-Offset (Jib-Swing / Dolly-Travel) entlang Pan-Richtung.", "file": "src/utils/camera.ts" },
+    { "id": "util-storage",      "label": "Storage Helpers",     "layer": "renderer", "group": "Utils",   "purpose": "loadJSON/saveJSON: try/catch-gekapselte localStorage-Wrapper (dedupliziert ~8 Stellen).", "file": "src/utils/storage.ts" },
+
+    // ── Renderer: Types ────────────────────────────────────
+    { "id": "types",             "label": "Types",               "layer": "renderer", "group": "Types",   "purpose": "Camera, Lens, SensorSize, AdapterInfo, VenueCamera, Venue, Stage, Wall, ReferencePerson, BackgroundPlan, VenueTemplate, FovResult, DofResult, ProjectFile, MOUNT_HEIGHT_RANGE.", "file": "src/types/index.ts" },
+
+    // ── External ───────────────────────────────────────────
+    { "id": "gemini-api",        "label": "Gemini API",          "layer": "external", "group": "AI",      "purpose": "Google Generative Language REST API. POST /v1beta/models/gemini-2.5-flash-lite:generateContent. Liefert Kamera-Specs als JSON.", "file": "generativelanguage.googleapis.com" }
+  ],
+  "edges": [
+    // Electron → Renderer
+    { "from": "electron-main", "to": "app-root", "kind": "renders", "label": "loadFile" },
+
+    // App-Root → Panels
+    { "from": "app-root", "to": "header", "kind": "renders" },
+    { "from": "app-root", "to": "error-boundary", "kind": "renders", "label": "wraps" },
+    { "from": "app-root", "to": "sidebar", "kind": "renders" },
+    { "from": "app-root", "to": "template-selector", "kind": "renders" },
+    { "from": "app-root", "to": "venue-2d", "kind": "renders" },
+    { "from": "app-root", "to": "venue-3d", "kind": "renders" },
+    { "from": "app-root", "to": "preview", "kind": "renders" },
+    { "from": "app-root", "to": "calculator", "kind": "renders" },
+    { "from": "app-root", "to": "export-panel", "kind": "renders" },
+    { "from": "app-root", "to": "export-registry", "kind": "imports" },
+    { "from": "app-root", "to": "util-storage", "kind": "imports" },
+
+    // Header
+    { "from": "header", "to": "use-store", "kind": "uses-store" },
+    { "from": "header", "to": "export-panel", "kind": "event", "label": "multicam-export" },
+
+    // Sidebar
+    { "from": "sidebar", "to": "custom-camera-form", "kind": "renders" },
+    { "from": "sidebar", "to": "calc-breakdown", "kind": "renders" },
+    { "from": "sidebar", "to": "use-store", "kind": "uses-store" },
+    { "from": "sidebar", "to": "data-cameras", "kind": "imports" },
+    { "from": "sidebar", "to": "data-lenses", "kind": "imports" },
+    { "from": "sidebar", "to": "util-fov", "kind": "imports" },
+    { "from": "sidebar", "to": "venue-2d", "kind": "event", "label": "calibrate / wall-draw" },
+
+    // Custom Camera Form
+    { "from": "custom-camera-form", "to": "data-cameras", "kind": "imports" },
+    { "from": "custom-camera-form", "to": "gemini-api", "kind": "http", "label": "POST :generateContent" },
+
+    // Calc Breakdown / Calculator
+    { "from": "calc-breakdown", "to": "types", "kind": "imports" },
+    { "from": "calculator", "to": "data-cameras", "kind": "imports" },
+    { "from": "calculator", "to": "util-fov", "kind": "imports" },
+
+    // Template Selector
+    { "from": "template-selector", "to": "use-store", "kind": "uses-store" },
+
+    // Venue 2D
+    { "from": "venue-2d", "to": "use-store", "kind": "uses-store" },
+    { "from": "venue-2d", "to": "data-cameras", "kind": "imports" },
+    { "from": "venue-2d", "to": "data-lenses", "kind": "imports" },
+    { "from": "venue-2d", "to": "util-fov", "kind": "imports" },
+    { "from": "venue-2d", "to": "util-camera", "kind": "imports" },
+    { "from": "venue-2d", "to": "export-registry", "kind": "imports" },
+
+    // Venue 3D
+    { "from": "venue-3d", "to": "use-store", "kind": "uses-store" },
+    { "from": "venue-3d", "to": "data-cameras", "kind": "imports" },
+    { "from": "venue-3d", "to": "data-lenses", "kind": "imports" },
+    { "from": "venue-3d", "to": "util-fov", "kind": "imports" },
+    { "from": "venue-3d", "to": "util-camera", "kind": "imports" },
+    { "from": "venue-3d", "to": "export-registry", "kind": "imports" },
+
+    // Preview
+    { "from": "preview", "to": "use-store", "kind": "uses-store" },
+    { "from": "preview", "to": "data-cameras", "kind": "imports" },
+    { "from": "preview", "to": "data-lenses", "kind": "imports" },
+    { "from": "preview", "to": "util-fov", "kind": "imports" },
+    { "from": "preview", "to": "util-camera", "kind": "imports" },
+    { "from": "preview", "to": "export-registry", "kind": "imports" },
+
+    // Export Panel
+    { "from": "export-panel", "to": "use-store", "kind": "uses-store" },
+    { "from": "export-panel", "to": "export-registry", "kind": "imports" },
+    { "from": "export-panel", "to": "data-cameras", "kind": "imports" },
+    { "from": "export-panel", "to": "data-lenses", "kind": "imports" },
+    { "from": "export-panel", "to": "util-fov", "kind": "imports" },
+
+    // Store → Data/Utils/Types
+    { "from": "use-store", "to": "data-cameras", "kind": "imports" },
+    { "from": "use-store", "to": "data-lenses", "kind": "imports" },
+    { "from": "use-store", "to": "data-templates", "kind": "imports" },
+    { "from": "use-store", "to": "util-storage", "kind": "imports" },
+    { "from": "use-store", "to": "types", "kind": "imports" },
+
+    // Data/Utils → Types
+    { "from": "data-cameras", "to": "types", "kind": "imports" },
+    { "from": "data-lenses", "to": "types", "kind": "imports" },
+    { "from": "data-templates", "to": "types", "kind": "imports" },
+    { "from": "util-fov", "to": "types", "kind": "imports" },
+    { "from": "util-camera", "to": "types", "kind": "imports" }
+  ],
+  "flows": [
+    {
+      "name": "Kamera platzieren & framen",
+      "steps": [
+        "Sidebar: + Kamera → useStore.addCamera(cameraId, lensId)",
+        "pickInitialMountAndLens wählt nutzbaren Mount + Lens",
+        "VenueCamera in cameras[] → Venue2D / Venue3D / Preview rendern",
+        "Drag des Markers → moveCamera, oder Pan/Tilt-Drag im Preview",
+        "Live FOV/DoF via getEffectiveSensor + computeFov/computeDof"
+      ]
+    },
+    {
+      "name": "Custom-Kamera per AI",
+      "steps": [
+        "CustomCameraForm: Manufacturer + Model eingeben",
+        "Gemini-Key aus localStorage → callGemini (x-goog-api-key Header)",
+        "fetch → Gemini API → JSON-Antwort",
+        "applyAiResult füllt Sensor / Mount / Sensor-Modi",
+        "useStore.addCustomCamera → localStorage-Persist (saveJSON)"
+      ]
+    },
+    {
+      "name": "Projekt speichern / laden",
+      "steps": [
+        "Header: Save → useStore.saveProject()",
+        "Blob(JSON) + a.download = '<name>_v<N>.mcplan' — Browser-Download",
+        "KEIN Electron-IPC, keine atomaren Writes",
+        "Load: File.text() → JSON.parse → loadProject()",
+        "ID-Reassign + Migration (scale → scaleX/scaleY, mountType-Default)"
+      ]
+    },
+    {
+      "name": "Grundriss kalibrieren",
+      "steps": [
+        "Sidebar: PDF/Bild-Upload → pdfToDataUrl (pdfjs) bzw. FileReader",
+        "BackgroundPlan (dataUrl + scaleX/Y + offset) in Store",
+        "Sidebar dispatch window-Event 'multicam-calibrate'",
+        "Venue2D hört Event: 2 Punkte klicken → Maßstab berechnen",
+        "setBackgroundPlan + optional Venue-Auto-Resize"
+      ]
+    },
+    {
+      "name": "PNG-Export (alle Panels)",
+      "steps": [
+        "Header → dispatch 'multicam-export' { mode }",
+        "ExportPanel: registry.prepareForExport() erzwingt Grid-Layout",
+        "framing3D.fitVenue rahmt die 3D-Szene",
+        "capture 2D (Konva.toCanvas) + 3D (preserveDrawingBuffer) + Preview (copy)",
+        "Composite auf out-Canvas → toBlob → Download"
+      ]
+    },
+    {
+      "name": "FOV/DoF-Berechnung (Kern-Logik)",
+      "steps": [
+        "getEffectiveSensor: Crop-Modus + Speedbooster + Adapter anwenden",
+        "computeFov: H/V/Diagonal-FOV, Bildmaße @ Distanz, KB-Äquivalent",
+        "computeDof: Hyperfokale, CoC, Nah-/Fern-Grenze",
+        "personHeightInFrame: Personen-Pixelhöhe @ 1080p",
+        "Anzeige in Preview-Readout, Calculator, CalculationBreakdown, Export"
+      ]
+    }
+  ]
+};
+
+// ─── Layout-Berechnung ───────────────────────────────────────────────────────
+const W = 200, H = 60, GAP_X = 60, GAP_Y = 18, GROUP_PAD = 22, GROUP_LABEL_H = 24;
+
+const layerOrder = ['main', 'renderer', 'external'];
+const grouped = {};
+for (const m of DATA.modules) {
+  if (!grouped[m.layer]) grouped[m.layer] = {};
+  const g = m.group || 'Other';
+  if (!grouped[m.layer][g]) grouped[m.layer][g] = [];
+  grouped[m.layer][g].push(m);
+}
+
+const positions = {};
+const layerBounds = {};
+const groupBounds = [];
+
+let xOffset = 40;
+for (const layerId of layerOrder) {
+  const groups = grouped[layerId] || {};
+  const colMax = layerId === 'renderer' ? 3 : 1; // Renderer hat viele Module, breit
+  const colWidth = colMax * W + (colMax - 1) * GAP_X;
+  let yOffset = 60;
+  const groupNames = Object.keys(groups);
+  for (const gName of groupNames) {
+    const modules = groups[gName];
+    const rows = Math.ceil(modules.length / colMax);
+    const groupH = rows * H + (rows - 1) * GAP_Y + GROUP_LABEL_H + 2 * GROUP_PAD;
+    groupBounds.push({
+      layer: layerId,
+      group: gName,
+      x: xOffset,
+      y: yOffset,
+      w: colWidth + 2 * GROUP_PAD,
+      h: groupH,
+    });
+    modules.forEach((m, i) => {
+      const col = i % colMax;
+      const row = Math.floor(i / colMax);
+      positions[m.id] = {
+        x: xOffset + GROUP_PAD + col * (W + GAP_X),
+        y: yOffset + GROUP_LABEL_H + GROUP_PAD + row * (H + GAP_Y),
+        w: W,
+        h: H,
+      };
+    });
+    yOffset += groupH + 30;
+  }
+  layerBounds[layerId] = {
+    x: xOffset - 20,
+    y: 20,
+    w: colWidth + 2 * GROUP_PAD + 40,
+    h: yOffset + 20,
+  };
+  xOffset += colWidth + 2 * GROUP_PAD + 120;
+}
+
+const totalW = xOffset;
+const totalH = Math.max(...Object.values(layerBounds).map(b => b.y + b.h));
+
+// ─── SVG-Render ──────────────────────────────────────────────────────────────
+const viewport = document.getElementById('viewport');
+const tooltip = document.getElementById('tooltip');
+let activeLayer = 'all';
+
+function renderGroups() {
+  for (const g of groupBounds) {
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', g.x);
+    rect.setAttribute('y', g.y);
+    rect.setAttribute('width', g.w);
+    rect.setAttribute('height', g.h);
+    rect.setAttribute('rx', 8);
+    rect.setAttribute('class', 'group-bg');
+    rect.dataset.layer = g.layer;
+    viewport.appendChild(rect);
+
+    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    label.setAttribute('x', g.x + GROUP_PAD);
+    label.setAttribute('y', g.y + 16);
+    label.setAttribute('class', 'group-label');
+    label.textContent = g.group;
+    label.dataset.layer = g.layer;
+    viewport.appendChild(label);
+  }
+}
+
+function renderEdges() {
+  for (const e of DATA.edges) {
+    const a = positions[e.from], b = positions[e.to];
+    if (!a || !b) continue;
+    const x1 = a.x + a.w / 2, y1 = a.y + a.h / 2;
+    const x2 = b.x + b.w / 2, y2 = b.y + b.h / 2;
+    const dx = Math.abs(x2 - x1) * 0.5;
+    const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('class', `edge ${e.kind}`);
+    path.dataset.from = e.from;
+    path.dataset.to = e.to;
+    path.dataset.layerFrom = DATA.modules.find(m => m.id === e.from)?.layer;
+    path.dataset.layerTo = DATA.modules.find(m => m.id === e.to)?.layer;
+    viewport.appendChild(path);
+  }
+}
+
+function renderNodes() {
+  for (const m of DATA.modules) {
+    const p = positions[m.id];
+    if (!p) continue;
+    const layer = DATA.layers.find(l => l.id === m.layer);
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'node');
+    g.setAttribute('transform', `translate(${p.x}, ${p.y})`);
+    g.dataset.id = m.id;
+    g.dataset.layer = m.layer;
+
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('width', p.w);
+    rect.setAttribute('height', p.h);
+    rect.setAttribute('rx', 6);
+    rect.setAttribute('fill', layer.color);
+    rect.setAttribute('stroke', '#1e293b');
+    rect.setAttribute('stroke-width', '1');
+    g.appendChild(rect);
+
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', p.w / 2);
+    text.setAttribute('y', p.h / 2 - 4);
+    text.setAttribute('text-anchor', 'middle');
+    text.textContent = m.label;
+    g.appendChild(text);
+
+    const sub = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    sub.setAttribute('x', p.w / 2);
+    sub.setAttribute('y', p.h / 2 + 10);
+    sub.setAttribute('text-anchor', 'middle');
+    sub.setAttribute('class', 'subtitle');
+    const short = m.purpose.length > 40 ? m.purpose.slice(0, 38) + '…' : m.purpose;
+    sub.textContent = short;
+    g.appendChild(sub);
+
+    g.addEventListener('mouseenter', (ev) => showTooltip(ev, m));
+    g.addEventListener('mousemove', (ev) => positionTooltip(ev));
+    g.addEventListener('mouseleave', () => hideTooltip());
+    g.addEventListener('click', () => focusOnNode(m.id));
+    viewport.appendChild(g);
+  }
+}
+
+function showTooltip(ev, m) {
+  tooltip.innerHTML = `
+    <div class="tt-label">${m.label}</div>
+    <div class="tt-file">${m.file || ''}</div>
+    <div class="tt-purpose">${m.purpose}</div>
+  `;
+  tooltip.style.display = 'block';
+  positionTooltip(ev);
+}
+function positionTooltip(ev) {
+  const x = ev.clientX + 14;
+  const y = ev.clientY + 14;
+  tooltip.style.left = Math.min(x, window.innerWidth - 300) + 'px';
+  tooltip.style.top = Math.min(y, window.innerHeight - 100) + 'px';
+}
+function hideTooltip() {
+  tooltip.style.display = 'none';
+}
+
+// ─── Pan / Zoom ─────────────────────────────────────────────────────────────
+let viewX = 0, viewY = 0, scale = 0.65;
+const svg = document.getElementById('graph');
+function applyTransform() {
+  viewport.setAttribute('transform', `translate(${viewX}, ${viewY}) scale(${scale})`);
+}
+function fitView() {
+  const svgRect = svg.getBoundingClientRect();
+  const padX = 40, padY = 40;
+  const fitScale = Math.min(
+    (svgRect.width - 2 * padX) / totalW,
+    (svgRect.height - 2 * padY) / totalH,
+  );
+  scale = Math.max(0.15, Math.min(1.5, fitScale));
+  viewX = padX;
+  viewY = padY;
+  applyTransform();
+}
+let dragging = false, dragStart = null;
+svg.addEventListener('mousedown', (e) => {
+  if (e.target.closest('.node')) return;
+  dragging = true;
+  dragStart = { x: e.clientX - viewX, y: e.clientY - viewY };
+});
+window.addEventListener('mousemove', (e) => {
+  if (!dragging) return;
+  viewX = e.clientX - dragStart.x;
+  viewY = e.clientY - dragStart.y;
+  applyTransform();
+});
+window.addEventListener('mouseup', () => { dragging = false; });
+svg.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.1 : 0.9;
+  const newScale = Math.max(0.15, Math.min(3, scale * factor));
+  const svgRect = svg.getBoundingClientRect();
+  const cx = e.clientX - svgRect.left;
+  const cy = e.clientY - svgRect.top;
+  viewX = cx - (cx - viewX) * (newScale / scale);
+  viewY = cy - (cy - viewY) * (newScale / scale);
+  scale = newScale;
+  applyTransform();
+}, { passive: false });
+
+document.getElementById('btn-fit').addEventListener('click', fitView);
+document.getElementById('btn-zoom-in').addEventListener('click', () => { scale = Math.min(3, scale * 1.2); applyTransform(); });
+document.getElementById('btn-zoom-out').addEventListener('click', () => { scale = Math.max(0.15, scale / 1.2); applyTransform(); });
+
+// ─── Layer-Filter ───────────────────────────────────────────────────────────
+function applyLayerFilter() {
+  document.querySelectorAll('.node').forEach((n) => {
+    if (activeLayer === 'all' || n.dataset.layer === activeLayer) {
+      n.classList.remove('dimmed');
+    } else {
+      n.classList.add('dimmed');
+    }
+  });
+  document.querySelectorAll('.edge').forEach((e) => {
+    if (activeLayer === 'all' || e.dataset.layerFrom === activeLayer || e.dataset.layerTo === activeLayer) {
+      e.classList.remove('dimmed');
+    } else {
+      e.classList.add('dimmed');
+    }
+  });
+  document.querySelectorAll('rect.group-bg, text.group-label').forEach((n) => {
+    if (activeLayer === 'all' || n.dataset.layer === activeLayer) {
+      n.style.opacity = '';
+    } else {
+      n.style.opacity = '0.15';
+    }
+  });
+}
+document.querySelectorAll('.layer-btn').forEach((b) => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.layer-btn').forEach((x) => x.classList.remove('active'));
+    b.classList.add('active');
+    activeLayer = b.dataset.layer;
+    applyLayerFilter();
+  });
+});
+
+// ─── Focus-On-Node: highlight neighbors ─────────────────────────────────────
+function focusOnNode(id) {
+  const neighbors = new Set([id]);
+  for (const e of DATA.edges) {
+    if (e.from === id) neighbors.add(e.to);
+    if (e.to === id) neighbors.add(e.from);
+  }
+  document.querySelectorAll('.node').forEach((n) => {
+    n.classList.toggle('dimmed', !neighbors.has(n.dataset.id));
+  });
+  document.querySelectorAll('.edge').forEach((e) => {
+    e.classList.toggle('dimmed', !(e.dataset.from === id || e.dataset.to === id));
+  });
+}
+
+// ─── Flows-Sidebar ──────────────────────────────────────────────────────────
+const flowsList = document.getElementById('flows-list');
+for (const f of DATA.flows) {
+  const div = document.createElement('div');
+  div.className = 'flow';
+  div.innerHTML = `<div class="flow-name">${f.name}</div><ol>${f.steps.map(s => `<li>${s}</li>`).join('')}</ol>`;
+  flowsList.appendChild(div);
+}
+
+// ─── INIT ───────────────────────────────────────────────────────────────────
+renderGroups();
+renderEdges();
+renderNodes();
+fitView();
+</script>
+</body>
+</html>
