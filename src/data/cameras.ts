@@ -203,6 +203,59 @@ export function getCamerasByType(type: Camera['type']): Camera[] {
 }
 
 /**
+ * Canonical focal-reducer ("Speed Booster") per lens→body mount combo, keyed
+ * "<lensMount>-><bodyMount>". Only the common 0.71× ULTRA variant is modelled
+ * because the UI exposes Speed Booster as a single on/off toggle; the widened
+ * sensor is derived from the body's own native sensor at runtime, so one entry
+ * stays correct on any body that exposes the combo (MFT, FZ, S35 E …).
+ *
+ * This is intentionally NOT a global auto-adapter catalogue — it only resolves
+ * when the operator explicitly enables `VenueCamera.useSpeedbooster`, matching
+ * the strict, opt-in mount model below.
+ */
+const SPEED_BOOSTERS: Record<string, { name: string; factor: number }> = {
+  'EF->MFT': { name: 'Metabones EF → MFT Speed Booster ULTRA II 0.71×',   factor: 0.71 },
+  'EF->FZ':  { name: 'Metabones EF → FZ Speed Booster ULTRA 0.71×',       factor: 0.71 },
+  'EF->E':   { name: 'Metabones EF → E CINE Speed Booster ULTRA II 0.71×', factor: 0.71 },
+  'EF->X':   { name: 'Metabones EF-X CINE Speed Booster ULTRA II 0.71×',  factor: 0.71 },
+  'NF->E':   { name: 'Metabones Nikon G → E Speed Booster ULTRA II 0.71×', factor: 0.71 },
+  'NF->MFT': { name: 'Metabones Nikon G → MFT Speed Booster ULTRA 0.71×',  factor: 0.71 },
+};
+
+/** True when a Speed Booster focal reducer exists for the lens→body mount combo. */
+export function speedBoosterExists(lensMount?: string, bodyMount?: string): boolean {
+  if (!lensMount || !bodyMount) return false;
+  return `${lensMount}->${bodyMount}` in SPEED_BOOSTERS;
+}
+
+/**
+ * Resolve the Speed Booster fitted between an adapted lens and the body, if the
+ * combo is supported. The widened sensor is computed from the body's own native
+ * sensor (focal reduction enlarges the captured area by 1/factor), so a 0.71×
+ * booster reports the correct effective frame on an MFT, FZ or S35 body alike.
+ */
+export function getSpeedBooster(camera: Camera, activeMount?: string): AdapterInfo | null {
+  const lensMount = activeMount ?? camera.mount;
+  const def = SPEED_BOOSTERS[`${lensMount}->${camera.mount}`];
+  if (!def) return null;
+  const { factor, name } = def;
+  const widened: SensorSize = {
+    name: `${camera.sensor.name} + Speed Booster ${factor}×`,
+    widthMm: camera.sensor.widthMm / factor,
+    heightMm: camera.sensor.heightMm / factor,
+    cropFactor: camera.sensor.cropFactor * factor,
+  };
+  // Focal reduction is a light *gain*: stops = 2·log2(factor) (negative).
+  const lightLossStops = Math.round(2 * Math.log2(factor) * 10) / 10;
+  return {
+    name,
+    lightLossStops,
+    cropSensor: widened,
+    notes: `Focal reducer between the ${lensMount} lens and the ${camera.mount} body. Widens the field of view by 1/${factor} and gains ~${Math.abs(lightLossStops)} T-stop; the effective sensor area scales up accordingly.`,
+  };
+}
+
+/**
  * Determine the adapter currently fitted on the camera, if any.
  *
  * Strict model:
@@ -215,21 +268,17 @@ export function getCamerasByType(type: Camera['type']): Camera[] {
  *     the calculator silently apply optical penalties the user never opted
  *     into. Lens-mount mismatches are surfaced as an incompatibility warning
  *     in the UI instead.
- *   - Speedbooster is a special EF→MFT focal reducer that swaps in for the
- *     passive EF mount plate on MFT bodies. When `useSpeedbooster` is on and
- *     the body is MFT with EF as the active mount, the Speedbooster info
- *     supersedes the body's mountAdapter entry.
+ *   - Speed Booster is an opt-in focal reducer (`VenueCamera.useSpeedbooster`)
+ *     that swaps in for the passive mount plate. When enabled and a booster
+ *     exists for the active lens mount → body mount combo (see SPEED_BOOSTERS),
+ *     it supersedes the body's plain mountAdapter entry.
  */
 export function getAdapterInfo(camera: Camera, _lens: Lens, useSpeedbooster = false, activeMount?: string): AdapterInfo | null {
   const effectiveMount = activeMount ?? camera.mount;
 
-  if (useSpeedbooster && camera.mount === 'MFT' && effectiveMount === 'EF') {
-    return {
-      name: 'Metabones EF→MFT Speed Booster 0.71×',
-      lightLossStops: -1.0,
-      cropSensor: { name: 'MFT + Speed Booster (S35 equiv)', widthMm: 17.3 / 0.71, heightMm: 13 / 0.71, cropFactor: 2.0 * 0.71 },
-      notes: 'Focal reducer that replaces the passive EF→MFT plate. Widens FOV by 0.71×, gains ~1 T-stop of light, and the effective image area approaches Super-35.',
-    };
+  if (useSpeedbooster) {
+    const booster = getSpeedBooster(camera, effectiveMount);
+    if (booster) return booster;
   }
 
   return camera.mountAdapters?.[effectiveMount] ?? null;
