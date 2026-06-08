@@ -18,4 +18,14 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
+  build: {
+    // Force the bundled 3D label font to inline as a base64 data: URL regardless
+    // of size. troika (drei <Text>) loads fonts via fetch(), and in a packaged
+    // Electron app (file:// origin) fetch() of a file:// URL is blocked by
+    // Chromium — a data: URL works offline with no network and no file fetch.
+    assetsInlineLimit(filePath) {
+      if (filePath.includes('Roboto-Regular.woff2')) return true;
+      return undefined; // everything else: default 4 KB threshold
+    },
+  },
 });

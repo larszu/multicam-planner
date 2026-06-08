@@ -166,7 +166,7 @@ export interface VenueCamera {
   focusDistance: number; // metres
   color: string;
   extenderActive: number; // 1 = none, 1.5, 2
-  useSpeedbooster?: boolean; // EF Speedbooster on MFT cameras
+  useSpeedbooster?: boolean; // opt-in focal reducer (EF/NF → MFT/FZ/E/X), see SPEED_BOOSTERS
   /**
    * Index into `Camera.sensorModes` selecting a hardware crop mode. Undefined or
    * out-of-range falls back to the camera's default sensor.

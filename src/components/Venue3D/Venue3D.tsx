@@ -11,6 +11,12 @@ import { getExportRegistry } from '../../store/exportRegistry';
 import type { FramingState } from '../../store/exportRegistry';
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import type { BackgroundPlan, StageObjectType } from '../../types';
+import robotoFont from '../../assets/fonts/Roboto-Regular.woff2';
+
+// Bundled label font (Roboto Regular, Apache-2.0 — see assets/fonts/Roboto-LICENSE.txt).
+// Inlined as a base64 data: URL at build time (vite.config.ts assetsInlineLimit) so
+// every 3D <Text> renders fully offline — no runtime CDN/font fetch, CSP stays strict.
+const LABEL_FONT = robotoFont;
 
 /* ── Draggable group that moves on the XZ ground plane ── */
 function DraggableOnFloor({ children, x, z, onDragEnd, onClick }: {
@@ -92,7 +98,7 @@ function FloorLabels({ widthM, heightM }: { widthM: number; heightM: number }) {
   // X-axis labels every 5m
   for (let x = 0; x <= widthM; x += 5) {
     labels.push(
-      <Text key={`xl-${x}`} position={[x, 0.02, -0.4]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.35} color="#6b7280" anchorX="center">
+      <Text key={`xl-${x}`} font={LABEL_FONT} position={[x, 0.02, -0.4]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.35} color="#6b7280" anchorX="center">
         {x}m
       </Text>,
     );
@@ -100,7 +106,7 @@ function FloorLabels({ widthM, heightM }: { widthM: number; heightM: number }) {
   // Z-axis labels every 5m
   for (let z = 0; z <= heightM; z += 5) {
     labels.push(
-      <Text key={`zl-${z}`} position={[-0.5, 0.02, z]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.35} color="#6b7280" anchorX="right">
+      <Text key={`zl-${z}`} font={LABEL_FONT} position={[-0.5, 0.02, z]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.35} color="#6b7280" anchorX="right">
         {z}m
       </Text>,
     );
@@ -326,11 +332,11 @@ function StageMesh({ x, y, w, h, label }: { x: number; y: number; w: number; h: 
         <edgesGeometry args={[new THREE.BoxGeometry(w, 0.1, h)]} />
         <lineBasicMaterial color="#60a5fa" />
       </lineSegments>
-      <Text position={[0, 0.2, 0]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.5} color="#93c5fd" anchorX="center" fontWeight="bold">
+      <Text font={LABEL_FONT} position={[0, 0.2, 0]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.5} color="#93c5fd" anchorX="center" fontWeight="bold">
         {label}
       </Text>
       {/* Stage dimensions */}
-      <Text position={[0, 0.15, h / 2 + 0.3]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.25} color="#60a5fa" anchorX="center" fillOpacity={0.53}>
+      <Text font={LABEL_FONT} position={[0, 0.15, h / 2 + 0.3]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.25} color="#60a5fa" anchorX="center" fillOpacity={0.53}>
         {w}×{h}m
       </Text>
     </group>
@@ -434,7 +440,7 @@ function FovPyramid({ cam, isSelected }: { cam: ReturnType<typeof useStore.getSt
         </lineSegments>
       )}
       {/* Label */}
-      <Text position={[0, 0.5, 0]} fontSize={0.35} color="#ffffff" anchorX="center" fontWeight="bold"
+      <Text font={LABEL_FONT} position={[0, 0.5, 0]} fontSize={0.35} color="#ffffff" anchorX="center" fontWeight="bold"
         outlineWidth={0.02} outlineColor="#000000">
         {cam.label}
       </Text>
@@ -810,7 +816,7 @@ function PersonMesh({ x, z, height, label, objectType, color }: { x: number; z: 
           )}
         </>
       )}
-      <Text position={[0, height * 0.5, 0]} fontSize={0.22} color={col} anchorX="center"
+      <Text font={LABEL_FONT} position={[0, height * 0.5, 0]} fontSize={0.22} color={col} anchorX="center"
         outlineWidth={0.015} outlineColor="#000000">
         {label} ({height}m)
       </Text>

@@ -1,5 +1,5 @@
 import { useStore, OBJECT_PRESETS } from '../../store/useStore';
-import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor, getCoverageStatus } from '../../data/cameras';
+import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor, getCoverageStatus, getSpeedBooster, speedBoosterExists } from '../../data/cameras';
 import { LENSES, getLensById, getCompatibleLenses, pickInitialMountAndLens } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
 import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2, FiRotateCcw } from 'react-icons/fi';
@@ -101,6 +101,7 @@ function CameraCard({ camId }: { camId: string }) {
   const isPureCustom = (id: string) => isCustomEntry(id) && !isBuiltIn(id);
 
   // Adapter & effective sensor
+  const speedBooster = camDef ? getSpeedBooster(camDef, cam.activeMount ?? lensDef?.mount) : null;
   const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, cam.useSpeedbooster, cam.activeMount) : null;
   const effectiveSensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex, cam.activeMount) : camDef?.sensor;
   const coverage = camDef && lensDef ? getCoverageStatus(camDef, lensDef, cam.useSpeedbooster, cam.activeMount, cam.sensorModeIndex) : null;
@@ -169,8 +170,9 @@ function CameraCard({ camId }: { camId: string }) {
           ⚠ Lens mount {lensDef.mount} ≠ active mount {activeMount} — incompatible
         </div>
       )}
-      {/* Speed Booster toggle — only for EF lens on MFT camera */}
-      {camDef?.mount === 'MFT' && lensDef?.mount === 'EF' && (
+      {/* Speed Booster toggle — shown when a focal reducer exists for the
+          fitted lens-mount → body-mount combo (EF/NF → MFT/FZ/E/X). */}
+      {speedBooster && (
         <label className="flex items-center gap-1.5 text-xs mt-1 text-gray-300 cursor-pointer" onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
@@ -178,7 +180,7 @@ function CameraCard({ camId }: { camId: string }) {
             onChange={(e) => updateCamera(cam.id, { useSpeedbooster: e.target.checked })}
             className="accent-bc-accent"
           />
-          Speed Booster 0.71× (focal reducer, +1T gain)
+          {speedBooster.name} (focal reducer)
         </label>
       )}
 
@@ -274,8 +276,8 @@ function CameraCard({ camId }: { camId: string }) {
                   focalLength: lens?.focalLengthMin ?? cam.focalLength,
                   aperture: lens?.maxApertureWide ?? cam.aperture,
                   extenderActive: supportsExtender ? cam.extenderActive : 1,
-                  // Speedbooster only valid on MFT cameras with EF mount fitted
-                  useSpeedbooster: newCam.mount === 'MFT' && pick.mount === 'EF' ? cam.useSpeedbooster : false,
+                  // Keep Speed Booster only if one exists for the new lens→body combo
+                  useSpeedbooster: speedBoosterExists(pick.mount, newCam.mount) ? cam.useSpeedbooster : false,
                   // Reset hardware sensor mode — each body has a different mode list
                   sensorModeIndex: newCam.sensorModes && newCam.sensorModes.length > 0 ? 0 : undefined,
                   activeMount: pick.mount,
@@ -375,7 +377,7 @@ function CameraCard({ camId }: { camId: string }) {
                     focalLength: nextFocal,
                     aperture: nextAperture,
                     extenderActive: 1,
-                    useSpeedbooster: newMount === 'MFT' && getLensById(nextLensId, customLenses)?.mount === 'EF' ? cam.useSpeedbooster : false,
+                    useSpeedbooster: speedBoosterExists(newMount, camDef?.mount) ? cam.useSpeedbooster : false,
                   });
                 }}
               >
@@ -475,8 +477,8 @@ function CameraCard({ camId }: { camId: string }) {
                   aperture: lens?.maxApertureWide ?? cam.aperture,
                   // Reset extender when switching to a lens that doesn't support the current value
                   extenderActive: supportsExtender ? cam.extenderActive : 1,
-                  // Speedbooster only makes sense with an EF lens on an MFT body
-                  useSpeedbooster: camDef?.mount === 'MFT' && lens?.mount === 'EF' ? cam.useSpeedbooster : false,
+                  // Keep Speed Booster only if one exists for the new lens→body combo
+                  useSpeedbooster: speedBoosterExists(lens?.mount, camDef?.mount) ? cam.useSpeedbooster : false,
                 });
               }}
             >
