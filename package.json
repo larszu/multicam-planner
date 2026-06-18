@@ -52,6 +52,9 @@
     "mac": {
       "icon": "build/icon.png",
       "category": "public.app-category.video",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
       "target": [
         {
           "target": "dmg",
