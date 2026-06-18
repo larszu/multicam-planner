@@ -1,0 +1,185 @@
+name: Release
+
+# Modeled on the cable-planner release pipeline.
+#
+# Push a version tag (e.g. `git tag v0.4.1 && git push origin v0.4.1`) and this
+# workflow:
+#   1. builds the Windows + macOS desktop apps (matrix),
+#   2. creates a GitHub Release with auto-generated notes and the binaries
+#      attached (NSIS installer, portable .exe, DMG, ZIP),
+#   3. writes the tag version back into package.json on the default branch so
+#      it never drifts behind the released tags.
+# It can also be run manually (workflow_dispatch) to smoke-test the build —
+# manual runs only upload workflow artifacts (no release / no version sync).
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# actions/checkout@v5 and actions/setup-node@v5 ship Node 24 natively. A few
+# JS actions (upload-artifact@v4, download-artifact@v4, action-gh-release@v2)
+# still lack a Node-24 release, so we force them onto Node 24 to silence the
+# runtime-deprecation warning. Drop this once those actions publish v5.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+  build:
+    name: Build (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: windows
+            build_args: --win
+          - os: macos-latest
+            name: macos
+            build_args: --mac --x64 --arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          # Node 24 LTS (active LTS since October 2025). Electron 42 bundles
+          # Node 22 internally; the build host can run any modern Node (>=22).
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync package.json version to tag
+        # electron-builder names artifacts ("MultiCam Planner Setup X.Y.Z.exe")
+        # from package.json.version — NOT the git tag. Without this a release
+        # tagged v0.4.1 still produces "Setup 0.4.0.exe". Rewrites package.json
+        # + lockfile in the runner only (no commit). Skipped on manual runs.
+        shell: bash
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          set -eu
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "Tag version: $TAG_VERSION"
+          npm version "$TAG_VERSION" --no-git-tag-version --allow-same-version
+          node -e "console.log('package.json after sync:', require('./package.json').version)"
+
+      - name: Build renderer + main
+        run: npm run build
+
+      - name: Package with electron-builder
+        # Force bash on every OS. The default Windows shell is pwsh, which has
+        # been observed to swallow electron-builder's stdout and exit code —
+        # the step "succeeds" in ~1.5s with no output, then the upload step
+        # fails because release/*.exe was never produced. Invoking cli.js
+        # directly via node (instead of the npm/npx .cmd shim) plus bash
+        # `set -eo pipefail` makes real failures surface. The electron-builder
+        # config lives in package.json, so no --config flag is needed.
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # NOTE: we deliberately do NOT set CSC_IDENTITY_AUTO_DISCOVERY=false.
+          # The mac config requests an ad-hoc signature (identity: "-") so
+          # Apple Silicon Gatekeeper accepts the binary instead of rejecting it
+          # with "MultiCam Planner is damaged and can't be opened". That flag
+          # can short-circuit the explicit ad-hoc identity in some
+          # electron-builder versions and fall back to a fully-unsigned binary.
+        run: |
+          set -x
+          node --version
+          node node_modules/electron-builder/cli.js ${{ matrix.build_args }} --publish never
+
+      - name: List release/ contents
+        # Make a silent "zero artifacts" failure obvious in the log.
+        shell: bash
+        run: ls -lh release/ || true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: multicam-planner-${{ matrix.name }}
+          path: |
+            release/*.exe
+            release/*.dmg
+            release/*.zip
+            release/*.blockmap
+            release/latest*.yml
+          # Fail loudly if a platform produced no artifacts (silent failure
+          # mode that has bitten the Windows job before).
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/*.exe
+            artifacts/**/*.dmg
+            artifacts/**/*.zip
+            artifacts/**/*.blockmap
+            artifacts/**/latest*.yml
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sync-version-to-main:
+    name: Persist tag version to master
+    needs: release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v5
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Bump package.json to tag version and commit
+        # The build job only syncs the version inside the runner (for the
+        # installer filename) — here we persist it so package.json.version on
+        # master keeps pace with the released tags. Idempotent: exits cleanly
+        # when already in sync. Pushes with GITHUB_TOKEN intentionally do NOT
+        # re-trigger workflows (no loop). Requires that branch protection on
+        # master permits the github-actions[bot] push.
+        shell: bash
+        run: |
+          set -eu
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "Tag version: $TAG_VERSION"
+          npm version "$TAG_VERSION" --no-git-tag-version --allow-same-version
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "package.json already at $TAG_VERSION — nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore(release): bump package.json to v$TAG_VERSION (tag sync)"
+          git pull --rebase origin master
+          git push origin HEAD:master

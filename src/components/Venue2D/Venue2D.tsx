@@ -11,7 +11,7 @@ import React, { useRef, useCallback, useEffect, useState } from 'react';
 import type Konva from 'konva';
 
 export default function Venue2D() {
-  const { venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, showAllFov, pixelsPerMeter, persons, updatePerson, updateStage, backgroundPlan, setBackgroundPlan, walls, updateWall, addWall } = useStore();
+  const { venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, updateCamera, showAllFov, pixelsPerMeter, persons, updatePerson, updateStage, backgroundPlan, setBackgroundPlan, walls, updateWall, addWall } = useStore();
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
@@ -315,6 +315,25 @@ export default function Venue2D() {
     [moveCamera, ppm, venue],
   );
 
+  // Pan-rotation handle (issue #36): orbit a handle around the camera marker to
+  // aim its viewing direction directly in the 2D canvas. Hold Shift to snap to
+  // 15° increments. The handle lives at a fixed pixel radius from the marker and
+  // its local (x,y) — relative to the camera Group origin — gives the pan angle.
+  const PAN_HANDLE_RADIUS = 30;
+  const handlePanRotate = useCallback(
+    (cam: VenueCamera, e: Konva.KonvaEventObject<DragEvent>) => {
+      const nx = e.target.x();
+      const ny = e.target.y();
+      let deg = (Math.atan2(ny, nx) * 180) / Math.PI;
+      if (shiftHeld.current) deg = Math.round(deg / 15) * 15;
+      // Keep the handle pinned to its orbit radius along the new angle.
+      const rad = (deg * Math.PI) / 180;
+      e.target.position({ x: Math.cos(rad) * PAN_HANDLE_RADIUS, y: Math.sin(rad) * PAN_HANDLE_RADIUS });
+      updateCamera(cam.id, { pan: deg });
+    },
+    [updateCamera],
+  );
+
   const handleStageDragEnd = useCallback(
     (stageId: string, e: Konva.KonvaEventObject<DragEvent>) => {
       const stage = venue.stages.find((s) => s.id === stageId);
@@ -535,6 +554,26 @@ export default function Venue2D() {
             <Group key={`cam-${cam.id}`} x={pos.x * ppm} y={pos.y * ppm} draggable={!drawingWall} onDragEnd={(e) => handleCamDragEnd(cam, e)} onClick={() => selectCamera(cam.id)} onTap={() => selectCamera(cam.id)}>
               <Circle radius={isSelected ? 10 : 8} fill={cam.color} stroke={isSelected ? '#fff' : cam.color} strokeWidth={isSelected ? 3 : 1} shadowColor={cam.color} shadowBlur={isSelected ? 12 : 0} />
               <Line points={[0, 0, 14 * Math.cos((cam.pan * Math.PI) / 180), 14 * Math.sin((cam.pan * Math.PI) / 180)]} stroke={cam.color} strokeWidth={2} />
+              {/* Pan-rotation handle — drag to aim the camera (issue #36) */}
+              {isSelected && (
+                <>
+                  <Line
+                    points={[0, 0, PAN_HANDLE_RADIUS * Math.cos((cam.pan * Math.PI) / 180), PAN_HANDLE_RADIUS * Math.sin((cam.pan * Math.PI) / 180)]}
+                    stroke="#ffffff" strokeWidth={1} dash={[3, 3]} opacity={0.45} listening={false}
+                  />
+                  <Circle
+                    x={PAN_HANDLE_RADIUS * Math.cos((cam.pan * Math.PI) / 180)}
+                    y={PAN_HANDLE_RADIUS * Math.sin((cam.pan * Math.PI) / 180)}
+                    radius={6}
+                    fill="#0f1117" stroke="#ffffff" strokeWidth={2}
+                    draggable
+                    onDragStart={(e) => { e.cancelBubble = true; }}
+                    onDragMove={(e) => { e.cancelBubble = true; handlePanRotate(cam, e); }}
+                    onMouseEnter={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = 'crosshair'; }}
+                    onMouseLeave={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = 'grab'; }}
+                  />
+                </>
+              )}
               <Text x={-16} y={12} text={cam.label} fontSize={11} fill="#fff" fontStyle="bold" align="center" width={32} />
             </Group>
           );

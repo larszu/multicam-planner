@@ -24,7 +24,7 @@ export default defineConfig({
     // Electron app (file:// origin) fetch() of a file:// URL is blocked by
     // Chromium — a data: URL works offline with no network and no file fetch.
     assetsInlineLimit(filePath) {
-      if (filePath.includes('Roboto-Regular.woff2')) return true;
+      if (filePath.includes('Roboto-Regular.ttf')) return true;
       return undefined; // everything else: default 4 KB threshold
     },
   },
