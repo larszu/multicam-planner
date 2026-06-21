@@ -42,6 +42,20 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   // Optical presets (issue #47), persisted globally.
   const [presets, setPresets] = useState<PreviewPreset[]>(() => loadJSON<PreviewPreset[]>(PREVIEW_PRESETS_KEY, []));
   const persistPresets = useCallback((next: PreviewPreset[]) => { setPresets(next); saveJSON(PREVIEW_PRESETS_KEY, next); }, []);
+  // Decoded wall pattern images, keyed by data URL (issue #45). A tick forces a
+  // repaint once an image finishes loading asynchronously.
+  const wallImageCache = useRef<Map<string, HTMLImageElement>>(new Map());
+  const [imageTick, setImageTick] = useState(0);
+  const getWallImage = useCallback((dataUrl: string): HTMLImageElement | null => {
+    const cache = wallImageCache.current;
+    const existing = cache.get(dataUrl);
+    if (existing) return existing.complete && existing.naturalWidth > 0 ? existing : null;
+    const img = new Image();
+    img.onload = () => setImageTick((t) => t + 1);
+    img.src = dataUrl;
+    cache.set(dataUrl, img);
+    return null;
+  }, []);
   // Cache projected person positions during draw() so the click handler can hit-test
   // without re-projecting everything itself.
   const projectedPersons = useRef<{ id: string; sx: number; sy: number; topSy: number; dist: number }[]>([]);
@@ -313,7 +327,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       })
       .sort((a, b) => b.dist - a.dist);
 
-    wallsByDist.forEach(({ wall }) => {
+    wallsByDist.forEach(({ wall, dist }) => {
       const camCorners = [
         worldToCamera(wall.x1, wall.y1, 0),
         worldToCamera(wall.x2, wall.y2, 0),
@@ -324,15 +338,84 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       if (clipped.length < 3) return;
       const projected = clipped.map((p) => cameraToScreen(p));
 
-      ctx.fillStyle = '#6b7280cc';
+      const baseColor = wall.color ?? '#6b7280';
+      const pattern = wall.pattern ?? 'solid';
+
+      // Depth-of-field blur for the wall, so a textured wall makes the focus
+      // falloff visible (issue #45). Same falloff model as persons.
+      const outOfFocus = Math.abs(dist - cam.focusDistance);
+      const wallBlur = Math.min(14, (outOfFocus * (cam.focalLength / 50)) / Math.max(1, cam.aperture) * 0.6);
+
+      ctx.save();
+      if (wallBlur > 0.5) ctx.filter = `blur(${wallBlur.toFixed(1)}px)`;
+
+      // Clip to the wall quad so the pattern only paints on the wall surface.
+      ctx.beginPath();
+      ctx.moveTo(projected[0].sx, projected[0].sy);
+      for (let i = 1; i < projected.length; i++) ctx.lineTo(projected[i].sx, projected[i].sy);
+      ctx.closePath();
+      ctx.save();
+      ctx.clip();
+
+      // Base fill.
+      ctx.fillStyle = baseColor + 'cc';
+      ctx.fill();
+
+      // Bounding box of the projected polygon (pattern is painted in screen space
+      // — not perspective-warped, but it gives the high-frequency detail needed to
+      // judge sharpness/blur).
+      const xs = projected.map((p) => p.sx);
+      const ys = projected.map((p) => p.sy);
+      const bx0 = Math.max(-50, Math.min(...xs));
+      const bx1 = Math.min(W + 50, Math.max(...xs));
+      const by0 = Math.max(-50, Math.min(...ys));
+      const by1 = Math.min(H + 50, Math.max(...ys));
+
+      if (pattern === 'grid') {
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+        ctx.lineWidth = 1;
+        const step = 16;
+        ctx.beginPath();
+        for (let x = bx0; x <= bx1; x += step) { ctx.moveTo(x, by0); ctx.lineTo(x, by1); }
+        for (let y = by0; y <= by1; y += step) { ctx.moveTo(bx0, y); ctx.lineTo(bx1, y); }
+        ctx.stroke();
+      } else if (pattern === 'flowers') {
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        const step = 26;
+        for (let y = by0; y <= by1; y += step) {
+          for (let x = bx0; x <= bx1; x += step) {
+            // simple 5-petal flower motif
+            for (let k = 0; k < 5; k++) {
+              const a = (k / 5) * Math.PI * 2;
+              ctx.beginPath();
+              ctx.arc(x + Math.cos(a) * 4, y + Math.sin(a) * 4, 2.6, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            ctx.fillStyle = 'rgba(250,204,21,0.85)';
+            ctx.beginPath();
+            ctx.arc(x, y, 2.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(255,255,255,0.55)';
+          }
+        }
+      } else if (pattern === 'image' && wall.patternImage) {
+        const img = getWallImage(wall.patternImage);
+        if (img) {
+          const tile = ctx.createPattern(img, 'repeat');
+          if (tile) { ctx.fillStyle = tile; ctx.fillRect(bx0, by0, bx1 - bx0, by1 - by0); }
+        }
+      }
+      ctx.restore(); // remove clip
+
+      // Outline (still blurred if out of focus).
       ctx.strokeStyle = '#9ca3af';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(projected[0].sx, projected[0].sy);
       for (let i = 1; i < projected.length; i++) ctx.lineTo(projected[i].sx, projected[i].sy);
       ctx.closePath();
-      ctx.fill();
       ctx.stroke();
+      ctx.restore(); // remove blur filter
     });
 
     // ── Draw persons / stage objects ──
@@ -865,7 +948,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     ctx.textAlign = 'right';
     ctx.fillText(`P ${cam.pan.toFixed(1)}°  T ${cam.tilt.toFixed(1)}°`, W - vRulerW - 8, 16);
 
-  }, [cam, venue, persons, walls, cameras, showGrid, showSafeAreas, showThirds, showCrosshair]);
+  }, [cam, venue, persons, walls, cameras, showGrid, showSafeAreas, showThirds, showCrosshair, getWallImage, imageTick]);
 
   // Repaint synchronously after every render so pan/tilt drags update the canvas
   // on the very next browser frame. The earlier `useEffect` variant was being
