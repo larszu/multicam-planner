@@ -1,4 +1,4 @@
-import { Stage, Layer, Rect, Wedge, Circle, Text, Group, Line, Image as KImage } from 'react-konva';
+import { Stage, Layer, Rect, Wedge, Circle, Text, Group, Line, Image as KImage, Transformer } from 'react-konva';
 import { useStore } from '../../store/useStore';
 import { getCameraById, getEffectiveSensor } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
@@ -9,15 +9,42 @@ import { effectiveCameraPos } from '../../utils/camera';
 import { getExportRegistry } from '../../store/exportRegistry';
 import React, { useRef, useCallback, useEffect, useState } from 'react';
 import type Konva from 'konva';
+import { FiCopy, FiLock, FiUnlock, FiTrash2 } from 'react-icons/fi';
+
+// Shared style for context-menu items (issue #38).
+const ctxItemStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  width: '100%',
+  padding: '6px 8px',
+  borderRadius: 6,
+  background: 'transparent',
+  border: 'none',
+  color: 'inherit',
+  cursor: 'pointer',
+  textAlign: 'left',
+  font: 'inherit',
+};
 
 export default function Venue2D() {
-  const { venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, updateCamera, showAllFov, pixelsPerMeter, persons, updatePerson, updateStage, backgroundPlan, setBackgroundPlan, walls, updateWall, addWall } = useStore();
+  const { venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, updateCamera, removeCamera, duplicateCamera, showAllFov, pixelsPerMeter, persons, updatePerson, removePerson, duplicatePerson, updateStage, addStage, removeStage, backgroundPlan, setBackgroundPlan, walls, updateWall, addWall } = useStore();
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
   const [containerSize, setContainerSize] = useState({ w: 800, h: 600 });
   const [zoom, setZoom] = useState(1);
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
+
+  // ── Stage resize (issue #42): select a stage to show a Konva Transformer
+  // with corner/edge anchors. ──
+  const [selectedStageId, setSelectedStageId] = useState<string | null>(null);
+  const trRef = useRef<Konva.Transformer>(null);
+  const stageNodeRefs = useRef<Record<string, Konva.Group>>({});
+
+  // ── Right-click context menu (issue #42/#38) ──
+  type MenuTarget = { x: number; y: number; kind: 'camera' | 'person' | 'stage'; id: string; locked: boolean };
+  const [menu, setMenu] = useState<MenuTarget | null>(null);
 
   // ── Wall drawing mode ──
   const [drawingWall, setDrawingWall] = useState(false);
@@ -192,6 +219,10 @@ export default function Venue2D() {
 
   // Handle calibration clicks on the stage
   const handleStageClick = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
+    // Clicking empty canvas (the Konva Stage itself) clears the stage selection.
+    if (e.target === e.target.getStage() && !drawingWall && !calibActive) {
+      setSelectedStageId(null);
+    }
     const point = getPointerWorldPoint();
     if (!point) return;
 
@@ -358,6 +389,103 @@ export default function Venue2D() {
     [updatePerson, ppm, venue],
   );
 
+  // Keep the Transformer attached to the currently-selected (unlocked) stage.
+  useEffect(() => {
+    const tr = trRef.current;
+    if (!tr) return;
+    const target = selectedStageId ? venue.stages.find((s) => s.id === selectedStageId) : null;
+    const node = selectedStageId ? stageNodeRefs.current[selectedStageId] : null;
+    if (node && target && !target.locked) {
+      tr.nodes([node]);
+    } else {
+      tr.nodes([]);
+    }
+    tr.getLayer()?.batchDraw();
+  }, [selectedStageId, venue.stages, drawingWall, calibActive]);
+
+  // Commit a Transformer resize: convert the scaled group back into metric
+  // width/height (+ x/y, since top/left anchors move the origin) and reset the
+  // scale so the next drag starts clean. Clamps to a 0.5 m minimum.
+  const handleStageTransformEnd = useCallback(
+    (stageId: string, e: Konva.KonvaEventObject<Event>) => {
+      const node = e.target;
+      const scaleX = node.scaleX();
+      const scaleY = node.scaleY();
+      node.scaleX(1);
+      node.scaleY(1);
+      const src = venue.stages.find((s) => s.id === stageId);
+      if (!src) return;
+      const newWidth = Math.max(0.5, src.width * scaleX);
+      const newHeight = Math.max(0.5, src.height * scaleY);
+      const newX = Math.max(0, node.x() / ppm);
+      const newY = Math.max(0, node.y() / ppm);
+      node.position({ x: newX * ppm, y: newY * ppm });
+      updateStage(stageId, {
+        x: newX,
+        y: newY,
+        width: Math.round(newWidth * 10) / 10,
+        height: Math.round(newHeight * 10) / 10,
+      });
+    },
+    [ppm, updateStage, venue.stages],
+  );
+
+  // Open the right-click context menu for an object, positioned at the cursor
+  // relative to the canvas container (issue #38).
+  const openContextMenu = useCallback(
+    (kind: MenuTarget['kind'], id: string, locked: boolean, e: Konva.KonvaEventObject<PointerEvent>) => {
+      e.evt.preventDefault();
+      e.cancelBubble = true;
+      const rect = containerRef.current?.getBoundingClientRect();
+      setMenu({
+        kind,
+        id,
+        locked,
+        x: e.evt.clientX - (rect?.left ?? 0),
+        y: e.evt.clientY - (rect?.top ?? 0),
+      });
+    },
+    [],
+  );
+
+  // Dismiss the context menu on any outside interaction / Escape.
+  useEffect(() => {
+    if (!menu) return;
+    const close = () => setMenu(null);
+    const onKey = (ev: KeyboardEvent) => { if (ev.key === 'Escape') setMenu(null); };
+    window.addEventListener('mousedown', close);
+    window.addEventListener('wheel', close);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('mousedown', close);
+      window.removeEventListener('wheel', close);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [menu]);
+
+  const handleMenuAction = useCallback((action: 'duplicate' | 'lock' | 'delete') => {
+    if (!menu) return;
+    const { kind, id, locked } = menu;
+    if (action === 'delete') {
+      if (kind === 'camera') removeCamera(id);
+      else if (kind === 'person') removePerson(id);
+      else { removeStage(id); if (selectedStageId === id) setSelectedStageId(null); }
+    } else if (action === 'lock') {
+      if (kind === 'camera') updateCamera(id, { locked: !locked });
+      else if (kind === 'person') updatePerson(id, { locked: !locked });
+      else { updateStage(id, { locked: !locked }); if (!locked && selectedStageId === id) setSelectedStageId(null); }
+    } else {
+      // duplicate
+      if (kind === 'camera') duplicateCamera(id);
+      else if (kind === 'person') duplicatePerson(id);
+      else {
+        const src = venue.stages.find((s) => s.id === id);
+        if (src) addStage({ x: Math.min(venue.widthM - src.width, src.x + 0.5), y: Math.min(venue.heightM - src.height, src.y + 0.5), width: src.width, height: src.height, label: `${src.label} copy` });
+      }
+    }
+    setMenu(null);
+  }, [menu, removeCamera, removePerson, removeStage, updateCamera, updatePerson, updateStage, duplicateCamera, duplicatePerson, addStage, venue.stages, venue.widthM, venue.heightM, selectedStageId]);
+
   return (
     <div ref={containerRef} style={{ width: '100%', height: '100%', background: '#0a0b0f', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
       {/* Zoom indicator */}
@@ -459,14 +587,39 @@ export default function Venue2D() {
           );
         })}
 
-        {/* Stages */}
+        {/* Stages — click to select (shows resize handles), drag to move,
+            right-click for the context menu (issue #42 / #38). */}
         {venue.stages.map((s) => (
-          <Group key={s.id} x={s.x * ppm} y={s.y * ppm} draggable={!drawingWall} onDragEnd={(e) => handleStageDragEnd(s.id, e)}>
-            <Rect width={s.width * ppm} height={s.height * ppm} fill="rgba(59,130,246,0.15)" stroke="#3b82f6" strokeWidth={2} cornerRadius={4} />
-            <Text x={4} y={4} text={s.label} fontSize={12} fill="#3b82f6" fontStyle="bold" />
+          <Group
+            key={s.id}
+            ref={(node) => { if (node) stageNodeRefs.current[s.id] = node; else delete stageNodeRefs.current[s.id]; }}
+            x={s.x * ppm}
+            y={s.y * ppm}
+            draggable={!drawingWall && !s.locked}
+            onDragEnd={(e) => handleStageDragEnd(s.id, e)}
+            onClick={(e) => { if (!drawingWall && !calibActive) { e.cancelBubble = true; setSelectedStageId(s.locked ? null : s.id); } }}
+            onTap={(e) => { if (!drawingWall && !calibActive) { e.cancelBubble = true; setSelectedStageId(s.locked ? null : s.id); } }}
+            onContextMenu={(e) => openContextMenu('stage', s.id, !!s.locked, e)}
+            onTransformEnd={(e) => handleStageTransformEnd(s.id, e)}
+          >
+            <Rect width={s.width * ppm} height={s.height * ppm} fill="rgba(59,130,246,0.15)" stroke={selectedStageId === s.id ? '#60a5fa' : '#3b82f6'} strokeWidth={selectedStageId === s.id ? 3 : 2} cornerRadius={4} />
+            <Text x={4} y={4} text={s.locked ? `${s.label} 🔒` : s.label} fontSize={12} fill="#3b82f6" fontStyle="bold" />
             <Text x={4} y={s.height * ppm - 16} text={`${s.width}×${s.height}m`} fontSize={9} fill="#3b82f688" />
           </Group>
         ))}
+        {/* Resize handles for the selected stage */}
+        <Transformer
+          ref={trRef}
+          rotateEnabled={false}
+          keepRatio={false}
+          ignoreStroke
+          anchorSize={8}
+          anchorStroke="#60a5fa"
+          anchorFill="#0f1117"
+          borderStroke="#60a5fa"
+          enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right', 'top-center', 'bottom-center']}
+          boundBoxFunc={(oldBox, newBox) => (newBox.width < 8 || newBox.height < 8 ? oldBox : newBox)}
+        />
 
         {/* Walls */}
         {walls.map((w) => (
@@ -511,7 +664,7 @@ export default function Venue2D() {
           );
           const footW = Math.max(6, p.width * ppm);
           return (
-            <Group key={p.id} x={p.x * ppm} y={p.y * ppm} draggable onDragEnd={(e) => handlePersonDragEnd(p.id, e)}>
+            <Group key={p.id} x={p.x * ppm} y={p.y * ppm} draggable={!p.locked} onDragEnd={(e) => handlePersonDragEnd(p.id, e)} onContextMenu={(e) => openContextMenu('person', p.id, !!p.locked, e)}>
               {type === 'table' || type === 'drums' || type === 'keys' ? (
                 <Rect x={-footW / 2} y={-footW / 4} width={footW} height={footW / 2} fill={col} opacity={0.55} stroke={col} strokeWidth={1} cornerRadius={2} />
               ) : type === 'schneetiger' ? (
@@ -519,7 +672,7 @@ export default function Venue2D() {
               ) : (
                 <Circle radius={Math.max(5, footW / 3)} fill={col} stroke="#fff" strokeWidth={1} opacity={0.85} />
               )}
-              <Text x={-26} y={8} text={`${p.label} (${p.height}m)`} fontSize={9} fill={col} align="center" width={52} />
+              <Text x={-26} y={8} text={`${p.locked ? '🔒 ' : ''}${p.label} (${p.height}m)`} fontSize={9} fill={col} align="center" width={52} />
             </Group>
           );
         })}
@@ -551,11 +704,12 @@ export default function Venue2D() {
           const isSelected = cam.id === selectedCameraId;
           const pos = effectiveCameraPos(cam);
           return (
-            <Group key={`cam-${cam.id}`} x={pos.x * ppm} y={pos.y * ppm} draggable={!drawingWall} onDragEnd={(e) => handleCamDragEnd(cam, e)} onClick={() => selectCamera(cam.id)} onTap={() => selectCamera(cam.id)}>
+            <Group key={`cam-${cam.id}`} x={pos.x * ppm} y={pos.y * ppm} draggable={!drawingWall && !cam.locked} onDragEnd={(e) => handleCamDragEnd(cam, e)} onClick={() => selectCamera(cam.id)} onTap={() => selectCamera(cam.id)} onContextMenu={(e) => openContextMenu('camera', cam.id, !!cam.locked, e)}>
               <Circle radius={isSelected ? 10 : 8} fill={cam.color} stroke={isSelected ? '#fff' : cam.color} strokeWidth={isSelected ? 3 : 1} shadowColor={cam.color} shadowBlur={isSelected ? 12 : 0} />
               <Line points={[0, 0, 14 * Math.cos((cam.pan * Math.PI) / 180), 14 * Math.sin((cam.pan * Math.PI) / 180)]} stroke={cam.color} strokeWidth={2} />
-              {/* Pan-rotation handle — drag to aim the camera (issue #36) */}
-              {isSelected && (
+              {/* Pan-rotation handle — drag to aim the camera (issue #36).
+                  Hidden while the camera is locked. */}
+              {isSelected && !cam.locked && (
                 <>
                   <Line
                     points={[0, 0, PAN_HANDLE_RADIUS * Math.cos((cam.pan * Math.PI) / 180), PAN_HANDLE_RADIUS * Math.sin((cam.pan * Math.PI) / 180)]}
@@ -574,7 +728,7 @@ export default function Venue2D() {
                   />
                 </>
               )}
-              <Text x={-16} y={12} text={cam.label} fontSize={11} fill="#fff" fontStyle="bold" align="center" width={32} />
+              <Text x={-16} y={12} text={cam.locked ? `${cam.label} 🔒` : cam.label} fontSize={11} fill="#fff" fontStyle="bold" align="center" width={32} />
             </Group>
           );
         })}
@@ -607,6 +761,39 @@ export default function Venue2D() {
         </Layer>
       )}
     </Stage>
+
+    {/* Right-click context menu (issue #38) */}
+    {menu && (
+      <div
+        onMouseDown={(e) => e.stopPropagation()}
+        style={{
+          position: 'absolute',
+          left: Math.min(menu.x, containerSize.w - 170),
+          top: Math.min(menu.y, containerSize.h - 110),
+          zIndex: 50,
+          minWidth: 150,
+          background: 'rgba(15,23,42,0.97)',
+          border: '1px solid #334155',
+          borderRadius: 8,
+          boxShadow: '0 10px 30px rgba(0,0,0,0.45)',
+          padding: 4,
+          fontSize: 12,
+          color: '#e2e8f0',
+          backdropFilter: 'blur(6px)',
+        }}
+      >
+        <button type="button" onClick={() => handleMenuAction('duplicate')} style={ctxItemStyle}>
+          <FiCopy size={13} /> Duplicate
+        </button>
+        <button type="button" onClick={() => handleMenuAction('lock')} style={ctxItemStyle}>
+          {menu.locked ? <FiUnlock size={13} /> : <FiLock size={13} />} {menu.locked ? 'Unlock position' : 'Lock position'}
+        </button>
+        <div style={{ height: 1, background: '#334155', margin: '4px 6px' }} />
+        <button type="button" onClick={() => handleMenuAction('delete')} style={{ ...ctxItemStyle, color: '#f87171' }}>
+          <FiTrash2 size={13} /> Delete {menu.kind}
+        </button>
+      </div>
+    )}
     </div>
   );
 }
