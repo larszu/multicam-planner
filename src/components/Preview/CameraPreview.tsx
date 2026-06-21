@@ -6,7 +6,13 @@ import { effectiveCameraPos } from '../../utils/camera';
 import { getExportRegistry } from '../../store/exportRegistry';
 import { useRef, useEffect, useLayoutEffect, useCallback, useState } from 'react';
 import type { StageObjectType } from '../../types';
-import { FiChevronLeft, FiChevronRight, FiUnlock, FiLock } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiUnlock, FiLock, FiPlus, FiX } from 'react-icons/fi';
+import { loadJSON, saveJSON } from '../../utils/storage';
+
+// Preview optical presets (issue #47) — snapshots of focal length / aperture /
+// focus distance the operator can recall. Persisted globally in localStorage.
+interface PreviewPreset { id: string; name: string; focalLength: number; aperture: number; focusDistance: number; }
+const PREVIEW_PRESETS_KEY = 'multicam-preview-presets';
 
 interface PreviewProps {
   undocked: boolean;
@@ -14,7 +20,7 @@ interface PreviewProps {
 }
 
 export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
-  const { cameras, selectedCameraId, venue, persons, selectNextCamera, selectPrevCamera } = useStore();
+  const { cameras, selectedCameraId, venue, persons, walls, selectNextCamera, selectPrevCamera } = useStore();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const cam = cameras.find((c) => c.id === selectedCameraId);
@@ -28,6 +34,14 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   const [showCrosshair, setShowCrosshair] = useState(true);
   const [showData, setShowData] = useState(true);
   const [focusPickMode, setFocusPickMode] = useState(false);
+  // Manual-zoom mode (issue #47): widen the focal-length slider past the lens's
+  // real range to preview hypothetical focal lengths. Both ends are editable.
+  const [manualZoom, setManualZoom] = useState(false);
+  const [manualMin, setManualMin] = useState(1);
+  const [manualMax, setManualMax] = useState(500);
+  // Optical presets (issue #47), persisted globally.
+  const [presets, setPresets] = useState<PreviewPreset[]>(() => loadJSON<PreviewPreset[]>(PREVIEW_PRESETS_KEY, []));
+  const persistPresets = useCallback((next: PreviewPreset[]) => { setPresets(next); saveJSON(PREVIEW_PRESETS_KEY, next); }, []);
   // Cache projected person positions during draw() so the click handler can hit-test
   // without re-projecting everything itself.
   const projectedPersons = useRef<{ id: string; sx: number; sy: number; topSy: number; dist: number }[]>([]);
@@ -283,6 +297,42 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         ctx.textAlign = 'center';
         ctx.fillText(stage.label, center.sx, center.sy + fontSize / 3);
       }
+    });
+
+    // ── Draw walls from venue (issue #46) ──
+    // Each wall is a vertical quad standing on the floor: bottom edge from
+    // (x1,y1) to (x2,y2) at z=0, top edge at z=height. Built in camera space and
+    // near-plane clipped like the stages so corners behind the camera don't
+    // collapse the quad. Drawn back-to-front (farthest first) so nearer walls
+    // overpaint farther ones.
+    const wallsByDist = walls
+      .map((wall) => {
+        const midX = (wall.x1 + wall.x2) / 2;
+        const midY = (wall.y1 + wall.y2) / 2;
+        return { wall, dist: worldToScreen(midX, midY, 0).dist };
+      })
+      .sort((a, b) => b.dist - a.dist);
+
+    wallsByDist.forEach(({ wall }) => {
+      const camCorners = [
+        worldToCamera(wall.x1, wall.y1, 0),
+        worldToCamera(wall.x2, wall.y2, 0),
+        worldToCamera(wall.x2, wall.y2, wall.height),
+        worldToCamera(wall.x1, wall.y1, wall.height),
+      ];
+      const clipped = clipPolygonNear(camCorners);
+      if (clipped.length < 3) return;
+      const projected = clipped.map((p) => cameraToScreen(p));
+
+      ctx.fillStyle = '#6b7280cc';
+      ctx.strokeStyle = '#9ca3af';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(projected[0].sx, projected[0].sy);
+      for (let i = 1; i < projected.length; i++) ctx.lineTo(projected[i].sx, projected[i].sy);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
     });
 
     // ── Draw persons / stage objects ──
@@ -815,7 +865,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     ctx.textAlign = 'right';
     ctx.fillText(`P ${cam.pan.toFixed(1)}°  T ${cam.tilt.toFixed(1)}°`, W - vRulerW - 8, 16);
 
-  }, [cam, venue, persons, cameras, showGrid, showSafeAreas, showThirds, showCrosshair]);
+  }, [cam, venue, persons, walls, cameras, showGrid, showSafeAreas, showThirds, showCrosshair]);
 
   // Repaint synchronously after every render so pan/tilt drags update the canvas
   // on the very next browser frame. The earlier `useEffect` variant was being
@@ -966,6 +1016,26 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
 
   const camIdx = cameras.findIndex((c) => c.id === cam.id);
 
+  // Upper bound for the focus-distance slider — roughly the venue diagonal.
+  const focusMax = Math.max(20, Math.ceil(Math.hypot(venue.widthM, venue.heightM)));
+
+  const addPreset = () => {
+    const name = window.prompt('Preset name:', `${cam.focalLength.toFixed(0)}mm f/${cam.aperture.toFixed(1)}`);
+    if (!name) return;
+    persistPresets([...presets, { id: Date.now().toString(36), name: name.trim(), focalLength: cam.focalLength, aperture: cam.aperture, focusDistance: cam.focusDistance }]);
+  };
+  const applyPreset = (p: PreviewPreset) => {
+    useStore.getState().updateCamera(cam.id, { focalLength: p.focalLength, aperture: p.aperture, focusDistance: p.focusDistance, lockedPersonId: undefined });
+    // A preset can hold a focal length outside the lens's native range, so make
+    // sure the slider can represent it.
+    if (lensDef && (p.focalLength < lensDef.focalLengthMin || p.focalLength > lensDef.focalLengthMax)) {
+      setManualZoom(true);
+      setManualMin((m) => Math.min(m, Math.floor(p.focalLength)));
+      setManualMax((m) => Math.max(m, Math.ceil(p.focalLength)));
+    }
+  };
+  const deletePreset = (id: string) => persistPresets(presets.filter((p) => p.id !== id));
+
   return (
     <div className="relative w-full h-full flex gap-2 overflow-hidden">
       {/* Left: Canvas + controls */}
@@ -1063,19 +1133,91 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           </span>
         </div>
 
-        {/* Zoom slider */}
-        <div className="flex items-center gap-3 px-2">
-          <span className="text-xs text-gray-400 w-16 font-mono">{cam.focalLength.toFixed(0)}mm</span>
-          <input
-            type="range"
-            min={lensDef?.focalLengthMin ?? 4}
-            max={lensDef?.focalLengthMax ?? 300}
-            step={0.1}
-            value={cam.focalLength}
-            onChange={(e) => useStore.getState().updateCamera(cam.id, { focalLength: parseFloat(e.target.value) })}
-            className="flex-1 accent-bc-accent"
-          />
-          <span className="text-xs text-gray-400 w-16 text-right font-mono">{lensDef?.focalLengthMax ?? '?'}mm</span>
+        {/* Zoom (focal length) slider — Manual mode (#47) widens the range past
+            the lens limits and makes both ends editable. */}
+        <div className="px-2">
+          <div className="flex items-center justify-between mb-0.5">
+            <span className="text-[10px] text-gray-500">Zoom · <span className="font-mono text-gray-300">{cam.focalLength.toFixed(0)}mm</span></span>
+            <button
+              onClick={() => setManualZoom((on) => {
+                const next = !on;
+                if (!next && lensDef) {
+                  const clamped = Math.min(lensDef.focalLengthMax, Math.max(lensDef.focalLengthMin, cam.focalLength));
+                  if (clamped !== cam.focalLength) useStore.getState().updateCamera(cam.id, { focalLength: clamped });
+                }
+                return next;
+              })}
+              title="Temporarily scrub focal length beyond the lens's real range"
+              className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${manualZoom ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
+            >
+              Manual{manualZoom ? ' · ON' : ''}
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            {manualZoom ? (
+              <input
+                type="number" min={1} max={manualMax - 1} value={manualMin}
+                onChange={(e) => setManualMin(Math.max(1, Math.min(manualMax - 1, parseFloat(e.target.value) || 1)))}
+                className="w-14 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-[10px] text-gray-300 font-mono"
+                title="Manual minimum focal length (mm)"
+              />
+            ) : (
+              <span className="text-[10px] text-gray-500 w-14 font-mono">{lensDef?.focalLengthMin ?? 4}mm</span>
+            )}
+            <input
+              type="range"
+              min={manualZoom ? manualMin : (lensDef?.focalLengthMin ?? 4)}
+              max={manualZoom ? manualMax : (lensDef?.focalLengthMax ?? 300)}
+              step={0.1}
+              value={cam.focalLength}
+              onChange={(e) => useStore.getState().updateCamera(cam.id, { focalLength: parseFloat(e.target.value) })}
+              className="flex-1 accent-bc-accent"
+            />
+            {manualZoom ? (
+              <input
+                type="number" min={manualMin + 1} max={2000} value={manualMax}
+                onChange={(e) => setManualMax(Math.max(manualMin + 1, Math.min(2000, parseFloat(e.target.value) || 500)))}
+                className="w-14 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-[10px] text-gray-300 font-mono text-right"
+                title="Manual maximum focal length (mm)"
+              />
+            ) : (
+              <span className="text-[10px] text-gray-500 w-14 text-right font-mono">{lensDef?.focalLengthMax ?? '?'}mm</span>
+            )}
+          </div>
+        </div>
+
+        {/* Focus distance slider (#47) */}
+        <div className="px-2">
+          <div className="flex items-center justify-between mb-0.5">
+            <span className="text-[10px] text-gray-500">Focus · <span className="font-mono text-gray-300">{cam.focusDistance.toFixed(1)}m</span>{cam.lockedPersonId ? ' · locked' : ''}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-gray-500 w-14 font-mono">0.5m</span>
+            <input
+              type="range"
+              min={0.5}
+              max={focusMax}
+              step={0.1}
+              value={Math.min(cam.focusDistance, focusMax)}
+              onChange={(e) => useStore.getState().updateCamera(cam.id, { focusDistance: Math.max(0.1, parseFloat(e.target.value)), lockedPersonId: undefined })}
+              className="flex-1 accent-bc-accent"
+            />
+            <span className="text-[10px] text-gray-500 w-14 text-right font-mono">{focusMax}m</span>
+          </div>
+        </div>
+
+        {/* Optical presets (#47) */}
+        <div className="px-2 flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] text-gray-500">Presets</span>
+          {presets.map((p) => (
+            <span key={p.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-gray-300 hover:border-bc-accent">
+              <button onClick={() => applyPreset(p)} title={`${p.focalLength.toFixed(0)}mm · f/${p.aperture.toFixed(1)} · ${p.focusDistance.toFixed(1)}m`}>{p.name}</button>
+              <button onClick={() => deletePreset(p.id)} className="text-gray-600 hover:text-bc-red" title="Delete preset"><FiX size={10} /></button>
+            </span>
+          ))}
+          <button onClick={addPreset} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-gray-500 hover:text-bc-accent hover:border-bc-accent" title="Save current focal length / aperture / focus as a preset">
+            <FiPlus size={10} /> Add
+          </button>
         </div>
       </div>
 
