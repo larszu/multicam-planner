@@ -4,7 +4,7 @@ import { LENSES, getLensById, getCompatibleLenses, pickInitialMountAndLens } fro
 import { computeFov, computeDof } from '../../utils/fov';
 import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2, FiRotateCcw } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { BackgroundPlan, StageObjectType, Camera, CameraMountType } from '../../types';
+import type { BackgroundPlan, StageObjectType, Camera, CameraMountType, WallPattern } from '../../types';
 import { MOUNT_TYPE_LABELS, MOUNT_HEIGHT_RANGE } from '../../types';
 import { CustomCameraForm } from './CustomCameraForm';
 import { CalculationBreakdown } from './CalculationBreakdown';
@@ -1174,14 +1174,61 @@ export default function Sidebar() {
               </div>
             )}
             {walls.map((w) => (
-              <div key={w.id} className="flex items-center gap-2 bg-bc-dark rounded p-1.5 border border-bc-border">
-                <input
-                  className="bg-transparent text-white text-xs w-16 outline-none"
-                  value={w.label}
-                  onChange={(e) => updateWall(w.id, { label: e.target.value })}
-                />
-                <span className="text-gray-500 text-[10px]">{w.height}m h</span>
-                <button onClick={() => removeWall(w.id)} className="ml-auto p-0.5 hover:text-bc-red"><FiTrash2 size={11} /></button>
+              <div key={w.id} className="bg-bc-dark rounded p-1.5 border border-bc-border space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <input
+                    className="bg-transparent text-white text-xs w-16 outline-none"
+                    value={w.label}
+                    onChange={(e) => updateWall(w.id, { label: e.target.value })}
+                  />
+                  <span className="text-gray-500 text-[10px]">{w.height}m h</span>
+                  <button onClick={() => removeWall(w.id)} className="ml-auto p-0.5 hover:text-bc-red"><FiTrash2 size={11} /></button>
+                </div>
+                {/* Surface pattern for blur-checking in the preview (issue #45) */}
+                <div className="flex items-center gap-1">
+                  <input
+                    type="color"
+                    className="w-5 h-5 rounded border border-bc-border cursor-pointer bg-transparent shrink-0"
+                    value={w.color ?? '#6b7280'}
+                    onChange={(e) => updateWall(w.id, { color: e.target.value })}
+                    title="Wall colour"
+                  />
+                  <select
+                    className="flex-1 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[10px]"
+                    value={w.pattern ?? 'solid'}
+                    onChange={(e) => updateWall(w.id, { pattern: e.target.value as WallPattern })}
+                  >
+                    <option value="solid">Solid</option>
+                    <option value="grid">Grid</option>
+                    <option value="flowers">Flowers</option>
+                    <option value="image">Image…</option>
+                  </select>
+                  {w.pattern === 'image' && (
+                    <label className="px-1.5 py-0.5 rounded bg-bc-accent/20 text-bc-accent text-[10px] cursor-pointer hover:bg-bc-accent/30" title="Upload a tiled image">
+                      <FiUpload size={10} className="inline" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = () => updateWall(w.id, { patternImage: String(reader.result), pattern: 'image' });
+                          reader.readAsDataURL(file);
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                  )}
+                  <button
+                    onClick={() => walls.forEach((other) => other.id !== w.id && updateWall(other.id, { color: w.color, pattern: w.pattern, patternImage: w.patternImage }))}
+                    className="px-1.5 py-0.5 rounded border border-bc-border text-gray-400 hover:text-bc-accent hover:border-bc-accent text-[10px] shrink-0"
+                    title="Apply this wall's colour & pattern to all walls"
+                  >
+                    All
+                  </button>
+                </div>
               </div>
             ))}
             <button
