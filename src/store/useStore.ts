@@ -29,6 +29,7 @@ interface AppState {
   addPerson: (x?: number, y?: number) => void;
   addStageObject: (objectType: StageObjectType, x?: number, y?: number) => void;
   removePerson: (id: string) => void;
+  duplicatePerson: (id: string) => void;
   updatePerson: (id: string, updates: Partial<ReferencePerson>) => void;
 
   // Custom lenses
@@ -261,6 +262,21 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   removePerson: (id) => set((s) => ({ persons: s.persons.filter((p) => p.id !== id), projectVersion: s.projectVersion + 1 })),
+
+  duplicatePerson: (id) =>
+    set((s) => {
+      const src = s.persons.find((p) => p.id === id);
+      if (!src) return s;
+      const dup: ReferencePerson = {
+        ...src,
+        id: personUid(),
+        label: `${src.label} copy`,
+        x: Math.min(s.venue.widthM, src.x + 0.5),
+        y: Math.min(s.venue.heightM, src.y + 0.5),
+        locked: false,
+      };
+      return { persons: [...s.persons, dup], projectVersion: s.projectVersion + 1 };
+    }),
 
   updatePerson: (id, updates) =>
     set((s) => ({
