@@ -1,5 +1,6 @@
 import { useStore } from './store/useStore';
 import Header from './components/Layout/Header';
+import StartupAssistant from './components/Layout/StartupAssistant';
 import Sidebar from './components/Sidebar/Sidebar';
 import Venue2D from './components/Venue2D/Venue2D';
 import Venue3D from './components/Venue3D/Venue3D';
@@ -467,6 +468,7 @@ export default function App() {
       </div>
 
       <ExportPanel />
+      <StartupAssistant />
     </div>
     </ErrorBoundary>
   );

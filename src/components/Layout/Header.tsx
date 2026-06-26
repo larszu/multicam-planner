@@ -2,12 +2,23 @@ import { useStore, APP_VERSION } from '../../store/useStore';
 import { FiCamera, FiLayout, FiBox, FiMonitor, FiSliders, FiSave, FiUpload, FiDownload, FiChevronDown, FiX, FiCheck } from 'react-icons/fi';
 import { useRef, useCallback, useState, useEffect } from 'react';
 import type { ExportMode } from '../Export/ExportPanel';
+import type { EditMode } from '../../types';
 
 const tabs: { id: string; label: string; icon: React.ReactNode }[] = [
   { id: 'tab-2d', label: '2D Plan', icon: <FiLayout size={16} /> },
   { id: 'tab-3d', label: '3D View', icon: <FiBox size={16} /> },
   { id: 'tab-preview', label: 'Preview', icon: <FiMonitor size={16} /> },
   { id: 'tab-calc', label: 'Calculator', icon: <FiSliders size={16} /> },
+];
+
+// Edit-mode slider options (issue #43). Each mode locks everything except its
+// own category in the 2D plan; "All" honours each object's manual lock flag.
+const editModes: { id: EditMode; label: string; title: string }[] = [
+  { id: 'all', label: 'All', title: 'Edit everything (respects per-object locks)' },
+  { id: 'floorplan', label: 'Floor Plan', title: 'Edit only the floor plan & walls' },
+  { id: 'stage', label: 'Stage', title: 'Edit only stages' },
+  { id: 'objects', label: 'Objects', title: 'Edit only objects & persons' },
+  { id: 'cameras', label: 'Cameras', title: 'Edit only cameras' },
 ];
 
 type HeaderProps = {
@@ -31,7 +42,7 @@ export default function Header({
   layoutPresetOptions,
   layoutMode,
 }: HeaderProps) {
-  const { venue, projectVersion, lastSavedVersion, saveProject, loadProject } = useStore();
+  const { venue, projectVersion, lastSavedVersion, saveProject, loadProject, editMode, setEditMode } = useStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const unsaved = projectVersion !== lastSavedVersion;
   const [presetMenuOpen, setPresetMenuOpen] = useState(false);
@@ -150,6 +161,20 @@ export default function Header({
           >
             Grid
           </button>
+        </div>
+        {/* Edit-mode slider — restricts editing to one category (issue #43) */}
+        <div className="hidden lg:flex items-center rounded-lg border border-bc-border bg-bc-dark p-0.5" title="Edit mode — lock everything except the selected category">
+          {editModes.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => setEditMode(m.id)}
+              className={`px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${editMode === m.id ? 'bg-bc-yellow text-black' : 'text-gray-400 hover:text-white'}`}
+              title={m.title}
+            >
+              {m.label}
+            </button>
+          ))}
         </div>
         <div className="relative" ref={presetMenuRef}>
           <button

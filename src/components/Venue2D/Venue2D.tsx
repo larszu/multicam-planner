@@ -28,7 +28,14 @@ const ctxItemStyle: React.CSSProperties = {
 };
 
 export default function Venue2D() {
-  const { venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, updateCamera, removeCamera, duplicateCamera, showAllFov, pixelsPerMeter, persons, updatePerson, removePerson, duplicatePerson, updateStage, addStage, removeStage, backgroundPlan, setBackgroundPlan, walls, updateWall, addWall } = useStore();
+  const { venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, updateCamera, removeCamera, duplicateCamera, showAllFov, pixelsPerMeter, persons, updatePerson, removePerson, duplicatePerson, updateStage, addStage, removeStage, backgroundPlan, setBackgroundPlan, walls, updateWall, addWall, removeWall, wallSnap, editMode } = useStore();
+
+  // Edit-mode locking (issue #43): each mode locks every category except its own.
+  // 'all' falls through to each object's individual lock flag.
+  const lockStages = editMode !== 'all' && editMode !== 'stage';
+  const lockPersons = editMode !== 'all' && editMode !== 'objects';
+  const lockCameras = editMode !== 'all' && editMode !== 'cameras';
+  const lockWalls = editMode !== 'all' && editMode !== 'floorplan';
   const stageRef = useRef<Konva.Stage>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
@@ -43,7 +50,7 @@ export default function Venue2D() {
   const stageNodeRefs = useRef<Record<string, Konva.Group>>({});
 
   // ── Right-click context menu (issue #42/#38) ──
-  type MenuTarget = { x: number; y: number; kind: 'camera' | 'person' | 'stage'; id: string; locked: boolean };
+  type MenuTarget = { x: number; y: number; kind: 'camera' | 'person' | 'stage' | 'wall'; id: string; locked: boolean };
   const [menu, setMenu] = useState<MenuTarget | null>(null);
 
   // ── Wall drawing mode ──
@@ -87,6 +94,27 @@ export default function Venue2D() {
     const dist = Math.sqrt(dx * dx + dy * dy);
     return { x: start.x + Math.cos(snapAngle) * dist, y: start.y + Math.sin(snapAngle) * dist };
   }, []);
+
+  // Magnet a point to the nearest existing wall endpoint within a small radius
+  // (issue #40). Disabled when the wall-snap option is off. `excludeWallId`
+  // skips the wall whose endpoint is currently being dragged.
+  const WALL_SNAP_DIST_M = 0.4;
+  const snapToEndpoints = useCallback(
+    (pt: { x: number; y: number }, excludeWallId?: string) => {
+      if (!wallSnap) return pt;
+      let best: { x: number; y: number } | null = null;
+      let bestD = WALL_SNAP_DIST_M;
+      for (const w of walls) {
+        if (w.id === excludeWallId) continue;
+        for (const ep of [{ x: w.x1, y: w.y1 }, { x: w.x2, y: w.y2 }]) {
+          const d = Math.hypot(pt.x - ep.x, pt.y - ep.y);
+          if (d < bestD) { bestD = d; best = ep; }
+        }
+      }
+      return best ?? pt;
+    },
+    [wallSnap, walls],
+  );
 
   // Calibration state
   const [calibActive, setCalibActive] = useState(false);
@@ -229,12 +257,13 @@ export default function Venue2D() {
     if (drawingWall) {
       const worldPoint = { x: point.xPx / ppm, y: point.yPx / ppm };
       if (!wallStart) {
-        setWallStart(worldPoint);
-        setWallCursor(worldPoint);
+        const start = snapToEndpoints(worldPoint);
+        setWallStart(start);
+        setWallCursor(start);
         return;
       }
 
-      const snappedEnd = snapPoint(wallStart, worldPoint);
+      const snappedEnd = snapToEndpoints(snapPoint(wallStart, worldPoint));
       const length = Math.hypot(snappedEnd.x - wallStart.x, snappedEnd.y - wallStart.y);
       if (length >= 0.1) {
         addWall({
@@ -297,32 +326,40 @@ export default function Venue2D() {
       setCalibCursor(null);
       window.dispatchEvent(new CustomEvent('multicam-calibrate-done'));
     }
-  }, [addWall, backgroundPlan, calibActive, calibAutoResize, calibAxis, calibDistM, calibPoints, calibScaleLocked, drawingWall, getPointerWorldPoint, ppm, setBackgroundPlan, setVenue, snapPoint, venue, wallStart, walls.length]);
+  }, [addWall, backgroundPlan, calibActive, calibAutoResize, calibAxis, calibDistM, calibPoints, calibScaleLocked, drawingWall, getPointerWorldPoint, ppm, setBackgroundPlan, setVenue, snapPoint, snapToEndpoints, venue, wallStart, walls.length]);
 
   const handleStageMouseMove = useCallback(() => {
     const point = getPointerWorldPoint();
     if (!point) return;
     if (drawingWall && wallStart) {
-      setWallCursor(snapPoint(wallStart, { x: point.xPx / ppm, y: point.yPx / ppm }));
+      setWallCursor(snapToEndpoints(snapPoint(wallStart, { x: point.xPx / ppm, y: point.yPx / ppm })));
     }
     if (calibActive && calibPoints.length === 1) {
       setCalibCursor({ x: point.xPx, y: point.yPx });
     }
-  }, [calibActive, calibPoints.length, drawingWall, getPointerWorldPoint, ppm, snapPoint, wallStart]);
+  }, [calibActive, calibPoints.length, drawingWall, getPointerWorldPoint, ppm, snapPoint, snapToEndpoints, wallStart]);
 
   const handleWallEndpointDragMove = useCallback((wall: Wall, end: 'start' | 'end', e: Konva.KonvaEventObject<DragEvent>) => {
     const node = e.target;
     const rawPoint = { x: node.x() / ppm, y: node.y() / ppm };
+    const anchor = end === 'start' ? { x: wall.x2, y: wall.y2 } : { x: wall.x1, y: wall.y1 };
+    // Angle-snap (shift) first, then magnet to other walls' endpoints (issue #40).
+    const p = snapToEndpoints(snapPoint(anchor, rawPoint), wall.id);
 
-    if (end === 'start') {
-      const snapped = snapPoint({ x: wall.x2, y: wall.y2 }, rawPoint);
-      updateWall(wall.id, { x1: snapped.x, y1: snapped.y });
-      return;
+    // Endpoints that were coincident with the one being dragged move together,
+    // so two joined walls keep their shared corner (issue #40).
+    const orig = end === 'start' ? { x: wall.x1, y: wall.y1 } : { x: wall.x2, y: wall.y2 };
+    if (wallSnap) {
+      for (const other of walls) {
+        if (other.id === wall.id) continue;
+        if (Math.hypot(other.x1 - orig.x, other.y1 - orig.y) < 0.05) updateWall(other.id, { x1: p.x, y1: p.y });
+        if (Math.hypot(other.x2 - orig.x, other.y2 - orig.y) < 0.05) updateWall(other.id, { x2: p.x, y2: p.y });
+      }
     }
 
-    const snapped = snapPoint({ x: wall.x1, y: wall.y1 }, rawPoint);
-    updateWall(wall.id, { x2: snapped.x, y2: snapped.y });
-  }, [ppm, snapPoint, updateWall]);
+    updateWall(wall.id, end === 'start' ? { x1: p.x, y1: p.y } : { x2: p.x, y2: p.y });
+    node.position({ x: p.x * ppm, y: p.y * ppm });
+  }, [ppm, snapPoint, snapToEndpoints, updateWall, wallSnap, walls]);
 
   const handleCamDragEnd = useCallback(
     (cam: VenueCamera, e: Konva.KonvaEventObject<DragEvent>) => {
@@ -395,13 +432,13 @@ export default function Venue2D() {
     if (!tr) return;
     const target = selectedStageId ? venue.stages.find((s) => s.id === selectedStageId) : null;
     const node = selectedStageId ? stageNodeRefs.current[selectedStageId] : null;
-    if (node && target && !target.locked) {
+    if (node && target && !target.locked && !lockStages) {
       tr.nodes([node]);
     } else {
       tr.nodes([]);
     }
     tr.getLayer()?.batchDraw();
-  }, [selectedStageId, venue.stages, drawingWall, calibActive]);
+  }, [selectedStageId, venue.stages, drawingWall, calibActive, lockStages]);
 
   // Commit a Transformer resize: convert the scaled group back into metric
   // width/height (+ x/y, since top/left anchors move the origin) and reset the
@@ -469,6 +506,7 @@ export default function Venue2D() {
     if (action === 'delete') {
       if (kind === 'camera') removeCamera(id);
       else if (kind === 'person') removePerson(id);
+      else if (kind === 'wall') removeWall(id);
       else { removeStage(id); if (selectedStageId === id) setSelectedStageId(null); }
     } else if (action === 'lock') {
       if (kind === 'camera') updateCamera(id, { locked: !locked });
@@ -484,7 +522,7 @@ export default function Venue2D() {
       }
     }
     setMenu(null);
-  }, [menu, removeCamera, removePerson, removeStage, updateCamera, updatePerson, updateStage, duplicateCamera, duplicatePerson, addStage, venue.stages, venue.widthM, venue.heightM, selectedStageId]);
+  }, [menu, removeCamera, removePerson, removeStage, removeWall, updateCamera, updatePerson, updateStage, duplicateCamera, duplicatePerson, addStage, venue.stages, venue.widthM, venue.heightM, selectedStageId]);
 
   return (
     <div ref={containerRef} style={{ width: '100%', height: '100%', background: '#0a0b0f', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
@@ -595,10 +633,10 @@ export default function Venue2D() {
             ref={(node) => { if (node) stageNodeRefs.current[s.id] = node; else delete stageNodeRefs.current[s.id]; }}
             x={s.x * ppm}
             y={s.y * ppm}
-            draggable={!drawingWall && !s.locked}
+            draggable={!drawingWall && !s.locked && !lockStages}
             onDragEnd={(e) => handleStageDragEnd(s.id, e)}
-            onClick={(e) => { if (!drawingWall && !calibActive) { e.cancelBubble = true; setSelectedStageId(s.locked ? null : s.id); } }}
-            onTap={(e) => { if (!drawingWall && !calibActive) { e.cancelBubble = true; setSelectedStageId(s.locked ? null : s.id); } }}
+            onClick={(e) => { if (!drawingWall && !calibActive) { e.cancelBubble = true; setSelectedStageId(s.locked || lockStages ? null : s.id); } }}
+            onTap={(e) => { if (!drawingWall && !calibActive) { e.cancelBubble = true; setSelectedStageId(s.locked || lockStages ? null : s.id); } }}
             onContextMenu={(e) => openContextMenu('stage', s.id, !!s.locked, e)}
             onTransformEnd={(e) => handleStageTransformEnd(s.id, e)}
           >
@@ -627,7 +665,8 @@ export default function Venue2D() {
             <Line
               points={[w.x1 * ppm, w.y1 * ppm, w.x2 * ppm, w.y2 * ppm]}
               stroke="#9ca3af" strokeWidth={3} hitStrokeWidth={10}
-              draggable={!drawingWall}
+              draggable={!drawingWall && !lockWalls}
+              onContextMenu={(e) => { e.evt.preventDefault(); if (!lockWalls) openContextMenu('wall', w.id, false, e); }}
               onDragEnd={(e) => {
                 const dx = e.target.x() / ppm;
                 const dy = e.target.y() / ppm;
@@ -635,8 +674,8 @@ export default function Venue2D() {
                 updateWall(w.id, { x1: w.x1 + dx, y1: w.y1 + dy, x2: w.x2 + dx, y2: w.y2 + dy });
               }}
             />
-            <Circle x={w.x1 * ppm} y={w.y1 * ppm} radius={5} fill="#0f1117" stroke="#f59e0b" strokeWidth={2} draggable={!drawingWall} onDragMove={(e) => handleWallEndpointDragMove(w, 'start', e)} />
-            <Circle x={w.x2 * ppm} y={w.y2 * ppm} radius={5} fill="#0f1117" stroke="#f59e0b" strokeWidth={2} draggable={!drawingWall} onDragMove={(e) => handleWallEndpointDragMove(w, 'end', e)} />
+            <Circle x={w.x1 * ppm} y={w.y1 * ppm} radius={5} fill="#0f1117" stroke="#f59e0b" strokeWidth={2} draggable={!drawingWall && !lockWalls} onDragMove={(e) => handleWallEndpointDragMove(w, 'start', e)} />
+            <Circle x={w.x2 * ppm} y={w.y2 * ppm} radius={5} fill="#0f1117" stroke="#f59e0b" strokeWidth={2} draggable={!drawingWall && !lockWalls} onDragMove={(e) => handleWallEndpointDragMove(w, 'end', e)} />
             <Text x={((w.x1 + w.x2) / 2) * ppm - 20} y={((w.y1 + w.y2) / 2) * ppm - 14} text={w.label} fontSize={9} fill="#9ca3af" align="center" width={40} />
           </React.Fragment>
         ))}
@@ -664,7 +703,7 @@ export default function Venue2D() {
           );
           const footW = Math.max(6, p.width * ppm);
           return (
-            <Group key={p.id} x={p.x * ppm} y={p.y * ppm} draggable={!p.locked} onDragEnd={(e) => handlePersonDragEnd(p.id, e)} onContextMenu={(e) => openContextMenu('person', p.id, !!p.locked, e)}>
+            <Group key={p.id} x={p.x * ppm} y={p.y * ppm} draggable={!p.locked && !lockPersons} onDragEnd={(e) => handlePersonDragEnd(p.id, e)} onContextMenu={(e) => { e.evt.preventDefault(); if (!lockPersons) openContextMenu('person', p.id, !!p.locked, e); }}>
               {type === 'table' || type === 'drums' || type === 'keys' ? (
                 <Rect x={-footW / 2} y={-footW / 4} width={footW} height={footW / 2} fill={col} opacity={0.55} stroke={col} strokeWidth={1} cornerRadius={2} />
               ) : type === 'schneetiger' ? (
@@ -704,12 +743,12 @@ export default function Venue2D() {
           const isSelected = cam.id === selectedCameraId;
           const pos = effectiveCameraPos(cam);
           return (
-            <Group key={`cam-${cam.id}`} x={pos.x * ppm} y={pos.y * ppm} draggable={!drawingWall && !cam.locked} onDragEnd={(e) => handleCamDragEnd(cam, e)} onClick={() => selectCamera(cam.id)} onTap={() => selectCamera(cam.id)} onContextMenu={(e) => openContextMenu('camera', cam.id, !!cam.locked, e)}>
+            <Group key={`cam-${cam.id}`} x={pos.x * ppm} y={pos.y * ppm} draggable={!drawingWall && !cam.locked && !lockCameras} onDragEnd={(e) => handleCamDragEnd(cam, e)} onClick={() => selectCamera(cam.id)} onTap={() => selectCamera(cam.id)} onContextMenu={(e) => { e.evt.preventDefault(); if (!lockCameras) openContextMenu('camera', cam.id, !!cam.locked, e); }}>
               <Circle radius={isSelected ? 10 : 8} fill={cam.color} stroke={isSelected ? '#fff' : cam.color} strokeWidth={isSelected ? 3 : 1} shadowColor={cam.color} shadowBlur={isSelected ? 12 : 0} />
               <Line points={[0, 0, 14 * Math.cos((cam.pan * Math.PI) / 180), 14 * Math.sin((cam.pan * Math.PI) / 180)]} stroke={cam.color} strokeWidth={2} />
               {/* Pan-rotation handle — drag to aim the camera (issue #36).
                   Hidden while the camera is locked. */}
-              {isSelected && !cam.locked && (
+              {isSelected && !cam.locked && !lockCameras && (
                 <>
                   <Line
                     points={[0, 0, PAN_HANDLE_RADIUS * Math.cos((cam.pan * Math.PI) / 180), PAN_HANDLE_RADIUS * Math.sin((cam.pan * Math.PI) / 180)]}
@@ -782,13 +821,17 @@ export default function Venue2D() {
           backdropFilter: 'blur(6px)',
         }}
       >
-        <button type="button" onClick={() => handleMenuAction('duplicate')} style={ctxItemStyle}>
-          <FiCopy size={13} /> Duplicate
-        </button>
-        <button type="button" onClick={() => handleMenuAction('lock')} style={ctxItemStyle}>
-          {menu.locked ? <FiUnlock size={13} /> : <FiLock size={13} />} {menu.locked ? 'Unlock position' : 'Lock position'}
-        </button>
-        <div style={{ height: 1, background: '#334155', margin: '4px 6px' }} />
+        {menu.kind !== 'wall' && (
+          <>
+            <button type="button" onClick={() => handleMenuAction('duplicate')} style={ctxItemStyle}>
+              <FiCopy size={13} /> Duplicate
+            </button>
+            <button type="button" onClick={() => handleMenuAction('lock')} style={ctxItemStyle}>
+              {menu.locked ? <FiUnlock size={13} /> : <FiLock size={13} />} {menu.locked ? 'Unlock position' : 'Lock position'}
+            </button>
+            <div style={{ height: 1, background: '#334155', margin: '4px 6px' }} />
+          </>
+        )}
         <button type="button" onClick={() => handleMenuAction('delete')} style={{ ...ctxItemStyle, color: '#f87171' }}>
           <FiTrash2 size={13} /> Delete {menu.kind}
         </button>

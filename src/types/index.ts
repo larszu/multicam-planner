@@ -283,6 +283,11 @@ export interface DofResult {
 // ── Tab views ──
 export type ViewTab = '2d' | '3d' | 'preview' | 'calculator';
 
+// ── Edit mode (issue #43) ──
+// A top-bar slider restricts editing to one category at a time so a plan can be
+// built up step by step. `all` respects each object's own lock flag instead.
+export type EditMode = 'all' | 'floorplan' | 'stage' | 'objects' | 'cameras';
+
 // ── Saved project ──
 export interface ProjectFile {
   formatVersion: 1;
