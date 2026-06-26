@@ -1074,126 +1074,6 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* Persons & Stage Objects */}
-      <div className="p-3 border-b border-bc-border">
-        <button
-          className="flex items-center justify-between w-full text-sm text-white font-semibold"
-          onClick={() => setPersonsOpen(!personsOpen)}
-        >
-          <span><FiUser className="inline mr-1" size={13} />Objects & Persons ({persons.length})</span>
-          {personsOpen ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-        </button>
-        {personsOpen && (
-          <div className="mt-2 space-y-2 text-xs">
-            {persons.map((p) => {
-              const icon =
-                p.objectType === 'drums' ? '🥁' :
-                p.objectType === 'keys' ? '🎹' :
-                p.objectType === 'person-guitar' ? '🎸' :
-                p.objectType === 'mic-stand' ? '🎤' :
-                p.objectType === 'sitting-person' ? '🪑' :
-                p.objectType === 'chair' ? '💺' :
-                p.objectType === 'table' ? '🪑' :
-                p.objectType === 'lectern' ? '🎙️' :
-                p.objectType === 'schneetiger' ? '🐅' :
-                p.objectType === 'custom' ? '◇' : '👤';
-              return (
-                <div key={p.id} className="flex items-center gap-2 bg-bc-dark rounded p-1.5 border border-bc-border">
-                  <span className="text-gray-500 text-[10px] w-6 text-center">{icon}</span>
-                  <input className="bg-transparent text-white text-xs w-16 outline-none" value={p.label}
-                    onChange={(e) => updatePerson(p.id, { label: e.target.value })} />
-                  <span className="text-gray-500">{p.height}m</span>
-                  <input
-                    type="color"
-                    className="w-5 h-5 rounded border border-bc-border cursor-pointer bg-transparent"
-                    value={p.color ?? (OBJECT_PRESETS[p.objectType]?.color ?? '#f59e0b')}
-                    onChange={(e) => updatePerson(p.id, { color: e.target.value })}
-                    title="Custom accent colour"
-                  />
-                  <span className="text-gray-500">({p.x.toFixed(1)}, {p.y.toFixed(1)})</span>
-                  <button onClick={() => removePerson(p.id)} className="ml-auto p-0.5 hover:text-bc-red"><FiTrash2 size={11} /></button>
-                </div>
-              );
-            })}
-            <div className="grid grid-cols-3 gap-1">
-              <button onClick={() => addPerson()} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
-                <FiUser size={10} /> Person
-              </button>
-              <button onClick={() => addStageObject('person-guitar')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
-                🎸 Guitarist
-              </button>
-              <button onClick={() => addStageObject('sitting-person')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
-                🪑 Seated
-              </button>
-              <button onClick={() => addStageObject('drums')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
-                🥁 Drums
-              </button>
-              <button onClick={() => addStageObject('keys')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
-                🎹 Keys
-              </button>
-              <button onClick={() => addStageObject('mic-stand')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
-                🎤 Mic Stand
-              </button>
-              <button onClick={() => addStageObject('chair')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
-                💺 Chair
-              </button>
-              <button onClick={() => addStageObject('table')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
-                🟫 Table
-              </button>
-              <button onClick={() => addStageObject('lectern')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
-                🎙️ Lectern
-              </button>
-              <button onClick={() => addStageObject('schneetiger')} className="col-span-3 flex items-center justify-center gap-1 px-1 py-1 rounded bg-sky-500/20 text-sky-300 text-[10px] hover:bg-sky-500/30">
-                🐅 Schneetiger
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Walls */}
-      <div className="p-3 border-b border-bc-border">
-        <button
-          className="flex items-center justify-between w-full text-sm text-white font-semibold"
-          onClick={() => setWallsOpen(!wallsOpen)}
-        >
-          <span>▇ Walls ({walls.length})</span>
-          {wallsOpen ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-        </button>
-        {wallsOpen && (
-          <div className="mt-2 space-y-2 text-xs">
-            <button
-              onClick={() => setWallDrawMode((active) => !active)}
-              className={`flex items-center gap-1 px-2 py-1 rounded text-xs w-full justify-center ${wallDrawMode ? 'bg-bc-yellow/20 text-bc-yellow hover:bg-bc-yellow/30' : 'bg-bc-dark text-gray-300 hover:text-white border border-bc-border'}`}
-            >
-              {wallDrawMode ? 'Stop Drawing' : 'Draw Walls'}
-            </button>
-            {wallDrawMode && (
-              <div className="rounded border border-bc-border bg-bc-dark px-2 py-1.5 text-[10px] text-gray-400 leading-relaxed">
-                Click once to place the start point, click again to finish. Hold Shift to snap the angle.
-              </div>
-            )}
-            {walls.map((w) => (
-              <div key={w.id} className="flex items-center gap-2 bg-bc-dark rounded p-1.5 border border-bc-border">
-                <input
-                  className="bg-transparent text-white text-xs w-16 outline-none"
-                  value={w.label}
-                  onChange={(e) => updateWall(w.id, { label: e.target.value })}
-                />
-                <span className="text-gray-500 text-[10px]">{w.height}m h</span>
-                <button onClick={() => removeWall(w.id)} className="ml-auto p-0.5 hover:text-bc-red"><FiTrash2 size={11} /></button>
-              </div>
-            ))}
-            <button
-              onClick={() => addWall()}
-              className="flex items-center gap-1 px-2 py-1 rounded bg-bc-accent/20 text-bc-accent text-xs hover:bg-bc-accent/30 w-full justify-center"
-            >
-              <FiPlus size={12} /> Add Wall
-            </button>
-          </div>
-        )}
-      </div>
-
       {/* Background plan */}
       <div className="p-3 border-b border-bc-border">
         <button
@@ -1338,6 +1218,126 @@ export default function Sidebar() {
         )}
       </div>
 
+
+      {/* Walls */}
+      <div className="p-3 border-b border-bc-border">
+        <button
+          className="flex items-center justify-between w-full text-sm text-white font-semibold"
+          onClick={() => setWallsOpen(!wallsOpen)}
+        >
+          <span>▇ Walls ({walls.length})</span>
+          {wallsOpen ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
+        </button>
+        {wallsOpen && (
+          <div className="mt-2 space-y-2 text-xs">
+            <button
+              onClick={() => setWallDrawMode((active) => !active)}
+              className={`flex items-center gap-1 px-2 py-1 rounded text-xs w-full justify-center ${wallDrawMode ? 'bg-bc-yellow/20 text-bc-yellow hover:bg-bc-yellow/30' : 'bg-bc-dark text-gray-300 hover:text-white border border-bc-border'}`}
+            >
+              {wallDrawMode ? 'Stop Drawing' : 'Draw Walls'}
+            </button>
+            {wallDrawMode && (
+              <div className="rounded border border-bc-border bg-bc-dark px-2 py-1.5 text-[10px] text-gray-400 leading-relaxed">
+                Click once to place the start point, click again to finish. Hold Shift to snap the angle.
+              </div>
+            )}
+            {walls.map((w) => (
+              <div key={w.id} className="flex items-center gap-2 bg-bc-dark rounded p-1.5 border border-bc-border">
+                <input
+                  className="bg-transparent text-white text-xs w-16 outline-none"
+                  value={w.label}
+                  onChange={(e) => updateWall(w.id, { label: e.target.value })}
+                />
+                <span className="text-gray-500 text-[10px]">{w.height}m h</span>
+                <button onClick={() => removeWall(w.id)} className="ml-auto p-0.5 hover:text-bc-red"><FiTrash2 size={11} /></button>
+              </div>
+            ))}
+            <button
+              onClick={() => addWall()}
+              className="flex items-center gap-1 px-2 py-1 rounded bg-bc-accent/20 text-bc-accent text-xs hover:bg-bc-accent/30 w-full justify-center"
+            >
+              <FiPlus size={12} /> Add Wall
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Persons & Stage Objects */}
+      <div className="p-3 border-b border-bc-border">
+        <button
+          className="flex items-center justify-between w-full text-sm text-white font-semibold"
+          onClick={() => setPersonsOpen(!personsOpen)}
+        >
+          <span><FiUser className="inline mr-1" size={13} />Objects & Persons ({persons.length})</span>
+          {personsOpen ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
+        </button>
+        {personsOpen && (
+          <div className="mt-2 space-y-2 text-xs">
+            {persons.map((p) => {
+              const icon =
+                p.objectType === 'drums' ? '🥁' :
+                p.objectType === 'keys' ? '🎹' :
+                p.objectType === 'person-guitar' ? '🎸' :
+                p.objectType === 'mic-stand' ? '🎤' :
+                p.objectType === 'sitting-person' ? '🪑' :
+                p.objectType === 'chair' ? '💺' :
+                p.objectType === 'table' ? '🪑' :
+                p.objectType === 'lectern' ? '🎙️' :
+                p.objectType === 'schneetiger' ? '🐅' :
+                p.objectType === 'custom' ? '◇' : '👤';
+              return (
+                <div key={p.id} className="flex items-center gap-2 bg-bc-dark rounded p-1.5 border border-bc-border">
+                  <span className="text-gray-500 text-[10px] w-6 text-center">{icon}</span>
+                  <input className="bg-transparent text-white text-xs w-16 outline-none" value={p.label}
+                    onChange={(e) => updatePerson(p.id, { label: e.target.value })} />
+                  <span className="text-gray-500">{p.height}m</span>
+                  <input
+                    type="color"
+                    className="w-5 h-5 rounded border border-bc-border cursor-pointer bg-transparent"
+                    value={p.color ?? (OBJECT_PRESETS[p.objectType]?.color ?? '#f59e0b')}
+                    onChange={(e) => updatePerson(p.id, { color: e.target.value })}
+                    title="Custom accent colour"
+                  />
+                  <span className="text-gray-500">({p.x.toFixed(1)}, {p.y.toFixed(1)})</span>
+                  <button onClick={() => removePerson(p.id)} className="ml-auto p-0.5 hover:text-bc-red"><FiTrash2 size={11} /></button>
+                </div>
+              );
+            })}
+            <div className="grid grid-cols-3 gap-1">
+              <button onClick={() => addPerson()} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                <FiUser size={10} /> Person
+              </button>
+              <button onClick={() => addStageObject('person-guitar')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                🎸 Guitarist
+              </button>
+              <button onClick={() => addStageObject('sitting-person')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                🪑 Seated
+              </button>
+              <button onClick={() => addStageObject('drums')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                🥁 Drums
+              </button>
+              <button onClick={() => addStageObject('keys')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                🎹 Keys
+              </button>
+              <button onClick={() => addStageObject('mic-stand')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                🎤 Mic Stand
+              </button>
+              <button onClick={() => addStageObject('chair')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                💺 Chair
+              </button>
+              <button onClick={() => addStageObject('table')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                🟫 Table
+              </button>
+              <button onClick={() => addStageObject('lectern')} className="flex items-center justify-center gap-1 px-1 py-1 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30">
+                🎙️ Lectern
+              </button>
+              <button onClick={() => addStageObject('schneetiger')} className="col-span-3 flex items-center justify-center gap-1 px-1 py-1 rounded bg-sky-500/20 text-sky-300 text-[10px] hover:bg-sky-500/30">
+                🐅 Schneetiger
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Camera list */}
       <div className="flex-1 p-3 overflow-y-auto">

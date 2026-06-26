@@ -429,7 +429,7 @@ export default function App() {
               className={`flex-1 py-2 text-xs font-medium ${sidebarTab === 'cameras' ? 'text-bc-accent border-b-2 border-bc-accent' : 'text-gray-500 hover:text-gray-300'}`}
               onClick={() => setSidebarTab('cameras')}
             >
-              Cameras
+              Settings
             </button>
             <button
               className={`flex-1 py-2 text-xs font-medium ${sidebarTab === 'templates' ? 'text-bc-accent border-b-2 border-bc-accent' : 'text-gray-500 hover:text-gray-300'}`}

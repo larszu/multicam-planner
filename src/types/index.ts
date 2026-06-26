@@ -136,6 +136,8 @@ export interface ReferencePerson {
   objectType: StageObjectType;
   /** Optional custom accent colour (hex). Falls back to type default. */
   color?: string;
+  /** When true, the object can't be dragged in the 2D/3D plan. */
+  locked?: boolean;
 }
 
 // ── Background floor plan ──
@@ -216,6 +218,8 @@ export interface VenueCamera {
    * shot list, etc.). Shown in the sidebar and included in PNG exports when set.
    */
   notes?: string;
+  /** When true, the camera marker can't be dragged in the 2D plan. */
+  locked?: boolean;
 }
 
 // ── Stage / target zone ──
@@ -226,6 +230,8 @@ export interface Stage {
   width: number;
   height: number;
   label: string;
+  /** When true, the stage can't be dragged or resized in the 2D plan. */
+  locked?: boolean;
 }
 
 // ── Venue ──
