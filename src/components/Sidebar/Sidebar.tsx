@@ -844,7 +844,7 @@ export default function Sidebar() {
     addStage, removeStage, updateStage,
     persons, addPerson, addStageObject, removePerson, updatePerson,
     backgroundPlan, setBackgroundPlan,
-    walls, addWall, removeWall, updateWall,
+    walls, addWall, removeWall, updateWall, wallSnap, setWallSnap,
   } = useStore();
   const [venueOpen, setVenueOpen] = useState(false);
   const [stagesOpen, setStagesOpen] = useState(false);
@@ -1238,9 +1238,19 @@ export default function Sidebar() {
             </button>
             {wallDrawMode && (
               <div className="rounded border border-bc-border bg-bc-dark px-2 py-1.5 text-[10px] text-gray-400 leading-relaxed">
-                Click once to place the start point, click again to finish. Hold Shift to snap the angle.
+                Click once to place the start point, click again to finish. Hold Shift to snap the angle. Right-click a wall to delete it.
               </div>
             )}
+            {/* Endpoint snapping toggle (issue #40) */}
+            <label className="flex items-center gap-2 text-[11px] text-gray-300 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                className="accent-bc-accent"
+                checked={wallSnap}
+                onChange={(e) => setWallSnap(e.target.checked)}
+              />
+              Snap wall endpoints together
+            </label>
             {walls.map((w) => (
               <div key={w.id} className="bg-bc-dark rounded p-1.5 border border-bc-border space-y-1.5">
                 <div className="flex items-center gap-2">
