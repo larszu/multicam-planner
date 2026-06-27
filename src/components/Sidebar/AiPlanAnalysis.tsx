@@ -1,0 +1,167 @@
+import { useCallback, useState } from 'react';
+import { FiCpu, FiKey, FiLoader } from 'react-icons/fi';
+import { useStore } from '../../store/useStore';
+import { AI_PROVIDERS, AI_PROVIDER_ORDER, splitDataUrl, parseJsonResponse } from '../../utils/aiProviders';
+import type { AiProviderId } from '../../utils/aiProviders';
+import { buildPlanPrompt, wallsFromResult, stagesFromResult } from '../../utils/planAnalysis';
+import type { AnalysisResult, PlanTasks } from '../../utils/planAnalysis';
+
+const PROVIDER_STORAGE = 'multicam-ai-provider';
+const modelStorageKey = (id: AiProviderId) => `multicam-ai-model-${id}`;
+
+// AI floor-plan analysis (issues #39 / #40): pick a provider, paste a key, and
+// have the model extract walls / stages / scale from the uploaded plan image.
+export default function AiPlanAnalysis() {
+  const { backgroundPlan, setBackgroundPlan, addWall, addStage } = useStore();
+
+  const initialProviderId: AiProviderId = (localStorage.getItem(PROVIDER_STORAGE) as AiProviderId) in AI_PROVIDERS
+    ? (localStorage.getItem(PROVIDER_STORAGE) as AiProviderId)
+    : 'gemini';
+  const [providerId, setProviderId] = useState<AiProviderId>(initialProviderId);
+  const provider = AI_PROVIDERS[providerId];
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem(AI_PROVIDERS[initialProviderId].keyStorageKey) ?? '');
+  const [model, setModel] = useState(
+    () => localStorage.getItem(modelStorageKey(initialProviderId)) ?? AI_PROVIDERS[initialProviderId].defaultModel,
+  );
+  const [tasks, setTasks] = useState<PlanTasks>({ walls: true, stages: true, scale: true });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
+
+  // Load the stored key + model whenever the provider changes.
+  const selectProvider = useCallback((id: AiProviderId) => {
+    setProviderId(id);
+    localStorage.setItem(PROVIDER_STORAGE, id);
+    setApiKey(localStorage.getItem(AI_PROVIDERS[id].keyStorageKey) ?? '');
+    setModel(localStorage.getItem(modelStorageKey(id)) ?? AI_PROVIDERS[id].defaultModel);
+    setError(null);
+    setSummary(null);
+  }, []);
+
+  const persistKey = useCallback((value: string) => {
+    setApiKey(value);
+    if (value.trim()) localStorage.setItem(provider.keyStorageKey, value.trim());
+    else localStorage.removeItem(provider.keyStorageKey);
+  }, [provider.keyStorageKey]);
+
+  const persistModel = useCallback((value: string) => {
+    setModel(value);
+    localStorage.setItem(modelStorageKey(providerId), value);
+  }, [providerId]);
+
+  const analyze = useCallback(async () => {
+    if (!backgroundPlan) { setError('Upload a floor plan image/PDF first.'); return; }
+    if (!apiKey.trim()) { setError(`Enter your ${provider.label} API key.`); return; }
+    if (!tasks.walls && !tasks.stages && !tasks.scale) { setError('Select at least one thing to extract.'); return; }
+
+    setBusy(true);
+    setError(null);
+    setSummary(null);
+    try {
+      const image = splitDataUrl(backgroundPlan.dataUrl);
+      const prompt = buildPlanPrompt(tasks);
+      const text = await provider.callVision(apiKey.trim(), model.trim() || provider.defaultModel, prompt, image);
+      const result = parseJsonResponse<AnalysisResult>(text);
+
+      // Apply the scale first so wall/stage geometry uses the corrected scale.
+      let plan = backgroundPlan;
+      let scaleNote = '';
+      if (tasks.scale && result.scale && typeof result.scale.metersPerPixel === 'number' && result.scale.metersPerPixel > 0) {
+        plan = { ...backgroundPlan, scaleX: result.scale.metersPerPixel, scaleY: result.scale.metersPerPixel };
+        setBackgroundPlan(plan);
+        scaleNote = `scale ${(result.scale.metersPerPixel * 1000).toFixed(1)} mm/px`;
+      }
+
+      const parts: string[] = [];
+      if (tasks.walls) {
+        const walls = wallsFromResult(result, plan);
+        walls.forEach((w) => addWall(w));
+        parts.push(`${walls.length} wall${walls.length === 1 ? '' : 's'}`);
+      }
+      if (tasks.stages) {
+        const stages = stagesFromResult(result, plan);
+        stages.forEach((s) => addStage(s));
+        parts.push(`${stages.length} stage${stages.length === 1 ? '' : 's'}`);
+      }
+      if (scaleNote) parts.push(scaleNote);
+
+      setSummary(parts.length ? `Added ${parts.join(', ')}.` : 'Nothing was detected in the plan.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }, [apiKey, backgroundPlan, model, provider, setBackgroundPlan, addWall, addStage, tasks]);
+
+  return (
+    <div className="p-2 rounded bg-bc-dark border border-bc-border space-y-1.5">
+      <div className="flex items-center gap-1 text-gray-300 font-medium">
+        <FiCpu size={11} /> AI Plan Analysis
+      </div>
+      <p className="text-gray-500 text-[10px] leading-tight">
+        Let an AI read the uploaded plan and draw walls / stages and read the scale.
+      </p>
+
+      {/* Provider + model */}
+      <select
+        className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[11px]"
+        value={providerId}
+        onChange={(e) => selectProvider(e.target.value as AiProviderId)}
+      >
+        {AI_PROVIDER_ORDER.map((id) => (
+          <option key={id} value={id}>
+            {AI_PROVIDERS[id].label}{AI_PROVIDERS[id].free ? ' — free key' : ''}
+          </option>
+        ))}
+      </select>
+
+      <div className="flex items-center gap-1">
+        <FiKey size={11} className="text-gray-500 shrink-0" />
+        <input
+          type="password"
+          placeholder={`${provider.label} API key`}
+          className="flex-1 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[11px]"
+          value={apiKey}
+          onChange={(e) => persistKey(e.target.value)}
+        />
+      </div>
+      <p className="text-gray-600 text-[9px]">{provider.keyHint}</p>
+
+      <input
+        type="text"
+        placeholder="model"
+        className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[10px]"
+        value={model}
+        onChange={(e) => persistModel(e.target.value)}
+        title="Model id — defaults to a vision-capable model for the provider"
+      />
+
+      {/* What to extract */}
+      <div className="flex flex-wrap gap-2 text-[10px] text-gray-300">
+        {(['walls', 'stages', 'scale'] as const).map((k) => (
+          <label key={k} className="flex items-center gap-1 cursor-pointer">
+            <input
+              type="checkbox"
+              className="accent-bc-accent"
+              checked={tasks[k]}
+              onChange={(e) => setTasks((t) => ({ ...t, [k]: e.target.checked }))}
+            />
+            {k.charAt(0).toUpperCase() + k.slice(1)}
+          </label>
+        ))}
+      </div>
+
+      <button
+        onClick={analyze}
+        disabled={busy || !backgroundPlan}
+        className="flex items-center justify-center gap-1 px-2 py-1 rounded bg-bc-accent/20 text-bc-accent text-[11px] hover:bg-bc-accent/30 w-full disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        {busy ? <><FiLoader size={11} className="animate-spin" /> Analysing…</> : <>Analyse plan with AI</>}
+      </button>
+
+      {!backgroundPlan && <p className="text-gray-600 text-[9px]">Upload a plan above to enable analysis.</p>}
+      {error && <p className="text-bc-red text-[10px] break-words">{error}</p>}
+      {summary && <p className="text-bc-green text-[10px]">{summary}</p>}
+    </div>
+  );
+}
