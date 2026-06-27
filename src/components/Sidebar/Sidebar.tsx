@@ -8,6 +8,7 @@ import type { BackgroundPlan, StageObjectType, Camera, CameraMountType, WallPatt
 import { MOUNT_TYPE_LABELS, MOUNT_HEIGHT_RANGE } from '../../types';
 import { CustomCameraForm } from './CustomCameraForm';
 import { CalculationBreakdown } from './CalculationBreakdown';
+import AiPlanAnalysis from './AiPlanAnalysis';
 import * as pdfjsLib from 'pdfjs-dist';
 
 /** Group lenses by mount for the dropdown */
@@ -1214,6 +1215,8 @@ export default function Sidebar() {
                 </button>
               </>
             )}
+            {/* AI floor-plan analysis (issues #39 / #40) */}
+            <AiPlanAnalysis />
           </div>
         )}
       </div>
