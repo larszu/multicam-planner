@@ -13,7 +13,7 @@ import { loadJSON, saveJSON } from './utils/storage';
 import { Suspense, useState, useRef, useCallback, useEffect } from 'react';
 import { FiChevronLeft, FiChevronRight, FiMaximize2, FiMinimize2, FiMinus, FiX } from 'react-icons/fi';
 import { Layout, Model, TabNode, Actions } from 'flexlayout-react';
-import type { IJsonModel, ITabSetRenderValues, TabSetNode, BorderNode } from 'flexlayout-react';
+import type { IJsonModel, ITabSetRenderValues, TabSetNode, BorderNode, ILayoutApi } from 'flexlayout-react';
 import 'flexlayout-react/style/dark.css';
 
 const LAYOUT_STORAGE_KEY = 'multicam-layout';
@@ -43,7 +43,6 @@ function createFocusLayoutJson(selectedTabId = 'tab-2d'): IJsonModel {
     global: {
       tabEnableClose: false,
       tabEnableRenderOnDemand: false,
-      splitterSize: 4,
       tabSetEnableMaximize: false,
     },
     layout: {
@@ -72,7 +71,6 @@ function createGridLayoutJson(): IJsonModel {
     global: {
       tabEnableClose: false,
       tabEnableRenderOnDemand: false,
-      splitterSize: 4,
       tabSetEnableMaximize: false,
     },
     layout: {
@@ -166,7 +164,7 @@ export default function App() {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('focus');
   const [focusTabId, setFocusTabId] = useState('tab-2d');
   const [userLayoutPresets, setUserLayoutPresets] = useState<Record<string, IJsonModel>>(() => loadUserLayoutPresets());
-  const layoutRef = useRef<Layout>(null);
+  const layoutRef = useRef<ILayoutApi>(null);
 
   const persistLayout = useCallback((nextModel: Model) => {
     saveJSON(LAYOUT_STORAGE_KEY, nextModel.toJson());
@@ -311,7 +309,7 @@ export default function App() {
         title={isMaximized ? 'Restore panel' : 'Fullscreen panel'}
         onClick={(event) => {
           event.stopPropagation();
-          model.doAction(Actions.maximizeToggle(tabSetNode.getId(), tabSetNode.getWindowId()));
+          model.doAction(Actions.maximizeToggle(tabSetNode.getId()));
         }}
       >
         {isMaximized ? <FiMinimize2 size={13} /> : <FiMaximize2 size={13} />}

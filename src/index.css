@@ -1,6 +1,16 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Tailwind v4 CSS-first config: Custom-Farben frueher in tailwind.config.js.
+   Als CSS-Variablen erzeugt v4 automatisch die bc-* Utilities (bg-bc-dark, ...). */
+@theme {
+  --color-bc-dark: #0f1117;
+  --color-bc-panel: #1a1d27;
+  --color-bc-border: #2a2d3a;
+  --color-bc-accent: #3b82f6;
+  --color-bc-green: #22c55e;
+  --color-bc-red: #ef4444;
+  --color-bc-yellow: #eab308;
+}
 
 * {
   margin: 0;
