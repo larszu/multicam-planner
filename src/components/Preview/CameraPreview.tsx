@@ -80,7 +80,6 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     const H = cssH;
 
     const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
-    const dof = computeDof(sensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive);
 
     const imgW = fov.imageWidthAtDistance;
     const imgH = fov.imageHeightAtDistance;

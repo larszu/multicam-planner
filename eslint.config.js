@@ -32,6 +32,9 @@ export default defineConfig([
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
           caughtErrorsIgnorePattern: '^_',
+          // `const { id, ...rest } = x` zum bewussten Weglassen von id ist
+          // kein toter Code.
+          ignoreRestSiblings: true,
         },
       ],
       // Bewusst pragmatisch in der three.js-/r3f-Glue-Schicht.
