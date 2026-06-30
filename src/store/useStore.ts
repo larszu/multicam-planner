@@ -4,6 +4,7 @@ import { CAMERAS, CAMERA_COLORS } from '../data/cameras';
 import { LENSES, pickInitialMountAndLens } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
 import { loadJSON, saveJSON } from '../utils/storage';
+import { fromVenueExchange, type VenueExchange } from '../utils/venueExchange';
 
 // Injected by Vite from package.json. In a release build that came through
 // the GitHub Actions workflow this matches the git release tag exactly,
@@ -97,6 +98,9 @@ interface AppState {
   bumpVersion: () => void;
   saveProject: () => void;
   loadProject: (file: File) => Promise<void>;
+  /** Importiert ein neutrales Venue-Austauschdokument (ersetzt den geteilten
+   *  Venue-Teil: Masse/Waende/Stage/Personen/Floor-Plan). Kameras bleiben. */
+  importVenueExchange: (ex: VenueExchange) => void;
 }
 
 let nextId = 1;
@@ -692,5 +696,16 @@ export const useStore = create<AppState>((set, get) => ({
       projectVersion: project.projectVersion,
       lastSavedVersion: project.projectVersion,
     });
+  },
+
+  importVenueExchange: (ex) => {
+    const r = fromVenueExchange(ex);
+    set((s) => ({
+      venue: r.venue,
+      persons: r.persons,
+      walls: r.walls,
+      backgroundPlan: r.backgroundPlan,
+      projectVersion: s.projectVersion + 1,
+    }));
   },
 }));

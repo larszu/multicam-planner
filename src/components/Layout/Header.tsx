@@ -1,5 +1,6 @@
 import { useStore, APP_VERSION } from '../../store/useStore';
-import { FiCamera, FiLayout, FiBox, FiMonitor, FiSliders, FiSave, FiUpload, FiDownload, FiChevronDown, FiX, FiCheck } from 'react-icons/fi';
+import { FiCamera, FiLayout, FiBox, FiMonitor, FiSliders, FiSave, FiUpload, FiDownload, FiChevronDown, FiX, FiCheck, FiMapPin } from 'react-icons/fi';
+import { toVenueExchange, parseVenueExchange } from '../../utils/venueExchange';
 import { useRef, useCallback, useState, useEffect } from 'react';
 import type { ExportMode } from '../Export/ExportPanel';
 
@@ -33,6 +34,7 @@ export default function Header({
 }: HeaderProps) {
   const { venue, projectVersion, lastSavedVersion, saveProject, loadProject } = useStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const venueInputRef = useRef<HTMLInputElement>(null);
   const unsaved = projectVersion !== lastSavedVersion;
   const [presetMenuOpen, setPresetMenuOpen] = useState(false);
   const [savePresetName, setSavePresetName] = useState('');
@@ -96,6 +98,40 @@ export default function Header({
   const handleExport = useCallback((mode: ExportMode = 'current') => {
     setExportMenuOpen(false);
     window.dispatchEvent(new CustomEvent('multicam-export', { detail: { mode } }));
+  }, []);
+
+  // ── Venue-Austausch: exportiert den geteilten Raum (Floor-Plan, Waende,
+  // Stage, Personen) als neutrale .venue.json, die auch Light-Planner liest.
+  const handleExportVenue = useCallback(() => {
+    const s = useStore.getState();
+    const ex = toVenueExchange({
+      venue: s.venue, persons: s.persons, walls: s.walls, backgroundPlan: s.backgroundPlan,
+      appVersion: APP_VERSION, exportedAt: new Date().toISOString(),
+    });
+    const blob = new Blob([JSON.stringify(ex, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${s.venue.name.replace(/[^a-zA-Z0-9_-]/g, '_')}.venue.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  const handleImportVenue = useCallback(() => {
+    venueInputRef.current?.click();
+  }, []);
+
+  const handleVenueFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const ex = parseVenueExchange(await file.text());
+        useStore.getState().importVenueExchange(ex);
+      } catch (err) {
+        alert(`Venue-Import fehlgeschlagen: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+    if (venueInputRef.current) venueInputRef.current.value = '';
   }, []);
 
   return (
@@ -245,6 +281,14 @@ export default function Header({
           <FiUpload size={14} />
           <span className="hidden sm:inline">Open</span>
         </button>
+        <button onClick={handleExportVenue} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors" title="Export venue (room, walls, stage, persons, floor plan) as a shared .venue.json — importable in Light-Planner">
+          <FiMapPin size={14} />
+          <span className="hidden md:inline">Venue ↑</span>
+        </button>
+        <button onClick={handleImportVenue} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors" title="Import a shared venue (.venue.json) — replaces room, walls, stage, persons, floor plan; cameras are kept">
+          <FiMapPin size={14} />
+          <span className="hidden md:inline">Venue ↓</span>
+        </button>
         <div className="relative" ref={exportMenuRef}>
           <button
             onClick={() => setExportMenuOpen((o) => !o)}
@@ -293,6 +337,7 @@ export default function Header({
           )}
         </div>
         <input ref={fileInputRef} type="file" accept=".mcplan,.json" className="hidden" onChange={handleFileChange} />
+        <input ref={venueInputRef} type="file" accept=".venue.json,.json" className="hidden" onChange={handleVenueFileChange} />
         <span className="text-xs text-gray-500 hidden lg:inline">v{APP_VERSION}</span>
       </div>
     </header>
