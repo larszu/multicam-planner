@@ -5,6 +5,7 @@ import { LENSES, pickInitialMountAndLens } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
 import { loadJSON, saveJSON } from '../utils/storage';
 import { fromVenueExchange, type VenueExchange } from '../utils/venueExchange';
+import type { AvPlan } from '../utils/avplan';
 
 // Injected by Vite from package.json. In a release build that came through
 // the GitHub Actions workflow this matches the git release tag exactly,
@@ -105,9 +106,17 @@ interface AppState {
   bumpVersion: () => void;
   saveProject: () => void;
   loadProject: (file: File) => Promise<void>;
+  /** Wendet ein bereits geparstes ProjectFile auf den Store an (Kern von loadProject). */
+  applyProjectFile: (project: ProjectFile) => void;
   /** Importiert ein neutrales Venue-Austauschdokument (ersetzt den geteilten
    *  Venue-Teil: Masse/Waende/Stage/Personen/Floor-Plan). Kameras bleiben. */
   importVenueExchange: (ex: VenueExchange) => void;
+  /** Fremde .avplan-Domaenen (lighting/cabling), die MultiCam nicht bearbeitet,
+   *  aber beim Export 1:1 wieder mitgibt — damit nichts verloren geht. */
+  avForeign: { lighting?: unknown; cabling?: unknown };
+  /** Importiert ein .avplan-Gesamtprojekt: laedt den cameras-Slot nativ,
+   *  ueberlagert den geteilten Raum und bewahrt lighting/cabling verlustfrei. */
+  importAvPlan: (avplan: AvPlan) => void;
 }
 
 let nextId = 1;
@@ -670,6 +679,10 @@ export const useStore = create<AppState>((set, get) => ({
   loadProject: async (file: File) => {
     const text = await file.text();
     const project: ProjectFile = JSON.parse(text);
+    get().applyProjectFile(project);
+  },
+
+  applyProjectFile: (project: ProjectFile) => {
     if (project.formatVersion !== 1) {
       alert('Unsupported project file format.');
       return;
@@ -718,5 +731,17 @@ export const useStore = create<AppState>((set, get) => ({
       backgroundPlan: r.backgroundPlan,
       projectVersion: s.projectVersion + 1,
     }));
+  },
+
+  avForeign: {},
+  importAvPlan: (avplan) => {
+    const cameras = avplan.domains.cameras as ProjectFile | undefined;
+    if (cameras) get().applyProjectFile(cameras);
+    // Geteilten Raum kanonisch aus der .avplan ueberlagern.
+    get().importVenueExchange({
+      kind: 'venue-exchange', formatVersion: 1, app: avplan.app,
+      appVersion: avplan.appVersion, exportedAt: avplan.exportedAt, venue: avplan.venue,
+    });
+    set({ avForeign: { lighting: avplan.domains.lighting, cabling: avplan.domains.cabling } });
   },
 }));
