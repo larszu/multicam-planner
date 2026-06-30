@@ -368,15 +368,19 @@ function StageMesh({ x, y, w, h, label }: { x: number; y: number; w: number; h: 
 function FovPyramid({ cam, isSelected }: { cam: ReturnType<typeof useStore.getState>['cameras'][0]; isSelected: boolean }) {
   const camDef = getCameraById(cam.cameraId, useStore.getState().customCameras);
   const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
-  if (!camDef || !lensDef) return null;
 
-  const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex, cam.activeMount);
-  const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
-  const fovMin = computeFov(sensor, lensDef.focalLengthMax, cam.focusDistance, cam.extenderActive);
-  const fovMax = computeFov(sensor, lensDef.focalLengthMin, cam.focusDistance, cam.extenderActive);
-  const isZoom = lensDef.focalLengthMin !== lensDef.focalLengthMax;
+  // Alle Hooks muessen unbedingt (in gleicher Reihenfolge bei jedem Render)
+  // laufen — daher null-safe ableiten und erst NACH den Hooks early-returnen.
+  const sensor = camDef && lensDef
+    ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex, cam.activeMount)
+    : null;
+  const fov = sensor ? computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive) : null;
+  const fovMin = sensor && lensDef ? computeFov(sensor, lensDef.focalLengthMax, cam.focusDistance, cam.extenderActive) : null;
+  const fovMax = sensor && lensDef ? computeFov(sensor, lensDef.focalLengthMin, cam.focusDistance, cam.extenderActive) : null;
+  const isZoom = !!lensDef && lensDef.focalLengthMin !== lensDef.focalLengthMax;
 
   const geometry = useMemo(() => {
+    if (!fov) return null;
     const halfH = Math.tan(((fov.horizontalDeg / 2) * Math.PI) / 180) * cam.focusDistance;
     const halfV = Math.tan(((fov.verticalDeg / 2) * Math.PI) / 180) * cam.focusDistance;
     const d = cam.focusDistance;
@@ -394,10 +398,10 @@ function FovPyramid({ cam, isSelected }: { cam: ReturnType<typeof useStore.getSt
     geo.setIndex(indices);
     geo.computeVertexNormals();
     return geo;
-  }, [fov.horizontalDeg, fov.verticalDeg, cam.focusDistance]);
+  }, [fov?.horizontalDeg, fov?.verticalDeg, cam.focusDistance]);
 
   const geoMin = useMemo(() => {
-    if (!isZoom) return null;
+    if (!isZoom || !fovMin) return null;
     const halfH = Math.tan(((fovMin.horizontalDeg / 2) * Math.PI) / 180) * cam.focusDistance;
     const halfV = Math.tan(((fovMin.verticalDeg / 2) * Math.PI) / 180) * cam.focusDistance;
     const d = cam.focusDistance;
@@ -407,10 +411,10 @@ function FovPyramid({ cam, isSelected }: { cam: ReturnType<typeof useStore.getSt
     geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
     geo.setIndex(indices);
     return geo;
-  }, [isZoom, fovMin.horizontalDeg, fovMin.verticalDeg, cam.focusDistance]);
+  }, [isZoom, fovMin?.horizontalDeg, fovMin?.verticalDeg, cam.focusDistance]);
 
   const geoMax = useMemo(() => {
-    if (!isZoom) return null;
+    if (!isZoom || !fovMax) return null;
     const halfH = Math.tan(((fovMax.horizontalDeg / 2) * Math.PI) / 180) * cam.focusDistance;
     const halfV = Math.tan(((fovMax.verticalDeg / 2) * Math.PI) / 180) * cam.focusDistance;
     const d = cam.focusDistance;
@@ -420,7 +424,10 @@ function FovPyramid({ cam, isSelected }: { cam: ReturnType<typeof useStore.getSt
     geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
     geo.setIndex(indices);
     return geo;
-  }, [isZoom, fovMax.horizontalDeg, fovMax.verticalDeg, cam.focusDistance]);
+  }, [isZoom, fovMax?.horizontalDeg, fovMax?.verticalDeg, cam.focusDistance]);
+
+  // Guard nach den Hooks: ohne gueltige Kamera/Linse gibt es keine Geometrie.
+  if (!geometry) return null;
 
   return (
     // The pyramid mesh is modelled looking along -Z. Both the pitch (rotate-X)
@@ -847,7 +854,7 @@ function PersonMesh({ x, z, height, label, objectType, color }: { x: number; z: 
 }
 
 export default function Venue3D() {
-  const { venue, cameras, persons, backgroundPlan, walls, moveCamera, updatePerson, selectCamera, selectedCameraId } = useStore();
+  const { venue, cameras, persons, backgroundPlan, walls, updatePerson, selectCamera, selectedCameraId } = useStore();
   const [unlockedCameraId, setUnlockedCameraId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState<CameraEditMode>('move');
 

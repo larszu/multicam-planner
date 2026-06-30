@@ -25,7 +25,7 @@ interface ExportDetail {
 export default function ExportPanel() {
   const [exporting, setExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
-  const { cameras, selectedCameraId, venue, projectVersion } = useStore();
+  const { cameras, venue, projectVersion } = useStore();
 
   const capture2DCanvas = useCallback((): HTMLCanvasElement | null => {
     const registry = getExportRegistry();
