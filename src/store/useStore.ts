@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { VenueCamera, Venue, ViewTab, ReferencePerson, BackgroundPlan, Stage, ProjectFile, VenueTemplate, StageObjectType, Lens, Wall, Camera } from '../types';
+import type { VenueCamera, Venue, ViewTab, EditMode, ReferencePerson, BackgroundPlan, Stage, ProjectFile, VenueTemplate, StageObjectType, Lens, Wall, Camera } from '../types';
 import { CAMERAS, CAMERA_COLORS } from '../data/cameras';
 import { LENSES, pickInitialMountAndLens } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
@@ -65,12 +65,19 @@ interface AppState {
   addWall: (wall?: Partial<Wall>) => void;
   removeWall: (id: string) => void;
   updateWall: (id: string, updates: Partial<Wall>) => void;
+  /** When true, wall endpoints magnet to nearby endpoints while drawing/dragging (issue #40). */
+  wallSnap: boolean;
+  setWallSnap: (v: boolean) => void;
 
   // View
   activeTab: ViewTab;
   setActiveTab: (tab: ViewTab) => void;
   showAllFov: boolean;
   toggleShowAllFov: () => void;
+
+  // Edit mode — restricts editing to one category at a time (issue #43)
+  editMode: EditMode;
+  setEditMode: (mode: EditMode) => void;
 
   // Layout UI
   sidebarCollapsed: boolean;
@@ -493,9 +500,13 @@ export const useStore = create<AppState>((set, get) => ({
   },
   removeWall: (id) => set((s) => ({ walls: s.walls.filter((w) => w.id !== id), projectVersion: s.projectVersion + 1 })),
   updateWall: (id, updates) => set((s) => ({ walls: s.walls.map((w) => (w.id === id ? { ...w, ...updates } : w)), projectVersion: s.projectVersion + 1 })),
+  wallSnap: true,
+  setWallSnap: (v) => set({ wallSnap: v }),
 
   activeTab: '2d',
   setActiveTab: (tab) => set({ activeTab: tab }),
+  editMode: 'all',
+  setEditMode: (mode) => set({ editMode: mode }),
   showAllFov: true,
   toggleShowAllFov: () => set((s) => ({ showAllFov: !s.showAllFov })),
 

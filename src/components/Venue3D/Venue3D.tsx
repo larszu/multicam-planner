@@ -990,7 +990,7 @@ export default function Venue3D() {
           return (
             <mesh key={w.id} position={[cx, w.height / 2, cy]} rotation={[0, -angle, 0]}>
               <boxGeometry args={[len, w.height, 0.15]} />
-              <meshStandardMaterial color="#6b7280" opacity={0.6} transparent />
+              <meshStandardMaterial color={w.color ?? '#6b7280'} opacity={0.6} transparent />
             </mesh>
           );
         })}

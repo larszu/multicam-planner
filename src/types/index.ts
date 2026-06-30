@@ -117,12 +117,22 @@ export const MOUNT_HEIGHT_RANGE: Record<CameraMountType, { min: number; max: num
 
 
 // ── Venue wall ──
+// `pattern` controls the wall surface texture in the camera preview so an
+// operator can judge focus/blur against a known motif (issue #45).
+export type WallPattern = 'solid' | 'grid' | 'flowers' | 'image';
+
 export interface Wall {
   id: string;
   x1: number; y1: number; // start point in metres
   x2: number; y2: number; // end point in metres
   height: number; // metres
   label: string;
+  /** Base surface colour (hex). Falls back to a neutral grey when unset. */
+  color?: string;
+  /** Surface pattern for blur-checking in the preview. Defaults to 'solid'. */
+  pattern?: WallPattern;
+  /** Data URL of a custom image, tiled across the wall when pattern === 'image'. */
+  patternImage?: string;
 }
 
 // ── Reference person / object in venue ──
@@ -272,6 +282,11 @@ export interface DofResult {
 
 // ── Tab views ──
 export type ViewTab = '2d' | '3d' | 'preview' | 'calculator';
+
+// ── Edit mode (issue #43) ──
+// A top-bar slider restricts editing to one category at a time so a plan can be
+// built up step by step. `all` respects each object's own lock flag instead.
+export type EditMode = 'all' | 'floorplan' | 'stage' | 'objects' | 'cameras';
 
 // ── Saved project ──
 export interface ProjectFile {
