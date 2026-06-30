@@ -3,6 +3,8 @@ import { FiCamera, FiLayout, FiBox, FiMonitor, FiSliders, FiSave, FiUpload, FiDo
 import { toVenueExchange, parseVenueExchange } from '../../utils/venueExchange';
 import { toCameraList } from '../../utils/cameraExport';
 import { getCameraById } from '../../data/cameras';
+import { makeAvPlan, parseAvPlan } from '../../utils/avplan';
+import type { ProjectFile } from '../../types';
 import { useRef, useCallback, useState, useEffect } from 'react';
 import type { ExportMode } from '../Export/ExportPanel';
 import type { EditMode } from '../../types';
@@ -48,6 +50,7 @@ export default function Header({
   const { venue, projectVersion, lastSavedVersion, saveProject, loadProject, editMode, setEditMode } = useStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const venueInputRef = useRef<HTMLInputElement>(null);
+  const avplanInputRef = useRef<HTMLInputElement>(null);
   const unsaved = projectVersion !== lastSavedVersion;
   const [presetMenuOpen, setPresetMenuOpen] = useState(false);
   const [savePresetName, setSavePresetName] = useState('');
@@ -146,6 +149,49 @@ export default function Header({
     a.download = `${s.venue.name.replace(/[^a-zA-Z0-9_-]/g, '_')}.cameras.json`;
     a.click();
     URL.revokeObjectURL(url);
+  }, []);
+
+  // ── Gesamtprojekt (.avplan): verlustfrei. MultiCam bearbeitet den cameras-
+  // Slot nativ und reicht lighting/cabling 1:1 durch.
+  const handleExportAvplan = useCallback(() => {
+    const s = useStore.getState();
+    const now = new Date().toISOString();
+    const cameraDoc: ProjectFile = {
+      formatVersion: 1, appVersion: APP_VERSION, projectVersion: s.projectVersion,
+      savedAt: now, venue: s.venue, cameras: s.cameras, persons: s.persons,
+      walls: s.walls ?? [], backgroundPlan: s.backgroundPlan,
+    };
+    const venue = toVenueExchange({
+      venue: s.venue, persons: s.persons, walls: s.walls, backgroundPlan: s.backgroundPlan,
+      appVersion: APP_VERSION, exportedAt: now,
+    }).venue;
+    const avplan = makeAvPlan({
+      app: 'multicam-planner', appVersion: APP_VERSION, exportedAt: now, venue,
+      domains: { cameras: cameraDoc, lighting: s.avForeign.lighting, cabling: s.avForeign.cabling },
+    });
+    const blob = new Blob([JSON.stringify(avplan, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${s.venue.name.replace(/[^a-zA-Z0-9_-]/g, '_')}.avplan`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  const handleImportAvplan = useCallback(() => {
+    avplanInputRef.current?.click();
+  }, []);
+
+  const handleAvplanFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        useStore.getState().importAvPlan(parseAvPlan(await file.text()));
+      } catch (err) {
+        alert(`.avplan-Import fehlgeschlagen: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+    if (avplanInputRef.current) avplanInputRef.current.value = '';
   }, []);
 
   const handleImportVenue = useCallback(() => {
@@ -326,6 +372,14 @@ export default function Header({
           <FiUpload size={14} />
           <span className="hidden sm:inline">Open</span>
         </button>
+        <button onClick={handleExportAvplan} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors" title="Export full combined project (.avplan) — venue + cameras + lighting + cabling, lossless across all three apps">
+          <FiBox size={14} />
+          <span className="hidden md:inline">.avplan ↑</span>
+        </button>
+        <button onClick={handleImportAvplan} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors" title="Import a combined project (.avplan) — cameras load natively, lighting/cabling are preserved losslessly">
+          <FiBox size={14} />
+          <span className="hidden md:inline">.avplan ↓</span>
+        </button>
         <button onClick={handleExportVenue} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors" title="Export venue (room, walls, stage, persons, floor plan) as a shared .venue.json — importable in Light-Planner">
           <FiMapPin size={14} />
           <span className="hidden md:inline">Venue ↑</span>
@@ -387,6 +441,7 @@ export default function Header({
         </div>
         <input ref={fileInputRef} type="file" accept=".mcplan,.json" className="hidden" onChange={handleFileChange} />
         <input ref={venueInputRef} type="file" accept=".venue.json,.json" className="hidden" onChange={handleVenueFileChange} />
+        <input ref={avplanInputRef} type="file" accept=".avplan,.json" className="hidden" onChange={handleAvplanFileChange} />
         <span className="text-xs text-gray-500 hidden lg:inline">v{APP_VERSION}</span>
       </div>
     </header>
