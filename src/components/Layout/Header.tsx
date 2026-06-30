@@ -1,6 +1,8 @@
 import { useStore, APP_VERSION } from '../../store/useStore';
 import { FiCamera, FiLayout, FiBox, FiMonitor, FiSliders, FiSave, FiUpload, FiDownload, FiChevronDown, FiX, FiCheck, FiMapPin } from 'react-icons/fi';
 import { toVenueExchange, parseVenueExchange } from '../../utils/venueExchange';
+import { toCameraList } from '../../utils/cameraExport';
+import { getCameraById } from '../../data/cameras';
 import { useRef, useCallback, useState, useEffect } from 'react';
 import type { ExportMode } from '../Export/ExportPanel';
 
@@ -113,6 +115,24 @@ export default function Header({
     const a = document.createElement('a');
     a.href = url;
     a.download = `${s.venue.name.replace(/[^a-zA-Z0-9_-]/g, '_')}.venue.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  // Exportiert die platzierten Kameras als camera-list fuer den Cable-Planner
+  // (dort werden sie zu verkabelbaren Equipment-Nodes).
+  const handleExportCameras = useCallback(() => {
+    const s = useStore.getState();
+    const ex = toCameraList(
+      s.cameras,
+      (id) => getCameraById(id, s.customCameras),
+      { appVersion: APP_VERSION, exportedAt: new Date().toISOString() },
+    );
+    const blob = new Blob([JSON.stringify(ex, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${s.venue.name.replace(/[^a-zA-Z0-9_-]/g, '_')}.cameras.json`;
     a.click();
     URL.revokeObjectURL(url);
   }, []);
@@ -288,6 +308,10 @@ export default function Header({
         <button onClick={handleImportVenue} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors" title="Import a shared venue (.venue.json) — replaces room, walls, stage, persons, floor plan; cameras are kept">
           <FiMapPin size={14} />
           <span className="hidden md:inline">Venue ↓</span>
+        </button>
+        <button onClick={handleExportCameras} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors" title="Export placed cameras as a .cameras.json for Cable-Planner — there they become cabling equipment nodes">
+          <FiCamera size={14} />
+          <span className="hidden md:inline">→ Cable</span>
         </button>
         <div className="relative" ref={exportMenuRef}>
           <button
