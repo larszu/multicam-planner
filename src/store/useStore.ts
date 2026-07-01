@@ -75,6 +75,9 @@ interface AppState {
   setActiveTab: (tab: ViewTab) => void;
   showAllFov: boolean;
   toggleShowAllFov: () => void;
+  /** Read-only Anzeige der fremden .avplan-Lampen im 2D-Venue. */
+  showForeign: boolean;
+  toggleShowForeign: () => void;
 
   // Edit mode — restricts editing to one category at a time (issue #43)
   editMode: EditMode;
@@ -518,6 +521,8 @@ export const useStore = create<AppState>((set, get) => ({
   setEditMode: (mode) => set({ editMode: mode }),
   showAllFov: true,
   toggleShowAllFov: () => set((s) => ({ showAllFov: !s.showAllFov })),
+  showForeign: true,
+  toggleShowForeign: () => set((s) => ({ showForeign: !s.showForeign })),
 
   sidebarCollapsed: false,
   setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
