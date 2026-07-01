@@ -47,7 +47,8 @@ export default function Header({
   layoutPresetOptions,
   layoutMode,
 }: HeaderProps) {
-  const { venue, projectVersion, lastSavedVersion, saveProject, loadProject, editMode, setEditMode } = useStore();
+  const { venue, projectVersion, lastSavedVersion, saveProject, loadProject, editMode, setEditMode, avForeign, showForeign, toggleShowForeign } = useStore();
+  const hasForeignLighting = !!(avForeign.lighting && Array.isArray((avForeign.lighting as { fixtures?: unknown }).fixtures) && (avForeign.lighting as { fixtures: unknown[] }).fixtures.length > 0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const venueInputRef = useRef<HTMLInputElement>(null);
   const avplanInputRef = useRef<HTMLInputElement>(null);
@@ -380,6 +381,12 @@ export default function Header({
           <FiBox size={14} />
           <span className="hidden md:inline">.avplan ↓</span>
         </button>
+        {hasForeignLighting && (
+          <button onClick={toggleShowForeign} className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors ${showForeign ? 'text-bc-yellow bg-bc-yellow/15' : 'text-gray-500 hover:text-white hover:bg-bc-border'}`} title="Show/hide read-only lighting fixtures imported from the Light-Planner (.avplan)">
+            <FiSliders size={14} />
+            <span className="hidden lg:inline">Lampen</span>
+          </button>
+        )}
         <button onClick={handleExportVenue} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors" title="Export venue (room, walls, stage, persons, floor plan) as a shared .venue.json — importable in Light-Planner">
           <FiMapPin size={14} />
           <span className="hidden md:inline">Venue ↑</span>

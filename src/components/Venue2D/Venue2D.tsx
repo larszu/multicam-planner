@@ -1,5 +1,6 @@
 import { Stage, Layer, Rect, Wedge, Circle, Text, Group, Line, Image as KImage, Transformer } from 'react-konva';
 import { useStore } from '../../store/useStore';
+import { foreignFixturesFrom, cctToColor } from '../../utils/foreignView';
 import { getCameraById, getEffectiveSensor } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov } from '../../utils/fov';
@@ -7,7 +8,7 @@ import type { VenueCamera, Wall } from '../../types';
 import { MOUNT_HEIGHT_RANGE } from '../../types';
 import { effectiveCameraPos } from '../../utils/camera';
 import { getExportRegistry } from '../../store/exportRegistry';
-import React, { useRef, useCallback, useEffect, useState } from 'react';
+import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react';
 import type Konva from 'konva';
 import { FiCopy, FiLock, FiUnlock, FiTrash2 } from 'react-icons/fi';
 
@@ -28,7 +29,7 @@ const ctxItemStyle: React.CSSProperties = {
 };
 
 export default function Venue2D() {
-  const { venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, updateCamera, removeCamera, duplicateCamera, showAllFov, pixelsPerMeter, persons, updatePerson, removePerson, duplicatePerson, updateStage, addStage, removeStage, backgroundPlan, setBackgroundPlan, walls, updateWall, addWall, removeWall, wallSnap, editMode } = useStore();
+  const { venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, updateCamera, removeCamera, duplicateCamera, showAllFov, pixelsPerMeter, persons, updatePerson, removePerson, duplicatePerson, updateStage, addStage, removeStage, backgroundPlan, setBackgroundPlan, walls, updateWall, addWall, removeWall, wallSnap, editMode, avForeign, showForeign } = useStore();
 
   // Edit-mode locking (issue #43): each mode locks every category except its own.
   // 'all' falls through to each object's individual lock flag.
@@ -126,6 +127,11 @@ export default function Venue2D() {
   const [calibCursor, setCalibCursor] = useState<{ x: number; y: number } | null>(null);
 
   const ppm = pixelsPerMeter;
+  // Read-only Lampen aus der verlustfrei mitgefuehrten .avplan-Lighting-Domaene.
+  const foreignFixtures = useMemo(
+    () => (showForeign ? foreignFixturesFrom(avForeign.lighting) : []),
+    [showForeign, avForeign.lighting],
+  );
   const W = venue.widthM * ppm;
   const H = venue.heightM * ppm;
 
@@ -772,6 +778,43 @@ export default function Venue2D() {
           );
         })}
       </Layer>
+
+      {/* ── Read-only foreign lighting (Lampen aus dem Light-Planner via .avplan) ── */}
+      {foreignFixtures.length > 0 && (
+        <Layer listening={false} opacity={0.85}>
+          {foreignFixtures.map((f) => {
+            const color = cctToColor(f.colorTemp);
+            const hasAim = f.aimX !== undefined && f.aimY !== undefined;
+            return (
+              <Group key={`fx-${f.id}`} x={f.x * ppm} y={f.y * ppm}>
+                {hasAim && (
+                  <Line
+                    points={[0, 0, (f.aimX! - f.x) * ppm, (f.aimY! - f.y) * ppm]}
+                    stroke={color}
+                    strokeWidth={1}
+                    dash={[4, 4]}
+                    opacity={0.5}
+                  />
+                )}
+                {/* Lampen-Marker: gefuelltes Quadrat-auf-Spitze (Scheinwerfer-Symbol) */}
+                <Rect
+                  width={8} height={8}
+                  offsetX={4} offsetY={4}
+                  rotation={45}
+                  fill={color}
+                  stroke="#0f1117"
+                  strokeWidth={1}
+                  opacity={Math.max(0.35, f.dimming ?? 1)}
+                />
+                <Circle radius={1.6} fill="#0f1117" />
+                {f.name && (
+                  <Text x={7} y={-5} text={f.name} fontSize={9} fill={color} listening={false} />
+                )}
+              </Group>
+            );
+          })}
+        </Layer>
+      )}
 
       {/* ── Layer 3: Calibration overlay (conditional) ── */}
       {calibActive && (
