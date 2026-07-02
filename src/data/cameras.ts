@@ -29,29 +29,29 @@ export const CAMERAS: Camera[] = [
   ], mountAdapters: {
     E: { name: 'Sony VENICE 2 E-mount Adapter', lightLossStops: 0, notes: 'Mechanical mount-block swap, no optical relay. The full sensor area stays available — choose the desired window via the Sensor Mode dropdown.' },
   } },
-  { id: 'sony-pmw-f5', manufacturer: 'Sony', model: 'PMW-F5', sensor: SENSORS.S35, mount: 'FZ', adaptedMounts: ['PL', 'B4', 'EF', 'NF'], resolutions: ['4K', '2K', 'HD'], type: 'cinema', notes: 'FZ-mount native; PL/B4 via Sony adapter, EF via Metabones FZ-EF CINE, NF via Metabones FZ-NF', mountAdapters: {
+  { id: 'sony-pmw-f5', deviceTypeId: 'f54cdfa3-1708-4b05-9179-4a8769c0b891', manufacturer: 'Sony', model: 'PMW-F5', sensor: SENSORS.S35, mount: 'FZ', adaptedMounts: ['PL', 'B4', 'EF', 'NF'], resolutions: ['4K', '2K', 'HD'], type: 'cinema', notes: 'FZ-mount native; PL/B4 via Sony adapter, EF via Metabones FZ-EF CINE, NF via Metabones FZ-NF', mountAdapters: {
     PL: { name: 'Sony VCT-FZ55B PL Adapter', lightLossStops: 0, notes: 'Mechanical PL-to-FZ adapter. No optical relay, no light loss; the full Super-35 sensor is used.' },
     B4: { name: 'Sony LA-FZB1 / LA-FZB2', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD, notes: 'B4 mount adapter with internal 2× relay optics. Crops the Super-35 sensor down to the 2/3" image circle the B4 lens projects, and costs ~1 T-stop of light through the relay glass.' },
     EF: { name: 'Metabones EF → FZ Smart CINE Adapter', lightLossStops: 0, notes: 'Smart EF-to-FZ adapter with electronic aperture control. Passive optically — no light loss, full Super-35 sensor used.' },
     NF: { name: 'Metabones Nikon F → FZ Adapter', lightLossStops: 0, notes: 'Mechanical Nikon-F-to-FZ adapter. Manual aperture only. No optical relay.' },
   } },
-  { id: 'sony-pmw-f55', manufacturer: 'Sony', model: 'PMW-F55', sensor: SENSORS.S35, mount: 'FZ', adaptedMounts: ['PL', 'B4', 'EF', 'NF'], resolutions: ['4K', '2K', 'HD'], type: 'cinema', notes: 'FZ-mount native; PL/B4 via Sony adapter, EF via Metabones FZ-EF CINE, NF via Metabones FZ-NF', mountAdapters: {
+  { id: 'sony-pmw-f55', deviceTypeId: 'eb02ca7e-856c-40ab-9a73-d1e98110f003', manufacturer: 'Sony', model: 'PMW-F55', sensor: SENSORS.S35, mount: 'FZ', adaptedMounts: ['PL', 'B4', 'EF', 'NF'], resolutions: ['4K', '2K', 'HD'], type: 'cinema', notes: 'FZ-mount native; PL/B4 via Sony adapter, EF via Metabones FZ-EF CINE, NF via Metabones FZ-NF', mountAdapters: {
     PL: { name: 'Sony VCT-FZ55B PL Adapter', lightLossStops: 0, notes: 'Mechanical PL-to-FZ adapter. No optical relay, no light loss; the full Super-35 sensor is used.' },
     B4: { name: 'Sony LA-FZB1 / LA-FZB2', lightLossStops: 1.0, cropSensor: SENSORS.TWO_THIRD, notes: 'B4 mount adapter with internal 2× relay optics. Crops the Super-35 sensor down to the 2/3" image circle the B4 lens projects, and costs ~1 T-stop of light through the relay glass.' },
     EF: { name: 'Metabones EF → FZ Smart CINE Adapter', lightLossStops: 0, notes: 'Smart EF-to-FZ adapter with electronic aperture control. Passive optically — no light loss, full Super-35 sensor used.' },
     NF: { name: 'Metabones Nikon F → FZ Adapter', lightLossStops: 0, notes: 'Mechanical Nikon-F-to-FZ adapter. Manual aperture only. No optical relay.' },
   } },
-  { id: 'sony-fx6', manufacturer: 'Sony', model: 'FX6', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF', 'NF'], resolutions: ['4K', 'HD'], type: 'cinema', notes: 'E-mount native; PL via Metabones PL → E CINE, EF via Metabones EF → E', mountAdapters: {
+  { id: 'sony-fx6', deviceTypeId: 'a823f2ff-3be9-4c45-af4e-bd4f6b13f7d7', manufacturer: 'Sony', model: 'FX6', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF', 'NF'], resolutions: ['4K', 'HD'], type: 'cinema', notes: 'E-mount native; PL via Metabones PL → E CINE, EF via Metabones EF → E', mountAdapters: {
     PL: { name: 'Metabones PL → E CINE Adapter', lightLossStops: 0, notes: 'Mechanical PL-to-E adapter. No light loss, full sensor.' },
     EF: { name: 'Metabones EF → E Smart Adapter (Mk V)', lightLossStops: 0, notes: 'Smart EF-to-E adapter with electronic aperture/AF. Passive optically.' },
     NF: { name: 'Nikon F → E Adapter', lightLossStops: 0, notes: 'Mechanical Nikon-F-to-E adapter. Manual aperture only.' },
   } },
-  { id: 'sony-fx3', manufacturer: 'Sony', model: 'FX3', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF', 'NF'], resolutions: ['4K', 'HD'], type: 'cinema', notes: 'E-mount native; PL/EF via passive adapter', mountAdapters: {
+  { id: 'sony-fx3', deviceTypeId: '3cd5dd2d-7d51-4af9-ad59-25860aa4baa2', manufacturer: 'Sony', model: 'FX3', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF', 'NF'], resolutions: ['4K', 'HD'], type: 'cinema', notes: 'E-mount native; PL/EF via passive adapter', mountAdapters: {
     PL: { name: 'PL → E Adapter', lightLossStops: 0, notes: 'Mechanical PL-to-E adapter (Metabones, Sigma MC-11 variants).' },
     EF: { name: 'Metabones EF → E Smart Adapter (Mk V)', lightLossStops: 0, notes: 'Smart EF-to-E adapter with electronic aperture/AF.' },
     NF: { name: 'Nikon F → E Adapter', lightLossStops: 0, notes: 'Mechanical Nikon-F-to-E adapter. Manual aperture only.' },
   } },
-  { id: 'sony-fx9', manufacturer: 'Sony', model: 'PXW-FX9', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF', 'NF'], resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'E-mount native; PL/EF via adapter', sensorModes: [
+  { id: 'sony-fx9', deviceTypeId: '05d88e97-2f3d-4b16-868c-f13f202754c5', manufacturer: 'Sony', model: 'PXW-FX9', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF', 'NF'], resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'E-mount native; PL/EF via adapter', sensorModes: [
     { name: 'Full Frame (35.7×18.8)', widthMm: 35.7, heightMm: 18.8, cropFactor: 1.0 },
     { name: 'Super 35 crop (23.6×12.4)', widthMm: 23.6, heightMm: 12.4, cropFactor: 1.51 },
   ], mountAdapters: {
@@ -59,7 +59,7 @@ export const CAMERAS: Camera[] = [
     EF: { name: 'Metabones EF → E Smart Adapter (Mk V)', lightLossStops: 0, notes: 'Smart EF-to-E adapter with electronic aperture/AF.' },
     NF: { name: 'Nikon F → E Adapter', lightLossStops: 0, notes: 'Mechanical Nikon-F-to-E adapter. Manual aperture only.' },
   } },
-  { id: 'sony-fs7ii', manufacturer: 'Sony', model: 'PXW-FS7 II', sensor: SENSORS.S35, mount: 'E', adaptedMounts: ['PL', 'EF', 'NF'], resolutions: ['4K', 'HD'], type: 'cinema', notes: 'E-mount native; PL/EF via adapter', mountAdapters: {
+  { id: 'sony-fs7ii', deviceTypeId: 'ff69e6b9-7a72-4eb2-ba53-df17fd8bfdf7', manufacturer: 'Sony', model: 'PXW-FS7 II', sensor: SENSORS.S35, mount: 'E', adaptedMounts: ['PL', 'EF', 'NF'], resolutions: ['4K', 'HD'], type: 'cinema', notes: 'E-mount native; PL/EF via adapter', mountAdapters: {
     PL: { name: 'Metabones PL → E CINE Adapter', lightLossStops: 0, notes: 'Mechanical PL-to-E adapter. No light loss.' },
     EF: { name: 'Metabones EF → E Smart Adapter (Mk V)', lightLossStops: 0, notes: 'Smart EF-to-E adapter with electronic aperture/AF.' },
     NF: { name: 'Nikon F → E Adapter', lightLossStops: 0, notes: 'Mechanical Nikon-F-to-E adapter. Manual aperture only.' },
@@ -92,13 +92,13 @@ export const CAMERAS: Camera[] = [
   { id: 'sony-brc-h800', manufacturer: 'Sony', model: 'BRC-H800', sensor: SENSORS.HALF_INCH, mount: 'integrated', resolutions: ['HD'], type: 'ptz', notes: '1/2.5" Exmor R CMOS, 12x optical zoom PTZ' },
 
   // ── Canon Broadcast / Cinema ──
-  { id: 'canon-c500ii', manufacturer: 'Canon', model: 'C500 Mark II', sensor: SENSORS.FF, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['5.9K', '4K', 'HD'], type: 'cinema', notes: 'EF native; PL via Canon swappable mount kit', mountAdapters: {
+  { id: 'canon-c500ii', deviceTypeId: '87fc07c8-7327-466d-9fd1-eac259af154e', manufacturer: 'Canon', model: 'C500 Mark II', sensor: SENSORS.FF, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['5.9K', '4K', 'HD'], type: 'cinema', notes: 'EF native; PL via Canon swappable mount kit', mountAdapters: {
     PL: { name: 'Canon C500 II PL Mount Kit', lightLossStops: 0, notes: 'Canon-official swappable PL mount unit. Mechanical change only — no relay, no light loss; the full sensor area stays available.' },
   } },
-  { id: 'canon-c300iii', manufacturer: 'Canon', model: 'C300 Mark III', sensor: SENSORS.S35, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['4K', 'HD'], type: 'cinema', notes: 'EF native; PL via Canon swappable mount kit', mountAdapters: {
+  { id: 'canon-c300iii', deviceTypeId: 'bfdc4077-32b8-4f1b-b9a5-6f875b37816c', manufacturer: 'Canon', model: 'C300 Mark III', sensor: SENSORS.S35, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['4K', 'HD'], type: 'cinema', notes: 'EF native; PL via Canon swappable mount kit', mountAdapters: {
     PL: { name: 'Canon C300 III PL Mount Kit', lightLossStops: 0, notes: 'Canon-official swappable PL mount unit. Mechanical change only — no relay, no light loss.' },
   } },
-  { id: 'canon-c70', manufacturer: 'Canon', model: 'C70', sensor: SENSORS.S35, mount: 'RF', adaptedMounts: ['EF', 'PL'], resolutions: ['4K', 'HD'], type: 'cinema', notes: 'RF native; EF via Canon EF-EOS R 0.71×, PL via Wooden Camera adapter', mountAdapters: {
+  { id: 'canon-c70', deviceTypeId: 'fd8fdb1a-0927-4d70-9c8b-f40ef5ef0fdb', manufacturer: 'Canon', model: 'C70', sensor: SENSORS.S35, mount: 'RF', adaptedMounts: ['EF', 'PL'], resolutions: ['4K', 'HD'], type: 'cinema', notes: 'RF native; EF via Canon EF-EOS R 0.71×, PL via Wooden Camera adapter', mountAdapters: {
     EF: { name: 'Canon EF → RF 0.71× Speed Booster Adapter', lightLossStops: -1.0, notes: 'Canon-official EF-EOS R 0.71× cinema adapter widens FOV by 1/0.71 and brightens by ~1 stop. Full electronic EF compatibility.' },
     PL: { name: 'Wooden Camera PL → RF Adapter', lightLossStops: 0, notes: 'Passive PL-to-RF adapter (Wooden Camera, Vocas). Mechanical only — full sensor area available, no light loss.' },
   } },
