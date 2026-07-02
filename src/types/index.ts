@@ -9,6 +9,15 @@ export interface SensorSize {
 // ── Camera ──
 export interface Camera {
   id: string;
+  /**
+   * Stabile geraeteuebergreifende Typ-Identitaet (GUID, GDTF/DIN-SPEC-15800-
+   * analog: FixtureTypeID). Optional — gesetzt fuer Modelle, deren echte I/O im
+   * Cable-Planner-Katalog hinterlegt ist. Beim Export (cameraExport) wird sie in
+   * die camera-list geschrieben, sodass der Cable-Planner die Kamera AUTORITATIV
+   * auf ihr Datenblatt/ihre Ports aufloest, statt ueber den Modellnamen zu raten.
+   * Dieselben GUIDs stehen in cable-planner src/renderer/lib/cameraCatalog.ts.
+   */
+  deviceTypeId?: string;
   manufacturer: string;
   model: string;
   sensor: SensorSize;
