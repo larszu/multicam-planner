@@ -13,7 +13,8 @@ function cam(overrides: Partial<VenueCamera>): VenueCamera {
 }
 
 const f55: Camera = {
-  id: 'sony-pmw-f55', manufacturer: 'Sony', model: 'PMW-F55',
+  id: 'sony-pmw-f55', deviceTypeId: 'eb02ca7e-856c-40ab-9a73-d1e98110f003',
+  manufacturer: 'Sony', model: 'PMW-F55',
   sensor: { widthMm: 24, heightMm: 12.7 } as Camera['sensor'],
   mount: 'FZ', resolutions: ['4K'], type: 'cinema',
 };
@@ -30,6 +31,8 @@ describe('cameraExport (MultiCam → Cable)', () => {
     expect(ex.cameras[0]).toMatchObject({
       id: 'c1', label: 'CAM 1', manufacturer: 'Sony', model: 'PMW-F55', x: 5, y: 7,
     });
+    // Stabile Geraetetyp-ID wird mitgegeben, damit Cable autoritativ aufloest.
+    expect(ex.cameras[0].deviceTypeId).toBe('eb02ca7e-856c-40ab-9a73-d1e98110f003');
   });
 
   it('Round-Trip durch parseCameraList', () => {

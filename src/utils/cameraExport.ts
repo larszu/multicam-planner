@@ -19,6 +19,10 @@ export interface CameraListEntry {
   label: string;
   manufacturer?: string;
   model?: string;
+  /** Stabile Geraetetyp-Identitaet (GUID, GDTF-analog). Wenn gesetzt, loest der
+   *  Cable-Planner die Kamera AUTORITATIV auf ihr Datenblatt/ihre Ports auf,
+   *  statt ueber Hersteller/Modell-Namen zu raten. */
+  deviceTypeId?: string;
   x?: number; // Meter im Venue (von links)
   y?: number; // Meter im Venue (von oben)
 }
@@ -48,6 +52,7 @@ export function toCameraList(
       return {
         id: c.id, label: c.label,
         manufacturer: def?.manufacturer, model: def?.model,
+        deviceTypeId: def?.deviceTypeId,
         x: c.x, y: c.y,
       };
     }),
