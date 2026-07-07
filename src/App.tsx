@@ -12,7 +12,8 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { getExportRegistry } from './store/exportRegistry';
 import { loadJSON, saveJSON } from './utils/storage';
 import { Suspense, useState, useRef, useCallback, useEffect } from 'react';
-import { FiChevronLeft, FiChevronRight, FiMaximize2, FiMinimize2, FiMinus, FiX } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiMaximize2, FiMinimize2, FiMinus, FiX, FiBox } from 'react-icons/fi';
+import { InventoryDialog } from './inventory/InventoryDialog';
 import { Layout, Model, TabNode, Actions } from 'flexlayout-react';
 import type { IJsonModel, ITabSetRenderValues, TabSetNode, BorderNode, ILayoutApi } from 'flexlayout-react';
 import 'flexlayout-react/style/dark.css';
@@ -160,6 +161,7 @@ function useLayoutModel() {
 export default function App() {
   const { sidebarCollapsed, setSidebarCollapsed } = useStore();
   const [sidebarTab, setSidebarTab] = useState<'cameras' | 'templates'>('cameras');
+  const [inventoryOpen, setInventoryOpen] = useState(false);
   const [model, setModel] = useLayoutModel();
   const [layoutEpoch, setLayoutEpoch] = useState(0);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('focus');
@@ -467,6 +469,17 @@ export default function App() {
 
       <ExportPanel />
       <StartupAssistant />
+
+      {/* Lager / Bestand — projektübergreifend, App-kompatibel via avplan-inventory */}
+      <button
+        type="button"
+        onClick={() => setInventoryOpen(true)}
+        title="Lager / Bestand"
+        className="fixed bottom-4 left-4 z-[150] flex items-center gap-1.5 rounded-full border border-bc-border bg-bc-panel px-3 py-2 text-sm text-gray-200 shadow-lg hover:bg-bc-border"
+      >
+        <FiBox size={16} /> Lager
+      </button>
+      <InventoryDialog open={inventoryOpen} onClose={() => setInventoryOpen(false)} />
     </div>
     </ErrorBoundary>
   );
