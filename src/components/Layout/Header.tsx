@@ -8,6 +8,7 @@ import type { ProjectFile } from '../../types';
 import { useRef, useCallback, useState, useEffect } from 'react';
 import type { ExportMode } from '../Export/ExportPanel';
 import type { EditMode } from '../../types';
+import ZoomControl from './ZoomControl';
 
 const tabs: { id: string; label: string; icon: React.ReactNode }[] = [
   { id: 'tab-2d', label: '2D Plan', icon: <FiLayout size={16} /> },
@@ -449,6 +450,7 @@ export default function Header({
         <input ref={fileInputRef} type="file" accept=".mcplan,.json" className="hidden" onChange={handleFileChange} />
         <input ref={venueInputRef} type="file" accept=".venue.json,.json" className="hidden" onChange={handleVenueFileChange} />
         <input ref={avplanInputRef} type="file" accept=".avplan,.json" className="hidden" onChange={handleAvplanFileChange} />
+        <ZoomControl />
         <span className="text-xs text-gray-500 hidden lg:inline">v{APP_VERSION}</span>
       </div>
     </header>
