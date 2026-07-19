@@ -18,6 +18,22 @@
   box-sizing: border-box;
 }
 
+/* Tailwind v4 Preflight entfernt den Default `cursor: pointer` auf Buttons
+   (in v3 war er noch gesetzt). Nach der v3->v4-Migration (f4faf02) fuehlten
+   sich dadurch ~alle Buttons "weniger interaktiv" an. Hier global wiederher-
+   gestellt, wie es das alte Tailwind-Preflight tat. */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+label[for] {
+  cursor: pointer;
+}
+
+/* v4 rendert Platzhalter dezenter; wir setzen die vertraute Graustufe zurueck. */
+::placeholder {
+  color: #6b7280;
+  opacity: 1;
+}
+
 html, body, #root {
   height: 100%;
   width: 100%;
