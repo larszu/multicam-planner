@@ -29,6 +29,19 @@ interface PreviewPreset {
   y?: number;
 }
 const PREVIEW_PRESETS_KEY = 'multicam-preview-presets';
+const PREVIEW_TRANSITION_MODE_KEY = 'multicam-preview-transition-mode';
+const PREVIEW_TRANSITION_SEC_KEY = 'multicam-preview-transition-sec';
+
+// Transition-Time (#62 Punkt 4): das Anfahren eines Presets. OFF springt hart,
+// sonst wird mit Ease-in/out von der aktuellen Pose (A) zum Preset (B) gefahren.
+type TransitionMode = 'off' | 'fast' | 'slow' | 'manual';
+const TRANSITION_PRESET_SECONDS: Record<'off' | 'fast' | 'slow', number> = { off: 0, fast: 3, slow: 10 };
+const TRANSITION_LABEL: Record<TransitionMode, string> = { off: 'OFF', fast: 'Schnell', slow: 'Langsam', manual: 'Manuell' };
+const TRANSITION_CYCLE: TransitionMode[] = ['off', 'fast', 'slow', 'manual'];
+// Kubische Ease-in/out-Kurve: sanftes Beschleunigen + Abbremsen.
+function easeInOut(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
 
 interface PreviewProps {
   undocked: boolean;
@@ -60,6 +73,13 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   const [manualAperture, setManualAperture] = useState(false);
   const [manualApMin, setManualApMin] = useState(0.1);
   const [manualApMax, setManualApMax] = useState(32);
+  // Transition-Time (#62 Punkt 4): Modus + Manuell-Zeit, global persistiert.
+  const [transitionMode, setTransitionMode] = useState<TransitionMode>(() => loadJSON<TransitionMode>(PREVIEW_TRANSITION_MODE_KEY, 'off'));
+  const [transitionSeconds, setTransitionSeconds] = useState<number>(() => loadJSON<number>(PREVIEW_TRANSITION_SEC_KEY, 6));
+  // Laufende Preset-Fahrt (requestAnimationFrame-Handle), zum Abbrechen.
+  const transitionRaf = useRef<number | null>(null);
+  // Laufende Fahrt beim Unmount abbrechen.
+  useEffect(() => () => { if (transitionRaf.current !== null) cancelAnimationFrame(transitionRaf.current); }, []);
   // Optical presets (issue #47), persisted globally.
   const [presets, setPresets] = useState<PreviewPreset[]>(() => loadJSON<PreviewPreset[]>(PREVIEW_PRESETS_KEY, []));
   const persistPresets = useCallback((next: PreviewPreset[]) => { setPresets(next); saveJSON(PREVIEW_PRESETS_KEY, next); }, []);
@@ -1131,24 +1151,64 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       pan: cam.pan, tilt: cam.tilt, z: cam.z, trackOffset: cam.trackOffset, x: cam.x, y: cam.y,
     }]);
   };
+  // Fahrt von der aktuellen Pose (A) zum Ziel-Patch (B) ueber `seconds` mit
+  // Ease-in/out. Jeder numerische Parameter wird einzeln interpoliert. `seconds`
+  // <= 0 springt hart. Eine laufende Fahrt wird vorher abgebrochen (#62 Punkt 4).
+  const runTransition = (camId: string, target: Partial<VenueCamera>, seconds: number) => {
+    if (transitionRaf.current !== null) { cancelAnimationFrame(transitionRaf.current); transitionRaf.current = null; }
+    const durationMs = Math.max(0, seconds) * 1000;
+    if (durationMs <= 0) { useStore.getState().updateCamera(camId, target); return; }
+    const start = useStore.getState().cameras.find((c) => c.id === camId);
+    if (!start) { useStore.getState().updateCamera(camId, target); return; }
+    // A/B-Paare nur fuer numerische Zielwerte mit numerischem Startwert.
+    const keys = (Object.keys(target) as (keyof VenueCamera)[]).filter(
+      (k) => typeof target[k] === 'number' && typeof start[k] === 'number',
+    );
+    const from: Partial<Record<keyof VenueCamera, number>> = {};
+    keys.forEach((k) => { from[k] = start[k] as number; });
+    const startTs = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - startTs) / durationMs);
+      const e = easeInOut(t);
+      const patch: Partial<VenueCamera> = {};
+      keys.forEach((k) => {
+        const a = from[k] as number;
+        const b = target[k] as number;
+        (patch[k] as number) = a + (b - a) * e;
+      });
+      useStore.getState().updateCamera(camId, patch);
+      if (t < 1) {
+        transitionRaf.current = requestAnimationFrame(tick);
+      } else {
+        transitionRaf.current = null;
+        useStore.getState().updateCamera(camId, target); // exakte Endwerte + Nicht-Numerisches
+      }
+    };
+    transitionRaf.current = requestAnimationFrame(tick);
+  };
   const applyPreset = (p: PreviewPreset) => {
     // Optische Werte immer, raeumliche nur wenn im Preset vorhanden (Abwaerts-
     // kompatibilitaet zu aelteren, rein optischen Presets).
-    const patch: Partial<VenueCamera> = { focalLength: p.focalLength, aperture: p.aperture, focusDistance: p.focusDistance, lockedPersonId: undefined };
-    if (p.pan !== undefined) patch.pan = p.pan;
-    if (p.tilt !== undefined) patch.tilt = p.tilt;
-    if (p.z !== undefined) patch.z = p.z;
-    if (p.trackOffset !== undefined) patch.trackOffset = p.trackOffset;
-    if (p.x !== undefined) patch.x = p.x;
-    if (p.y !== undefined) patch.y = p.y;
-    useStore.getState().updateCamera(cam.id, patch);
+    const target: Partial<VenueCamera> = { focalLength: p.focalLength, aperture: p.aperture, focusDistance: p.focusDistance, lockedPersonId: undefined };
+    if (p.pan !== undefined) target.pan = p.pan;
+    if (p.tilt !== undefined) target.tilt = p.tilt;
+    if (p.z !== undefined) target.z = p.z;
+    if (p.trackOffset !== undefined) target.trackOffset = p.trackOffset;
+    if (p.x !== undefined) target.x = p.x;
+    if (p.y !== undefined) target.y = p.y;
     // A preset can hold a focal length outside the lens's native range, so make
-    // sure the slider can represent it.
+    // sure the slider can represent it (vor der Fahrt setzen).
     if (lensDef && (p.focalLength < lensDef.focalLengthMin || p.focalLength > lensDef.focalLengthMax)) {
       setManualZoom(true);
       setManualMin((m) => Math.min(m, Math.floor(p.focalLength)));
       setManualMax((m) => Math.max(m, Math.ceil(p.focalLength)));
     }
+    // Focus-Lock sofort loesen, damit die Fahrt nicht dagegen arbeitet.
+    useStore.getState().updateCamera(cam.id, { lockedPersonId: undefined });
+    const secs = transitionMode === 'off' ? 0
+      : transitionMode === 'manual' ? Math.max(0, transitionSeconds)
+      : TRANSITION_PRESET_SECONDS[transitionMode];
+    runTransition(cam.id, target, secs);
   };
   const deletePreset = (id: string) => persistPresets(presets.filter((p) => p.id !== id));
 
@@ -1389,6 +1449,37 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           <button onClick={addPreset} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-gray-500 hover:text-bc-accent hover:border-bc-accent" title="Save current focal length / aperture / focus as a preset">
             <FiPlus size={10} /> Add
           </button>
+        </div>
+
+        {/* Transition-Time (#62 Punkt 4): steuert, wie ein Preset angefahren wird. */}
+        <div className="px-2 flex items-center gap-2">
+          <span className="text-[10px] text-gray-500">Transition-Time</span>
+          <button
+            onClick={() => {
+              const next = TRANSITION_CYCLE[(TRANSITION_CYCLE.indexOf(transitionMode) + 1) % TRANSITION_CYCLE.length];
+              setTransitionMode(next);
+              saveJSON(PREVIEW_TRANSITION_MODE_KEY, next);
+            }}
+            title="Umschalten: OFF (springt) / Schnell 3s / Langsam 10s / Manuell"
+            className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${transitionMode === 'off' ? 'border-bc-border text-gray-500 hover:text-gray-300' : 'border-bc-accent text-bc-accent bg-bc-accent/10'}`}
+          >
+            {TRANSITION_LABEL[transitionMode]}
+          </button>
+          <input
+            type="number" min={0} max={120} step={0.5}
+            value={transitionMode === 'manual' ? transitionSeconds : (transitionMode === 'off' ? 0 : TRANSITION_PRESET_SECONDS[transitionMode])}
+            onChange={(e) => {
+              // Zeit editieren schaltet auf Manuell und uebernimmt den Wert.
+              const v = Math.max(0, Math.min(120, parseFloat(e.target.value) || 0));
+              setTransitionMode('manual');
+              setTransitionSeconds(v);
+              saveJSON(PREVIEW_TRANSITION_MODE_KEY, 'manual');
+              saveJSON(PREVIEW_TRANSITION_SEC_KEY, v);
+            }}
+            className="w-14 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-[10px] text-gray-300 font-mono"
+            title="Fahrtzeit in Sekunden (Bearbeiten schaltet auf Manuell)"
+          />
+          <span className="text-[10px] text-gray-600">s</span>
         </div>
       </div>
 
