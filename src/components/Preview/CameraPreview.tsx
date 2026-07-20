@@ -39,6 +39,11 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   const [manualZoom, setManualZoom] = useState(false);
   const [manualMin, setManualMin] = useState(1);
   const [manualMax, setManualMax] = useState(500);
+  // Manual-aperture mode (issue #62): widen the aperture slider past the lens's
+  // real range (default 0.1 - 32) to preview hypothetical f-stops. Both ends editable.
+  const [manualAperture, setManualAperture] = useState(false);
+  const [manualApMin, setManualApMin] = useState(0.1);
+  const [manualApMax, setManualApMax] = useState(32);
   // Optical presets (issue #47), persisted globally.
   const [presets, setPresets] = useState<PreviewPreset[]>(() => loadJSON<PreviewPreset[]>(PREVIEW_PRESETS_KEY, []));
   const persistPresets = useCallback((next: PreviewPreset[]) => { setPresets(next); saveJSON(PREVIEW_PRESETS_KEY, next); }, []);
@@ -1264,6 +1269,61 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
               />
             ) : (
               <span className="text-[10px] text-gray-500 w-14 text-right font-mono">{lensDef?.focalLengthMax ?? '?'}mm</span>
+            )}
+          </div>
+        </div>
+
+        {/* Aperture (Blende) slider (#62) — between Zoom and Focus. Manual mode
+            widens the range past the lens's real f-stops (0.1 - 32), both ends editable. */}
+        <div className="px-2">
+          <div className="flex items-center justify-between mb-0.5">
+            <span className="text-[10px] text-gray-500">Blende · <span className="font-mono text-gray-300">f/{cam.aperture.toFixed(1)}</span></span>
+            <button
+              onClick={() => setManualAperture((on) => {
+                const next = !on;
+                if (!next) {
+                  // Leaving manual mode: clamp back into the lens's real range.
+                  const wide = lensDef?.maxApertureWide ?? 1.4;
+                  const clamped = Math.min(22, Math.max(wide, cam.aperture));
+                  if (clamped !== cam.aperture) useStore.getState().updateCamera(cam.id, { aperture: clamped });
+                }
+                return next;
+              })}
+              title="Temporarily scrub the aperture beyond the lens's real range"
+              className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${manualAperture ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
+            >
+              Manual{manualAperture ? ' · ON' : ''}
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            {manualAperture ? (
+              <input
+                type="number" min={0.1} max={manualApMax - 0.1} step={0.1} value={manualApMin}
+                onChange={(e) => setManualApMin(Math.max(0.1, Math.min(manualApMax - 0.1, parseFloat(e.target.value) || 0.1)))}
+                className="w-14 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-[10px] text-gray-300 font-mono"
+                title="Manual minimum aperture (f-stop)"
+              />
+            ) : (
+              <span className="text-[10px] text-gray-500 w-14 font-mono">f/{(lensDef?.maxApertureWide ?? 1.4).toFixed(1)}</span>
+            )}
+            <input
+              type="range"
+              min={manualAperture ? manualApMin : (lensDef?.maxApertureWide ?? 1.4)}
+              max={manualAperture ? manualApMax : 22}
+              step={0.1}
+              value={cam.aperture}
+              onChange={(e) => useStore.getState().updateCamera(cam.id, { aperture: parseFloat(e.target.value) })}
+              className="flex-1 accent-bc-accent"
+            />
+            {manualAperture ? (
+              <input
+                type="number" min={manualApMin + 0.1} max={64} step={0.1} value={manualApMax}
+                onChange={(e) => setManualApMax(Math.max(manualApMin + 0.1, Math.min(64, parseFloat(e.target.value) || 32)))}
+                className="w-14 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-[10px] text-gray-300 font-mono text-right"
+                title="Manual maximum aperture (f-stop)"
+              />
+            ) : (
+              <span className="text-[10px] text-gray-500 w-14 text-right font-mono">f/22</span>
             )}
           </div>
         </div>
