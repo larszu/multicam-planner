@@ -28,36 +28,44 @@ function AccordionHeader({
   /** Optionale Aktions-Buttons rechts (z. B. bei Cameras). */
   right?: React.ReactNode;
 }) {
+  // Hinweis: die App hat ein globales `* { padding: 0 }` (unlayered), das saemtliche
+  // Tailwind `p-*`-Utilities aussticht. Deshalb werden Padding/Mindesthoehe hier per
+  // Inline-Style gesetzt (Inline gewinnt gegen alles) — sonst waere die Klickflaeche
+  // nur ~24px hoch und ohne linken Einzug. gap wird von der Regel nicht beruehrt.
   return (
     <div className="flex items-center">
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="group flex flex-1 items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-white/[0.04]"
+        style={{ minHeight: '44px', padding: '10px 14px' }}
+        className="group flex flex-1 items-center gap-2.5 text-left transition-colors hover:bg-white/[0.06]"
       >
         <span
-          className={`grid h-6 w-6 shrink-0 place-items-center rounded-md transition-colors ${
-            open ? 'bg-bc-accent/15 text-bc-accent' : 'bg-bc-dark text-gray-500 group-hover:text-gray-300'
+          className={`grid h-7 w-7 shrink-0 place-items-center rounded-md transition-colors ${
+            open ? 'bg-bc-accent/20 text-bc-accent' : 'bg-bc-dark text-gray-400 group-hover:text-gray-200'
           }`}
         >
           {icon}
         </span>
         <span
-          className={`text-[13px] font-semibold transition-colors ${
-            open ? 'text-white' : 'text-gray-300 group-hover:text-white'
+          className={`text-[13.5px] font-semibold transition-colors ${
+            open ? 'text-white' : 'text-gray-100 group-hover:text-white'
           }`}
         >
           {title}
         </span>
         {count !== undefined && (
-          <span className="rounded-full bg-bc-dark px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-gray-400">
+          <span
+            style={{ padding: '2px 7px' }}
+            className="rounded-full bg-bc-dark text-[10.5px] font-semibold tabular-nums text-gray-300"
+          >
             {count}
           </span>
         )}
         <FiChevronDown
-          size={15}
-          className={`ml-auto shrink-0 transition-transform duration-200 ${open ? 'rotate-180 text-gray-300' : 'text-gray-500'}`}
+          size={17}
+          className={`ml-auto shrink-0 transition-transform duration-200 ${open ? 'rotate-180 text-gray-200' : 'text-gray-400'}`}
         />
       </button>
       {right && <div className="flex items-center gap-1 pr-2">{right}</div>}
@@ -1027,7 +1035,7 @@ export default function Sidebar() {
           onToggle={() => setVenueOpen(!venueOpen)}
         />
         {venueOpen && (
-          <div className="px-3 pb-3 space-y-2 text-xs">
+          <div className="space-y-2 text-xs" style={{ padding: '0 14px 12px' }}>
             <label className="block">
               <span className="text-gray-400">Name</span>
               <input
@@ -1081,7 +1089,7 @@ export default function Sidebar() {
           onToggle={() => setStagesOpen(!stagesOpen)}
         />
         {stagesOpen && (
-          <div className="px-3 pb-3 space-y-2 text-xs">
+          <div className="space-y-2 text-xs" style={{ padding: '0 14px 12px' }}>
             {venue.stages.map((s) => (
               <div key={s.id} className="bg-bc-dark rounded p-2 border border-bc-border">
                 <div className="flex items-center justify-between mb-1">
@@ -1137,7 +1145,7 @@ export default function Sidebar() {
           onToggle={() => setBgOpen(!bgOpen)}
         />
         {bgOpen && (
-          <div className="px-3 pb-3 space-y-2 text-xs">
+          <div className="space-y-2 text-xs" style={{ padding: '0 14px 12px' }}>
             <input ref={fileInputRef} type="file" accept="image/*,.pdf,application/pdf" className="hidden" onChange={handleBgUpload} />
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -1284,7 +1292,7 @@ export default function Sidebar() {
           onToggle={() => setWallsOpen(!wallsOpen)}
         />
         {wallsOpen && (
-          <div className="px-3 pb-3 space-y-2 text-xs">
+          <div className="space-y-2 text-xs" style={{ padding: '0 14px 12px' }}>
             <button
               onClick={() => setWallDrawMode((active) => !active)}
               className={`flex items-center gap-1 px-2 py-1 rounded text-xs w-full justify-center ${wallDrawMode ? 'bg-bc-yellow/20 text-bc-yellow hover:bg-bc-yellow/30' : 'bg-bc-dark text-gray-300 hover:text-white border border-bc-border'}`}
@@ -1384,7 +1392,7 @@ export default function Sidebar() {
           onToggle={() => setPersonsOpen(!personsOpen)}
         />
         {personsOpen && (
-          <div className="px-3 pb-3 space-y-2 text-xs">
+          <div className="space-y-2 text-xs" style={{ padding: '0 14px 12px' }}>
             {persons.map((p) => {
               const icon =
                 p.objectType === 'drums' ? '🥁' :
@@ -1453,32 +1461,37 @@ export default function Sidebar() {
 
       {/* Camera list — nicht klappbar, aber gleicher Header-Stil wie das Akkordeon */}
       <div className="flex-1 overflow-y-auto flex flex-col">
-        <div className="flex items-center gap-2.5 px-3 py-2.5">
-          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-bc-accent/15 text-bc-accent">
+        <div className="flex items-center gap-2.5" style={{ minHeight: '44px', padding: '10px 14px' }}>
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-bc-accent/20 text-bc-accent">
             <FiVideo size={14} />
           </span>
-          <span className="text-[13px] font-semibold text-white">Cameras</span>
-          <span className="rounded-full bg-bc-dark px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-gray-400">
+          <span className="text-[13.5px] font-semibold text-white">Cameras</span>
+          <span
+            style={{ padding: '2px 7px' }}
+            className="rounded-full bg-bc-dark text-[10.5px] font-semibold tabular-nums text-gray-300"
+          >
             {cameras.length}
           </span>
           <div className="ml-auto flex items-center gap-1">
             <button
               onClick={toggleShowAllFov}
-              className="p-1.5 rounded hover:bg-bc-border text-gray-400 hover:text-white"
+              style={{ padding: '6px' }}
+              className="rounded hover:bg-bc-border text-gray-400 hover:text-white"
               title={showAllFov ? 'Hide all FOV' : 'Show all FOV'}
             >
-              {showAllFov ? <FiEye size={14} /> : <FiEyeOff size={14} />}
+              {showAllFov ? <FiEye size={15} /> : <FiEyeOff size={15} />}
             </button>
             <button
               onClick={() => addCamera()}
-              className="flex items-center gap-1 px-2 py-1 rounded bg-bc-accent text-white text-xs font-semibold hover:bg-bc-accent/80"
+              style={{ padding: '5px 10px' }}
+              className="flex items-center gap-1 rounded bg-bc-accent text-white text-xs font-semibold hover:bg-bc-accent/80"
             >
               <FiPlus size={12} /> Add
             </button>
           </div>
         </div>
 
-        <div className="px-3 pb-3">
+        <div style={{ padding: '0 14px 12px' }}>
           {cameras.map((cam) => (
             <CameraCard key={cam.id} camId={cam.id} />
           ))}
