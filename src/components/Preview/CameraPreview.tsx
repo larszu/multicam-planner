@@ -5,13 +5,29 @@ import { computeFov, computeDof } from '../../utils/fov';
 import { effectiveCameraPos } from '../../utils/camera';
 import { getExportRegistry } from '../../store/exportRegistry';
 import { useRef, useEffect, useLayoutEffect, useCallback, useState } from 'react';
-import type { StageObjectType } from '../../types';
+import type { StageObjectType, VenueCamera } from '../../types';
 import { FiChevronLeft, FiChevronRight, FiUnlock, FiLock, FiPlus, FiX } from 'react-icons/fi';
 import { loadJSON, saveJSON } from '../../utils/storage';
 
 // Preview optical presets (issue #47) — snapshots of focal length / aperture /
 // focus distance the operator can recall. Persisted globally in localStorage.
-interface PreviewPreset { id: string; name: string; focalLength: number; aperture: number; focusDistance: number; }
+// Preview preset (#47, erweitert #62 Punkt 3). Neben den optischen Werten
+// werden jetzt auch die raeumlichen Kamera-Parameter gespeichert (Pan, Tilt,
+// Hoehe, Track, X, Y). Die raeumlichen Felder sind optional, damit aeltere,
+// bereits gespeicherte Presets (nur optisch) weiterhin laden und anwendbar bleiben.
+interface PreviewPreset {
+  id: string;
+  name: string;
+  focalLength: number;
+  aperture: number;
+  focusDistance: number;
+  pan?: number;
+  tilt?: number;
+  z?: number;          // Hoehe in Metern
+  trackOffset?: number; // Track (Dolly/Jib), Meter
+  x?: number;
+  y?: number;
+}
 const PREVIEW_PRESETS_KEY = 'multicam-preview-presets';
 
 interface PreviewProps {
@@ -1109,10 +1125,23 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   const addPreset = () => {
     const name = window.prompt('Preset name:', `${cam.focalLength.toFixed(0)}mm f/${cam.aperture.toFixed(1)}`);
     if (!name) return;
-    persistPresets([...presets, { id: Date.now().toString(36), name: name.trim(), focalLength: cam.focalLength, aperture: cam.aperture, focusDistance: cam.focusDistance }]);
+    persistPresets([...presets, {
+      id: Date.now().toString(36), name: name.trim(),
+      focalLength: cam.focalLength, aperture: cam.aperture, focusDistance: cam.focusDistance,
+      pan: cam.pan, tilt: cam.tilt, z: cam.z, trackOffset: cam.trackOffset, x: cam.x, y: cam.y,
+    }]);
   };
   const applyPreset = (p: PreviewPreset) => {
-    useStore.getState().updateCamera(cam.id, { focalLength: p.focalLength, aperture: p.aperture, focusDistance: p.focusDistance, lockedPersonId: undefined });
+    // Optische Werte immer, raeumliche nur wenn im Preset vorhanden (Abwaerts-
+    // kompatibilitaet zu aelteren, rein optischen Presets).
+    const patch: Partial<VenueCamera> = { focalLength: p.focalLength, aperture: p.aperture, focusDistance: p.focusDistance, lockedPersonId: undefined };
+    if (p.pan !== undefined) patch.pan = p.pan;
+    if (p.tilt !== undefined) patch.tilt = p.tilt;
+    if (p.z !== undefined) patch.z = p.z;
+    if (p.trackOffset !== undefined) patch.trackOffset = p.trackOffset;
+    if (p.x !== undefined) patch.x = p.x;
+    if (p.y !== undefined) patch.y = p.y;
+    useStore.getState().updateCamera(cam.id, patch);
     // A preset can hold a focal length outside the lens's native range, so make
     // sure the slider can represent it.
     if (lensDef && (p.focalLength < lensDef.focalLengthMin || p.focalLength > lensDef.focalLengthMax)) {
@@ -1353,7 +1382,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           <span className="text-[10px] text-gray-500">Presets</span>
           {presets.map((p) => (
             <span key={p.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-gray-300 hover:border-bc-accent">
-              <button onClick={() => applyPreset(p)} title={`${p.focalLength.toFixed(0)}mm · f/${p.aperture.toFixed(1)} · ${p.focusDistance.toFixed(1)}m`}>{p.name}</button>
+              <button onClick={() => applyPreset(p)} title={`${p.focalLength.toFixed(0)}mm · f/${p.aperture.toFixed(1)} · ${p.focusDistance.toFixed(1)}m${p.pan !== undefined ? ` · Pos (Pan ${p.pan.toFixed(0)}° Tilt ${p.tilt?.toFixed(0)}° H ${p.z?.toFixed(1)}m)` : ''}`}>{p.name}{p.pan !== undefined && <span className="ml-0.5 text-bc-accent" title="enthaelt Kamera-Position">◈</span>}</button>
               <button onClick={() => deletePreset(p.id)} className="text-gray-600 hover:text-bc-red" title="Delete preset"><FiX size={10} /></button>
             </span>
           ))}
