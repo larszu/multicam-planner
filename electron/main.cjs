@@ -11,7 +11,14 @@ function createMainWindow() {
     minHeight: 720,
     autoHideMenuBar: true,
     backgroundColor: '#0f1117',
-    icon: path.join(__dirname, '..', 'build', 'icon.png'),
+    // Running-app window / taskbar icon. In the packaged app `build/` is NOT
+    // inside the asar (it's not in build.files), so the dev path would resolve
+    // to nothing and the app would fall back to the default Electron icon.
+    // electron-builder's extraResources copies build/icon.png to
+    // <resources>/icon.png, so point there when packaged.
+    icon: app.isPackaged
+      ? path.join(process.resourcesPath, 'icon.png')
+      : path.join(__dirname, '..', 'build', 'icon.png'),
     webPreferences: {
       contextIsolation: true,
       sandbox: true,
