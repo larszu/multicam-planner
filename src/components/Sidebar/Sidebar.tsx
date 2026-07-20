@@ -2,7 +2,7 @@ import { useStore, OBJECT_PRESETS } from '../../store/useStore';
 import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor, getCoverageStatus, getSpeedBooster, speedBoosterExists } from '../../data/cameras';
 import { LENSES, getLensById, getCompatibleLenses, pickInitialMountAndLens } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
-import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2, FiRotateCcw } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2, FiRotateCcw, FiHome, FiImage, FiColumns, FiUsers, FiVideo } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { BackgroundPlan, StageObjectType, Camera, CameraMountType, WallPattern } from '../../types';
 import { MOUNT_TYPE_LABELS, MOUNT_HEIGHT_RANGE } from '../../types';
@@ -10,6 +10,60 @@ import { CustomCameraForm } from './CustomCameraForm';
 import { CalculationBreakdown } from './CalculationBreakdown';
 import AiPlanAnalysis from './AiPlanAnalysis';
 import * as pdfjsLib from 'pdfjs-dist';
+
+/**
+ * Einheitlicher Akkordeon-Kopf fuer die linke Sidebar. Icon im getoenten
+ * Quadrat (Akzent, wenn offen), Titel mit Hover-/Offen-Zustaenden, optionaler
+ * Zaehler als Pill, ein rotierendes Chevron. Ersetzt die frueher uneinheitlichen
+ * Header (fehlende/gemischte Icons, das rohe "▇"-Zeichen, nackte "(n)"-Zaehler).
+ */
+function AccordionHeader({
+  icon, title, count, open, onToggle, right,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  count?: number;
+  open: boolean;
+  onToggle: () => void;
+  /** Optionale Aktions-Buttons rechts (z. B. bei Cameras). */
+  right?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="group flex flex-1 items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-white/[0.04]"
+      >
+        <span
+          className={`grid h-6 w-6 shrink-0 place-items-center rounded-md transition-colors ${
+            open ? 'bg-bc-accent/15 text-bc-accent' : 'bg-bc-dark text-gray-500 group-hover:text-gray-300'
+          }`}
+        >
+          {icon}
+        </span>
+        <span
+          className={`text-[13px] font-semibold transition-colors ${
+            open ? 'text-white' : 'text-gray-300 group-hover:text-white'
+          }`}
+        >
+          {title}
+        </span>
+        {count !== undefined && (
+          <span className="rounded-full bg-bc-dark px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-gray-400">
+            {count}
+          </span>
+        )}
+        <FiChevronDown
+          size={15}
+          className={`ml-auto shrink-0 transition-transform duration-200 ${open ? 'rotate-180 text-gray-300' : 'text-gray-500'}`}
+        />
+      </button>
+      {right && <div className="flex items-center gap-1 pr-2">{right}</div>}
+    </div>
+  );
+}
 
 /** Group lenses by mount for the dropdown */
 function groupByMount(lenses: typeof LENSES) {
@@ -965,16 +1019,15 @@ export default function Sidebar() {
   return (
     <div className="w-80 bg-bc-panel border-r border-bc-border h-full flex flex-col overflow-y-auto">
       {/* Venue settings */}
-      <div className="p-3 border-b border-bc-border">
-        <button
-          className="flex items-center justify-between w-full text-sm text-white font-semibold"
-          onClick={() => setVenueOpen(!venueOpen)}
-        >
-          <span>Venue Settings</span>
-          {venueOpen ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-        </button>
+      <div className={`border-b border-bc-border/60 ${venueOpen ? 'bg-white/[0.015]' : ''}`}>
+        <AccordionHeader
+          icon={<FiHome size={14} />}
+          title="Venue Settings"
+          open={venueOpen}
+          onToggle={() => setVenueOpen(!venueOpen)}
+        />
         {venueOpen && (
-          <div className="mt-2 space-y-2 text-xs">
+          <div className="px-3 pb-3 space-y-2 text-xs">
             <label className="block">
               <span className="text-gray-400">Name</span>
               <input
@@ -1019,16 +1072,16 @@ export default function Sidebar() {
       </div>
 
       {/* Stages management */}
-      <div className="p-3 border-b border-bc-border">
-        <button
-          className="flex items-center justify-between w-full text-sm text-white font-semibold"
-          onClick={() => setStagesOpen(!stagesOpen)}
-        >
-          <span><FiMap className="inline mr-1" size={13} />Stages ({venue.stages.length})</span>
-          {stagesOpen ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-        </button>
+      <div className={`border-b border-bc-border/60 ${stagesOpen ? 'bg-white/[0.015]' : ''}`}>
+        <AccordionHeader
+          icon={<FiMap size={14} />}
+          title="Stages"
+          count={venue.stages.length}
+          open={stagesOpen}
+          onToggle={() => setStagesOpen(!stagesOpen)}
+        />
         {stagesOpen && (
-          <div className="mt-2 space-y-2 text-xs">
+          <div className="px-3 pb-3 space-y-2 text-xs">
             {venue.stages.map((s) => (
               <div key={s.id} className="bg-bc-dark rounded p-2 border border-bc-border">
                 <div className="flex items-center justify-between mb-1">
@@ -1076,16 +1129,15 @@ export default function Sidebar() {
       </div>
 
       {/* Background plan */}
-      <div className="p-3 border-b border-bc-border">
-        <button
-          className="flex items-center justify-between w-full text-sm text-white font-semibold"
-          onClick={() => setBgOpen(!bgOpen)}
-        >
-          <span><FiUpload className="inline mr-1" size={13} />Floor Plan</span>
-          {bgOpen ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-        </button>
+      <div className={`border-b border-bc-border/60 ${bgOpen ? 'bg-white/[0.015]' : ''}`}>
+        <AccordionHeader
+          icon={<FiImage size={14} />}
+          title="Floor Plan"
+          open={bgOpen}
+          onToggle={() => setBgOpen(!bgOpen)}
+        />
         {bgOpen && (
-          <div className="mt-2 space-y-2 text-xs">
+          <div className="px-3 pb-3 space-y-2 text-xs">
             <input ref={fileInputRef} type="file" accept="image/*,.pdf,application/pdf" className="hidden" onChange={handleBgUpload} />
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -1223,16 +1275,16 @@ export default function Sidebar() {
 
 
       {/* Walls */}
-      <div className="p-3 border-b border-bc-border">
-        <button
-          className="flex items-center justify-between w-full text-sm text-white font-semibold"
-          onClick={() => setWallsOpen(!wallsOpen)}
-        >
-          <span>▇ Walls ({walls.length})</span>
-          {wallsOpen ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-        </button>
+      <div className={`border-b border-bc-border/60 ${wallsOpen ? 'bg-white/[0.015]' : ''}`}>
+        <AccordionHeader
+          icon={<FiColumns size={14} />}
+          title="Walls"
+          count={walls.length}
+          open={wallsOpen}
+          onToggle={() => setWallsOpen(!wallsOpen)}
+        />
         {wallsOpen && (
-          <div className="mt-2 space-y-2 text-xs">
+          <div className="px-3 pb-3 space-y-2 text-xs">
             <button
               onClick={() => setWallDrawMode((active) => !active)}
               className={`flex items-center gap-1 px-2 py-1 rounded text-xs w-full justify-center ${wallDrawMode ? 'bg-bc-yellow/20 text-bc-yellow hover:bg-bc-yellow/30' : 'bg-bc-dark text-gray-300 hover:text-white border border-bc-border'}`}
@@ -1323,16 +1375,16 @@ export default function Sidebar() {
       </div>
 
       {/* Persons & Stage Objects */}
-      <div className="p-3 border-b border-bc-border">
-        <button
-          className="flex items-center justify-between w-full text-sm text-white font-semibold"
-          onClick={() => setPersonsOpen(!personsOpen)}
-        >
-          <span><FiUser className="inline mr-1" size={13} />Objects & Persons ({persons.length})</span>
-          {personsOpen ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
-        </button>
+      <div className={`border-b border-bc-border/60 ${personsOpen ? 'bg-white/[0.015]' : ''}`}>
+        <AccordionHeader
+          icon={<FiUsers size={14} />}
+          title="Objects & Persons"
+          count={persons.length}
+          open={personsOpen}
+          onToggle={() => setPersonsOpen(!personsOpen)}
+        />
         {personsOpen && (
-          <div className="mt-2 space-y-2 text-xs">
+          <div className="px-3 pb-3 space-y-2 text-xs">
             {persons.map((p) => {
               const icon =
                 p.objectType === 'drums' ? '🥁' :
@@ -1399,11 +1451,17 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* Camera list */}
-      <div className="flex-1 p-3 overflow-y-auto">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm text-white font-semibold">Cameras ({cameras.length})</span>
-          <div className="flex gap-1">
+      {/* Camera list — nicht klappbar, aber gleicher Header-Stil wie das Akkordeon */}
+      <div className="flex-1 overflow-y-auto flex flex-col">
+        <div className="flex items-center gap-2.5 px-3 py-2.5">
+          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-bc-accent/15 text-bc-accent">
+            <FiVideo size={14} />
+          </span>
+          <span className="text-[13px] font-semibold text-white">Cameras</span>
+          <span className="rounded-full bg-bc-dark px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-gray-400">
+            {cameras.length}
+          </span>
+          <div className="ml-auto flex items-center gap-1">
             <button
               onClick={toggleShowAllFov}
               className="p-1.5 rounded hover:bg-bc-border text-gray-400 hover:text-white"
@@ -1420,13 +1478,15 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {cameras.map((cam) => (
-          <CameraCard key={cam.id} camId={cam.id} />
-        ))}
+        <div className="px-3 pb-3">
+          {cameras.map((cam) => (
+            <CameraCard key={cam.id} camId={cam.id} />
+          ))}
 
-        {cameras.length === 0 && (
-          <p className="text-gray-500 text-xs text-center mt-8">No cameras. Click "Add" or load a template.</p>
-        )}
+          {cameras.length === 0 && (
+            <p className="text-gray-500 text-xs text-center mt-8">No cameras. Click "Add" or load a template.</p>
+          )}
+        </div>
       </div>
 
       {/* Bottom actions */}
