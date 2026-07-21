@@ -36,6 +36,8 @@ type HeaderProps = {
   onDragNewPanel: (tabId: string, event: DragEvent) => void;
   layoutPresetOptions: { id: string; label: string }[];
   layoutMode: 'focus' | 'grid' | 'custom';
+  /** Oeffnet den Lager-/Bestand-Dialog (projektuebergreifend). */
+  onOpenInventory: () => void;
 };
 
 export default function Header({
@@ -47,6 +49,7 @@ export default function Header({
   onDragNewPanel,
   layoutPresetOptions,
   layoutMode,
+  onOpenInventory,
 }: HeaderProps) {
   const { venue, projectVersion, lastSavedVersion, saveProject, loadProject, editMode, setEditMode, avForeign, showForeign, toggleShowForeign } = useStore();
   const hasForeignLighting = !!(avForeign.lighting && Array.isArray((avForeign.lighting as { fixtures?: unknown }).fixtures) && (avForeign.lighting as { fixtures: unknown[] }).fixtures.length > 0);
@@ -373,6 +376,10 @@ export default function Header({
         <button onClick={handleLoad} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors" title="Open project file">
           <FiUpload size={14} />
           <span className="hidden sm:inline">Open</span>
+        </button>
+        <button onClick={onOpenInventory} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors" title="Lager / Bestand — projektübergreifender Equipment-Bestand (QR/Barcode, Cases, App-übergreifend)">
+          <FiBox size={14} />
+          <span className="hidden md:inline">Lager</span>
         </button>
         <button onClick={handleExportAvplan} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-gray-400 hover:text-white hover:bg-bc-border transition-colors" title="Export full combined project (.avplan) — venue + cameras + lighting + cabling, lossless across all three apps">
           <FiBox size={14} />
