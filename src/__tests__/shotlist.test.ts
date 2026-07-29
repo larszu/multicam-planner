@@ -13,7 +13,13 @@ import {
   shotTargetFromState,
   stepShotIndex,
 } from '../utils/shot';
-import { contactSheetSize, shotOpticsLabel, shotTransitionLabel, buildStoryboardHtml } from '../utils/storyboard';
+import {
+  buildStoryboardHtml,
+  contactSheetSize,
+  sheetColumns,
+  shotOpticsLabel,
+  shotTransitionLabel,
+} from '../utils/storyboard';
 import type { Shot, Shotlist, VenueCamera } from '../types';
 
 // Shotlist-/Storyboard-Tool (#62 Punkt 5). Getestet ist die reine Logik:
@@ -179,11 +185,21 @@ describe('Storyboard-Aufbereitung', () => {
     expect(shotTransitionLabel(shot({ transition: 'manual', transitionSeconds: 7 }))).toBe('Manuell (7s)');
   });
 
-  it('waechst der Kontaktbogen zeilenweise mit der Shot-Zahl', () => {
-    const one = contactSheetSize(1);
-    const four = contactSheetSize(4); // 3 Spalten -> 2 Zeilen
-    expect(four.width).toBe(one.width);
-    expect(four.height).toBeGreaterThan(one.height);
+  it('bleibt bei wenigen Shots schmal statt rechts leer zu laufen', () => {
+    // 1–2 Shots ergaben frueher trotzdem einen 3-spaltigen Bogen mit toter
+    // Flaeche rechts. Jetzt waechst die Breite mit der Shot-Zahl bis max. 3.
+    expect(sheetColumns(1)).toBe(1);
+    expect(sheetColumns(2)).toBe(2);
+    expect(sheetColumns(3)).toBe(3);
+    expect(sheetColumns(7)).toBe(3);
+    expect(contactSheetSize(2).width).toBeLessThan(contactSheetSize(3).width);
+  });
+
+  it('waechst der Kontaktbogen zeilenweise, sobald die Spalten voll sind', () => {
+    const three = contactSheetSize(3); // 3 Spalten, 1 Zeile
+    const four = contactSheetSize(4); // 3 Spalten, 2 Zeilen
+    expect(four.width).toBe(three.width);
+    expect(four.height).toBeGreaterThan(three.height);
   });
 
   it('behaelt auch fuer 0 Shots eine gueltige Groesse', () => {

@@ -134,9 +134,9 @@ export default function ShotlistPanel() {
       return;
     }
     if (!res.hadThumbnail) {
-      // Der Framegrab braucht einen sichtbaren Preview-Canvas. Im Focus-Layout
-      // ist immer nur ein Tab sichtbar — daher der Hinweis auf die Rasteransicht.
-      flash('Shot gespeichert — ohne Bild. Fuer Framegrabs im Preview-Tab aufnehmen oder die Rasteransicht nutzen.');
+      // Sollte dank Offscreen-Render praktisch nie passieren — nur wenn gar
+      // keine Preview gemountet ist (z. B. Panel allein im Grid-Preset).
+      flash('Shot gespeichert — ohne Bild (Preview nicht verfuegbar).');
     }
   }, [flash]);
 

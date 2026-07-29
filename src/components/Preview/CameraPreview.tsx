@@ -103,6 +103,8 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   // Cache projected person positions during draw() so the click handler can hit-test
   // without re-projecting everything itself.
   const projectedPersons = useRef<{ id: string; sx: number; sy: number; topSy: number; dist: number }[]>([]);
+  // Spiegel von projectedPersons.current.length fuer die Render-Phase.
+  const [projectedCount, setProjectedCount] = useState(0);
 
   // ── Locked-person focus tracker ──
   // When cam.lockedPersonId is set, the focus distance follows that target as
@@ -123,10 +125,14 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     }
   }, [cam?.lockedPersonId, cam?.x, cam?.y, cam?.z, cam?.focusDistance, cam?.id, cam?.trackOffset, cam?.pan, persons, cam]);
 
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
+  // `target` rendert in einen uebergebenen (auch nicht im DOM haengenden) Canvas
+  // mit fester Breite. Gebraucht fuer Shotlist-Framegrabs, wenn der Preview-Tab
+  // gerade nicht sichtbar ist und der eigene Canvas darum 0 px breit waere.
+  const draw = useCallback((target?: { canvas: HTMLCanvasElement; cssW: number }) => {
+    const canvas = target?.canvas ?? canvasRef.current;
     const wrap = wrapRef.current;
-    if (!canvas || !wrap || !cam) return;
+    if (!canvas || !cam) return;
+    if (!target && !wrap) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -136,10 +142,12 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
 
     const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex, cam.activeMount);
 
-    // HiDPI: size canvas to container at device pixel ratio
-    const dpr = window.devicePixelRatio || 1;
-    const rect = wrap.getBoundingClientRect();
-    const cssW = rect.width;
+    // HiDPI: size canvas to container at device pixel ratio.
+    // Offscreen (target) rendern wir bei dpr 1 in fester Breite — das Thumbnail
+    // wird ohnehin auf 320 px verkleinert.
+    const dpr = target ? 1 : (window.devicePixelRatio || 1);
+    const cssW = target ? target.cssW : wrap!.getBoundingClientRect().width;
+    if (!(cssW > 0)) return; // versteckter Tab: nichts zu zeichnen
     const cssH = Math.round(cssW * 9 / 16);
     canvas.width = Math.round(cssW * dpr);
     canvas.height = Math.round(cssH * dpr);
@@ -991,6 +999,11 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     ctx.textAlign = 'right';
     ctx.fillText(`P ${cam.pan.toFixed(1)}°  T ${cam.tilt.toFixed(1)}°`, W - vRulerW - 8, 16);
 
+    // Anzahl sichtbarer Personen in State spiegeln, damit das Render sie lesen
+    // kann ohne auf den Ref zuzugreifen (Refs sind waehrend des Renders tabu und
+    // loesen kein Re-Render aus). Gleicher Wert => React bricht ab, kein Loop.
+    if (!target) setProjectedCount(projectedPersons.current.length);
+
   }, [cam, venue, persons, walls, cameras, showGrid, showSafeAreas, showThirds, showCrosshair, getWallImage, imageTick]);
 
   // Repaint synchronously after every render so pan/tilt drags update the canvas
@@ -1027,6 +1040,27 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
 
     return () => { registry.capturePreviewCanvas = null; };
   }, []);
+
+  // Offscreen-Render fuer Shotlist-Framegrabs (#62 Punkt 5): funktioniert auch,
+  // wenn der Preview-Tab gerade versteckt ist (dann ist der sichtbare Canvas
+  // 0 px breit und `capturePreviewCanvas` liefert nichts).
+  useEffect(() => {
+    const registry = getExportRegistry();
+    registry.renderPreviewOffscreen = (cssWidth = 640) => {
+      const canvas = document.createElement('canvas');
+      // `draw` schreibt beim normalen Lauf die projizierten Personen in den Ref
+      // (Hit-Testing der sichtbaren Ansicht). Der Offscreen-Lauf hat eine andere
+      // Groesse — deshalb den Stand sichern und danach zurueckspielen.
+      const saved = projectedPersons.current;
+      try {
+        draw({ canvas, cssW: cssWidth });
+      } finally {
+        projectedPersons.current = saved;
+      }
+      return canvas.width > 0 && canvas.height > 0 ? canvas : null;
+    };
+    return () => { registry.renderPreviewOffscreen = null; };
+  }, [draw]);
 
   // ── PTZ Mouse Controls ──
   const dragStart = useRef({ x: 0, y: 0 });
@@ -1268,7 +1302,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
               <FiLock size={10} /> Unlock {persons.find((p) => p.id === cam.lockedPersonId)?.label ?? 'subject'}
             </button>
           )}
-          {!cam.lockedPersonId && projectedPersons.current.length > 0 && (
+          {!cam.lockedPersonId && projectedCount > 0 && (
             <button
               onClick={() => {
                 // Lock to the projected person nearest the crosshair (centre).

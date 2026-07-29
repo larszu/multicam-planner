@@ -15,7 +15,13 @@ const TILE_H = THUMB_H + TEXT_H;
 const GAP = 16;
 const PAD = 28;
 const HEADER_H = 64;
-const COLS = 3;
+const MAX_COLS = 3;
+
+/** Tatsaechliche Spaltenzahl: bei 1–2 Shots schmaler, damit rechts keine tote
+ *  Flaeche steht. Ab 3 Shots immer 3 Spalten. */
+export function sheetColumns(shotCount: number): number {
+  return Math.max(1, Math.min(MAX_COLS, shotCount || 1));
+}
 
 /** Kurzbeschreibung der Optik einer Kachel, z. B. "35mm · f/2.8 · 4.2m". */
 export function shotOpticsLabel(shot: Shot): string {
@@ -32,9 +38,10 @@ export function shotTransitionLabel(shot: Shot): string {
 
 /** Gesamthoehe des Bogens fuer n Shots — auch fuer Tests nutzbar. */
 export function contactSheetSize(shotCount: number): { width: number; height: number } {
-  const rows = Math.max(1, Math.ceil(shotCount / COLS));
+  const cols = sheetColumns(shotCount);
+  const rows = Math.max(1, Math.ceil(shotCount / cols));
   return {
-    width: PAD * 2 + COLS * TILE_W + (COLS - 1) * GAP,
+    width: PAD * 2 + cols * TILE_W + (cols - 1) * GAP,
     height: PAD * 2 + HEADER_H + rows * TILE_H + (rows - 1) * GAP,
   };
 }
@@ -92,9 +99,10 @@ export async function renderStoryboardSheet(
   // Bilder parallel laden, damit der Bogen nicht seriell auf jedes wartet.
   const images = await Promise.all(shots.map((s) => (s.thumbnail ? loadImage(s.thumbnail) : null)));
 
+  const cols = sheetColumns(shots.length);
   shots.forEach((shot, i) => {
-    const col = i % COLS;
-    const row = Math.floor(i / COLS);
+    const col = i % cols;
+    const row = Math.floor(i / cols);
     const x = PAD + col * (TILE_W + GAP);
     const y = PAD + HEADER_H + row * (TILE_H + GAP);
 

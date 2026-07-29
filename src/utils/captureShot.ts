@@ -34,7 +34,16 @@ export function captureCurrentShot(): CaptureShotResult {
 
   const shotlistId = state.activeShotlistId ?? state.addShotlist('Shotlist 1');
 
-  const canvas = getExportRegistry().capturePreviewCanvas?.() ?? null;
+  // Bevorzugt offscreen rendern statt den sichtbaren Canvas zu kopieren.
+  //
+  // Grund: ein nie gezeichneter <canvas> ist NICHT 0x0, sondern per HTML-Default
+  // 300x150. `capturePreviewCanvas` prueft nur auf 0 und liefert dann ein
+  // schwarzes Bild zurueck, wenn der Preview-Tab noch nie sichtbar war — der
+  // Shot bekaeme also stillschweigend einen leeren Framegrab. Der Offscreen-
+  // Render zeichnet dagegen denselben Zustand garantiert frisch und in fester
+  // Groesse, egal welcher Tab gerade vorne ist.
+  const registry = getExportRegistry();
+  const canvas = registry.renderPreviewOffscreen?.() ?? registry.capturePreviewCanvas?.() ?? null;
   const thumbnail = makeThumbnail(canvas) ?? undefined;
 
   const shotId = useStore.getState().addShot(shotlistId, {
