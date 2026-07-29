@@ -290,7 +290,51 @@ export interface DofResult {
 }
 
 // ── Tab views ──
-export type ViewTab = '2d' | '3d' | 'preview' | 'calculator';
+export type ViewTab = '2d' | '3d' | 'preview' | 'calculator' | 'shotlist';
+
+// ── Shotlist / Storyboard (#62 Punkt 5) ──
+// Ein Preset ist ein einzelner Kamera-Zustand; ein Shot ist derselbe Zustand,
+// aber benannt, bebildert (Framegrab) und Teil einer geordneten Sequenz. Die
+// Shotlist faehrt die Shots der Reihe nach an — mit derselben Transition-Engine
+// wie die Presets (#62 Punkt 4) — und laesst sich als Storyboard exportieren.
+
+/** Eingefrorener Kamera-Zustand eines Shots (die Preset-Parameter aus Punkt 3). */
+export interface ShotState {
+  x: number;
+  y: number;
+  z: number;
+  pan: number;
+  tilt: number;
+  focalLength: number;
+  aperture: number;
+  focusDistance: number;
+  trackOffset: number;
+}
+
+/** Wie ein Shot angefahren wird. `off` springt hart. */
+export type ShotTransition = 'off' | 'fast' | 'slow' | 'manual';
+
+export interface Shot {
+  id: string;
+  /** Freier Name, z. B. "WS Buehne", "CU Saenger". */
+  name: string;
+  /** Auf welche VenueCamera sich der Shot bezieht (`VenueCamera.id`). */
+  cameraId: string;
+  state: ShotState;
+  transition: ShotTransition;
+  /** Nur bei `transition === 'manual'` relevant. */
+  transitionSeconds?: number;
+  /** Framegrab als data-URL. Klein gehalten (JPEG), damit localStorage reicht. */
+  thumbnail?: string;
+  /** Regie-/Kamera-Notiz. */
+  note?: string;
+}
+
+export interface Shotlist {
+  id: string;
+  name: string;
+  shots: Shot[];
+}
 
 // ── Edit mode (issue #43) ──
 // A top-bar slider restricts editing to one category at a time so a plan can be

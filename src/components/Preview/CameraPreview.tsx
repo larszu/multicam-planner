@@ -5,9 +5,16 @@ import { computeFov, computeDof } from '../../utils/fov';
 import { effectiveCameraPos } from '../../utils/camera';
 import { getExportRegistry } from '../../store/exportRegistry';
 import { useRef, useEffect, useLayoutEffect, useCallback, useState } from 'react';
-import type { StageObjectType, VenueCamera } from '../../types';
-import { FiChevronLeft, FiChevronRight, FiUnlock, FiLock, FiPlus, FiX } from 'react-icons/fi';
+import type { ShotTransition, StageObjectType, VenueCamera } from '../../types';
+import { FiChevronLeft, FiChevronRight, FiUnlock, FiLock, FiPlus, FiX, FiCamera } from 'react-icons/fi';
 import { loadJSON, saveJSON } from '../../utils/storage';
+import {
+  TRANSITION_CYCLE,
+  TRANSITION_LABEL,
+  TRANSITION_PRESET_SECONDS,
+  runCameraTransition,
+} from '../../utils/cameraTransition';
+import { captureCurrentShot } from '../../utils/captureShot';
 
 // Preview optical presets (issue #47) — snapshots of focal length / aperture /
 // focus distance the operator can recall. Persisted globally in localStorage.
@@ -32,16 +39,10 @@ const PREVIEW_PRESETS_KEY = 'multicam-preview-presets';
 const PREVIEW_TRANSITION_MODE_KEY = 'multicam-preview-transition-mode';
 const PREVIEW_TRANSITION_SEC_KEY = 'multicam-preview-transition-sec';
 
-// Transition-Time (#62 Punkt 4): das Anfahren eines Presets. OFF springt hart,
-// sonst wird mit Ease-in/out von der aktuellen Pose (A) zum Preset (B) gefahren.
-type TransitionMode = 'off' | 'fast' | 'slow' | 'manual';
-const TRANSITION_PRESET_SECONDS: Record<'off' | 'fast' | 'slow', number> = { off: 0, fast: 3, slow: 10 };
-const TRANSITION_LABEL: Record<TransitionMode, string> = { off: 'OFF', fast: 'Schnell', slow: 'Langsam', manual: 'Manuell' };
-const TRANSITION_CYCLE: TransitionMode[] = ['off', 'fast', 'slow', 'manual'];
-// Kubische Ease-in/out-Kurve: sanftes Beschleunigen + Abbremsen.
-function easeInOut(t: number): number {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
+// Transition-Time (#62 Punkt 4): das Anfahren eines Presets. Engine + Konstanten
+// liegen in utils/cameraTransition, damit die Shotlist (#62 Punkt 5) exakt
+// dieselbe Fahrt nutzt statt einer zweiten Implementierung.
+type TransitionMode = ShotTransition;
 
 interface PreviewProps {
   undocked: boolean;
@@ -76,10 +77,12 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   // Transition-Time (#62 Punkt 4): Modus + Manuell-Zeit, global persistiert.
   const [transitionMode, setTransitionMode] = useState<TransitionMode>(() => loadJSON<TransitionMode>(PREVIEW_TRANSITION_MODE_KEY, 'off'));
   const [transitionSeconds, setTransitionSeconds] = useState<number>(() => loadJSON<number>(PREVIEW_TRANSITION_SEC_KEY, 6));
-  // Laufende Preset-Fahrt (requestAnimationFrame-Handle), zum Abbrechen.
-  const transitionRaf = useRef<number | null>(null);
+  // Kurze Rueckmeldung nach 'Shot aufnehmen' (#62 Punkt 5).
+  const [shotHint, setShotHint] = useState<string | null>(null);
+  // Abbruch-Handle der laufenden Preset-Fahrt (utils/cameraTransition).
+  const transitionCancel = useRef<(() => void) | null>(null);
   // Laufende Fahrt beim Unmount abbrechen.
-  useEffect(() => () => { if (transitionRaf.current !== null) cancelAnimationFrame(transitionRaf.current); }, []);
+  useEffect(() => () => { transitionCancel.current?.(); }, []);
   // Optical presets (issue #47), persisted globally.
   const [presets, setPresets] = useState<PreviewPreset[]>(() => loadJSON<PreviewPreset[]>(PREVIEW_PRESETS_KEY, []));
   const persistPresets = useCallback((next: PreviewPreset[]) => { setPresets(next); saveJSON(PREVIEW_PRESETS_KEY, next); }, []);
@@ -1155,36 +1158,16 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   // Ease-in/out. Jeder numerische Parameter wird einzeln interpoliert. `seconds`
   // <= 0 springt hart. Eine laufende Fahrt wird vorher abgebrochen (#62 Punkt 4).
   const runTransition = (camId: string, target: Partial<VenueCamera>, seconds: number) => {
-    if (transitionRaf.current !== null) { cancelAnimationFrame(transitionRaf.current); transitionRaf.current = null; }
-    const durationMs = Math.max(0, seconds) * 1000;
-    if (durationMs <= 0) { useStore.getState().updateCamera(camId, target); return; }
+    transitionCancel.current?.();
     const start = useStore.getState().cameras.find((c) => c.id === camId);
     if (!start) { useStore.getState().updateCamera(camId, target); return; }
-    // A/B-Paare nur fuer numerische Zielwerte mit numerischem Startwert.
-    const keys = (Object.keys(target) as (keyof VenueCamera)[]).filter(
-      (k) => typeof target[k] === 'number' && typeof start[k] === 'number',
-    );
-    const from: Partial<Record<keyof VenueCamera, number>> = {};
-    keys.forEach((k) => { from[k] = start[k] as number; });
-    const startTs = performance.now();
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - startTs) / durationMs);
-      const e = easeInOut(t);
-      const patch: Partial<VenueCamera> = {};
-      keys.forEach((k) => {
-        const a = from[k] as number;
-        const b = target[k] as number;
-        (patch[k] as number) = a + (b - a) * e;
-      });
-      useStore.getState().updateCamera(camId, patch);
-      if (t < 1) {
-        transitionRaf.current = requestAnimationFrame(tick);
-      } else {
-        transitionRaf.current = null;
-        useStore.getState().updateCamera(camId, target); // exakte Endwerte + Nicht-Numerisches
-      }
-    };
-    transitionRaf.current = requestAnimationFrame(tick);
+    transitionCancel.current = runCameraTransition({
+      from: start,
+      to: target,
+      seconds,
+      apply: (patch) => useStore.getState().updateCamera(camId, patch),
+      onDone: () => { transitionCancel.current = null; },
+    });
   };
   const applyPreset = (p: PreviewPreset) => {
     // Optische Werte immer, raeumliche nur wenn im Preset vorhanden (Abwaerts-
@@ -1449,6 +1432,27 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           <button onClick={addPreset} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-gray-500 hover:text-bc-accent hover:border-bc-accent" title="Save current focal length / aperture / focus as a preset">
             <FiPlus size={10} /> Add
           </button>
+
+          {/* Shot aufnehmen (#62 Punkt 5): friert die aktuelle Ansicht inkl.
+              Framegrab als Shot in der aktiven Shotlist ein. */}
+          <button
+            onClick={() => {
+              const res = captureCurrentShot();
+              setShotHint(
+                !res.ok
+                  ? (res.reason ?? 'Aufnehmen fehlgeschlagen.')
+                  : res.hadThumbnail
+                    ? 'Shot aufgenommen.'
+                    : 'Shot gespeichert — ohne Bild.',
+              );
+              window.setTimeout(() => setShotHint(null), 2500);
+            }}
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-accent/60 text-bc-accent bg-bc-accent/10 hover:bg-bc-accent/20"
+            title="Aktuelle Ansicht als Shot in die Shotlist aufnehmen"
+          >
+            <FiCamera size={10} /> Shot aufnehmen
+          </button>
+          {shotHint && <span className="text-[10px] text-bc-yellow">{shotHint}</span>}
         </div>
 
         {/* Transition-Time (#62 Punkt 4): steuert, wie ein Preset angefahren wird. */}
