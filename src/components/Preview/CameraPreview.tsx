@@ -15,6 +15,36 @@ import {
   runCameraTransition,
 } from '../../utils/cameraTransition';
 import { captureCurrentShot } from '../../utils/captureShot';
+import LensSlider from './LensSlider';
+import {
+  formatAperture,
+  formatDistance,
+  formatFocal,
+  niceTicks,
+  stepStop,
+  stopsInRange,
+  valueToPos,
+  posToValue,
+} from '../../utils/lensScale';
+
+/** Kuerzeste sinnvolle Fokusdistanz des Reglers (m). */
+const FOCUS_MIN = 0.5;
+
+/**
+ * Eine „Stufe" entlang beliebiger Marken (Zoom/Fokus): zum naechsten Teilstrich
+ * springen. Liegt keiner mehr in der Richtung, um 1/12 der logarithmischen Bahn
+ * weitergehen — so bleibt der Schritt am Bahnende gleichmaessig statt zu klemmen.
+ */
+function stepAlong(value: number, dir: 1 | -1, min: number, max: number, ticks: number[]): number {
+  const eps = 1e-6;
+  const sorted = [...ticks].sort((a, b) => a - b);
+  const next = dir === 1
+    ? sorted.find((t) => t > value + eps)
+    : [...sorted].reverse().find((t) => t < value - eps);
+  if (next !== undefined) return next;
+  const pos = valueToPos(value, min, max) + dir * (1 / 12);
+  return Math.min(max, Math.max(min, posToValue(pos, min, max)));
+}
 
 // Preview optical presets (issue #47) — snapshots of focal length / aperture /
 // focus distance the operator can recall. Persisted globally in localStorage.
@@ -1179,6 +1209,22 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   // Upper bound for the focus-distance slider — roughly the venue diagonal.
   const focusMax = Math.max(20, Math.ceil(Math.hypot(venue.widthM, venue.heightM)));
 
+  // Effektive Regler-Grenzen: normal die echten Objektiv-Werte, im Manual-Modus
+  // die frei gesetzten. Daraus die Rastmarken der jeweiligen Bahn.
+  const zoomMin = manualZoom ? manualMin : (lensDef?.focalLengthMin ?? 4);
+  const zoomMax = manualZoom ? manualMax : (lensDef?.focalLengthMax ?? 300);
+  const apMin = manualAperture ? manualApMin : (lensDef?.maxApertureWide ?? 1.4);
+  const apMax = manualAperture ? manualApMax : 22;
+  // Bewusst ohne useMemo: das sind ein paar Array-Operationen auf hoechstens
+  // 14 Elementen — billiger als die Memoisierung selbst.
+  const zoomTicks = niceTicks(zoomMin, zoomMax);
+  const focusTicks = niceTicks(FOCUS_MIN, focusMax);
+  // Blende rastet auf die Normreihe; die Bahn-Enden kommen dazu, damit die
+  // Skala auch bei krummen Objektiv-Grenzen (f/1.7) beschriftet ist.
+  const apertureTicks = [
+    ...new Set([apMin, ...stopsInRange(apMin, apMax), apMax].map((v) => Number(v.toFixed(2)))),
+  ].sort((a, b) => a - b);
+
   const addPreset = () => {
     const name = window.prompt('Preset name:', `${cam.focalLength.toFixed(0)}mm f/${cam.aperture.toFixed(1)}`);
     if (!name) return;
@@ -1326,133 +1372,115 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           </span>
         </div>
 
-        {/* Zoom (focal length) slider — Manual mode (#47) widens the range past
-            the lens limits and makes both ends editable. */}
-        <div className="px-2">
-          <div className="flex items-center justify-between mb-0.5">
-            <span className="text-[10px] text-gray-500">Zoom · <span className="font-mono text-gray-300">{cam.focalLength.toFixed(0)}mm</span></span>
-            <button
-              onClick={() => setManualZoom((on) => {
-                const next = !on;
-                if (!next && lensDef) {
-                  const clamped = Math.min(lensDef.focalLengthMax, Math.max(lensDef.focalLengthMin, cam.focalLength));
-                  if (clamped !== cam.focalLength) useStore.getState().updateCamera(cam.id, { focalLength: clamped });
-                }
-                return next;
-              })}
-              title="Temporarily scrub focal length beyond the lens's real range"
-              className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${manualZoom ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
-            >
-              Manual{manualZoom ? ' · ON' : ''}
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            {manualZoom ? (
-              <input
-                type="number" min={1} max={manualMax - 1} value={manualMin}
-                onChange={(e) => setManualMin(Math.max(1, Math.min(manualMax - 1, parseFloat(e.target.value) || 1)))}
-                className="w-14 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-[10px] text-gray-300 font-mono"
-                title="Manual minimum focal length (mm)"
-              />
-            ) : (
-              <span className="text-[10px] text-gray-500 w-14 font-mono">{lensDef?.focalLengthMin ?? 4}mm</span>
-            )}
-            <input
-              type="range"
-              min={manualZoom ? manualMin : (lensDef?.focalLengthMin ?? 4)}
-              max={manualZoom ? manualMax : (lensDef?.focalLengthMax ?? 300)}
-              step={0.1}
-              value={cam.focalLength}
-              onChange={(e) => useStore.getState().updateCamera(cam.id, { focalLength: parseFloat(e.target.value) })}
-              className="flex-1 accent-bc-accent"
-            />
-            {manualZoom ? (
-              <input
-                type="number" min={manualMin + 1} max={2000} value={manualMax}
-                onChange={(e) => setManualMax(Math.max(manualMin + 1, Math.min(2000, parseFloat(e.target.value) || 500)))}
-                className="w-14 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-[10px] text-gray-300 font-mono text-right"
-                title="Manual maximum focal length (mm)"
-              />
-            ) : (
-              <span className="text-[10px] text-gray-500 w-14 text-right font-mono">{lensDef?.focalLengthMax ?? '?'}mm</span>
-            )}
-          </div>
-        </div>
+        {/* Zoom / Blende / Fokus — logarithmische Bahn + Rastung, siehe LensSlider.
+            Manual-Modus (#47/#62) weitet die Grenzen ueber die echte Optik hinaus. */}
+        <LensSlider
+          label="Zoom"
+          value={cam.focalLength}
+          min={zoomMin}
+          max={zoomMax}
+          ticks={zoomTicks}
+          format={formatFocal}
+          onChange={(v) => useStore.getState().updateCamera(cam.id, { focalLength: v })}
+          onStep={(dir) => useStore.getState().updateCamera(cam.id, { focalLength: stepAlong(cam.focalLength, dir, zoomMin, zoomMax, zoomTicks) })}
+          title="Brennweite — logarithmisch, rastet auf die Marken. Shift = frei, Mausrad = Stufe."
+          headerRight={
+            <>
+              {manualZoom && (
+                <>
+                  <input
+                    type="number" min={1} max={manualMax - 1} value={manualMin}
+                    onChange={(e) => setManualMin(Math.max(1, Math.min(manualMax - 1, parseFloat(e.target.value) || 1)))}
+                    className="w-12 bg-bc-dark border border-bc-border rounded px-1 text-[9px] text-gray-300 font-mono"
+                    title="Manuelles Minimum (mm)"
+                  />
+                  <input
+                    type="number" min={manualMin + 1} max={2000} value={manualMax}
+                    onChange={(e) => setManualMax(Math.max(manualMin + 1, Math.min(2000, parseFloat(e.target.value) || 500)))}
+                    className="w-12 bg-bc-dark border border-bc-border rounded px-1 text-[9px] text-gray-300 font-mono"
+                    title="Manuelles Maximum (mm)"
+                  />
+                </>
+              )}
+              <button
+                onClick={() => setManualZoom((on) => {
+                  const next = !on;
+                  if (!next && lensDef) {
+                    const clamped = Math.min(lensDef.focalLengthMax, Math.max(lensDef.focalLengthMin, cam.focalLength));
+                    if (clamped !== cam.focalLength) useStore.getState().updateCamera(cam.id, { focalLength: clamped });
+                  }
+                  return next;
+                })}
+                title="Brennweite ueber die echten Objektiv-Grenzen hinaus durchfahren"
+                className={`px-1.5 py-0.5 rounded text-[9px] font-medium border transition-colors ${manualZoom ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
+              >
+                Manual
+              </button>
+            </>
+          }
+        />
 
-        {/* Aperture (Blende) slider (#62) — between Zoom and Focus. Manual mode
-            widens the range past the lens's real f-stops (0.1 - 32), both ends editable. */}
-        <div className="px-2">
-          <div className="flex items-center justify-between mb-0.5">
-            <span className="text-[10px] text-gray-500">Blende · <span className="font-mono text-gray-300">f/{cam.aperture.toFixed(1)}</span></span>
-            <button
-              onClick={() => setManualAperture((on) => {
-                const next = !on;
-                if (!next) {
-                  // Leaving manual mode: clamp back into the lens's real range.
-                  const wide = lensDef?.maxApertureWide ?? 1.4;
-                  const clamped = Math.min(22, Math.max(wide, cam.aperture));
-                  if (clamped !== cam.aperture) useStore.getState().updateCamera(cam.id, { aperture: clamped });
-                }
-                return next;
-              })}
-              title="Temporarily scrub the aperture beyond the lens's real range"
-              className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${manualAperture ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
-            >
-              Manual{manualAperture ? ' · ON' : ''}
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            {manualAperture ? (
-              <input
-                type="number" min={0.1} max={manualApMax - 0.1} step={0.1} value={manualApMin}
-                onChange={(e) => setManualApMin(Math.max(0.1, Math.min(manualApMax - 0.1, parseFloat(e.target.value) || 0.1)))}
-                className="w-14 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-[10px] text-gray-300 font-mono"
-                title="Manual minimum aperture (f-stop)"
-              />
-            ) : (
-              <span className="text-[10px] text-gray-500 w-14 font-mono">f/{(lensDef?.maxApertureWide ?? 1.4).toFixed(1)}</span>
-            )}
-            <input
-              type="range"
-              min={manualAperture ? manualApMin : (lensDef?.maxApertureWide ?? 1.4)}
-              max={manualAperture ? manualApMax : 22}
-              step={0.1}
-              value={cam.aperture}
-              onChange={(e) => useStore.getState().updateCamera(cam.id, { aperture: parseFloat(e.target.value) })}
-              className="flex-1 accent-bc-accent"
-            />
-            {manualAperture ? (
-              <input
-                type="number" min={manualApMin + 0.1} max={64} step={0.1} value={manualApMax}
-                onChange={(e) => setManualApMax(Math.max(manualApMin + 0.1, Math.min(64, parseFloat(e.target.value) || 32)))}
-                className="w-14 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-[10px] text-gray-300 font-mono text-right"
-                title="Manual maximum aperture (f-stop)"
-              />
-            ) : (
-              <span className="text-[10px] text-gray-500 w-14 text-right font-mono">f/22</span>
-            )}
-          </div>
-        </div>
+        <LensSlider
+          label="Blende"
+          value={cam.aperture}
+          min={apMin}
+          max={apMax}
+          ticks={apertureTicks}
+          format={formatAperture}
+          formatTick={(v) => (v < 10 ? v.toFixed(1) : v.toFixed(0))}
+          onChange={(v) => useStore.getState().updateCamera(cam.id, { aperture: v })}
+          onStep={(dir) => useStore.getState().updateCamera(cam.id, { aperture: stepStop(cam.aperture, dir, apMin, apMax) })}
+          title="Blende — Normreihe in vollen Stufen (√2). Shift = stufenlos, Mausrad = eine Stufe."
+          headerRight={
+            <>
+              {manualAperture && (
+                <>
+                  <input
+                    type="number" min={0.1} max={manualApMax - 0.1} step={0.1} value={manualApMin}
+                    onChange={(e) => setManualApMin(Math.max(0.1, Math.min(manualApMax - 0.1, parseFloat(e.target.value) || 0.1)))}
+                    className="w-12 bg-bc-dark border border-bc-border rounded px-1 text-[9px] text-gray-300 font-mono"
+                    title="Manuelles Minimum (Blende)"
+                  />
+                  <input
+                    type="number" min={manualApMin + 0.1} max={64} step={0.1} value={manualApMax}
+                    onChange={(e) => setManualApMax(Math.max(manualApMin + 0.1, Math.min(64, parseFloat(e.target.value) || 32)))}
+                    className="w-12 bg-bc-dark border border-bc-border rounded px-1 text-[9px] text-gray-300 font-mono"
+                    title="Manuelles Maximum (Blende)"
+                  />
+                </>
+              )}
+              <button
+                onClick={() => setManualAperture((on) => {
+                  const next = !on;
+                  if (!next) {
+                    const wide = lensDef?.maxApertureWide ?? 1.4;
+                    const clamped = Math.min(22, Math.max(wide, cam.aperture));
+                    if (clamped !== cam.aperture) useStore.getState().updateCamera(cam.id, { aperture: clamped });
+                  }
+                  return next;
+                })}
+                title="Blende ueber die echten Objektiv-Grenzen hinaus durchfahren"
+                className={`px-1.5 py-0.5 rounded text-[9px] font-medium border transition-colors ${manualAperture ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
+              >
+                Manual
+              </button>
+            </>
+          }
+        />
 
-        {/* Focus distance slider (#47) */}
-        <div className="px-2">
-          <div className="flex items-center justify-between mb-0.5">
-            <span className="text-[10px] text-gray-500">Focus · <span className="font-mono text-gray-300">{cam.focusDistance.toFixed(1)}m</span>{cam.lockedPersonId ? ' · locked' : ''}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-gray-500 w-14 font-mono">0.5m</span>
-            <input
-              type="range"
-              min={0.5}
-              max={focusMax}
-              step={0.1}
-              value={Math.min(cam.focusDistance, focusMax)}
-              onChange={(e) => useStore.getState().updateCamera(cam.id, { focusDistance: Math.max(0.1, parseFloat(e.target.value)), lockedPersonId: undefined })}
-              className="flex-1 accent-bc-accent"
-            />
-            <span className="text-[10px] text-gray-500 w-14 text-right font-mono">{focusMax}m</span>
-          </div>
-        </div>
+        <LensSlider
+          label="Focus"
+          value={Math.min(cam.focusDistance, focusMax)}
+          min={FOCUS_MIN}
+          max={focusMax}
+          ticks={focusTicks}
+          format={formatDistance}
+          onChange={(v) => useStore.getState().updateCamera(cam.id, { focusDistance: Math.max(0.1, v), lockedPersonId: undefined })}
+          onStep={(dir) => useStore.getState().updateCamera(cam.id, { focusDistance: stepAlong(cam.focusDistance, dir, FOCUS_MIN, focusMax, focusTicks), lockedPersonId: undefined })}
+          note={cam.lockedPersonId ? 'locked' : undefined}
+          title="Fokusdistanz — nah fein, fern grob (logarithmisch). Zahl anklicken fuer direkte Eingabe."
+        />
+
 
         {/* Optical presets (#47) */}
         <div className="px-2 flex items-center gap-2 flex-wrap">
