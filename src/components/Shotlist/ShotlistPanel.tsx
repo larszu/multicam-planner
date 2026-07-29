@@ -19,6 +19,12 @@ import {
   transitionSeconds,
 } from '../../utils/cameraTransition';
 import { indexOfShot, shotTargetFromState, stepShotIndex } from '../../utils/shot';
+import {
+  MOTION_PROFILES,
+  feasibleDurationRounded,
+  profileForMount,
+} from '../../utils/motionProfile';
+import { MOUNT_TYPE_LABELS, type CameraMountType } from '../../types';
 import { exportStoryboardPng, printStoryboard, shotOpticsLabel } from '../../utils/storyboard';
 import type { Shot } from '../../types';
 
@@ -111,11 +117,14 @@ export default function ShotlistPanel() {
 
       const target = shotTargetFromState(shot.state);
       const secs = transitionSeconds(shot.transition, shot.transitionSeconds);
+      // Bewegungsstil: explizit am Shot gesetzt, sonst der der Montage.
+      const profile = profileForMount(shot.motionStyle ?? from.mountType);
 
       cancelRef.current = runCameraTransition({
         from,
         to: target,
         seconds: secs,
+        profile,
         apply: (patch) => updateCamera(shot.cameraId, patch),
         onDone: () => {
           cancelRef.current = null;
@@ -319,8 +328,16 @@ export default function ShotlistPanel() {
 
         {shots.map((shot, i) => {
           const isCurrent = shot.id === currentShotId;
-          const camGone = !cameras.some((c) => c.id === shot.cameraId);
+          const shotCam = cameras.find((c) => c.id === shot.cameraId);
+          const camGone = !shotCam;
           const secs = transitionSeconds(shot.transition, shot.transitionSeconds);
+          // Bewegungsstil + physikalische Mindestdauer auf diesem Rig. Die
+          // Fahrt geht vom aktuellen Kamerastand zum Shot — genau die Strecke,
+          // die beim Abspielen zurueckgelegt wird.
+          const effStyle: CameraMountType = shot.motionStyle ?? shotCam?.mountType ?? 'tripod';
+          const profile = profileForMount(effStyle);
+          const needS = shotCam ? feasibleDurationRounded(profile, shotCam, shot.state) : 0;
+          const tooFast = secs > 0 && needS > secs;
           return (
             <div
               key={shot.id}
@@ -404,6 +421,35 @@ export default function ShotlistPanel() {
                         className="w-12 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-[9px] text-white"
                         title="Fahrtzeit in Sekunden"
                       />
+                    )}
+                    {/* Bewegungsstil: leer = der der Montage. */}
+                    <select
+                      value={shot.motionStyle ?? ''}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => {
+                        if (!list) return;
+                        const v = e.target.value;
+                        updateShot(list.id, shot.id, {
+                          motionStyle: v ? (v as CameraMountType) : undefined,
+                        });
+                      }}
+                      className="bg-bc-panel border border-bc-border rounded px-0.5 py-0.5 text-[9px] text-gray-400 max-w-[86px]"
+                      title={`Bewegungsstil — ${profile.hint}`}
+                    >
+                      <option value="">
+                        Rig: {MOUNT_TYPE_LABELS[shotCam?.mountType ?? 'tripod']}
+                      </option>
+                      {(Object.keys(MOTION_PROFILES) as CameraMountType[]).map((m) => (
+                        <option key={m} value={m}>{MOTION_PROFILES[m].label}</option>
+                      ))}
+                    </select>
+                    {tooFast && (
+                      <span
+                        className="text-[9px] text-bc-yellow"
+                        title={`Auf einem ${profile.label} braucht diese Fahrt mindestens ${needS}s — die eingestellten ${secs}s sind physikalisch nicht zu schaffen.`}
+                      >
+                        min {needS}s
+                      </span>
                     )}
                     {camGone && (
                       <span className="text-[9px] text-bc-red" title="Die Kamera dieses Shots wurde geloescht">

@@ -94,12 +94,13 @@ export type StageObjectType =
 // height range and (for jib / dolly) a track length used by the live track
 // slider. Without it Z is unconstrained, which is fine for typing but loses
 // the "this rig physically can't go that high" check.
-export type CameraMountType = 'tripod' | 'pedestal' | 'jib' | 'dolly' | 'gimbal' | 'handheld' | 'steadicam' | 'fixed';
+export type CameraMountType = 'tripod' | 'pedestal' | 'jib' | 'technocrane' | 'dolly' | 'gimbal' | 'handheld' | 'steadicam' | 'fixed';
 
 export const MOUNT_TYPE_LABELS: Record<CameraMountType, string> = {
   tripod: 'Stativ',
   pedestal: 'Studio Pedestal',
   jib: 'Jib / Crane',
+  technocrane: 'Technocrane (teleskopierend)',
   dolly: 'Dolly',
   gimbal: 'Gimbal',
   handheld: 'Handheld',
@@ -117,6 +118,10 @@ export const MOUNT_HEIGHT_RANGE: Record<CameraMountType, { min: number; max: num
   tripod:    { min: 0.5, max: 2.2, pump: 0.05 },
   pedestal:  { min: 0.6, max: 1.8, pump: 0.4 },
   jib:       { min: 0.3, max: 6.0, pump: 1.5, track: 3.5 },
+  // Techno 22 als gaengiger Vertreter: 24' (7.3 m) Objektivhoehe ueberschlaegig,
+  // 15'6" (4.7 m) Teleskopweg. Der Arm faehrt teleskopierend ein/aus, statt nur
+  // zu schwenken — darum deutlich mehr Track als ein klassischer Jib.
+  technocrane: { min: 0.5, max: 7.3, pump: 1.5, track: 4.7 },
   dolly:     { min: 0.4, max: 1.9, pump: 0.1, track: 6.0 },
   gimbal:    { min: 0.8, max: 1.9, pump: 0.6 },
   handheld:  { min: 1.0, max: 1.9, pump: 0.8 },
@@ -324,6 +329,13 @@ export interface Shot {
   transition: ShotTransition;
   /** Nur bei `transition === 'manual'` relevant. */
   transitionSeconds?: number;
+  /**
+   * Bewegungsstil beim Anfahren. Ohne Angabe gilt der Stil der Montage, auf der
+   * die Kamera steht (`VenueCamera.mountType`) — das ist der Normalfall. Explizit
+   * gesetzt laesst sich ein Shot abweichend fahren, z. B. eine Stativ-Kamera
+   * bewusst „wie ein Dolly" traege anlaufen lassen.
+   */
+  motionStyle?: CameraMountType;
   /** Framegrab als data-URL. Klein gehalten (JPEG), damit localStorage reicht. */
   thumbnail?: string;
   /** Regie-/Kamera-Notiz. */

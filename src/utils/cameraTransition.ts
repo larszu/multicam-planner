@@ -7,6 +7,7 @@
 // Bewusst OHNE Store-Import: der Aufrufer reicht `apply` herein. Dadurch
 // bleibt das Modul rein und ohne DOM/Store-Abhaengigkeit testbar.
 import type { ShotTransition, VenueCamera } from '../types';
+import { motionEase, motionJitter, type MotionProfile } from './motionProfile';
 
 /** Sekunden je Transition-Modus. `manual` kommt vom Nutzer. */
 export const TRANSITION_PRESET_SECONDS: Record<'off' | 'fast' | 'slow', number> = {
@@ -71,6 +72,12 @@ export interface CameraTransitionOptions {
   from: VenueCamera;
   to: Partial<VenueCamera>;
   seconds: number;
+  /**
+   * Bewegungsstil der Montage. Bestimmt Zeitkurve und (bei Handheld/Steadicam)
+   * das ueberlagerte Zittern. Ohne Profil bleibt es beim neutralen kubischen
+   * Ease-in/out wie zuvor.
+   */
+  profile?: MotionProfile;
   /** Schreibt ein Zwischenbild bzw. am Ende die exakten Zielwerte. */
   apply: (patch: Partial<VenueCamera>) => void;
   /** Laeuft NUR bei regulaerem Ende, nicht beim Abbruch (Playback-Kette). */
@@ -84,7 +91,7 @@ export interface CameraTransitionOptions {
  * Playback-Kette sauber ab, statt sie im Hintergrund weiterlaufen zu lassen.
  */
 export function runCameraTransition(opts: CameraTransitionOptions): () => void {
-  const { from, to, seconds, apply, onDone } = opts;
+  const { from, to, seconds, apply, onDone, profile } = opts;
   const durationMs = Math.max(0, seconds) * 1000;
 
   if (durationMs <= 0) {
@@ -101,7 +108,17 @@ export function runCameraTransition(opts: CameraTransitionOptions): () => void {
     if (cancelled) return;
     const t = Math.min(1, (now - startTs) / durationMs);
     if (t < 1) {
-      apply(interpolateCamera(from, to, easeInOut(t)));
+      const eased = profile ? motionEase(profile, t) : easeInOut(t);
+      const patch = interpolateCamera(from, to, eased);
+      if (profile) {
+        // Zittern nur waehrend der Fahrt aufschlagen — der Zielwert unten
+        // bleibt exakt, sonst kaeme der Shot nicht dort an, wo er aufgenommen
+        // wurde.
+        const j = motionJitter(profile, t);
+        if (typeof patch.pan === 'number') patch.pan += j.pan;
+        if (typeof patch.tilt === 'number') patch.tilt += j.tilt;
+      }
+      apply(patch);
       raf = requestAnimationFrame(tick);
     } else {
       raf = null;

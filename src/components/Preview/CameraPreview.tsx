@@ -15,6 +15,7 @@ import {
   runCameraTransition,
 } from '../../utils/cameraTransition';
 import { captureCurrentShot } from '../../utils/captureShot';
+import { profileForMount } from '../../utils/motionProfile';
 import LensSlider from './LensSlider';
 import {
   formatAperture,
@@ -1245,6 +1246,8 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       from: start,
       to: target,
       seconds,
+      // Presets fahren im Stil der Montage — dieselbe Engine wie die Shotlist.
+      profile: profileForMount(start.mountType),
       apply: (patch) => useStore.getState().updateCamera(camId, patch),
       onDone: () => { transitionCancel.current = null; },
     });
