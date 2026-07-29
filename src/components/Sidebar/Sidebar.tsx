@@ -1079,63 +1079,6 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* Stages management */}
-      <div className={`border-b border-bc-border/60 ${stagesOpen ? 'bg-white/[0.015]' : ''}`}>
-        <AccordionHeader
-          icon={<FiMap size={14} />}
-          title="Stages"
-          count={venue.stages.length}
-          open={stagesOpen}
-          onToggle={() => setStagesOpen(!stagesOpen)}
-        />
-        {stagesOpen && (
-          <div className="space-y-2 text-xs" style={{ padding: '0 14px 12px' }}>
-            {venue.stages.map((s) => (
-              <div key={s.id} className="bg-bc-dark rounded p-2 border border-bc-border">
-                <div className="flex items-center justify-between mb-1">
-                  <input
-                    className="bg-transparent text-white text-xs font-semibold w-24 outline-none"
-                    value={s.label}
-                    onChange={(e) => updateStage(s.id, { label: e.target.value })}
-                  />
-                  <button onClick={() => removeStage(s.id)} className="p-0.5 hover:text-bc-red" title="Remove stage">
-                    <FiTrash2 size={12} />
-                  </button>
-                </div>
-                <div className="grid grid-cols-4 gap-1">
-                  <label>
-                    <span className="text-gray-500">X</span>
-                    <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs" value={s.x} step={0.5}
-                      onChange={(e) => updateStage(s.id, { x: parseFloat(e.target.value) || 0 })} />
-                  </label>
-                  <label>
-                    <span className="text-gray-500">Y</span>
-                    <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs" value={s.y} step={0.5}
-                      onChange={(e) => updateStage(s.id, { y: parseFloat(e.target.value) || 0 })} />
-                  </label>
-                  <label>
-                    <span className="text-gray-500">W</span>
-                    <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs" value={s.width} step={0.5}
-                      onChange={(e) => updateStage(s.id, { width: parseFloat(e.target.value) || 1 })} />
-                  </label>
-                  <label>
-                    <span className="text-gray-500">H</span>
-                    <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs" value={s.height} step={0.5}
-                      onChange={(e) => updateStage(s.id, { height: parseFloat(e.target.value) || 1 })} />
-                  </label>
-                </div>
-              </div>
-            ))}
-            <button
-              onClick={() => addStage()}
-              className="flex items-center gap-1 px-2 py-1 rounded bg-bc-accent/20 text-bc-accent text-xs hover:bg-bc-accent/30 w-full justify-center"
-            >
-              <FiPlus size={12} /> Add Stage
-            </button>
-          </div>
-        )}
-      </div>
-
       {/* Background plan */}
       <div className={`border-b border-bc-border/60 ${bgOpen ? 'bg-white/[0.015]' : ''}`}>
         <AccordionHeader
@@ -1277,6 +1220,63 @@ export default function Sidebar() {
             )}
             {/* AI floor-plan analysis (issues #39 / #40) */}
             <AiPlanAnalysis />
+          </div>
+        )}
+      </div>
+
+      {/* Stages management */}
+      <div className={`border-b border-bc-border/60 ${stagesOpen ? 'bg-white/[0.015]' : ''}`}>
+        <AccordionHeader
+          icon={<FiMap size={14} />}
+          title="Stages"
+          count={venue.stages.length}
+          open={stagesOpen}
+          onToggle={() => setStagesOpen(!stagesOpen)}
+        />
+        {stagesOpen && (
+          <div className="space-y-2 text-xs" style={{ padding: '0 14px 12px' }}>
+            {venue.stages.map((s) => (
+              <div key={s.id} className="bg-bc-dark rounded p-2 border border-bc-border">
+                <div className="flex items-center justify-between mb-1">
+                  <input
+                    className="bg-transparent text-white text-xs font-semibold w-24 outline-none"
+                    value={s.label}
+                    onChange={(e) => updateStage(s.id, { label: e.target.value })}
+                  />
+                  <button onClick={() => removeStage(s.id)} className="p-0.5 hover:text-bc-red" title="Remove stage">
+                    <FiTrash2 size={12} />
+                  </button>
+                </div>
+                <div className="grid grid-cols-4 gap-1">
+                  <label>
+                    <span className="text-gray-500">X</span>
+                    <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs" value={s.x} step={0.5}
+                      onChange={(e) => updateStage(s.id, { x: parseFloat(e.target.value) || 0 })} />
+                  </label>
+                  <label>
+                    <span className="text-gray-500">Y</span>
+                    <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs" value={s.y} step={0.5}
+                      onChange={(e) => updateStage(s.id, { y: parseFloat(e.target.value) || 0 })} />
+                  </label>
+                  <label>
+                    <span className="text-gray-500">W</span>
+                    <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs" value={s.width} step={0.5}
+                      onChange={(e) => updateStage(s.id, { width: parseFloat(e.target.value) || 1 })} />
+                  </label>
+                  <label>
+                    <span className="text-gray-500">H</span>
+                    <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs" value={s.height} step={0.5}
+                      onChange={(e) => updateStage(s.id, { height: parseFloat(e.target.value) || 1 })} />
+                  </label>
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={() => addStage()}
+              className="flex items-center gap-1 px-2 py-1 rounded bg-bc-accent/20 text-bc-accent text-xs hover:bg-bc-accent/30 w-full justify-center"
+            >
+              <FiPlus size={12} /> Add Stage
+            </button>
           </div>
         )}
       </div>
