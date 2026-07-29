@@ -1381,6 +1381,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           max={zoomMax}
           ticks={zoomTicks}
           format={formatFocal}
+          unit="mm"
           onChange={(v) => useStore.getState().updateCamera(cam.id, { focalLength: v })}
           onStep={(dir) => useStore.getState().updateCamera(cam.id, { focalLength: stepAlong(cam.focalLength, dir, zoomMin, zoomMax, zoomTicks) })}
           title="Brennweite — logarithmisch, rastet auf die Marken. Shift = frei, Mausrad = Stufe."
@@ -1427,6 +1428,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           max={apMax}
           ticks={apertureTicks}
           format={formatAperture}
+          prefix="f/"
           formatTick={(v) => (v < 10 ? v.toFixed(1) : v.toFixed(0))}
           onChange={(v) => useStore.getState().updateCamera(cam.id, { aperture: v })}
           onStep={(dir) => useStore.getState().updateCamera(cam.id, { aperture: stepStop(cam.aperture, dir, apMin, apMax) })}
@@ -1475,6 +1477,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           max={focusMax}
           ticks={focusTicks}
           format={formatDistance}
+          unit="m"
           onChange={(v) => useStore.getState().updateCamera(cam.id, { focusDistance: Math.max(0.1, v), lockedPersonId: undefined })}
           onStep={(dir) => useStore.getState().updateCamera(cam.id, { focusDistance: stepAlong(cam.focusDistance, dir, FOCUS_MIN, focusMax, focusTicks), lockedPersonId: undefined })}
           note={cam.lockedPersonId ? 'locked' : undefined}

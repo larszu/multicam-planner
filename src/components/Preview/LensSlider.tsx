@@ -27,6 +27,10 @@ export interface LensSliderProps {
   /** Nur diese Punkte rasten; sonst rasten alle `ticks`. */
   snapPoints?: number[];
   format: (v: number) => string;
+  /** Zeichen vor der Zahl im Eingabefeld, z. B. "f/". */
+  prefix?: string;
+  /** Einheit hinter dem Eingabefeld, z. B. "mm" / "m". */
+  unit?: string;
   /** Kurzform fuer die Skalenbeschriftung (Default: `format`). */
   formatTick?: (v: number) => string;
   onChange: (v: number) => void;
@@ -50,6 +54,8 @@ export default function LensSlider({
   ticks,
   snapPoints,
   format,
+  prefix,
+  unit,
   formatTick,
   onChange,
   onStep,
@@ -58,8 +64,10 @@ export default function LensSlider({
   disabled,
   title,
 }: LensSliderProps) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState('');
+  // `draft === null` heisst: Feld zeigt den echten Wert. Beim Tippen haelt es
+  // die RohEingabe, damit Zwischenstaende wie "1." nicht sofort umgerechnet
+  // (und dadurch zerstoert) werden. Beim Kamerawechsel greift wieder der Wert.
+  const [draft, setDraft] = useState<string | null>(null);
   const shiftRef = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -74,9 +82,7 @@ export default function LensSlider({
     };
   }, []);
 
-  useEffect(() => {
-    if (editing) inputRef.current?.select();
-  }, [editing]);
+
 
   const snapCandidates = snapPoints ?? ticks;
 
@@ -113,11 +119,16 @@ export default function LensSlider({
     return () => el.removeEventListener('wheel', onWheel);
   }, [disabled, onStep]);
 
+  /** Uebernimmt die Eingabe; ungueltiges verwirft sie stillschweigend. */
   const submitDraft = useCallback(() => {
+    if (draft === null) return;
     const parsed = parseFloat(draft.replace(',', '.'));
     if (Number.isFinite(parsed)) onChange(Math.min(max, Math.max(min, parsed)));
-    setEditing(false);
+    setDraft(null);
   }, [draft, max, min, onChange]);
+
+  /** Was im Feld steht: waehrend des Tippens der Rohtext, sonst der Wert. */
+  const fieldText = draft ?? String(Number(value.toFixed(2)));
 
   const pos = Math.round(valueToPos(value, min, max) * POS_STEPS);
   const fmtTick = formatTick ?? format;
@@ -127,37 +138,63 @@ export default function LensSlider({
   return (
     <div className="px-2" title={title}>
       <div className="flex items-center justify-between mb-0.5">
-        <span className="text-[10px] text-gray-500">
-          {label} ·{' '}
-          {editing ? (
+        <span className="text-[10px] text-gray-500 flex items-center gap-1">
+          {label}
+          {/* Immer sichtbares Zahlenfeld statt Klick-zum-Bearbeiten: per Tab
+              erreichbar, Werte lassen sich so ohne Maus von Kamera zu Kamera
+              uebertragen. Slider = grob, Feld = exakt (belegtes Hybrid-Muster). */}
+          <span className="inline-flex items-center">
+            {prefix ? <span className="text-gray-500 font-mono">{prefix}</span> : null}
             <input
               ref={inputRef}
-              value={draft}
+              value={fieldText}
+              disabled={disabled}
+              inputMode="decimal"
+              onFocus={(e) => e.currentTarget.select()}
               onChange={(e) => setDraft(e.target.value)}
               onBlur={submitDraft}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') submitDraft();
-                if (e.key === 'Escape') setEditing(false);
+                if (e.key === 'Enter') {
+                  submitDraft();
+                  // Enter haengt die drei Felder zu einer Kette: Wert tippen,
+                  // Enter, naechster Wert — ohne zur Maus zu greifen. Genau der
+                  // Ablauf, wenn mehrere Kameras gleich eingestellt werden.
+                  const fields = Array.from(
+                    document.querySelectorAll<HTMLInputElement>('[data-lens-field]'),
+                  );
+                  const i = fields.indexOf(e.currentTarget);
+                  const next = fields[i + (e.shiftKey ? -1 : 1)];
+                  if (next) { next.focus(); next.select(); }
+                  else e.currentTarget.select();
+                } else if (e.key === 'Escape') {
+                  setDraft(null);
+                  e.currentTarget.blur();
+                } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                  // Im Feld steppt Pfeil hoch/runter eine ganze Stufe — sonst
+                  // wuerde der Browser nur im Text navigieren.
+                  e.preventDefault();
+                  setDraft(null);
+                  onStep(e.key === 'ArrowUp' ? -1 : 1);
+                }
               }}
-              className="w-16 bg-bc-dark border border-bc-accent rounded px-1 text-[10px] text-white font-mono"
+              className={`w-11 bg-bc-dark border rounded px-1 text-[10px] font-mono text-right outline-none transition-colors ${
+                draft !== null
+                  ? 'border-bc-accent text-white'
+                  : 'border-bc-border/60 text-gray-300 hover:border-bc-accent/60 focus:border-bc-accent'
+              }`}
+              title={`${label} direkt eingeben — Enter uebernimmt, Pfeil hoch/runter = eine Stufe`}
+              aria-label={`${label} Wert`}
+              data-lens-field
             />
-          ) : (
-            <button
-              onClick={() => { setDraft(String(Number(value.toFixed(2)))); setEditing(true); }}
-              className="font-mono text-gray-300 hover:text-bc-accent underline decoration-dotted underline-offset-2"
-              title="Wert direkt eingeben"
-              disabled={disabled}
-            >
-              {format(value)}
-            </button>
-          )}
-          {note ? <span className="text-gray-600"> · {note}</span> : null}
+            {unit ? <span className="text-gray-500 font-mono ml-0.5">{unit}</span> : null}
+          </span>
+          {note ? <span className="text-gray-600">· {note}</span> : null}
         </span>
         <div className="flex items-center gap-1">
-          <button className={stepBtn} onClick={() => onStep(-1)} disabled={disabled} title="Eine Stufe zurueck">
+          <button className={stepBtn} tabIndex={-1} onClick={() => onStep(-1)} disabled={disabled} title="Eine Stufe zurueck">
             <FiMinus size={10} />
           </button>
-          <button className={stepBtn} onClick={() => onStep(1)} disabled={disabled} title="Eine Stufe weiter">
+          <button className={stepBtn} tabIndex={-1} onClick={() => onStep(1)} disabled={disabled} title="Eine Stufe weiter">
             <FiPlus size={10} />
           </button>
           {headerRight}
@@ -178,7 +215,10 @@ export default function LensSlider({
           aria-valuetext={format(value)}
         />
         {/* Skala: Rastpunkte an ihrer echten (logarithmischen) Position. */}
-        <div className="relative h-3 select-none pointer-events-none">
+        {/* Skala: Marken sind anklickbar. Fuer die Blende ist das faktisch die
+            diskrete Stufenauswahl, die echte Objektive haben — ohne den
+            stufenlosen Manual-Modus zu verlieren. */}
+        <div className="relative h-3 select-none">
           {ticks.map((t, i) => {
             const p = valueToPos(t, min, max) * 100;
             const active = Math.abs(t - value) < 1e-6;
@@ -189,16 +229,21 @@ export default function LensSlider({
             const shift = isFirst ? 'translate-x-0' : isLast ? '-translate-x-full' : '-translate-x-1/2';
             const tickAlign = isFirst ? 'ml-0' : isLast ? 'mr-0 ml-auto' : 'mx-auto';
             return (
-              <span
+              <button
                 key={`${t}-${i}`}
-                className={`absolute top-0 ${shift} text-[8px] font-mono leading-none ${
+                type="button"
+                tabIndex={-1}
+                disabled={disabled}
+                onClick={() => onChange(t)}
+                className={`absolute top-0 ${shift} text-[8px] font-mono leading-none hover:text-bc-accent ${
                   active ? 'text-bc-accent' : 'text-gray-600'
                 }`}
                 style={{ left: `${p}%` }}
+                title={`Auf ${fmtTick(t)} setzen`}
               >
                 <span className={`block w-px h-1 ${tickAlign} bg-current opacity-60`} />
                 {fmtTick(t)}
-              </span>
+              </button>
             );
           })}
         </div>
