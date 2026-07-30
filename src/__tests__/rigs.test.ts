@@ -180,10 +180,24 @@ describe('rigLimits — Rangfolge der Quellen', () => {
     expect(clampHeight(l, 99)).toBe(l.maxHeightM);
     expect(clampHeight(l, -5)).toBe(l.minHeightM);
 
+    // 4 m gelegte Schiene = 2 m Fahrweg nach jeder Seite (Mitte = Parkposition).
     const d = rigLimits({ mountType: 'dolly', trackLengthM: 4 });
-    expect(clampTrack(d, 99)).toBe(4);
-    expect(clampTrack(d, -99)).toBe(-4);
+    expect(clampTrack(d, 99)).toBe(2);
+    expect(clampTrack(d, -99)).toBe(-2);
     expect(clampTrack(rigLimits({ mountType: 'tripod' }), 5)).toBe(0);
+  });
+
+  it('trennt Schienenlaenge und Fahrweg', () => {
+    // Bei der Schiene ist die Angabe die gelegte Strecke — der Wagen faehrt
+    // von der Mitte aus nur die Haelfte in jede Richtung.
+    const rail = rigLimits({ mountType: 'dolly', trackLengthM: 12 });
+    expect(rail.railLengthM).toBe(12);
+    expect(rail.travelM).toBe(6);
+
+    // Beim Jib/Kran ist die Angabe dagegen der Weg selbst, keine Schiene.
+    const jib = rigLimits({ mountType: 'jib', rigId: 'jimmyjib-triangle-18ft' });
+    expect(jib.railLengthM).toBe(0);
+    expect(jib.travelM).toBe(jib.trackM);
   });
 
   it('liefert fuer jede Kamera ein Bewegungsprofil zur Kategorie', () => {

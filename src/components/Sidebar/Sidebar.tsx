@@ -198,7 +198,11 @@ function CameraCard({ camId }: { camId: string }) {
           <button onClick={(e) => { e.stopPropagation(); removeCamera(cam.id); }} className="p-1 hover:text-bc-red" title="Remove">
             <FiTrash2 size={14} />
           </button>
-          <button onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }} className="p-1 hover:text-bc-accent">
+          <button
+            onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+            className="p-1 hover:text-bc-accent"
+            title={expanded ? 'Details zuklappen' : 'Details aufklappen'}
+          >
             {expanded ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
           </button>
         </div>
@@ -874,9 +878,12 @@ function CameraCard({ camId }: { camId: string }) {
                           const v = parseFloat(e.target.value);
                           if (!Number.isFinite(v)) return;
                           const len = Math.max(0.5, Math.min(60, v));
+                          // Der Wagen faehrt von der Mitte aus nach beiden
+                          // Seiten, also maximal die halbe Schiene weit.
+                          const half = len / 2;
                           updateCamera(cam.id, {
                             trackLengthM: len,
-                            trackOffset: Math.max(-len, Math.min(len, cam.trackOffset ?? 0)),
+                            trackOffset: Math.max(-half, Math.min(half, cam.trackOffset ?? 0)),
                           });
                         }}
                         title="Tatsaechlich gelegte Schienenlaenge in Metern"
@@ -899,18 +906,18 @@ function CameraCard({ camId }: { camId: string }) {
                 )}
 
                 {/* Live-Fahrweg — Jib-Schwenk, Dolly-Fahrt, Teleskop, Flug */}
-                {limits.trackM > 0 && (
+                {limits.travelM > 0 && (
                   <label className="block">
                     <span className="text-gray-400">
                       Fahrweg: {(cam.trackOffset ?? 0).toFixed(2)}m{' '}
-                      <span className="text-[10px] text-gray-600">(±{limits.trackM.toFixed(2)}m)</span>
+                      <span className="text-[10px] text-gray-600">(±{limits.travelM.toFixed(2)}m)</span>
                     </span>
                     <div className="flex items-center gap-2">
                       <input
                         type="range"
                         className="flex-1 accent-bc-yellow"
-                        min={-limits.trackM}
-                        max={limits.trackM}
+                        min={-limits.travelM}
+                        max={limits.travelM}
                         step={0.05}
                         value={clampTrack(limits, cam.trackOffset ?? 0)}
                         onChange={(e) => updateCamera(cam.id, { trackOffset: parseFloat(e.target.value) })}

@@ -5,8 +5,8 @@ import { getCameraById, getEffectiveSensor } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov } from '../../utils/fov';
 import type { VenueCamera, Wall } from '../../types';
-import { MOUNT_HEIGHT_RANGE } from '../../types';
 import { effectiveCameraPos } from '../../utils/camera';
+import RigOverlay from './RigOverlay';
 import { getExportRegistry } from '../../store/exportRegistry';
 import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react';
 import type Konva from 'konva';
@@ -722,22 +722,18 @@ export default function Venue2D() {
           );
         })}
 
-        {/* Track range — dashed line showing the rig's full travel envelope.
-            Drawn before the camera icon so the camera marker sits on top. */}
+        {/* Rig in der Draufsicht: Standflaeche, Schiene mit Sektionsstoeßen,
+            Ausleger und Fahrweg — aus den echten Maßen des gewaehlten Rigs
+            (utils/rigGeometry). Vor der Kamera-Marke gezeichnet, damit die
+            Marke oben liegt. */}
         {cameras.map((cam) => {
-          const range = MOUNT_HEIGHT_RANGE[cam.mountType ?? 'tripod'];
-          if (!range.track) return null;
           if (!showAllFov && cam.id !== selectedCameraId) return null;
-          const panRad = (cam.pan * Math.PI) / 180;
-          const dx = Math.cos(panRad) * range.track * ppm;
-          const dy = Math.sin(panRad) * range.track * ppm;
-          const x0 = cam.x * ppm;
-          const y0 = cam.y * ppm;
           return (
-            <Line
-              key={`track-${cam.id}`}
-              points={[x0 - dx, y0 - dy, x0 + dx, y0 + dy]}
-              stroke={cam.color} strokeWidth={1.5} dash={[4, 4]} opacity={0.6} listening={false}
+            <RigOverlay
+              key={`rig-${cam.id}`}
+              cam={cam}
+              ppm={ppm}
+              isSelected={cam.id === selectedCameraId}
             />
           );
         })}

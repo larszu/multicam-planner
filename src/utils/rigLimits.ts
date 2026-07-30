@@ -10,6 +10,12 @@
 import { MOUNT_HEIGHT_RANGE, type CameraMountType, type VenueCamera } from '../types';
 import { getRigById, type CameraRig } from '../data/rigs';
 
+/**
+ * Montagen, die auf einer gelegten Schiene fahren. Bei ihnen ist die
+ * Laengenangabe die Schiene selbst, nicht der Weg in eine Richtung.
+ */
+const RAIL_TYPES = new Set<CameraMountType>(['dolly', 'slider']);
+
 export interface RigLimits {
   /** Kategorie der Montage. */
   type: CameraMountType;
@@ -19,8 +25,19 @@ export interface RigLimits {
   maxHeightM: number;
   /** Empfohlener Hoehen-Schritt (Pedestal-Pump, Jib-Stufe). */
   pumpM: number;
-  /** Fahrweg in eine Richtung (m); 0 = starres Rig ohne Fahrt. */
+  /**
+   * Rohwert der Fahrstrecke (m): bei Schienen-Rigs die GELEGTE SCHIENENLAENGE,
+   * sonst der Fahrweg des Rigs (Jib-Schwenk, Teleskopweg, Flugstrecke).
+   */
   trackM: number;
+  /**
+   * Fahrweg in EINE Richtung ab der Parkposition (m); 0 = starres Rig.
+   * Bei Schienen ist das die halbe Schienenlaenge — die Schiene liegt
+   * symmetrisch um die Parkposition, der Wagen faehrt nach beiden Seiten.
+   */
+  travelM: number;
+  /** Gelegte Schienenlaenge (m); 0 bei Rigs ohne Schiene. */
+  railLengthM: number;
   /** true, wenn die Laenge vom Nutzer gesetzt ist (nicht vom Rig/Default). */
   trackIsCustom: boolean;
   armLengthM?: number;
@@ -41,6 +58,8 @@ export function rigLimits(cam: Pick<VenueCamera, 'mountType' | 'rigId' | 'trackL
 
   const trackFromRig = fits?.trackLengthM ?? base.track ?? 0;
   const custom = typeof cam.trackLengthM === 'number' && cam.trackLengthM > 0;
+  const trackM = custom ? (cam.trackLengthM as number) : trackFromRig;
+  const onRail = RAIL_TYPES.has(type);
 
   return {
     type,
@@ -48,7 +67,9 @@ export function rigLimits(cam: Pick<VenueCamera, 'mountType' | 'rigId' | 'trackL
     minHeightM: fits?.minHeightM ?? base.min,
     maxHeightM: fits?.maxHeightM ?? base.max,
     pumpM: base.pump > 0 ? base.pump : 0.05,
-    trackM: custom ? (cam.trackLengthM as number) : trackFromRig,
+    trackM,
+    travelM: onRail ? trackM / 2 : trackM,
+    railLengthM: onRail ? trackM : 0,
     trackIsCustom: custom,
     armLengthM: fits?.armLengthM,
     telescopeM: fits?.telescopeM,
@@ -59,7 +80,7 @@ export function rigLimits(cam: Pick<VenueCamera, 'mountType' | 'rigId' | 'trackL
 
 /** true, wenn die Montage ueberhaupt einen Fahrweg hat (Schiene, Schwenk, Flug). */
 export function hasTrack(limits: RigLimits): boolean {
-  return limits.trackM > 0;
+  return limits.travelM > 0;
 }
 
 /** Hoehe in den erlaubten Bereich klemmen — beim Wechsel von Rig/Montage. */
@@ -69,7 +90,7 @@ export function clampHeight(limits: RigLimits, z: number): number {
 
 /** Fahrweg-Offset in den erlaubten Bereich klemmen (symmetrisch um 0). */
 export function clampTrack(limits: RigLimits, offset: number): number {
-  const t = limits.trackM;
+  const t = limits.travelM;
   if (t <= 0) return 0;
   return Math.max(-t, Math.min(t, offset));
 }

@@ -6,6 +6,7 @@ import { getCameraById, getEffectiveSensor } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov } from '../../utils/fov';
 import { effectiveCameraPos } from '../../utils/camera';
+import RigStructure from './RigStructure';
 import * as THREE from 'three';
 import { configureTextBuilder } from 'troika-three-text';
 import { getExportRegistry } from '../../store/exportRegistry';
@@ -943,6 +944,13 @@ export default function Venue3D() {
         {/* Stages */}
         {venue.stages.map((s) => (
           <StageMesh key={s.id} x={s.x} y={s.y} w={s.width} h={s.height} label={s.label} />
+        ))}
+
+        {/* Rig-Aufbau (Stativ, Schiene, Kran) — eigene Gruppe auf der
+            Parkposition, waehrend die Kamera selbst auf der verfahrenen
+            Position sitzt. Sonst wuerde die Schiene mitfahren. */}
+        {cameras.map((cam) => (
+          <RigStructure key={`rig-${cam.id}`} cam={cam} isSelected={cam.id === selectedCameraId} />
         ))}
 
         {/* Cameras with explicit unlock + gizmo editing */}
