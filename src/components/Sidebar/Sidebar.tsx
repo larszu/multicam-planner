@@ -8,6 +8,7 @@ import type { BackgroundPlan, StageObjectType, Camera, CameraMountType, WallPatt
 import { MOUNT_TYPE_LABELS } from '../../types';
 import { rigsForType, trackSectionPlan } from '../../data/rigs';
 import { clampHeight, clampTrack, rigLimits } from '../../utils/rigLimits';
+import { rigYaw } from '../../utils/camera';
 import { CustomCameraForm } from './CustomCameraForm';
 import { CalculationBreakdown } from './CalculationBreakdown';
 import AiPlanAnalysis from './AiPlanAnalysis';
@@ -827,6 +828,50 @@ function CameraCard({ camId }: { camId: string }) {
                   </label>
                 )}
 
+                {/* Ausrichtung des Rigs im Raum. Eine gelegte Schiene oder ein
+                    Kran-Chassis steht fest, waehrend die Kamera darauf
+                    schwenkt — darum ein eigener Winkel neben `pan`. Ohne
+                    eigenen Wert folgt das Rig der Kamera. */}
+                <label className="block">
+                  <span className="text-gray-400">
+                    Ausrichtung: {rigYaw(cam).toFixed(0)}°{' '}
+                    {cam.rigRotation === undefined
+                      ? <span className="text-[10px] text-gray-600">(folgt der Kamera)</span>
+                      : <span className="text-[10px] text-bc-yellow">(fest ausgerichtet)</span>}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      className="flex-1 accent-bc-yellow"
+                      min={-180}
+                      max={180}
+                      step={1}
+                      value={rigYaw(cam)}
+                      onChange={(e) => updateCamera(cam.id, { rigRotation: parseFloat(e.target.value) })}
+                    />
+                    <input
+                      type="number"
+                      className="w-16 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                      value={Number(rigYaw(cam).toFixed(0))}
+                      step={5}
+                      min={-180}
+                      max={180}
+                      title="Ausrichtung des Rigs in Grad"
+                      onChange={(e) => {
+                        const v = parseFloat(e.target.value);
+                        if (Number.isFinite(v)) updateCamera(cam.id, { rigRotation: v });
+                      }}
+                    />
+                    {cam.rigRotation !== undefined && (
+                      <button
+                        onClick={() => updateCamera(cam.id, { rigRotation: undefined })}
+                        className="text-[10px] text-gray-500 hover:text-white px-1.5 py-0.5 rounded border border-bc-border"
+                        title="Rig wieder an die Blickrichtung koppeln"
+                      >koppeln</button>
+                    )}
+                  </div>
+                </label>
+
                 {/* Hoehe — durch die echten Grenzen des Rigs begrenzt */}
                 <label className="block">
                   <span className="text-gray-400">
@@ -852,6 +897,7 @@ function CameraCard({ camId }: { camId: string }) {
                       step={0.1}
                       min={limits.minHeightM}
                       max={limits.maxHeightM}
+                      title="Objektivhoehe in Metern"
                       onChange={(e) => updateCamera(cam.id, { z: clampHeight(limits, parseFloat(e.target.value) || 0) })}
                     />
                   </div>

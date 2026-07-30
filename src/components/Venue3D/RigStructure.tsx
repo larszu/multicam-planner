@@ -11,6 +11,7 @@
 // die Achsen des Rig-Frames.
 import * as THREE from 'three';
 import type { VenueCamera } from '../../types';
+import { rigYaw } from '../../utils/camera';
 import { rigLimits } from '../../utils/rigLimits';
 import { rigSkeleton, type RigRole, type RigSegment } from '../../utils/rigGeometry';
 
@@ -82,7 +83,7 @@ export default function RigStructure({ cam, isSelected }: { cam: VenueCamera; is
   const skel = rigSkeleton(limits, { heightM: cam.z, offsetM: cam.trackOffset ?? 0 });
 
   return (
-    <group position={[cam.x, 0, cam.y]} rotation={[0, THREE.MathUtils.degToRad(-cam.pan), 0]}>
+    <group position={[cam.x, 0, cam.y]} rotation={[0, THREE.MathUtils.degToRad(-rigYaw(cam)), 0]}>
       {skel.segments.map((s, i) => (
         <Strut key={i} s={s} camColor={cam.color} />
       ))}

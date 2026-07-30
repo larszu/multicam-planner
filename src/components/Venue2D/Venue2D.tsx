@@ -5,8 +5,8 @@ import { getCameraById, getEffectiveSensor } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov } from '../../utils/fov';
 import type { VenueCamera, Wall } from '../../types';
-import { effectiveCameraPos } from '../../utils/camera';
-import RigOverlay from './RigOverlay';
+import { effectiveCameraPos, rigYaw } from '../../utils/camera';
+import RigOverlay, { RIG_HANDLE_RADIUS } from './RigOverlay';
 import { getExportRegistry } from '../../store/exportRegistry';
 import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react';
 import type Konva from 'konva';
@@ -374,15 +374,18 @@ export default function Venue2D() {
       const dropX = e.target.x() / ppm;
       const dropY = e.target.y() / ppm;
       const offset = cam.trackOffset ?? 0;
-      const panRad = (cam.pan * Math.PI) / 180;
-      const parkedX = dropX - Math.cos(panRad) * offset;
-      const parkedY = dropY - Math.sin(panRad) * offset;
+      // Der Fahrweg laeuft entlang der Rig-Achse, nicht entlang der
+      // Blickrichtung — sonst springt die Parkposition, sobald das Rig eine
+      // eigene Ausrichtung hat.
+      const yawRad = (rigYaw(cam) * Math.PI) / 180;
+      const parkedX = dropX - Math.cos(yawRad) * offset;
+      const parkedY = dropY - Math.sin(yawRad) * offset;
       const newX = Math.max(0, Math.min(venue.widthM, parkedX));
       const newY = Math.max(0, Math.min(venue.heightM, parkedY));
       // Snap the visual back to the (possibly clamped) effective position.
       e.target.position({
-        x: (newX + Math.cos(panRad) * offset) * ppm,
-        y: (newY + Math.sin(panRad) * offset) * ppm,
+        x: (newX + Math.cos(yawRad) * offset) * ppm,
+        y: (newY + Math.sin(yawRad) * offset) * ppm,
       });
       moveCamera(cam.id, newX, newY);
     },
@@ -404,6 +407,19 @@ export default function Venue2D() {
       const rad = (deg * Math.PI) / 180;
       e.target.position({ x: Math.cos(rad) * PAN_HANDLE_RADIUS, y: Math.sin(rad) * PAN_HANDLE_RADIUS });
       updateCamera(cam.id, { pan: deg });
+    },
+    [updateCamera],
+  );
+
+  // Rig-Ausricht-Griff: dreht Schiene/Chassis/Beinstellung, ohne den Pan der
+  // Kamera anzufassen. Shift rastet auf 15°.
+  const handleRigRotate = useCallback(
+    (cam: VenueCamera, e: Konva.KonvaEventObject<DragEvent>) => {
+      let deg = (Math.atan2(e.target.y(), e.target.x()) * 180) / Math.PI;
+      if (shiftHeld.current) deg = Math.round(deg / 15) * 15;
+      const rad = (deg * Math.PI) / 180;
+      e.target.position({ x: Math.cos(rad) * RIG_HANDLE_RADIUS, y: Math.sin(rad) * RIG_HANDLE_RADIUS });
+      updateCamera(cam.id, { rigRotation: deg });
     },
     [updateCamera],
   );
@@ -734,6 +750,11 @@ export default function Venue2D() {
               cam={cam}
               ppm={ppm}
               isSelected={cam.id === selectedCameraId}
+              onRotate={
+                cam.id === selectedCameraId && !cam.locked && !lockCameras && !drawingWall
+                  ? handleRigRotate
+                  : undefined
+              }
             />
           );
         })}

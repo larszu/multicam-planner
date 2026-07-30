@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { effectiveCameraPos } from '../utils/camera';
+import { effectiveCameraPos, rigYaw } from '../utils/camera';
 import type { VenueCamera } from '../types';
 
 function makeCam(overrides: Partial<VenueCamera> = {}): VenueCamera {
@@ -63,5 +63,36 @@ describe('effectiveCameraPos', () => {
     const pos = effectiveCameraPos(cam);
     expect(pos.x).toBeCloseTo(8, 5);
     expect(pos.y).toBeCloseTo(5, 5);
+  });
+
+  it('faehrt entlang der Rig-Achse, nicht der Blickrichtung', () => {
+    // Schiene liegt quer (0°), die Kamera schaut nach oben (-90°): der Wagen
+    // rollt trotzdem nach rechts.
+    const cam = makeCam({ pan: -90, rigRotation: 0, trackOffset: 2 });
+    const pos = effectiveCameraPos(cam);
+    expect(pos.x).toBeCloseTo(12, 5);
+    expect(pos.y).toBeCloseTo(5, 5);
+  });
+
+  it('laesst den Pan die Fahrt nicht mehr verschieben, wenn das Rig fest ist', () => {
+    const rail = { rigRotation: 0, trackOffset: 3 };
+    const a = effectiveCameraPos(makeCam({ pan: 0, ...rail }));
+    const b = effectiveCameraPos(makeCam({ pan: 137, ...rail }));
+    expect(b).toEqual(a);
+  });
+});
+
+describe('rigYaw', () => {
+  it('folgt ohne eigene Ausrichtung dem Pan', () => {
+    expect(rigYaw(makeCam({ pan: 42 }))).toBe(42);
+  });
+
+  it('nimmt die eigene Ausrichtung, sobald sie gesetzt ist', () => {
+    expect(rigYaw(makeCam({ pan: 42, rigRotation: -90 }))).toBe(-90);
+  });
+
+  it('behandelt 0° als gesetzten Wert, nicht als fehlend', () => {
+    // Klassische ??-Falle: 0 ist eine gueltige Ausrichtung (Schiene quer).
+    expect(rigYaw(makeCam({ pan: 42, rigRotation: 0 }))).toBe(0);
   });
 });

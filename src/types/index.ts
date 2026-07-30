@@ -273,6 +273,18 @@ export interface VenueCamera {
    */
   trackOffset?: number;
   /**
+   * Ausrichtung des Rigs im Raum (Grad, gleiche Konvention wie `pan`).
+   * Eine gelegte Schiene, ein Kran-Chassis oder die Beinstellung eines Stativs
+   * bleiben stehen, waehrend die Kamera darauf schwenkt — darum ist das ein
+   * eigener Winkel und kein Offset auf `pan`.
+   *
+   * Ohne Angabe folgt das Rig dem Pan der Kamera (Verhalten vor #71 und
+   * sinnvoller Default: Stativ wird eben so hingestellt, wie man schaut).
+   * `rigYaw()` in `utils/camera.ts` loest das auf; der Fahrweg laeuft immer
+   * entlang dieser Achse, nicht entlang der Blickrichtung.
+   */
+  rigRotation?: number;
+  /**
    * Free-form notes for this camera placement (mount, operator, instructions,
    * shot list, etc.). Shown in the sidebar and included in PNG exports when set.
    */

@@ -7,7 +7,9 @@
 // Die Kamera-Marke selbst zeichnet Venue2D auf der effektiven (verfahrenen)
 // Position darueber.
 import { Circle, Group, Line, Rect, Text } from 'react-konva';
+import type Konva from 'konva';
 import type { VenueCamera } from '../../types';
+import { rigYaw } from '../../utils/camera';
 import { rigLimits } from '../../utils/rigLimits';
 import { rigSkeleton, type RigRole, type RigSegment } from '../../utils/rigGeometry';
 
@@ -94,16 +96,32 @@ function SegmentShape({ s, ppm, camColor }: { s: RigSegment; ppm: number; camCol
   );
 }
 
-export default function RigOverlay({ cam, ppm, isSelected }: { cam: VenueCamera; ppm: number; isSelected: boolean }) {
+/** Abstand des Ausricht-Griffs vom Rig-Mittelpunkt (Pixel). */
+export const RIG_HANDLE_RADIUS = 48;
+
+export default function RigOverlay({
+  cam,
+  ppm,
+  isSelected,
+  onRotate,
+}: {
+  cam: VenueCamera;
+  ppm: number;
+  isSelected: boolean;
+  /** Gesetzt, wenn das Rig ausgerichtet werden darf — zeigt den Dreh-Griff. */
+  onRotate?: (cam: VenueCamera, e: Konva.KonvaEventObject<DragEvent>) => void;
+}) {
   const limits = rigLimits(cam);
   const skel = rigSkeleton(limits, { heightM: cam.z, offsetM: cam.trackOffset ?? 0 });
+  const yaw = rigYaw(cam);
+  const yawRad = (yaw * Math.PI) / 180;
 
   return (
     <>
     <Group
       x={cam.x * ppm}
       y={cam.y * ppm}
-      rotation={cam.pan}
+      rotation={yaw}
       listening={false}
       opacity={isSelected ? 1 : 0.55}
     >
@@ -137,6 +155,35 @@ export default function RigOverlay({ cam, ppm, isSelected }: { cam: VenueCamera;
       ))}
 
     </Group>
+
+      {/* Ausricht-Griff: zieht die Rig-Achse (Schiene, Kran-Chassis,
+          Beinstellung) unabhaengig vom Pan der Kamera. Sitzt auf der
+          Parkposition, weil sich das Rig beim Fahren nicht mitdreht. */}
+      {onRotate && (
+        <Group x={cam.x * ppm} y={cam.y * ppm}>
+          <Line
+            points={[0, 0, Math.cos(yawRad) * RIG_HANDLE_RADIUS, Math.sin(yawRad) * RIG_HANDLE_RADIUS]}
+            stroke="#94a3b8" strokeWidth={1} dash={[3, 3]} opacity={0.5} listening={false}
+          />
+          <Rect
+            x={Math.cos(yawRad) * RIG_HANDLE_RADIUS}
+            y={Math.sin(yawRad) * RIG_HANDLE_RADIUS}
+            width={11}
+            height={11}
+            offsetX={5.5}
+            offsetY={5.5}
+            rotation={yaw}
+            fill="#0f1117"
+            stroke="#94a3b8"
+            strokeWidth={2}
+            draggable
+            onDragStart={(e) => { e.cancelBubble = true; }}
+            onDragMove={(e) => { e.cancelBubble = true; onRotate(cam, e); }}
+            onMouseEnter={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = 'crosshair'; }}
+            onMouseLeave={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = 'grab'; }}
+          />
+        </Group>
+      )}
 
       {/* Rig-Name waagerecht unter der Kamera — ausserhalb der gedrehten
           Gruppe, damit die Schrift nicht mitkippt. */}
