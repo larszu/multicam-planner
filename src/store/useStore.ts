@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { VenueCamera, Venue, ViewTab, EditMode, ReferencePerson, BackgroundPlan, Stage, ProjectFile, VenueTemplate, StageObjectType, Lens, Wall, Camera, Shot, Shotlist } from '../types';
+import type { VenueCamera, Venue, ViewTab, EditMode, ReferencePerson, BackgroundPlan, Stage, ProjectFile, VenueTemplate, StageObjectType, Lens, Wall, Camera, Shot, Shotlist, RigTake } from '../types';
 import { CAMERAS, CAMERA_COLORS } from '../data/cameras';
 import { LENSES, pickInitialMountAndLens } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
@@ -121,6 +121,14 @@ interface AppState {
   moveShot: (shotlistId: string, from: number, to: number) => void;
   setCurrentShotId: (id: string | null) => void;
 
+  // ── Aufgezeichnete Rig-Fahrten (Takes) ──
+  rigTakes: RigTake[];
+  /** true, wenn der letzte Take nicht in den localStorage gepasst hat. */
+  takeStorageFull: boolean;
+  addRigTake: (take: Omit<RigTake, 'id'>) => string;
+  removeRigTake: (id: string) => void;
+  renameRigTake: (id: string, name: string) => void;
+
   // Project versioning
   projectVersion: number;
   lastSavedVersion: number;
@@ -211,6 +219,19 @@ function loadShotlists(): Shotlist[] {
 /** Einmalig beim Modul-Laden gelesen — der Store-Initializer nutzt denselben
  *  Stand fuer `shotlists` und `activeShotlistId`. */
 const INITIAL_SHOTLISTS: Shotlist[] = loadShotlists();
+
+const RIG_TAKES_KEY = 'multicam-rig-takes';
+
+function loadRigTakes(): RigTake[] {
+  const parsed = loadJSON<RigTake[]>(RIG_TAKES_KEY, []);
+  if (!Array.isArray(parsed)) return [];
+  return parsed.filter(
+    (t): t is RigTake =>
+      !!t && typeof t.id === 'string' && typeof t.cameraId === 'string' && Array.isArray(t.samples),
+  );
+}
+
+const INITIAL_RIG_TAKES: RigTake[] = loadRigTakes();
 
 const FAVORITE_CAMERAS_KEY = 'multicam-favorite-cameras';
 const FAVORITE_LENSES_KEY = 'multicam-favorite-lenses';
@@ -651,6 +672,30 @@ export const useStore = create<AppState>((set, get) => ({
         return { ...l, shots };
       });
       return { shotlists, shotlistStorageFull: !saveJSONSafe(SHOTLISTS_KEY, shotlists) };
+    }),
+
+  rigTakes: INITIAL_RIG_TAKES,
+  takeStorageFull: false,
+
+  addRigTake: (take) => {
+    const id = persistentId('take');
+    set((s) => {
+      const rigTakes = [...s.rigTakes, { ...take, id }];
+      return { rigTakes, takeStorageFull: !saveJSONSafe(RIG_TAKES_KEY, rigTakes) };
+    });
+    return id;
+  },
+
+  removeRigTake: (id) =>
+    set((s) => {
+      const rigTakes = s.rigTakes.filter((t) => t.id !== id);
+      return { rigTakes, takeStorageFull: !saveJSONSafe(RIG_TAKES_KEY, rigTakes) };
+    }),
+
+  renameRigTake: (id, name) =>
+    set((s) => {
+      const rigTakes = s.rigTakes.map((t) => (t.id === id ? { ...t, name } : t));
+      return { rigTakes, takeStorageFull: !saveJSONSafe(RIG_TAKES_KEY, rigTakes) };
     }),
 
   setCurrentShotId: (id) => set({ currentShotId: id }),

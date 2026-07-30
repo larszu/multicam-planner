@@ -395,6 +395,31 @@ export interface Shotlist {
   shots: Shot[];
 }
 
+// ── Aufgezeichnete Rig-Fahrt ("Take") ──
+// Ein Shot ist EIN Zustand und wird angefahren; ein Take ist die ganze
+// Bewegung, so wie sie am Pult gefahren wurde — inklusive Zoegern,
+// Nachfuehren und gleichzeitiger Achsen. Damit lassen sich Fahrten
+// wiedergeben, statt sie nur zwischen zwei Punkten zu interpolieren.
+
+/** Ein abgetasteter Moment der Fahrt. `t` = Sekunden seit Aufnahmebeginn. */
+export interface TakeSample {
+  t: number;
+  state: ShotState;
+  /** Ausrichtung des Rigs zu diesem Zeitpunkt (nur wenn eigenstaendig). */
+  rigRotation?: number;
+}
+
+export interface RigTake {
+  id: string;
+  name: string;
+  /** Kamera, mit der aufgezeichnet wurde (`VenueCamera.id`). */
+  cameraId: string;
+  /** Montage zum Aufnahmezeitpunkt — fuer die Anzeige, nicht fuer Wiedergabe. */
+  mountType?: CameraMountType;
+  samples: TakeSample[];
+  createdAt: number;
+}
+
 // ── Edit mode (issue #43) ──
 // A top-bar slider restricts editing to one category at a time so a plan can be
 // built up step by step. `all` respects each object's own lock flag instead.
