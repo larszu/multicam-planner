@@ -94,18 +94,29 @@ export type StageObjectType =
 // height range and (for jib / dolly) a track length used by the live track
 // slider. Without it Z is unconstrained, which is fine for typing but loses
 // the "this rig physically can't go that high" check.
-export type CameraMountType = 'tripod' | 'pedestal' | 'jib' | 'technocrane' | 'dolly' | 'gimbal' | 'handheld' | 'steadicam' | 'fixed';
+export type CameraMountType =
+  | 'tripod' | 'hihat' | 'pedestal' | 'jib' | 'technocrane' | 'dolly' | 'slider'
+  | 'cablecam' | 'drone' | 'scissorlift' | 'remotehead' | 'carmount' | 'rickshaw'
+  | 'gimbal' | 'handheld' | 'steadicam' | 'fixed';
 
 export const MOUNT_TYPE_LABELS: Record<CameraMountType, string> = {
   tripod: 'Stativ',
+  hihat: 'Hi-Hat / Bodenstativ',
   pedestal: 'Studio Pedestal',
-  jib: 'Jib / Crane',
+  jib: 'Jib / Kran',
   technocrane: 'Technocrane (teleskopierend)',
-  dolly: 'Dolly',
+  dolly: 'Dolly (Schiene)',
+  slider: 'Slider',
+  cablecam: 'Cable-Cam / Spidercam',
+  drone: 'Drohne',
+  scissorlift: 'Scherenbuehne / Hebebuehne',
+  remotehead: 'Remote-Head',
+  carmount: 'Fahrzeug-Montage',
+  rickshaw: 'Rickshaw / Kamerawagen',
   gimbal: 'Gimbal',
   handheld: 'Handheld',
   steadicam: 'Steadicam',
-  fixed: 'Fixed Mount',
+  fixed: 'Feste Montage',
 };
 
 /**
@@ -116,6 +127,8 @@ export const MOUNT_TYPE_LABELS: Record<CameraMountType, string> = {
  */
 export const MOUNT_HEIGHT_RANGE: Record<CameraMountType, { min: number; max: number; pump: number; track?: number }> = {
   tripod:    { min: 0.5, max: 2.2, pump: 0.05 },
+  // Hi-Hat: Kamera fast auf dem Boden, kaum Hoehenspiel.
+  hihat:     { min: 0.1, max: 0.5, pump: 0.05 },
   pedestal:  { min: 0.6, max: 1.8, pump: 0.4 },
   jib:       { min: 0.3, max: 6.0, pump: 1.5, track: 3.5 },
   // Techno 22 als gaengiger Vertreter: 24' (7.3 m) Objektivhoehe ueberschlaegig,
@@ -123,6 +136,16 @@ export const MOUNT_HEIGHT_RANGE: Record<CameraMountType, { min: number; max: num
   // zu schwenken — darum deutlich mehr Track als ein klassischer Jib.
   technocrane: { min: 0.5, max: 7.3, pump: 1.5, track: 4.7 },
   dolly:     { min: 0.4, max: 1.9, pump: 0.1, track: 6.0 },
+  // Slider: kurzer Weg, dafuer sehr feine Kontrolle.
+  slider:    { min: 0.2, max: 2.0, pump: 0.05, track: 1.2 },
+  // Cable-Cam haengt in Seilen — grosser Hoehenbereich, sehr weiter Weg.
+  cablecam:  { min: 2.0, max: 40.0, pump: 2.0, track: 80.0 },
+  drone:     { min: 0.5, max: 120.0, pump: 5.0, track: 100.0 },
+  scissorlift: { min: 1.2, max: 12.0, pump: 1.0 },
+  // Remote-Head sitzt auf einem anderen Rig; eigener Hoehenbereich bleibt klein.
+  remotehead: { min: 0.3, max: 3.0, pump: 0.2 },
+  carmount:  { min: 0.3, max: 2.5, pump: 0.2, track: 50.0 },
+  rickshaw:  { min: 0.8, max: 2.0, pump: 0.2, track: 30.0 },
   gimbal:    { min: 0.8, max: 1.9, pump: 0.6 },
   handheld:  { min: 1.0, max: 1.9, pump: 0.8 },
   steadicam: { min: 0.3, max: 2.0, pump: 0.5 },
@@ -211,6 +234,18 @@ export interface VenueCamera {
    * (jib swing, dolly travel).
    */
   mountType?: CameraMountType;
+  /**
+   * Konkretes Rig aus dem Katalog (`data/rigs.ts`) — z. B. ein 18-ft-Jimmy-Jib
+   * statt nur "Jib". Setzt Hoehenbereich und Fahrweg auf die echten Maße des
+   * Geraets. Ohne Angabe gelten die Kategorie-Defaults aus MOUNT_HEIGHT_RANGE.
+   */
+  rigId?: string;
+  /**
+   * Gelegte Schienenlaenge in Metern (Dolly/Slider). Ueberschreibt den Vorschlag
+   * des Rigs — die Strecke wird aus Sektionen (4/8/10 ft) gelegt und ist damit
+   * pro Aufbau anders lang.
+   */
+  trackLengthM?: number;
   /**
    * Preview drag-direction overrides. Persisted per camera so an operator with
    * a preferred swing direction keeps it across sessions.

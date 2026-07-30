@@ -5,7 +5,9 @@ import { computeFov, computeDof } from '../../utils/fov';
 import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2, FiRotateCcw, FiHome, FiImage, FiColumns, FiUsers, FiVideo } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { BackgroundPlan, StageObjectType, Camera, CameraMountType, WallPattern } from '../../types';
-import { MOUNT_TYPE_LABELS, MOUNT_HEIGHT_RANGE } from '../../types';
+import { MOUNT_TYPE_LABELS } from '../../types';
+import { rigsForType, trackSectionPlan } from '../../data/rigs';
+import { clampHeight, clampTrack, rigLimits } from '../../utils/rigLimits';
 import { CustomCameraForm } from './CustomCameraForm';
 import { CalculationBreakdown } from './CalculationBreakdown';
 import AiPlanAnalysis from './AiPlanAnalysis';
@@ -754,86 +756,177 @@ function CameraCard({ camId }: { camId: string }) {
             </label>
           </div>
 
-          {/* Mount type — physical rig the camera sits on. Determines the
-              ergonomic height range below and whether a live-motion track slider
-              (jib swing / dolly travel) appears. */}
-          <label className="block">
-            <span className="text-gray-400">Mount</span>
-            <select
-              className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
-              value={cam.mountType ?? 'tripod'}
-              onChange={(e) => {
-                const newMount = e.target.value as CameraMountType;
-                const range = MOUNT_HEIGHT_RANGE[newMount];
-                // Clamp Z into the new ergonomic range so changing to a tripod
-                // doesn't leave the camera at 6 m from a jib config.
-                const clampedZ = Math.max(range.min, Math.min(range.max, cam.z));
-                updateCamera(cam.id, { mountType: newMount, z: clampedZ, trackOffset: range.track ? 0 : undefined });
-              }}
-            >
-              {(Object.keys(MOUNT_TYPE_LABELS) as CameraMountType[]).map((m) => (
-                <option key={m} value={m}>{MOUNT_TYPE_LABELS[m]}</option>
-              ))}
-            </select>
-          </label>
-
-          {/* Camera height (Z) — bounded by the mount's ergonomic range */}
+          {/* Montage + konkretes Rig. Die Kategorie bestimmt den Bewegungsstil,
+              das Rig die echten Maße (Hoehe, Ausleger, Fahrweg). */}
           {(() => {
-            const range = MOUNT_HEIGHT_RANGE[cam.mountType ?? 'tripod'];
+            const limits = rigLimits(cam);
+            const catRigs = rigsForType(limits.type);
             return (
-              <label className="block">
-                <span className="text-gray-400">Height: {cam.z.toFixed(2)}m <span className="text-[10px] text-gray-600">({range.min}–{range.max}m)</span></span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="range"
-                    className="flex-1 accent-bc-accent"
-                    min={range.min}
-                    max={range.max}
-                    step={range.pump > 0 ? range.pump : 0.05}
-                    value={Math.min(range.max, Math.max(range.min, cam.z))}
-                    onChange={(e) => updateCamera(cam.id, { z: parseFloat(e.target.value) })}
-                  />
-                  <input
-                    type="number"
-                    className="w-16 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-white text-xs"
-                    value={cam.z}
-                    step={0.1}
-                    min={range.min}
-                    max={range.max}
-                    onChange={(e) => updateCamera(cam.id, { z: Math.max(range.min, Math.min(range.max, parseFloat(e.target.value) || 0)) })}
-                  />
-                </div>
-              </label>
+              <>
+                <label className="block">
+                  <span className="text-gray-400">Montage</span>
+                  <select
+                    className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
+                    value={cam.mountType ?? 'tripod'}
+                    onChange={(e) => {
+                      const newMount = e.target.value as CameraMountType;
+                      // Rig und Sonderlaenge fallen weg — sie gehoerten zur alten
+                      // Kategorie und wuerden sonst falsche Grenzen liefern.
+                      const next = rigLimits({ mountType: newMount });
+                      updateCamera(cam.id, {
+                        mountType: newMount,
+                        rigId: undefined,
+                        trackLengthM: undefined,
+                        z: clampHeight(next, cam.z),
+                        trackOffset: next.trackM > 0 ? 0 : undefined,
+                      });
+                    }}
+                  >
+                    {(Object.keys(MOUNT_TYPE_LABELS) as CameraMountType[]).map((m) => (
+                      <option key={m} value={m}>{MOUNT_TYPE_LABELS[m]}</option>
+                    ))}
+                  </select>
+                </label>
+
+                {catRigs.length > 0 && (
+                  <label className="block">
+                    <span className="text-gray-400">Modell</span>
+                    <select
+                      className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
+                      value={cam.rigId ?? ''}
+                      onChange={(e) => {
+                        const rigId = e.target.value || undefined;
+                        const next = rigLimits({ mountType: limits.type, rigId });
+                        updateCamera(cam.id, {
+                          rigId,
+                          trackLengthM: undefined,
+                          z: clampHeight(next, cam.z),
+                          trackOffset: next.trackM > 0 ? clampTrack(next, cam.trackOffset ?? 0) : undefined,
+                        });
+                      }}
+                    >
+                      <option value="">— allgemein ({MOUNT_TYPE_LABELS[limits.type]}) —</option>
+                      {catRigs.map((r) => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                    </select>
+                    {limits.rig && (
+                      <span className="block mt-0.5 text-[10px] text-gray-500 leading-snug">
+                        {limits.minHeightM.toFixed(2)}–{limits.maxHeightM.toFixed(2)} m
+                        {limits.armLengthM ? ` · Ausleger ${limits.armLengthM.toFixed(1)} m` : ''}
+                        {limits.telescopeM ? ` · Teleskop ${limits.telescopeM.toFixed(1)} m` : ''}
+                        {limits.payloadKg ? ` · max ${limits.payloadKg} kg` : ''}
+                        {limits.footprintM ? ` · Stellflaeche ${limits.footprintM.w.toFixed(1)}×${limits.footprintM.d.toFixed(1)} m` : ''}
+                        {limits.rig.notes ? ` — ${limits.rig.notes}` : ''}
+                      </span>
+                    )}
+                  </label>
+                )}
+
+                {/* Hoehe — durch die echten Grenzen des Rigs begrenzt */}
+                <label className="block">
+                  <span className="text-gray-400">
+                    Hoehe: {cam.z.toFixed(2)}m{' '}
+                    <span className="text-[10px] text-gray-600">
+                      ({limits.minHeightM.toFixed(2)}–{limits.maxHeightM.toFixed(2)}m)
+                    </span>
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      className="flex-1 accent-bc-accent"
+                      min={limits.minHeightM}
+                      max={limits.maxHeightM}
+                      step={limits.pumpM}
+                      value={clampHeight(limits, cam.z)}
+                      onChange={(e) => updateCamera(cam.id, { z: parseFloat(e.target.value) })}
+                    />
+                    <input
+                      type="number"
+                      className="w-16 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                      value={cam.z}
+                      step={0.1}
+                      min={limits.minHeightM}
+                      max={limits.maxHeightM}
+                      onChange={(e) => updateCamera(cam.id, { z: clampHeight(limits, parseFloat(e.target.value) || 0) })}
+                    />
+                  </div>
+                </label>
+
+                {/* Gelegte Schienenlaenge — nur wo es eine Schiene gibt */}
+                {(limits.type === 'dolly' || limits.type === 'slider') && (
+                  <label className="block">
+                    <span className="text-gray-400">
+                      Schienenlaenge: {limits.trackM.toFixed(2)}m{' '}
+                      {limits.trackIsCustom
+                        ? <span className="text-[10px] text-bc-yellow">(eigene Laenge)</span>
+                        : <span className="text-[10px] text-gray-600">(Vorschlag)</span>}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        className="w-20 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                        value={Number(limits.trackM.toFixed(2))}
+                        step={0.5}
+                        min={0.5}
+                        max={60}
+                        onChange={(e) => {
+                          const v = parseFloat(e.target.value);
+                          if (!Number.isFinite(v)) return;
+                          const len = Math.max(0.5, Math.min(60, v));
+                          updateCamera(cam.id, {
+                            trackLengthM: len,
+                            trackOffset: Math.max(-len, Math.min(len, cam.trackOffset ?? 0)),
+                          });
+                        }}
+                        title="Tatsaechlich gelegte Schienenlaenge in Metern"
+                      />
+                      <span className="text-[10px] text-gray-500 flex-1 leading-snug">
+                        {(() => {
+                          const plan = trackSectionPlan(limits.trackM);
+                          return `aus ${plan.sections.map((s) => `${s.count}×${(s.lengthM / 0.3048).toFixed(0)}′`).join(' + ')} = ${plan.total.toFixed(2)} m`;
+                        })()}
+                      </span>
+                      {limits.trackIsCustom && (
+                        <button
+                          onClick={() => updateCamera(cam.id, { trackLengthM: undefined })}
+                          className="text-[10px] text-gray-500 hover:text-white px-1.5 py-0.5 rounded border border-bc-border"
+                          title="Zurueck auf den Vorschlag des Rigs"
+                        >reset</button>
+                      )}
+                    </div>
+                  </label>
+                )}
+
+                {/* Live-Fahrweg — Jib-Schwenk, Dolly-Fahrt, Teleskop, Flug */}
+                {limits.trackM > 0 && (
+                  <label className="block">
+                    <span className="text-gray-400">
+                      Fahrweg: {(cam.trackOffset ?? 0).toFixed(2)}m{' '}
+                      <span className="text-[10px] text-gray-600">(±{limits.trackM.toFixed(2)}m)</span>
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        className="flex-1 accent-bc-yellow"
+                        min={-limits.trackM}
+                        max={limits.trackM}
+                        step={0.05}
+                        value={clampTrack(limits, cam.trackOffset ?? 0)}
+                        onChange={(e) => updateCamera(cam.id, { trackOffset: parseFloat(e.target.value) })}
+                      />
+                      <button
+                        onClick={() => updateCamera(cam.id, { trackOffset: 0 })}
+                        className="text-[10px] text-gray-500 hover:text-white px-1.5 py-0.5 rounded border border-bc-border"
+                        title="Rig auf Null parken"
+                      >park</button>
+                    </div>
+                  </label>
+                )}
+              </>
             );
           })()}
 
-          {/* Live track slider — only for rigs with travel (jib swing, dolly track) */}
-          {(() => {
-            const range = MOUNT_HEIGHT_RANGE[cam.mountType ?? 'tripod'];
-            if (!range.track) return null;
-            const offset = cam.trackOffset ?? 0;
-            return (
-              <label className="block">
-                <span className="text-gray-400">Track: {offset.toFixed(2)}m <span className="text-[10px] text-gray-600">(0–{range.track}m)</span></span>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="range"
-                    className="flex-1 accent-bc-yellow"
-                    min={-range.track}
-                    max={range.track}
-                    step={0.05}
-                    value={offset}
-                    onChange={(e) => updateCamera(cam.id, { trackOffset: parseFloat(e.target.value) })}
-                  />
-                  <button
-                    onClick={() => updateCamera(cam.id, { trackOffset: 0 })}
-                    className="text-[10px] text-gray-500 hover:text-white px-1.5 py-0.5 rounded border border-bc-border"
-                    title="Park rig at zero"
-                  >park</button>
-                </div>
-              </label>
-            );
-          })()}
 
           {/* Notes — free-form, shown in export when filled */}
           <label className="block">
