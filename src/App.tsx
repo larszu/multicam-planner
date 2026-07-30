@@ -6,6 +6,8 @@ import Venue2D from './components/Venue2D/Venue2D';
 import Venue3D from './components/Venue3D/Venue3D';
 import CameraPreview from './components/Preview/CameraPreview';
 import Calculator from './components/Sidebar/Calculator';
+import ShotlistPanel from './components/Shotlist/ShotlistPanel';
+import RigControlPanel from './components/RigControl/RigControlPanel';
 import TemplateSelector from './components/Templates/TemplateSelector';
 import ExportPanel from './components/Export/ExportPanel';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -34,6 +36,10 @@ function getSelectedIndexForTab(tabId: string) {
       return 2;
     case 'tab-calc':
       return 3;
+    case 'tab-shotlist':
+      return 4;
+    case 'tab-rig':
+      return 5;
     case 'tab-2d':
     default:
       return 0;
@@ -61,6 +67,8 @@ function createFocusLayoutJson(selectedTabId = 'tab-2d'): IJsonModel {
             { type: 'tab', name: '3D View', component: 'venue3d', id: 'tab-3d' },
             { type: 'tab', name: 'Preview', component: 'preview', id: 'tab-preview' },
             { type: 'tab', name: 'Calculator', component: 'calculator', id: 'tab-calc' },
+            { type: 'tab', name: 'Shotlist', component: 'shotlist', id: 'tab-shotlist' },
+            { type: 'tab', name: 'Rig-Steuerung', component: 'rigcontrol', id: 'tab-rig' },
           ],
         },
       ],
@@ -253,6 +261,8 @@ export default function App() {
     'tab-3d': { component: 'venue3d', name: '3D View' },
     'tab-preview': { component: 'preview', name: 'Preview' },
     'tab-calc': { component: 'calculator', name: 'Calculator' },
+    'tab-shotlist': { component: 'shotlist', name: 'Shotlist' },
+    'tab-rig': { component: 'rigcontrol', name: 'Rig-Steuerung' },
   };
 
   const handleDragNewPanel = useCallback((tabId: string, event: DragEvent) => {
@@ -362,6 +372,10 @@ export default function App() {
         return <CameraPreview undocked={false} onUndock={() => {}} />;
       case 'calculator':
         return <Calculator />;
+      case 'shotlist':
+        return <ShotlistPanel />;
+      case 'rigcontrol':
+        return <RigControlPanel />;
       default:
         return <div className="p-4 text-gray-500">Unknown panel: {component}</div>;
     }

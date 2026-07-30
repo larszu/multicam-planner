@@ -1,9 +1,9 @@
 import { create } from 'zustand';
-import type { VenueCamera, Venue, ViewTab, EditMode, ReferencePerson, BackgroundPlan, Stage, ProjectFile, VenueTemplate, StageObjectType, Lens, Wall, Camera } from '../types';
+import type { VenueCamera, Venue, ViewTab, EditMode, ReferencePerson, BackgroundPlan, Stage, ProjectFile, VenueTemplate, StageObjectType, Lens, Wall, Camera, Shot, Shotlist, RigTake } from '../types';
 import { CAMERAS, CAMERA_COLORS } from '../data/cameras';
 import { LENSES, pickInitialMountAndLens } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
-import { loadJSON, saveJSON } from '../utils/storage';
+import { loadJSON, saveJSON, saveJSONSafe } from '../utils/storage';
 import { fromVenueExchange, type VenueExchange } from '../utils/venueExchange';
 import type { AvPlan } from '../utils/avplan';
 
@@ -102,6 +102,33 @@ interface AppState {
   restoreBuiltInTemplates: () => void;
   clearAll: () => void;
 
+  // ── Shotlist / Storyboard (#62 Punkt 5) ──
+  shotlists: Shotlist[];
+  activeShotlistId: string | null;
+  /** Zuletzt angefahrener Shot — treibt die Markierung im Panel. */
+  currentShotId: string | null;
+  /** true, wenn die letzte Persistierung an der localStorage-Quota scheiterte. */
+  shotlistStorageFull: boolean;
+  addShotlist: (name?: string) => string;
+  removeShotlist: (id: string) => void;
+  renameShotlist: (id: string, name: string) => void;
+  setActiveShotlist: (id: string | null) => void;
+  /** Haengt einen Shot ans Ende der Liste und liefert dessen id. */
+  addShot: (shotlistId: string, shot: Omit<Shot, 'id'>) => string;
+  updateShot: (shotlistId: string, shotId: string, updates: Partial<Omit<Shot, 'id'>>) => void;
+  removeShot: (shotlistId: string, shotId: string) => void;
+  /** Verschiebt einen Shot per Index (Drag-Reihenfolge im Panel). */
+  moveShot: (shotlistId: string, from: number, to: number) => void;
+  setCurrentShotId: (id: string | null) => void;
+
+  // ── Aufgezeichnete Rig-Fahrten (Takes) ──
+  rigTakes: RigTake[];
+  /** true, wenn der letzte Take nicht in den localStorage gepasst hat. */
+  takeStorageFull: boolean;
+  addRigTake: (take: Omit<RigTake, 'id'>) => string;
+  removeRigTake: (id: string) => void;
+  renameRigTake: (id: string, name: string) => void;
+
   // Project versioning
   projectVersion: number;
   lastSavedVersion: number;
@@ -159,6 +186,52 @@ function loadCustomCameras(): Camera[] {
 function saveCustomCamerasStorage(cameras: Camera[]) {
   saveJSON(CUSTOM_CAMERAS_KEY, cameras);
 }
+
+// ── Shotlisten (#62 Punkt 5) ──
+const SHOTLISTS_KEY = 'multicam-shotlists';
+
+/**
+ * Id fuer persistierte Entitaeten. `Date.now()` allein reicht nicht: beim
+ * schnellen Aufnehmen mehrerer Shots (oder beim Duplizieren) faellt mehr als
+ * eine Id in dieselbe Millisekunde. Der Zaehler + Zufallssuffix macht sie
+ * eindeutig, auch ueber Sessions hinweg (anders als der reine `uid`-Zaehler,
+ * der nach einem Neustart wieder bei 1 beginnt und persistierte Ids treffen
+ * wuerde).
+ */
+let persistentIdCounter = 0;
+function persistentId(prefix: string): string {
+  persistentIdCounter += 1;
+  const rand = Math.random().toString(36).slice(2, 8);
+  return `${prefix}-${Date.now().toString(36)}-${persistentIdCounter}-${rand}`;
+}
+
+function loadShotlists(): Shotlist[] {
+  const parsed = loadJSON<Shotlist[]>(SHOTLISTS_KEY, []);
+  if (!Array.isArray(parsed)) return [];
+  // Defensiv: nur strukturell brauchbare Eintraege durchlassen, damit ein
+  // halb geschriebener/handgepfuschter Storage das Panel nicht crasht.
+  return parsed.filter(
+    (l): l is Shotlist =>
+      !!l && typeof l.id === 'string' && typeof l.name === 'string' && Array.isArray(l.shots),
+  );
+}
+
+/** Einmalig beim Modul-Laden gelesen — der Store-Initializer nutzt denselben
+ *  Stand fuer `shotlists` und `activeShotlistId`. */
+const INITIAL_SHOTLISTS: Shotlist[] = loadShotlists();
+
+const RIG_TAKES_KEY = 'multicam-rig-takes';
+
+function loadRigTakes(): RigTake[] {
+  const parsed = loadJSON<RigTake[]>(RIG_TAKES_KEY, []);
+  if (!Array.isArray(parsed)) return [];
+  return parsed.filter(
+    (t): t is RigTake =>
+      !!t && typeof t.id === 'string' && typeof t.cameraId === 'string' && Array.isArray(t.samples),
+  );
+}
+
+const INITIAL_RIG_TAKES: RigTake[] = loadRigTakes();
 
 const FAVORITE_CAMERAS_KEY = 'multicam-favorite-cameras';
 const FAVORITE_LENSES_KEY = 'multicam-favorite-lenses';
@@ -517,6 +590,115 @@ export const useStore = create<AppState>((set, get) => ({
 
   activeTab: '2d',
   setActiveTab: (tab) => set({ activeTab: tab }),
+
+  // ── Shotlist / Storyboard (#62 Punkt 5) ──
+  shotlists: INITIAL_SHOTLISTS,
+  activeShotlistId: INITIAL_SHOTLISTS[0]?.id ?? null,
+  currentShotId: null,
+  shotlistStorageFull: false,
+
+  addShotlist: (name) => {
+    const id = persistentId('shotlist');
+    const list: Shotlist = { id, name: name?.trim() || 'Shotlist', shots: [] };
+    set((s) => {
+      const shotlists = [...s.shotlists, list];
+      return { shotlists, activeShotlistId: id, shotlistStorageFull: !saveJSONSafe(SHOTLISTS_KEY, shotlists) };
+    });
+    return id;
+  },
+
+  removeShotlist: (id) =>
+    set((s) => {
+      const shotlists = s.shotlists.filter((l) => l.id !== id);
+      return {
+        shotlists,
+        activeShotlistId: s.activeShotlistId === id ? (shotlists[0]?.id ?? null) : s.activeShotlistId,
+        currentShotId: s.activeShotlistId === id ? null : s.currentShotId,
+        shotlistStorageFull: !saveJSONSafe(SHOTLISTS_KEY, shotlists),
+      };
+    }),
+
+  renameShotlist: (id, name) =>
+    set((s) => {
+      const shotlists = s.shotlists.map((l) => (l.id === id ? { ...l, name } : l));
+      return { shotlists, shotlistStorageFull: !saveJSONSafe(SHOTLISTS_KEY, shotlists) };
+    }),
+
+  setActiveShotlist: (id) => set({ activeShotlistId: id, currentShotId: null }),
+
+  addShot: (shotlistId, shot) => {
+    const id = persistentId('shot');
+    set((s) => {
+      const shotlists = s.shotlists.map((l) =>
+        l.id === shotlistId ? { ...l, shots: [...l.shots, { ...shot, id }] } : l,
+      );
+      return { shotlists, currentShotId: id, shotlistStorageFull: !saveJSONSafe(SHOTLISTS_KEY, shotlists) };
+    });
+    return id;
+  },
+
+  updateShot: (shotlistId, shotId, updates) =>
+    set((s) => {
+      const shotlists = s.shotlists.map((l) =>
+        l.id === shotlistId
+          ? { ...l, shots: l.shots.map((sh) => (sh.id === shotId ? { ...sh, ...updates } : sh)) }
+          : l,
+      );
+      return { shotlists, shotlistStorageFull: !saveJSONSafe(SHOTLISTS_KEY, shotlists) };
+    }),
+
+  removeShot: (shotlistId, shotId) =>
+    set((s) => {
+      const shotlists = s.shotlists.map((l) =>
+        l.id === shotlistId ? { ...l, shots: l.shots.filter((sh) => sh.id !== shotId) } : l,
+      );
+      return {
+        shotlists,
+        currentShotId: s.currentShotId === shotId ? null : s.currentShotId,
+        shotlistStorageFull: !saveJSONSafe(SHOTLISTS_KEY, shotlists),
+      };
+    }),
+
+  moveShot: (shotlistId, from, to) =>
+    set((s) => {
+      const shotlists = s.shotlists.map((l) => {
+        if (l.id !== shotlistId) return l;
+        // Out-of-range-Indizes ignorieren statt undefined einzuschleusen —
+        // ein Drop ausserhalb der Liste darf die Sequenz nicht zerstoeren.
+        if (from < 0 || from >= l.shots.length || to < 0 || to >= l.shots.length || from === to) return l;
+        const shots = [...l.shots];
+        const [moved] = shots.splice(from, 1);
+        shots.splice(to, 0, moved);
+        return { ...l, shots };
+      });
+      return { shotlists, shotlistStorageFull: !saveJSONSafe(SHOTLISTS_KEY, shotlists) };
+    }),
+
+  rigTakes: INITIAL_RIG_TAKES,
+  takeStorageFull: false,
+
+  addRigTake: (take) => {
+    const id = persistentId('take');
+    set((s) => {
+      const rigTakes = [...s.rigTakes, { ...take, id }];
+      return { rigTakes, takeStorageFull: !saveJSONSafe(RIG_TAKES_KEY, rigTakes) };
+    });
+    return id;
+  },
+
+  removeRigTake: (id) =>
+    set((s) => {
+      const rigTakes = s.rigTakes.filter((t) => t.id !== id);
+      return { rigTakes, takeStorageFull: !saveJSONSafe(RIG_TAKES_KEY, rigTakes) };
+    }),
+
+  renameRigTake: (id, name) =>
+    set((s) => {
+      const rigTakes = s.rigTakes.map((t) => (t.id === id ? { ...t, name } : t));
+      return { rigTakes, takeStorageFull: !saveJSONSafe(RIG_TAKES_KEY, rigTakes) };
+    }),
+
+  setCurrentShotId: (id) => set({ currentShotId: id }),
   editMode: 'all',
   setEditMode: (mode) => set({ editMode: mode }),
   showAllFov: true,

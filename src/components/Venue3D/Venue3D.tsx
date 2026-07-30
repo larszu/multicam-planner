@@ -5,7 +5,8 @@ import { useStore } from '../../store/useStore';
 import { getCameraById, getEffectiveSensor } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov } from '../../utils/fov';
-import { effectiveCameraPos } from '../../utils/camera';
+import { effectiveCameraPos, rigYaw } from '../../utils/camera';
+import RigStructure from './RigStructure';
 import * as THREE from 'three';
 import { configureTextBuilder } from 'troika-three-text';
 import { getExportRegistry } from '../../store/exportRegistry';
@@ -529,7 +530,11 @@ function CameraRig({
       // axis (= roll), so the pitch rotation has to go on Z.
       pitchRef.current.rotation.set(0, 0, THREE.MathUtils.degToRad(cam.tilt));
     }
-  }, [cam.pan, cam.tilt, cam.x, cam.y, cam.z, cam.trackOffset, cam]);
+  }, [cam.pan, cam.tilt, cam.x, cam.y, cam.z, cam.trackOffset, cam.rigRotation, cam]);
+
+  // Ausrichtung des Rigs — einmal im Render aufgeloest, damit die Callbacks
+  // nur den Winkel als Abhaengigkeit brauchen und nicht das ganze cam-Objekt.
+  const camYaw = rigYaw(cam);
 
   const commitMove = useCallback(() => {
     if (!baseRef.current) return;
@@ -537,14 +542,15 @@ function CameraRig({
     // so back out the trackOffset to recover the parked position before
     // clamping into the venue bounds.
     const offset = cam.trackOffset ?? 0;
-    const panRad = (cam.pan * Math.PI) / 180;
-    const dropX = baseRef.current.position.x - Math.cos(panRad) * offset;
-    const dropY = baseRef.current.position.z - Math.sin(panRad) * offset;
+    // Der Fahrweg folgt der Rig-Achse (Schiene/Kran), nicht dem Pan.
+    const yawRad = (camYaw * Math.PI) / 180;
+    const dropX = baseRef.current.position.x - Math.cos(yawRad) * offset;
+    const dropY = baseRef.current.position.z - Math.sin(yawRad) * offset;
     const nextX = Math.max(0, Math.min(venueWidth, dropX));
     const nextY = Math.max(0, Math.min(venueHeight, dropY));
-    baseRef.current.position.set(nextX + Math.cos(panRad) * offset, 0, nextY + Math.sin(panRad) * offset);
+    baseRef.current.position.set(nextX + Math.cos(yawRad) * offset, 0, nextY + Math.sin(yawRad) * offset);
     moveCamera(cam.id, nextX, nextY);
-  }, [cam.id, cam.pan, cam.trackOffset, moveCamera, venueHeight, venueWidth]);
+  }, [cam.id, camYaw, cam.trackOffset, moveCamera, venueHeight, venueWidth]);
 
   const commitHeight = useCallback(() => {
     if (!liftRef.current) return;
@@ -943,6 +949,13 @@ export default function Venue3D() {
         {/* Stages */}
         {venue.stages.map((s) => (
           <StageMesh key={s.id} x={s.x} y={s.y} w={s.width} h={s.height} label={s.label} />
+        ))}
+
+        {/* Rig-Aufbau (Stativ, Schiene, Kran) — eigene Gruppe auf der
+            Parkposition, waehrend die Kamera selbst auf der verfahrenen
+            Position sitzt. Sonst wuerde die Schiene mitfahren. */}
+        {cameras.map((cam) => (
+          <RigStructure key={`rig-${cam.id}`} cam={cam} isSelected={cam.id === selectedCameraId} />
         ))}
 
         {/* Cameras with explicit unlock + gizmo editing */}

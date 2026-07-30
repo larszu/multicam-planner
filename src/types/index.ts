@@ -94,17 +94,29 @@ export type StageObjectType =
 // height range and (for jib / dolly) a track length used by the live track
 // slider. Without it Z is unconstrained, which is fine for typing but loses
 // the "this rig physically can't go that high" check.
-export type CameraMountType = 'tripod' | 'pedestal' | 'jib' | 'dolly' | 'gimbal' | 'handheld' | 'steadicam' | 'fixed';
+export type CameraMountType =
+  | 'tripod' | 'hihat' | 'pedestal' | 'jib' | 'technocrane' | 'dolly' | 'slider'
+  | 'cablecam' | 'drone' | 'scissorlift' | 'remotehead' | 'carmount' | 'rickshaw'
+  | 'gimbal' | 'handheld' | 'steadicam' | 'fixed';
 
 export const MOUNT_TYPE_LABELS: Record<CameraMountType, string> = {
   tripod: 'Stativ',
+  hihat: 'Hi-Hat / Bodenstativ',
   pedestal: 'Studio Pedestal',
-  jib: 'Jib / Crane',
-  dolly: 'Dolly',
+  jib: 'Jib / Kran',
+  technocrane: 'Technocrane (teleskopierend)',
+  dolly: 'Dolly (Schiene)',
+  slider: 'Slider',
+  cablecam: 'Cable-Cam / Spidercam',
+  drone: 'Drohne',
+  scissorlift: 'Scherenbuehne / Hebebuehne',
+  remotehead: 'Remote-Head',
+  carmount: 'Fahrzeug-Montage',
+  rickshaw: 'Rickshaw / Kamerawagen',
   gimbal: 'Gimbal',
   handheld: 'Handheld',
   steadicam: 'Steadicam',
-  fixed: 'Fixed Mount',
+  fixed: 'Feste Montage',
 };
 
 /**
@@ -115,9 +127,25 @@ export const MOUNT_TYPE_LABELS: Record<CameraMountType, string> = {
  */
 export const MOUNT_HEIGHT_RANGE: Record<CameraMountType, { min: number; max: number; pump: number; track?: number }> = {
   tripod:    { min: 0.5, max: 2.2, pump: 0.05 },
+  // Hi-Hat: Kamera fast auf dem Boden, kaum Hoehenspiel.
+  hihat:     { min: 0.1, max: 0.5, pump: 0.05 },
   pedestal:  { min: 0.6, max: 1.8, pump: 0.4 },
   jib:       { min: 0.3, max: 6.0, pump: 1.5, track: 3.5 },
+  // Techno 22 als gaengiger Vertreter: 24' (7.3 m) Objektivhoehe ueberschlaegig,
+  // 15'6" (4.7 m) Teleskopweg. Der Arm faehrt teleskopierend ein/aus, statt nur
+  // zu schwenken — darum deutlich mehr Track als ein klassischer Jib.
+  technocrane: { min: 0.5, max: 7.3, pump: 1.5, track: 4.7 },
   dolly:     { min: 0.4, max: 1.9, pump: 0.1, track: 6.0 },
+  // Slider: kurzer Weg, dafuer sehr feine Kontrolle.
+  slider:    { min: 0.2, max: 2.0, pump: 0.05, track: 1.2 },
+  // Cable-Cam haengt in Seilen — grosser Hoehenbereich, sehr weiter Weg.
+  cablecam:  { min: 2.0, max: 40.0, pump: 2.0, track: 80.0 },
+  drone:     { min: 0.5, max: 120.0, pump: 5.0, track: 100.0 },
+  scissorlift: { min: 1.2, max: 12.0, pump: 1.0 },
+  // Remote-Head sitzt auf einem anderen Rig; eigener Hoehenbereich bleibt klein.
+  remotehead: { min: 0.3, max: 3.0, pump: 0.2 },
+  carmount:  { min: 0.3, max: 2.5, pump: 0.2, track: 50.0 },
+  rickshaw:  { min: 0.8, max: 2.0, pump: 0.2, track: 30.0 },
   gimbal:    { min: 0.8, max: 1.9, pump: 0.6 },
   handheld:  { min: 1.0, max: 1.9, pump: 0.8 },
   steadicam: { min: 0.3, max: 2.0, pump: 0.5 },
@@ -207,6 +235,18 @@ export interface VenueCamera {
    */
   mountType?: CameraMountType;
   /**
+   * Konkretes Rig aus dem Katalog (`data/rigs.ts`) — z. B. ein 18-ft-Jimmy-Jib
+   * statt nur "Jib". Setzt Hoehenbereich und Fahrweg auf die echten Maße des
+   * Geraets. Ohne Angabe gelten die Kategorie-Defaults aus MOUNT_HEIGHT_RANGE.
+   */
+  rigId?: string;
+  /**
+   * Gelegte Schienenlaenge in Metern (Dolly/Slider). Ueberschreibt den Vorschlag
+   * des Rigs — die Strecke wird aus Sektionen (4/8/10 ft) gelegt und ist damit
+   * pro Aufbau anders lang.
+   */
+  trackLengthM?: number;
+  /**
    * Preview drag-direction overrides. Persisted per camera so an operator with
    * a preferred swing direction keeps it across sessions.
    * `invertPreviewH` flips the pan direction, `invertPreviewV` flips tilt.
@@ -232,6 +272,18 @@ export interface VenueCamera {
    * line in the 2D plan so the operator can see the swept area.
    */
   trackOffset?: number;
+  /**
+   * Ausrichtung des Rigs im Raum (Grad, gleiche Konvention wie `pan`).
+   * Eine gelegte Schiene, ein Kran-Chassis oder die Beinstellung eines Stativs
+   * bleiben stehen, waehrend die Kamera darauf schwenkt — darum ist das ein
+   * eigener Winkel und kein Offset auf `pan`.
+   *
+   * Ohne Angabe folgt das Rig dem Pan der Kamera (Verhalten vor #71 und
+   * sinnvoller Default: Stativ wird eben so hingestellt, wie man schaut).
+   * `rigYaw()` in `utils/camera.ts` loest das auf; der Fahrweg laeuft immer
+   * entlang dieser Achse, nicht entlang der Blickrichtung.
+   */
+  rigRotation?: number;
   /**
    * Free-form notes for this camera placement (mount, operator, instructions,
    * shot list, etc.). Shown in the sidebar and included in PNG exports when set.
@@ -290,7 +342,83 @@ export interface DofResult {
 }
 
 // ── Tab views ──
-export type ViewTab = '2d' | '3d' | 'preview' | 'calculator';
+export type ViewTab = '2d' | '3d' | 'preview' | 'calculator' | 'shotlist';
+
+// ── Shotlist / Storyboard (#62 Punkt 5) ──
+// Ein Preset ist ein einzelner Kamera-Zustand; ein Shot ist derselbe Zustand,
+// aber benannt, bebildert (Framegrab) und Teil einer geordneten Sequenz. Die
+// Shotlist faehrt die Shots der Reihe nach an — mit derselben Transition-Engine
+// wie die Presets (#62 Punkt 4) — und laesst sich als Storyboard exportieren.
+
+/** Eingefrorener Kamera-Zustand eines Shots (die Preset-Parameter aus Punkt 3). */
+export interface ShotState {
+  x: number;
+  y: number;
+  z: number;
+  pan: number;
+  tilt: number;
+  focalLength: number;
+  aperture: number;
+  focusDistance: number;
+  trackOffset: number;
+}
+
+/** Wie ein Shot angefahren wird. `off` springt hart. */
+export type ShotTransition = 'off' | 'fast' | 'slow' | 'manual';
+
+export interface Shot {
+  id: string;
+  /** Freier Name, z. B. "WS Buehne", "CU Saenger". */
+  name: string;
+  /** Auf welche VenueCamera sich der Shot bezieht (`VenueCamera.id`). */
+  cameraId: string;
+  state: ShotState;
+  transition: ShotTransition;
+  /** Nur bei `transition === 'manual'` relevant. */
+  transitionSeconds?: number;
+  /**
+   * Bewegungsstil beim Anfahren. Ohne Angabe gilt der Stil der Montage, auf der
+   * die Kamera steht (`VenueCamera.mountType`) — das ist der Normalfall. Explizit
+   * gesetzt laesst sich ein Shot abweichend fahren, z. B. eine Stativ-Kamera
+   * bewusst „wie ein Dolly" traege anlaufen lassen.
+   */
+  motionStyle?: CameraMountType;
+  /** Framegrab als data-URL. Klein gehalten (JPEG), damit localStorage reicht. */
+  thumbnail?: string;
+  /** Regie-/Kamera-Notiz. */
+  note?: string;
+}
+
+export interface Shotlist {
+  id: string;
+  name: string;
+  shots: Shot[];
+}
+
+// ── Aufgezeichnete Rig-Fahrt ("Take") ──
+// Ein Shot ist EIN Zustand und wird angefahren; ein Take ist die ganze
+// Bewegung, so wie sie am Pult gefahren wurde — inklusive Zoegern,
+// Nachfuehren und gleichzeitiger Achsen. Damit lassen sich Fahrten
+// wiedergeben, statt sie nur zwischen zwei Punkten zu interpolieren.
+
+/** Ein abgetasteter Moment der Fahrt. `t` = Sekunden seit Aufnahmebeginn. */
+export interface TakeSample {
+  t: number;
+  state: ShotState;
+  /** Ausrichtung des Rigs zu diesem Zeitpunkt (nur wenn eigenstaendig). */
+  rigRotation?: number;
+}
+
+export interface RigTake {
+  id: string;
+  name: string;
+  /** Kamera, mit der aufgezeichnet wurde (`VenueCamera.id`). */
+  cameraId: string;
+  /** Montage zum Aufnahmezeitpunkt — fuer die Anzeige, nicht fuer Wiedergabe. */
+  mountType?: CameraMountType;
+  samples: TakeSample[];
+  createdAt: number;
+}
 
 // ── Edit mode (issue #43) ──
 // A top-bar slider restricts editing to one category at a time so a plan can be

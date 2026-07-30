@@ -1,5 +1,5 @@
 import { useStore, APP_VERSION } from '../../store/useStore';
-import { FiCamera, FiLayout, FiBox, FiMonitor, FiSliders, FiSave, FiUpload, FiDownload, FiChevronDown, FiX, FiCheck, FiMapPin, FiRepeat, FiEdit2 } from 'react-icons/fi';
+import { FiCamera, FiLayout, FiBox, FiMonitor, FiSliders, FiFilm, FiMove, FiSave, FiUpload, FiDownload, FiChevronDown, FiX, FiCheck, FiMapPin, FiRepeat, FiEdit2 } from 'react-icons/fi';
 import { toVenueExchange, parseVenueExchange } from '../../utils/venueExchange';
 import { toCameraList } from '../../utils/cameraExport';
 import { getCameraById } from '../../data/cameras';
@@ -15,6 +15,8 @@ const tabs: { id: string; label: string; icon: React.ReactNode }[] = [
   { id: 'tab-3d', label: '3D View', icon: <FiBox size={16} /> },
   { id: 'tab-preview', label: 'Preview', icon: <FiMonitor size={16} /> },
   { id: 'tab-calc', label: 'Calculator', icon: <FiSliders size={16} /> },
+  { id: 'tab-shotlist', label: 'Shotlist', icon: <FiFilm size={16} /> },
+  { id: 'tab-rig', label: 'Rig', icon: <FiMove size={16} /> },
 ];
 
 // Edit-mode slider options (issue #43). Each mode locks everything except its

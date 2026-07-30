@@ -1,18 +1,30 @@
 import type { VenueCamera } from '../types';
 
 /**
+ * Ausrichtung des Rigs im Raum (Grad). Ohne eigene `rigRotation` folgt das Rig
+ * dem Pan der Kamera — so war es vor der frei drehbaren Montage, und fuer ein
+ * Stativ ist es auch der natuerliche Default.
+ *
+ * Sobald der Nutzer die Schiene/den Kran ausgerichtet hat, ist der Winkel fest:
+ * die Kamera schwenkt darauf, das Rig dreht sich nicht mit.
+ */
+export function rigYaw(cam: Pick<VenueCamera, 'pan' | 'rigRotation'>): number {
+  return cam.rigRotation ?? cam.pan;
+}
+
+/**
  * Effective camera position once the live-motion track slider (jib / dolly)
  * is applied. The "parked" position is `cam.x` / `cam.y`; the track shifts
- * along the camera's current look direction (so a positive offset is "track
- * in" for a dolly, "extend" for a jib). Returns the unmodified parked
- * position when no offset is set.
+ * along the **rig's** axis (`rigYaw`) — a dolly rolls along its rail no matter
+ * where the camera happens to look. Returns the unmodified parked position
+ * when no offset is set.
  */
 export function effectiveCameraPos(cam: VenueCamera): { x: number; y: number } {
   const offset = cam.trackOffset ?? 0;
   if (!offset) return { x: cam.x, y: cam.y };
-  const panRad = (cam.pan * Math.PI) / 180;
+  const yawRad = (rigYaw(cam) * Math.PI) / 180;
   return {
-    x: cam.x + Math.cos(panRad) * offset,
-    y: cam.y + Math.sin(panRad) * offset,
+    x: cam.x + Math.cos(yawRad) * offset,
+    y: cam.y + Math.sin(yawRad) * offset,
   };
 }
