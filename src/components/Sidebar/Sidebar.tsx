@@ -4,11 +4,12 @@ import { LENSES, getLensById, getCompatibleLenses, pickInitialMountAndLens } fro
 import { computeFov, computeDof } from '../../utils/fov';
 import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2, FiRotateCcw, FiHome, FiImage, FiColumns, FiUsers, FiVideo } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { BackgroundPlan, StageObjectType, Camera, CameraMountType, WallPattern } from '../../types';
+import type { BackgroundPlan, StageObjectType, Camera, CameraMountType, WallFit, WallPattern } from '../../types';
 import { MOUNT_TYPE_LABELS } from '../../types';
 import { rigsForType, trackSectionPlan } from '../../data/rigs';
 import { clampHeight, clampTrack, rigLimits } from '../../utils/rigLimits';
 import { rigYaw } from '../../utils/camera';
+import { DEFAULT_PATTERN_ROWS, PATTERN_ROWS_MAX, PATTERN_ROWS_MIN } from '../../utils/wallSurface';
 import { FieldRow, Group, Note, Readout, ValueSlider } from './fields';
 // Derselbe Objektiv-Regler wie im Preview-Tab: logarithmische Bahn, Rastung,
 // direkte Zahleneingabe. Zwei Implementierungen waeren zwei Bedienungen.
@@ -1496,7 +1497,7 @@ export default function Sidebar() {
               onClick={() => addStage()}
               className="flex items-center gap-1 px-2 py-1 rounded bg-bc-accent/20 text-bc-accent text-xs hover:bg-bc-accent/30 w-full justify-center"
             >
-              <FiPlus size={12} /> Neu Stage
+              <FiPlus size={12} /> Bühne hinzufügen
             </button>
           </div>
         )}
@@ -1561,10 +1562,10 @@ export default function Sidebar() {
                     value={w.pattern ?? 'solid'}
                     onChange={(e) => updateWall(w.id, { pattern: e.target.value as WallPattern })}
                   >
-                    <option value="solid">Solid</option>
-                    <option value="grid">Grid</option>
-                    <option value="flowers">Flowers</option>
-                    <option value="image">Image…</option>
+                    <option value="solid">Einfarbig</option>
+                    <option value="grid">Raster</option>
+                    <option value="flowers">Blumen</option>
+                    <option value="image">Bild…</option>
                   </select>
                   {w.pattern === 'image' && (
                     <label className="px-1.5 py-0.5 rounded bg-bc-accent/20 text-bc-accent text-[10px] cursor-pointer hover:bg-bc-accent/30" title="Kachelbild hochladen">
@@ -1585,20 +1586,60 @@ export default function Sidebar() {
                     </label>
                   )}
                   <button
-                    onClick={() => walls.forEach((other) => other.id !== w.id && updateWall(other.id, { color: w.color, pattern: w.pattern, patternImage: w.patternImage }))}
+                    onClick={() => walls.forEach((other) => other.id !== w.id && updateWall(other.id, {
+                      color: w.color, pattern: w.pattern, patternImage: w.patternImage,
+                      patternFit: w.patternFit, patternRows: w.patternRows,
+                    }))}
                     className="px-1.5 py-0.5 rounded border border-bc-border text-gray-400 hover:text-bc-accent hover:border-bc-accent text-[10px] shrink-0"
-                    title="Apply this wall's colour & pattern to all walls"
+                    title="Farbe & Muster dieser Wand auf alle Wände übertragen"
                   >
-                    All
+                    alle
                   </button>
                 </div>
+
+                {/* Wie das Muster auf der Wand liegt (#74). Die Anzahl haengt
+                    jetzt an der Wand statt am Zoom. */}
+                {(w.pattern ?? 'solid') !== 'solid' && (
+                  <div className="flex items-center gap-1">
+                    <select
+                      className="flex-1 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[10px]"
+                      value={w.patternFit ?? 'tile'}
+                      onChange={(e) => updateWall(w.id, { patternFit: e.target.value as WallFit })}
+                      title="Wie das Muster auf die Wandfläche gelegt wird"
+                    >
+                      <option value="tile">Kacheln</option>
+                      <option value="scale-v">Skaliert (Höhe)</option>
+                      <option value="scale-h">Skaliert (Breite)</option>
+                      <option value="stretch">Gedehnt</option>
+                    </select>
+                    {(w.patternFit ?? 'tile') === 'tile' && (
+                      <label className="flex items-center gap-1 text-[10px] text-gray-400">
+                        Reihen
+                        <input
+                          type="number"
+                          className="w-12 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[10px] tabular-nums"
+                          min={PATTERN_ROWS_MIN}
+                          max={PATTERN_ROWS_MAX}
+                          step={1}
+                          value={w.patternRows ?? DEFAULT_PATTERN_ROWS}
+                          title="Wiederholungen über die Wandhöhe — die Breite folgt daraus, damit Kacheln nicht verzerren"
+                          onChange={(e) => {
+                            const v = parseInt(e.target.value, 10);
+                            if (!Number.isFinite(v)) return;
+                            updateWall(w.id, { patternRows: Math.max(PATTERN_ROWS_MIN, Math.min(PATTERN_ROWS_MAX, v)) });
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
             <button
               onClick={() => addWall()}
               className="flex items-center gap-1 px-2 py-1 rounded bg-bc-accent/20 text-bc-accent text-xs hover:bg-bc-accent/30 w-full justify-center"
             >
-              <FiPlus size={12} /> Neu Wall
+              <FiPlus size={12} /> Wand hinzufügen
             </button>
           </div>
         )}

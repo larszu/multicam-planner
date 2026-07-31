@@ -170,7 +170,30 @@ export interface Wall {
   pattern?: WallPattern;
   /** Data URL of a custom image, tiled across the wall when pattern === 'image'. */
   patternImage?: string;
+  /**
+   * Wie das Muster auf die Wand gelegt wird (#74). Ohne Angabe: gekachelt.
+   * Frueher wurde das Muster im Bildschirmraum gemalt — dadurch aenderte sich
+   * die Anzahl mit dem Zoom und ein Bild klebte am Bildschirm statt an der
+   * Wand ("die Wand ist ein Loch fuer das Bild dahinter").
+   */
+  patternFit?: WallFit;
+  /**
+   * Wiederholungen ueber die WANDHOEHE (#74) — "wie viele Blumen in der Hoehe".
+   * Die Anzahl in der Breite ergibt sich daraus, damit Kacheln nicht verzerren.
+   * Gilt fuer `tile`; bei den anderen Modi bestimmt sie die Wiederholung
+   * quer zur skalierten Achse. Default: 6.
+   */
+  patternRows?: number;
 }
+
+/**
+ * Auflegen des Musters auf die Wandflaeche (#74):
+ *   tile     — feste Anzahl Kacheln, Seitenverhaeltnis bleibt erhalten
+ *   scale-v  — Bildhoehe = Wandhoehe, waagerecht wiederholt
+ *   scale-h  — Bildbreite = Wandlaenge, senkrecht wiederholt
+ *   stretch  — ein Bild ueber die ganze Wand, Seitenverhaeltnis egal
+ */
+export type WallFit = 'tile' | 'scale-v' | 'scale-h' | 'stretch';
 
 // ── Reference person / object in venue ──
 export interface ReferencePerson {

@@ -5,7 +5,7 @@ import { computeFov, computeDof } from '../../utils/fov';
 import { effectiveCameraPos } from '../../utils/camera';
 import { getExportRegistry } from '../../store/exportRegistry';
 import { useRef, useEffect, useLayoutEffect, useCallback, useState } from 'react';
-import type { ShotTransition, StageObjectType, VenueCamera } from '../../types';
+import type { ShotTransition, StageObjectType, VenueCamera, Wall } from '../../types';
 import { FiChevronLeft, FiChevronRight, FiUnlock, FiLock, FiPlus, FiX, FiCamera } from 'react-icons/fi';
 import { loadJSON, saveJSON } from '../../utils/storage';
 import {
@@ -17,6 +17,15 @@ import {
 import { captureCurrentShot } from '../../utils/captureShot';
 import { profileForMount } from '../../utils/motionProfile';
 import LensSlider from './LensSlider';
+import {
+  DEFAULT_PATTERN_ROWS,
+  paintWallSurface,
+  stripCount,
+  stripRanges,
+  stripTransform,
+  surfaceKey,
+  textureSize,
+} from '../../utils/wallSurface';
 import {
   assignPreset,
   groupPresets,
@@ -104,6 +113,41 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     cache.set(dataUrl, img);
     return null;
   }, []);
+  // Fertig gemalte Wandflaechen (#74). Ohne Cache wuerde jede Wand in jedem
+  // Bild neu gemalt; so passiert das nur, wenn sich Muster, Anzahl, Farbe,
+  // Bild oder die Wandmaße aendern.
+  const wallTextureCache = useRef<Map<string, { key: string; canvas: HTMLCanvasElement }>>(new Map());
+  const getWallTexture = useCallback(
+    (wall: Wall, lengthM: number, loadImage: (src: string) => HTMLImageElement | null): HTMLCanvasElement | null => {
+      const pattern = wall.pattern ?? 'solid';
+      if (pattern === 'solid') return null;
+      const img = pattern === 'image' && wall.patternImage ? loadImage(wall.patternImage) : null;
+      if (pattern === 'image' && !img) return null;
+      const key = surfaceKey(wall, lengthM);
+      const cached = wallTextureCache.current.get(wall.id);
+      if (cached && cached.key === key) return cached.canvas;
+
+      const { w, h } = textureSize(lengthM, wall.height);
+      const canvas = cached?.canvas ?? document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const tctx = canvas.getContext('2d');
+      if (!tctx) return null;
+      paintWallSurface(tctx, w, h, {
+        pattern,
+        fit: wall.patternFit ?? 'tile',
+        rows: wall.patternRows ?? DEFAULT_PATTERN_ROWS,
+        color: wall.color ?? '#6b7280',
+        image: img ?? undefined,
+        lengthM,
+        heightM: wall.height,
+      });
+      wallTextureCache.current.set(wall.id, { key, canvas });
+      return canvas;
+    },
+    [],
+  );
+
   // Cache projected person positions during draw() so the click handler can hit-test
   // without re-projecting everything itself.
   const projectedPersons = useRef<{ id: string; sx: number; sy: number; topSy: number; dist: number }[]>([]);
@@ -395,6 +439,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
 
       const baseColor = wall.color ?? '#6b7280';
       const pattern = wall.pattern ?? 'solid';
+      const len = Math.hypot(wall.x2 - wall.x1, wall.y2 - wall.y1);
 
       // Depth-of-field blur for the wall, so a textured wall makes the focus
       // falloff visible (issue #45). Same falloff model as persons.
@@ -416,50 +461,59 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       ctx.fillStyle = baseColor + 'cc';
       ctx.fill();
 
-      // Bounding box of the projected polygon (pattern is painted in screen space
-      // — not perspective-warped, but it gives the high-frequency detail needed to
-      // judge sharpness/blur).
       const xs = projected.map((p) => p.sx);
-      const ys = projected.map((p) => p.sy);
-      const bx0 = Math.max(-50, Math.min(...xs));
-      const bx1 = Math.min(W + 50, Math.max(...xs));
-      const by0 = Math.max(-50, Math.min(...ys));
-      const by1 = Math.min(H + 50, Math.max(...ys));
 
-      if (pattern === 'grid') {
-        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-        ctx.lineWidth = 1;
-        const step = 16;
-        ctx.beginPath();
-        for (let x = bx0; x <= bx1; x += step) { ctx.moveTo(x, by0); ctx.lineTo(x, by1); }
-        for (let y = by0; y <= by1; y += step) { ctx.moveTo(bx0, y); ctx.lineTo(bx1, y); }
-        ctx.stroke();
-      } else if (pattern === 'flowers') {
-        ctx.fillStyle = 'rgba(255,255,255,0.55)';
-        const step = 26;
-        for (let y = by0; y <= by1; y += step) {
-          for (let x = bx0; x <= bx1; x += step) {
-            // simple 5-petal flower motif
-            for (let k = 0; k < 5; k++) {
-              const a = (k / 5) * Math.PI * 2;
-              ctx.beginPath();
-              ctx.arc(x + Math.cos(a) * 4, y + Math.sin(a) * 4, 2.6, 0, Math.PI * 2);
-              ctx.fill();
-            }
-            ctx.fillStyle = 'rgba(250,204,21,0.85)';
-            ctx.beginPath();
-            ctx.arc(x, y, 2.2, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      // Muster in WANDkoordinaten (#74): die Flaeche wird einmal auf eine
+      // Zwischen-Leinwand gemalt (Kachelzahl steht an der Wand, nicht am Zoom)
+      // und dann streifenweise auf das projizierte Viereck gelegt. Vorher lief
+      // das im Bildschirmraum — daher wuchs die Blumenzahl beim Reinzoomen ins
+      // Unermessliche und ein Bild klebte am Bildschirm statt an der Wand.
+      if (pattern !== 'solid') {
+        const texture = getWallTexture(wall, len, getWallImage);
+        if (texture) {
+          const dirX = len > 0 ? (wall.x2 - wall.x1) / len : 0;
+          const dirY = len > 0 ? (wall.y2 - wall.y1) / len : 0;
+          // Streifenzahl nach Bildschirmbreite: eine ferne Wand braucht wenige.
+          const screenW = Math.max(...xs) - Math.min(...xs);
+          const ranges = stripRanges(stripCount(screenW));
+          for (const { t0, t1 } of ranges) {
+            const ax = wall.x1 + dirX * len * t0;
+            const ay = wall.y1 + dirY * len * t0;
+            const bx = wall.x1 + dirX * len * t1;
+            const by = wall.y1 + dirY * len * t1;
+            const cTopL = worldToCamera(ax, ay, wall.height);
+            const cTopR = worldToCamera(bx, by, wall.height);
+            const cBotL = worldToCamera(ax, ay, 0);
+            // Streifen hinter der Kamera auslassen, statt mit unsinnigen
+            // Koordinaten zu rechnen.
+            if (cTopL.z <= NEAR || cTopR.z <= NEAR || cBotL.z <= NEAR) continue;
+            const pTopL = cameraToScreen(cTopL);
+            const pTopR = cameraToScreen(cTopR);
+            const pBotL = cameraToScreen(cBotL);
+            const sx = t0 * texture.width;
+            const sw = (t1 - t0) * texture.width;
+            if (sw <= 0) continue;
+            const m = stripTransform(
+              sx, sw, texture.height,
+              { x: pTopL.sx, y: pTopL.sy },
+              { x: pTopR.sx, y: pTopR.sy },
+              { x: pBotL.sx, y: pBotL.sy },
+            );
+            ctx.save();
+            // `transform` MULTIPLIZIERT auf die laufende Matrix — anders als
+            // `setTransform`, das sie ersetzt und damit die DPR-Skalierung vom
+            // Anfang des Zeichnens (ctx.scale(dpr, dpr)) verwerfen wuerde. Auf
+            // einem HiDPI-Schirm laege das Muster sonst halb so gross und
+            // verschoben auf der Wand.
+            ctx.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
+            // Halbes Pixel Ueberlappung, sonst blitzen Fugen zwischen den
+            // Streifen durch.
+            ctx.drawImage(texture, sx, 0, sw + 0.5, texture.height, sx, 0, sw + 0.5, texture.height);
+            ctx.restore();
           }
         }
-      } else if (pattern === 'image' && wall.patternImage) {
-        const img = getWallImage(wall.patternImage);
-        if (img) {
-          const tile = ctx.createPattern(img, 'repeat');
-          if (tile) { ctx.fillStyle = tile; ctx.fillRect(bx0, by0, bx1 - bx0, by1 - by0); }
-        }
       }
+
       ctx.restore(); // remove clip
 
       // Outline (still blurred if out of focus).
@@ -1275,6 +1329,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         <div ref={wrapRef} className="relative w-full">
           <canvas
             ref={canvasRef}
+            data-preview-canvas
             className="w-full rounded-lg"
             style={{ cursor: focusPickMode ? 'crosshair' : 'grab', display: 'block' }}
             onMouseDown={handleMouseDown}
