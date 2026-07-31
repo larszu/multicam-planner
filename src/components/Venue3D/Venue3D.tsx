@@ -12,7 +12,7 @@ import { configureTextBuilder } from 'troika-three-text';
 import { getExportRegistry } from '../../store/exportRegistry';
 import type { FramingState } from '../../store/exportRegistry';
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
-import type { BackgroundPlan, StageObjectType } from '../../types';
+import type { BackgroundPlan, Stage, StageObjectType } from '../../types';
 import robotoFont from '../../assets/fonts/Roboto-Regular.ttf';
 
 // ── Apple-Silicon / Electron 3D-view fix (issue #35) ──
@@ -343,24 +343,35 @@ function FPSControls({ mouseLookEnabled }: { mouseLookEnabled: boolean }) {
   return null;
 }
 
-function StageMesh({ x, y, w, h, label }: { x: number; y: number; w: number; h: number; label: string }) {
+function StageMesh({ stage }: { stage: Stage }) {
+  const { x, y, width: w, height: h, label } = stage;
+  // Podest statt Flaeche (#73): mit `elevationM` wird aus der Buehne ein
+  // Koerper, der auf dem Boden steht — die Oberkante liegt dann genau auf der
+  // eingestellten Hoehe. Ohne Angabe bleibt die bisherige flache Andeutung.
+  const raised = Math.max(0, stage.elevationM ?? 0);
+  const boxH = raised > 0 ? raised : 0.1;
+  const color = stage.color ?? '#3b82f6';
+  const opacity = Math.max(0, Math.min(1, stage.opacity ?? 0.4));
+  const geo = useMemo(() => new THREE.BoxGeometry(w, boxH, h), [w, boxH, h]);
+
   return (
-    <group position={[x + w / 2, 0.05, y + h / 2]}>
-      <mesh>
-        <boxGeometry args={[w, 0.1, h]} />
-        <meshStandardMaterial color="#3b82f6" opacity={0.4} transparent />
+    <group position={[x + w / 2, boxH / 2, y + h / 2]}>
+      <mesh geometry={geo}>
+        <meshStandardMaterial color={color} opacity={opacity} transparent={opacity < 1} />
       </mesh>
       {/* Stage edge glow */}
       <lineSegments>
-        <edgesGeometry args={[new THREE.BoxGeometry(w, 0.1, h)]} />
+        <edgesGeometry args={[geo]} />
         <lineBasicMaterial color="#60a5fa" />
       </lineSegments>
-      <Text font={LABEL_FONT} position={[0, 0.2, 0]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.5} color="#93c5fd" anchorX="center" fontWeight="bold">
+      {/* Beschriftung auf die Oberkante, sonst steckt sie bei einem hohen
+          Podest im Koerper. */}
+      <Text font={LABEL_FONT} position={[0, boxH / 2 + 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.5} color="#93c5fd" anchorX="center" fontWeight="bold">
         {label}
       </Text>
       {/* Stage dimensions */}
-      <Text font={LABEL_FONT} position={[0, 0.15, h / 2 + 0.3]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.25} color="#60a5fa" anchorX="center" fillOpacity={0.53}>
-        {w}×{h}m
+      <Text font={LABEL_FONT} position={[0, boxH / 2 + 0.08, h / 2 + 0.3]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.25} color="#60a5fa" anchorX="center" fillOpacity={0.53}>
+        {w}×{h}m{raised > 0 ? ` · ${raised.toFixed(2)}m hoch` : ''}
       </Text>
     </group>
   );
@@ -948,7 +959,7 @@ export default function Venue3D() {
 
         {/* Stages */}
         {venue.stages.map((s) => (
-          <StageMesh key={s.id} x={s.x} y={s.y} w={s.width} h={s.height} label={s.label} />
+          <StageMesh key={s.id} stage={s} />
         ))}
 
         {/* Rig-Aufbau (Stativ, Schiene, Kran) — eigene Gruppe auf der

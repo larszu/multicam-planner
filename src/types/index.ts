@@ -326,6 +326,16 @@ export interface Stage {
   label: string;
   /** When true, the stage can't be dragged or resized in the 2D plan. */
   locked?: boolean;
+  /**
+   * Podesthoehe ueber dem Boden (m) — macht aus der Flaeche einen Koerper
+   * (#73). `width`/`height` sind die Grundflaeche, deshalb der eigene Name.
+   * Ohne Angabe: flach (0.1 m Andeutung wie bisher).
+   */
+  elevationM?: number;
+  /** Farbe des Podests (Hex). Ohne Angabe das bisherige Blau. */
+  color?: string;
+  /** Deckkraft 0..1. Ohne Angabe 0.4 wie bisher. */
+  opacity?: number;
 }
 
 // ── Venue ──

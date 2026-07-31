@@ -1486,9 +1486,55 @@ export default function Sidebar() {
                       onChange={(e) => updateStage(s.id, { width: parseFloat(e.target.value) || 1 })} />
                   </label>
                   <label>
-                    <span className="text-gray-500">H</span>
+                    <span className="text-gray-500">T</span>
                     <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs" value={s.height} step={0.5}
+                      title="Tiefe der Grundfläche in Metern"
                       onChange={(e) => updateStage(s.id, { height: parseFloat(e.target.value) || 1 })} />
+                  </label>
+                </div>
+
+                {/* Podest statt Flaeche (#73): Hoehe, Farbe, Transparenz —
+                    dieselben Stellschrauben wie bei den Wänden. */}
+                <div className="mt-1 flex items-center gap-1">
+                  <label className="flex items-center gap-1 text-gray-500">
+                    Höhe
+                    <input
+                      type="number"
+                      className="w-14 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs tabular-nums"
+                      value={s.elevationM ?? 0}
+                      step={0.1}
+                      min={0}
+                      max={10}
+                      title="Podesthöhe über dem Boden in Metern — 0 bleibt flach"
+                      onChange={(e) => {
+                        const v = parseFloat(e.target.value);
+                        updateStage(s.id, { elevationM: Number.isFinite(v) ? Math.max(0, Math.min(10, v)) : 0 });
+                      }}
+                    />
+                    <span className="text-[10px] text-gray-600">m</span>
+                  </label>
+                  <input
+                    type="color"
+                    className="w-5 h-5 rounded border border-bc-border cursor-pointer bg-transparent shrink-0"
+                    value={s.color ?? '#3b82f6'}
+                    onChange={(e) => updateStage(s.id, { color: e.target.value })}
+                    title="Farbe des Podests"
+                    aria-label="Farbe des Podests"
+                  />
+                  <label className="flex flex-1 items-center gap-1 text-gray-500" title="Deckkraft in Prozent">
+                    <input
+                      type="range"
+                      className="flex-1 accent-bc-accent"
+                      min={10}
+                      max={100}
+                      step={5}
+                      value={Math.round((s.opacity ?? 0.4) * 100)}
+                      aria-label="Deckkraft des Podests in Prozent"
+                      onChange={(e) => updateStage(s.id, { opacity: parseInt(e.target.value, 10) / 100 })}
+                    />
+                    <span className="w-8 text-right text-[10px] tabular-nums text-gray-400">
+                      {Math.round((s.opacity ?? 0.4) * 100)}%
+                    </span>
                   </label>
                 </div>
               </div>
