@@ -18,6 +18,12 @@ import { captureCurrentShot } from '../../utils/captureShot';
 import { profileForMount } from '../../utils/motionProfile';
 import LensSlider from './LensSlider';
 import {
+  assignPreset,
+  groupPresets,
+  hasPose,
+  type PreviewPreset,
+} from '../../utils/previewPreset';
+import {
   formatAperture,
   formatDistance,
   formatFocal,
@@ -30,25 +36,9 @@ import {
 /** Kuerzeste sinnvolle Fokusdistanz des Reglers (m). */
 const FOCUS_MIN = 0.5;
 
-// Preview optical presets (issue #47) — snapshots of focal length / aperture /
-// focus distance the operator can recall. Persisted globally in localStorage.
-// Preview preset (#47, erweitert #62 Punkt 3). Neben den optischen Werten
-// werden jetzt auch die raeumlichen Kamera-Parameter gespeichert (Pan, Tilt,
-// Hoehe, Track, X, Y). Die raeumlichen Felder sind optional, damit aeltere,
-// bereits gespeicherte Presets (nur optisch) weiterhin laden und anwendbar bleiben.
-interface PreviewPreset {
-  id: string;
-  name: string;
-  focalLength: number;
-  aperture: number;
-  focusDistance: number;
-  pan?: number;
-  tilt?: number;
-  z?: number;          // Hoehe in Metern
-  trackOffset?: number; // Track (Dolly/Jib), Meter
-  x?: number;
-  y?: number;
-}
+// Preview-Presets (#47, erweitert #62 Punkt 3): gespeicherte Posen zum
+// Anfahren — Optik plus (optional) Position im Raum. Typ und Zuordnungslogik
+// liegen in utils/previewPreset, damit die Regeln testbar sind.
 const PREVIEW_PRESETS_KEY = 'multicam-preview-presets';
 const PREVIEW_TRANSITION_MODE_KEY = 'multicam-preview-transition-mode';
 const PREVIEW_TRANSITION_SEC_KEY = 'multicam-preview-transition-sec';
@@ -1213,7 +1203,9 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     const name = window.prompt('Preset name:', `${cam.focalLength.toFixed(0)}mm f/${cam.aperture.toFixed(1)}`);
     if (!name) return;
     persistPresets([...presets, {
-      id: Date.now().toString(36), name: name.trim(),
+      // Ein Preset gehoert zu genau einer Kamera — sonst faehrt es beim
+      // naechsten Klick irgendeine andere an ihre Position.
+      id: Date.now().toString(36), name: name.trim(), cameraId: cam.id,
       focalLength: cam.focalLength, aperture: cam.aperture, focusDistance: cam.focusDistance,
       pan: cam.pan, tilt: cam.tilt, z: cam.z, trackOffset: cam.trackOffset, x: cam.x, y: cam.y,
     }]);
@@ -1260,6 +1252,12 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     runTransition(cam.id, target, secs);
   };
   const deletePreset = (id: string) => persistPresets(presets.filter((p) => p.id !== id));
+  /** Altbestand/verwaiste Presets dieser Kamera zuschlagen. */
+  const takeOverPreset = (id: string) => persistPresets(assignPreset(presets, id, cam.id));
+
+  // Sichtbar sind nur die Presets DIESER Kamera plus die ohne Zuordnung;
+  // Presets anderer, noch existierender Kameras bleiben aussen vor.
+  const presetGroups = groupPresets(presets, cam.id, cameras.map((c) => c.id));
 
   return (
     <div className="relative w-full h-full flex gap-2 overflow-hidden">
@@ -1471,17 +1469,24 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         />
 
 
-        {/* Optical presets (#47) */}
+        {/* Presets (#47) — pro Kamera. Die Liste zeigt nur die Presets der
+            aktiven Kamera; Presets anderer Kameras wuerden sonst diese hierher
+            fahren. */}
         <div className="px-2 flex items-center gap-2 flex-wrap">
-          <span className="text-[10px] text-gray-500">Presets</span>
-          {presets.map((p) => (
+          <span className="text-[10px] text-gray-500" title={`Presets von ${cam.label}`}>
+            Presets · {cam.label}
+          </span>
+          {presetGroups.own.map((p) => (
             <span key={p.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-gray-300 hover:border-bc-accent">
-              <button onClick={() => applyPreset(p)} title={`${p.focalLength.toFixed(0)}mm · f/${p.aperture.toFixed(1)} · ${p.focusDistance.toFixed(1)}m${p.pan !== undefined ? ` · Pos (Pan ${p.pan.toFixed(0)}° Tilt ${p.tilt?.toFixed(0)}° H ${p.z?.toFixed(1)}m)` : ''}`}>{p.name}{p.pan !== undefined && <span className="ml-0.5 text-bc-accent" title="enthaelt Kamera-Position">◈</span>}</button>
-              <button onClick={() => deletePreset(p.id)} className="text-gray-600 hover:text-bc-red" title="Delete preset"><FiX size={10} /></button>
+              <button onClick={() => applyPreset(p)} title={`${p.focalLength.toFixed(0)}mm · f/${p.aperture.toFixed(1)} · ${p.focusDistance.toFixed(1)}m${p.pan !== undefined ? ` · Pos (Pan ${p.pan.toFixed(0)}° Tilt ${p.tilt?.toFixed(0)}° H ${p.z?.toFixed(1)}m)` : ''}`}>{p.name}{hasPose(p) && <span className="ml-0.5 text-bc-accent" title="enthaelt Kamera-Position">◈</span>}</button>
+              <button onClick={() => deletePreset(p.id)} className="text-gray-600 hover:text-bc-red" title="Preset loeschen" aria-label={`Preset ${p.name} loeschen`}><FiX size={10} /></button>
             </span>
           ))}
-          <button onClick={addPreset} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-gray-500 hover:text-bc-accent hover:border-bc-accent" title="Save current focal length / aperture / focus as a preset">
-            <FiPlus size={10} /> Add
+          {presetGroups.own.length === 0 && (
+            <span className="text-[10px] text-gray-600">noch keins</span>
+          )}
+          <button onClick={addPreset} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-gray-500 hover:text-bc-accent hover:border-bc-accent" title={`Aktuelle Optik + Position als Preset von ${cam.label} sichern`}>
+            <FiPlus size={10} /> Neu
           </button>
 
           {/* Shot aufnehmen (#62 Punkt 5): friert die aktuelle Ansicht inkl.
@@ -1505,6 +1510,32 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           </button>
           {shotHint && <span className="text-[10px] text-bc-yellow">{shotHint}</span>}
         </div>
+
+        {/* Presets ohne Zuordnung: aus der Zeit vor der Kamera-Bindung oder von
+            einer geloeschten/ausgetauschten Kamera. Sie bleiben anwendbar und
+            lassen sich dieser Kamera zuschlagen — stilles Loeschen waere
+            Datenverlust. */}
+        {presetGroups.unassigned.length > 0 && (
+          <div className="px-2 flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] text-gray-600" title="Presets ohne Kamera-Zuordnung">
+              ohne Zuordnung
+            </span>
+            {presetGroups.unassigned.map((p) => (
+              <span key={p.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-dashed border-bc-border text-gray-500 hover:border-bc-accent">
+                <button onClick={() => applyPreset(p)} title={`Auf ${cam.label} anwenden — ${p.focalLength.toFixed(0)}mm · f/${p.aperture.toFixed(1)}`}>{p.name}{hasPose(p) && <span className="ml-0.5 text-bc-accent">◈</span>}</button>
+                <button
+                  onClick={() => takeOverPreset(p.id)}
+                  className="text-gray-600 hover:text-bc-accent"
+                  title={`${cam.label} zuordnen`}
+                  aria-label={`Preset ${p.name} der Kamera ${cam.label} zuordnen`}
+                >
+                  <FiPlus size={10} />
+                </button>
+                <button onClick={() => deletePreset(p.id)} className="text-gray-600 hover:text-bc-red" title="Preset loeschen" aria-label={`Preset ${p.name} loeschen`}><FiX size={10} /></button>
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Transition-Time (#62 Punkt 4): steuert, wie ein Preset angefahren wird. */}
         <div className="px-2 flex items-center gap-2">
