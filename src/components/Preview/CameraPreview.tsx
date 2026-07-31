@@ -22,30 +22,13 @@ import {
   formatDistance,
   formatFocal,
   niceTicks,
+  stepAlong,
   stepStop,
   stopsInRange,
-  valueToPos,
-  posToValue,
 } from '../../utils/lensScale';
 
 /** Kuerzeste sinnvolle Fokusdistanz des Reglers (m). */
 const FOCUS_MIN = 0.5;
-
-/**
- * Eine „Stufe" entlang beliebiger Marken (Zoom/Fokus): zum naechsten Teilstrich
- * springen. Liegt keiner mehr in der Richtung, um 1/12 der logarithmischen Bahn
- * weitergehen — so bleibt der Schritt am Bahnende gleichmaessig statt zu klemmen.
- */
-function stepAlong(value: number, dir: 1 | -1, min: number, max: number, ticks: number[]): number {
-  const eps = 1e-6;
-  const sorted = [...ticks].sort((a, b) => a - b);
-  const next = dir === 1
-    ? sorted.find((t) => t > value + eps)
-    : [...sorted].reverse().find((t) => t < value - eps);
-  if (next !== undefined) return next;
-  const pos = valueToPos(value, min, max) + dir * (1 / 12);
-  return Math.min(max, Math.max(min, posToValue(pos, min, max)));
-}
 
 // Preview optical presets (issue #47) — snapshots of focal length / aperture /
 // focus distance the operator can recall. Persisted globally in localStorage.

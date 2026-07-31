@@ -437,24 +437,33 @@ export default function App() {
       />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* ── Left sidebar ── */}
-        <div className={`border-r border-bc-border flex flex-col bg-bc-panel shrink-0 transition-[width] duration-200 ${sidebarCollapsed ? 'w-0 overflow-hidden' : 'w-80'}`}>
+        {/* ── Left sidebar ──
+            Breite skaliert mit dem Fenster statt fest 320 px: auf grossen
+            Schirmen darf die Spalte mitwachsen (die Kamera-Karte nutzt das per
+            Container-Query fuer zweispaltige Zeilen), auf kleinen schrumpft sie
+            bis 264 px, bevor der Auto-Collapse aus dem Media-Query greift.
+            `min-w` an den Kindern muss dafuer weg — sonst kann sie nicht kleiner
+            werden und die Spalte ueberlaeuft. */}
+        <div
+          style={sidebarCollapsed ? undefined : { width: 'clamp(264px, 22vw, 420px)' }}
+          className={`border-r border-bc-border flex flex-col bg-bc-panel shrink-0 transition-[width] duration-200 ${sidebarCollapsed ? 'w-0 overflow-hidden' : ''}`}
+        >
           {/* Sidebar tabs */}
-          <div className="flex border-b border-bc-border min-w-[320px]">
+          <div className="flex border-b border-bc-border">
             <button
               className={`flex-1 py-2 text-xs font-medium ${sidebarTab === 'cameras' ? 'text-bc-accent border-b-2 border-bc-accent' : 'text-gray-500 hover:text-gray-300'}`}
               onClick={() => setSidebarTab('cameras')}
             >
-              Settings
+              Einstellungen
             </button>
             <button
               className={`flex-1 py-2 text-xs font-medium ${sidebarTab === 'templates' ? 'text-bc-accent border-b-2 border-bc-accent' : 'text-gray-500 hover:text-gray-300'}`}
               onClick={() => setSidebarTab('templates')}
             >
-              Templates
+              Vorlagen
             </button>
           </div>
-          <div className="min-w-[320px] flex-1 overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-hidden flex flex-col">
             {sidebarTab === 'cameras' ? <Sidebar /> : <TemplateSelector />}
           </div>
         </div>
@@ -463,7 +472,8 @@ export default function App() {
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           className="shrink-0 w-5 flex items-center justify-center bg-bc-panel border-r border-bc-border hover:bg-bc-border text-gray-500 hover:text-white transition-colors"
-          title={sidebarCollapsed ? 'Open sidebar' : 'Collapse sidebar'}
+          title={sidebarCollapsed ? 'Spalte einblenden' : 'Spalte ausblenden'}
+          aria-label={sidebarCollapsed ? 'Seitenspalte einblenden' : 'Seitenspalte ausblenden'}
         >
           {sidebarCollapsed ? <FiChevronRight size={14} /> : <FiChevronLeft size={14} />}
         </button>

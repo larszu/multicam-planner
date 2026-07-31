@@ -385,9 +385,9 @@ export function getCoverageStatus(camera: Camera, lens: Lens, useSpeedbooster = 
   const ratio = circle / sensorDiag;
   if (ratio >= 1.0) return { status: 'ok', ratio };
   if (ratio >= 0.9) {
-    return { status: 'marginal', ratio, message: `Image circle tight (${(ratio * 100).toFixed(0)} %) — corners may darken.` };
+    return { status: 'marginal', ratio, message: `Bildkreis knapp (${(ratio * 100).toFixed(0)} %) — Ecken können abdunkeln.` };
   }
-  return { status: 'vignette', ratio, message: `Lens cannot cover sensor (${(ratio * 100).toFixed(0)} %) — heavy vignetting / crop needed.` };
+  return { status: 'vignette', ratio, message: `Objektiv deckt den Sensor nicht (${(ratio * 100).toFixed(0)} %) — starke Vignettierung, Crop nötig.` };
 }
 
 export const CAMERA_COLORS = [
