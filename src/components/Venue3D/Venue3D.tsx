@@ -13,6 +13,8 @@ import { getExportRegistry } from '../../store/exportRegistry';
 import type { FramingState } from '../../store/exportRegistry';
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import type { BackgroundPlan, Stage, StageObjectType } from '../../types';
+import { FLAT_STAGE_M, groundHeightAt, stageColor, stageOpacity, stageTopZ } from '../../utils/stageBody';
+import { FiLock, FiUnlock } from 'react-icons/fi';
 import robotoFont from '../../assets/fonts/Roboto-Regular.ttf';
 
 // ── Apple-Silicon / Electron 3D-view fix (issue #35) ──
@@ -348,10 +350,10 @@ function StageMesh({ stage }: { stage: Stage }) {
   // Podest statt Flaeche (#73): mit `elevationM` wird aus der Buehne ein
   // Koerper, der auf dem Boden steht — die Oberkante liegt dann genau auf der
   // eingestellten Hoehe. Ohne Angabe bleibt die bisherige flache Andeutung.
-  const raised = Math.max(0, stage.elevationM ?? 0);
-  const boxH = raised > 0 ? raised : 0.1;
-  const color = stage.color ?? '#3b82f6';
-  const opacity = Math.max(0, Math.min(1, stage.opacity ?? 0.4));
+  const raised = stageTopZ(stage);
+  const boxH = raised > 0 ? raised : FLAT_STAGE_M;
+  const color = stageColor(stage);
+  const opacity = stageOpacity(stage);
   const geo = useMemo(() => new THREE.BoxGeometry(w, boxH, h), [w, boxH, h]);
 
   return (
@@ -523,6 +525,16 @@ function CameraRig({
   const baseRef = useRef<THREE.Group>(null);
   const liftRef = useRef<THREE.Group>(null);
   const pitchRef = useRef<THREE.Group>(null);
+  // Die Gizmos haengen an diesen Gruppen. Ein Ref allein loest kein Rendern
+  // aus — ohne diesen Zustand haette ein frisch eingehaengtes Rig beim ersten
+  // Rendern nur `null` und der Gizmo waere nie erschienen.
+  const [rigMounted, setRigMounted] = useState(false);
+  const attachBase = useCallback((node: THREE.Group | null) => {
+    baseRef.current = node;
+    // Kinder haengen sich vor dem Elternteil ein, liftRef/pitchRef stehen hier
+    // also schon.
+    setRigMounted(node !== null && liftRef.current !== null && pitchRef.current !== null);
+  }, []);
 
   useEffect(() => {
     const pos = effectiveCameraPos(cam);
@@ -594,76 +606,104 @@ function CameraRig({
     cursor: 'pointer',
   } as const);
 
+  const showGizmo = isSelected && isUnlocked && rigMounted;
+
   return (
-    <group
-      ref={baseRef}
-      position={[cam.x, 0, cam.y]}
-      rotation={[0, THREE.MathUtils.degToRad(-cam.pan), 0]}
-      onClick={(e) => {
-        e.stopPropagation();
-        onSelect(cam.id);
-      }}
-    >
-      {isSelected && isUnlocked && editMode === 'move' && baseRef.current && (
+    <>
+      {/* Die Gizmos stehen NEBEN dem Rig, nicht darin. Steckt ein
+          TransformControls in der Gruppe, die es bewegt, ruft sein
+          `updateMatrixWorld` das seines eigenen Vorfahren auf — die Rekursion
+          sprengt in jedem Frame den Stack ("Maximum call stack size exceeded"),
+          und weder Gizmo noch Ziehen funktionieren. */}
+      {showGizmo && editMode === 'move' && baseRef.current && (
         <TransformControls object={baseRef.current} mode="translate" showX showY={false} showZ size={0.9} onMouseUp={commitMove} />
       )}
-      {isSelected && isUnlocked && editMode === 'pan' && baseRef.current && (
+      {showGizmo && editMode === 'pan' && baseRef.current && (
         <TransformControls object={baseRef.current} mode="rotate" showX={false} showY showZ={false} size={0.9} onMouseUp={commitPan} />
       )}
+      {showGizmo && editMode === 'height' && liftRef.current && (
+        <TransformControls object={liftRef.current} mode="translate" showX={false} showY showZ={false} size={0.9} onMouseUp={commitHeight} />
+      )}
+      {/* `space="local"`: der Neigungs-Knoten haengt unter der Pan-Drehung,
+          seine Z-Achse zeigt also nur bei Pan 0 in Richtung der Welt-Z-Achse.
+          Im Weltraum (Vorgabe) drehte das Gizmo um die Welt-Z — bei Pan 90
+          war das die lokale X-Achse, `rotation.z` blieb 0 und die Neigung
+          sprang beim Loslassen zurueck. */}
+      {showGizmo && editMode === 'tilt' && pitchRef.current && (
+        <TransformControls object={pitchRef.current} mode="rotate" space="local" showX={false} showY={false} showZ size={0.9} onMouseUp={commitTilt} />
+      )}
 
-      <group ref={liftRef} position={[0, cam.z, 0]}>
-        {isSelected && (
-          <Html position={[0, 1.15, 0]} center style={{ pointerEvents: 'auto' }}>
-            <div
-              style={{
-                display: 'flex',
-                gap: 4,
-                alignItems: 'center',
-                background: 'rgba(15, 23, 42, 0.92)',
-                border: '1px solid #334155',
-                borderRadius: 8,
-                padding: '6px 8px',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
-              }}
-              onPointerDown={(e) => e.stopPropagation()}
-            >
-              <button type="button" onClick={() => onToggleLock(cam.id)} style={buttonStyle(isUnlocked)}>
-                {isUnlocked ? 'Lock' : 'Unlock'}
-              </button>
-              <button type="button" disabled={!isUnlocked} onClick={() => onEditModeChange('move')} style={buttonStyle(editMode === 'move' && isUnlocked)}>
-                XY
-              </button>
-              <button type="button" disabled={!isUnlocked} onClick={() => onEditModeChange('height')} style={buttonStyle(editMode === 'height' && isUnlocked)}>
-                Z
-              </button>
-              <button type="button" disabled={!isUnlocked} onClick={() => onEditModeChange('pan')} style={buttonStyle(editMode === 'pan' && isUnlocked)}>
-                Pan
-              </button>
-              <button type="button" disabled={!isUnlocked} onClick={() => onEditModeChange('tilt')} style={buttonStyle(editMode === 'tilt' && isUnlocked)}>
-                Tilt
-              </button>
-            </div>
-          </Html>
-        )}
-
-        {isSelected && isUnlocked && editMode === 'height' && liftRef.current && (
-          <TransformControls object={liftRef.current} mode="translate" showX={false} showY showZ={false} size={0.9} onMouseUp={commitHeight} />
-        )}
-
-        <group ref={pitchRef} rotation={[0, 0, THREE.MathUtils.degToRad(cam.tilt)]}>
-          {isSelected && isUnlocked && editMode === 'tilt' && pitchRef.current && (
-            <TransformControls object={pitchRef.current} mode="rotate" showX={false} showY={false} showZ size={0.9} onMouseUp={commitTilt} />
+      <group
+        ref={attachBase}
+        position={[cam.x, 0, cam.y]}
+        rotation={[0, THREE.MathUtils.degToRad(-cam.pan), 0]}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelect(cam.id);
+        }}
+      >
+        <group ref={liftRef} position={[0, cam.z, 0]}>
+          {isSelected && (
+            <Html position={[0, 1.15, 0]} center style={{ pointerEvents: 'auto' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 4,
+                  alignItems: 'center',
+                  background: 'rgba(15, 23, 42, 0.92)',
+                  border: '1px solid #334155',
+                  borderRadius: 8,
+                  padding: '6px 8px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                {/* Schloss statt Wortmarke: zu ist der Normalfall und braucht
+                    keine Beschriftung. Die Achsen-Knoepfe erscheinen erst mit
+                    dem offenen Schloss — vorher waren sie nur ausgegraut und
+                    haben das Badge unnoetig breit gemacht. */}
+                <button
+                  type="button"
+                  onClick={() => onToggleLock(cam.id)}
+                  style={{ ...buttonStyle(isUnlocked), display: 'flex', alignItems: 'center', padding: '4px 6px' }}
+                  aria-pressed={isUnlocked}
+                  aria-label={isUnlocked ? 'Position sperren' : 'Position entsperren'}
+                  title={isUnlocked ? 'Position sperren' : 'Position entsperren'}
+                >
+                  {isUnlocked ? <FiUnlock size={12} /> : <FiLock size={12} />}
+                </button>
+                {isUnlocked && (
+                  <>
+                    <button type="button" onClick={() => onEditModeChange('move')} style={buttonStyle(editMode === 'move')} title="Standort auf dem Boden">
+                      XY
+                    </button>
+                    <button type="button" onClick={() => onEditModeChange('height')} style={buttonStyle(editMode === 'height')} title="Hoehe">
+                      Z
+                    </button>
+                    <button type="button" onClick={() => onEditModeChange('pan')} style={buttonStyle(editMode === 'pan')} title="Schwenk">
+                      Pan
+                    </button>
+                    <button type="button" onClick={() => onEditModeChange('tilt')} style={buttonStyle(editMode === 'tilt')} title="Neigung">
+                      Tilt
+                    </button>
+                  </>
+                )}
+              </div>
+            </Html>
           )}
-          {/* Reorient the pyramid (modelled along -Z) so it points along the
-              camera's pan axis. Applying this group AFTER pitchRef means pitch
-              acts on the camera's right axis (X) before reorientation, giving a
-              proper pitch instead of roll. */}
-          <group rotation={[0, -Math.PI / 2, 0]}>
-            <FovPyramid cam={cam} isSelected={isSelected} />
+
+          <group ref={pitchRef} rotation={[0, 0, THREE.MathUtils.degToRad(cam.tilt)]}>
+            {/* Reorient the pyramid (modelled along -Z) so it points along the
+                camera's pan axis. Applying this group AFTER pitchRef means pitch
+                acts on the camera's right axis (X) before reorientation, giving a
+                proper pitch instead of roll. */}
+            <group rotation={[0, -Math.PI / 2, 0]}>
+              <FovPyramid cam={cam} isSelected={isSelected} />
+            </group>
           </group>
         </group>
       </group>
-    </group>
+    </>
   );
 }
 
@@ -896,13 +936,13 @@ export default function Venue3D() {
         fontSize: 11, color: '#9ca3af', lineHeight: 1.6, backdropFilter: 'blur(4px)',
         pointerEvents: 'none',
       }}>
-        <b style={{ color: '#60a5fa' }}>Select camera</b> → unlock to edit<br/>
-        <b style={{ color: '#60a5fa' }}>XY</b> floor move &nbsp;|&nbsp;
-        <b style={{ color: '#60a5fa' }}>Z</b> height &nbsp;|&nbsp;
-        <b style={{ color: '#60a5fa' }}>Pan/Tilt</b> rotate axes<br/>
-        <b style={{ color: '#60a5fa' }}>WASD</b> Move &nbsp;|&nbsp;
-        <b style={{ color: '#60a5fa' }}>Space/Shift</b> vertical &nbsp;|&nbsp;
-        <b style={{ color: '#60a5fa' }}>Scroll</b> Dolly
+        <b style={{ color: '#60a5fa' }}>Kamera wählen</b> → Schloss öffnen zum Bearbeiten<br/>
+        <b style={{ color: '#60a5fa' }}>XY</b> Standort &nbsp;|&nbsp;
+        <b style={{ color: '#60a5fa' }}>Z</b> Höhe &nbsp;|&nbsp;
+        <b style={{ color: '#60a5fa' }}>Pan/Tilt</b> Schwenk und Neigung<br/>
+        <b style={{ color: '#60a5fa' }}>WASD</b> Bewegen &nbsp;|&nbsp;
+        <b style={{ color: '#60a5fa' }}>Space/Shift</b> hoch und runter &nbsp;|&nbsp;
+        <b style={{ color: '#60a5fa' }}>Scroll</b> vor und zurück
       </div>
 
       {/* Reset View button */}
@@ -979,11 +1019,11 @@ export default function Venue3D() {
             editMode={editMode}
             onSelect={selectCamera}
             onToggleLock={(cameraId) => {
-              setUnlockedCameraId((current) => {
-                if (current === cameraId) return null;
-                setEditMode('move');
-                return cameraId;
-              });
+              // Kein setState im Updater — der muss rein bleiben (React ruft
+              // ihn in StrictMode doppelt auf).
+              const next = unlockedCameraId === cameraId ? null : cameraId;
+              setUnlockedCameraId(next);
+              if (next) setEditMode('move');
             }}
             onEditModeChange={setEditMode}
             venueWidth={venue.widthM}
@@ -991,7 +1031,10 @@ export default function Venue3D() {
           />
         ))}
 
-        {/* Reference persons from store – draggable */}
+        {/* Reference persons from store – draggable.
+            Steht die Person auf einem Podest, hebt `groundHeightAt` sie auf
+            dessen Oberkante (#73) — sonst steckt sie im Koerper. Beim Ziehen
+            greift das erst beim Loslassen, weil dabei nur x/z laufen. */}
         {persons.map((p) => (
           <DraggableOnFloor
             key={p.id}
@@ -999,7 +1042,9 @@ export default function Venue3D() {
             z={p.y}
             onDragEnd={(nx, nz) => updatePerson(p.id, { x: nx, y: nz })}
           >
-            <PersonMesh x={0} z={0} height={p.height} label={p.label} objectType={p.objectType} color={p.color} />
+            <group position={[0, groundHeightAt(venue.stages, p.x, p.y), 0]}>
+              <PersonMesh x={0} z={0} height={p.height} label={p.label} objectType={p.objectType} color={p.color} />
+            </group>
           </DraggableOnFloor>
         ))}
 
