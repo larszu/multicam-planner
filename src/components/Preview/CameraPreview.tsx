@@ -5,7 +5,10 @@ import { computeFov, computeDof } from '../../utils/fov';
 import { effectiveCameraPos } from '../../utils/camera';
 import { getExportRegistry } from '../../store/exportRegistry';
 import { useRef, useEffect, useLayoutEffect, useCallback, useState } from 'react';
-import type { ShotTransition, StageObjectType, VenueCamera } from '../../types';
+import type { ShotTransition, Stage, StageObjectType, VenueCamera, Wall } from '../../types';
+import type { StageFace } from '../../utils/stageBody';
+import { groundHeightAt, stageColor, stageFaces, stageLabelAnchor, stageOpacity } from '../../utils/stageBody';
+import { alphaSuffix, shadeHex } from '../../utils/color';
 import { FiChevronLeft, FiChevronRight, FiUnlock, FiLock, FiPlus, FiX, FiCamera } from 'react-icons/fi';
 import { loadJSON, saveJSON } from '../../utils/storage';
 import {
@@ -18,54 +21,36 @@ import { captureCurrentShot } from '../../utils/captureShot';
 import { profileForMount } from '../../utils/motionProfile';
 import LensSlider from './LensSlider';
 import {
+  DEFAULT_PATTERN_ROWS,
+  paintWallSurface,
+  stripCount,
+  stripRanges,
+  stripTransform,
+  surfaceKey,
+  textureSize,
+} from '../../utils/wallSurface';
+import {
+  assignPreset,
+  groupPresets,
+  hasPose,
+  type PreviewPreset,
+} from '../../utils/previewPreset';
+import {
   formatAperture,
   formatDistance,
   formatFocal,
   niceTicks,
+  stepAlong,
   stepStop,
   stopsInRange,
-  valueToPos,
-  posToValue,
 } from '../../utils/lensScale';
 
 /** Kuerzeste sinnvolle Fokusdistanz des Reglers (m). */
 const FOCUS_MIN = 0.5;
 
-/**
- * Eine „Stufe" entlang beliebiger Marken (Zoom/Fokus): zum naechsten Teilstrich
- * springen. Liegt keiner mehr in der Richtung, um 1/12 der logarithmischen Bahn
- * weitergehen — so bleibt der Schritt am Bahnende gleichmaessig statt zu klemmen.
- */
-function stepAlong(value: number, dir: 1 | -1, min: number, max: number, ticks: number[]): number {
-  const eps = 1e-6;
-  const sorted = [...ticks].sort((a, b) => a - b);
-  const next = dir === 1
-    ? sorted.find((t) => t > value + eps)
-    : [...sorted].reverse().find((t) => t < value - eps);
-  if (next !== undefined) return next;
-  const pos = valueToPos(value, min, max) + dir * (1 / 12);
-  return Math.min(max, Math.max(min, posToValue(pos, min, max)));
-}
-
-// Preview optical presets (issue #47) — snapshots of focal length / aperture /
-// focus distance the operator can recall. Persisted globally in localStorage.
-// Preview preset (#47, erweitert #62 Punkt 3). Neben den optischen Werten
-// werden jetzt auch die raeumlichen Kamera-Parameter gespeichert (Pan, Tilt,
-// Hoehe, Track, X, Y). Die raeumlichen Felder sind optional, damit aeltere,
-// bereits gespeicherte Presets (nur optisch) weiterhin laden und anwendbar bleiben.
-interface PreviewPreset {
-  id: string;
-  name: string;
-  focalLength: number;
-  aperture: number;
-  focusDistance: number;
-  pan?: number;
-  tilt?: number;
-  z?: number;          // Hoehe in Metern
-  trackOffset?: number; // Track (Dolly/Jib), Meter
-  x?: number;
-  y?: number;
-}
+// Preview-Presets (#47, erweitert #62 Punkt 3): gespeicherte Posen zum
+// Anfahren — Optik plus (optional) Position im Raum. Typ und Zuordnungslogik
+// liegen in utils/previewPreset, damit die Regeln testbar sind.
 const PREVIEW_PRESETS_KEY = 'multicam-preview-presets';
 const PREVIEW_TRANSITION_MODE_KEY = 'multicam-preview-transition-mode';
 const PREVIEW_TRANSITION_SEC_KEY = 'multicam-preview-transition-sec';
@@ -131,6 +116,41 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     cache.set(dataUrl, img);
     return null;
   }, []);
+  // Fertig gemalte Wandflaechen (#74). Ohne Cache wuerde jede Wand in jedem
+  // Bild neu gemalt; so passiert das nur, wenn sich Muster, Anzahl, Farbe,
+  // Bild oder die Wandmaße aendern.
+  const wallTextureCache = useRef<Map<string, { key: string; canvas: HTMLCanvasElement }>>(new Map());
+  const getWallTexture = useCallback(
+    (wall: Wall, lengthM: number, loadImage: (src: string) => HTMLImageElement | null): HTMLCanvasElement | null => {
+      const pattern = wall.pattern ?? 'solid';
+      if (pattern === 'solid') return null;
+      const img = pattern === 'image' && wall.patternImage ? loadImage(wall.patternImage) : null;
+      if (pattern === 'image' && !img) return null;
+      const key = surfaceKey(wall, lengthM);
+      const cached = wallTextureCache.current.get(wall.id);
+      if (cached && cached.key === key) return cached.canvas;
+
+      const { w, h } = textureSize(lengthM, wall.height);
+      const canvas = cached?.canvas ?? document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const tctx = canvas.getContext('2d');
+      if (!tctx) return null;
+      paintWallSurface(tctx, w, h, {
+        pattern,
+        fit: wall.patternFit ?? 'tile',
+        rows: wall.patternRows ?? DEFAULT_PATTERN_ROWS,
+        color: wall.color ?? '#6b7280',
+        image: img ?? undefined,
+        lengthM,
+        heightM: wall.height,
+      });
+      wallTextureCache.current.set(wall.id, { key, canvas });
+      return canvas;
+    },
+    [],
+  );
+
   // Cache projected person positions during draw() so the click handler can hit-test
   // without re-projecting everything itself.
   const projectedPersons = useRef<{ id: string; sx: number; sy: number; topSy: number; dist: number }[]>([]);
@@ -356,24 +376,31 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       ctx.restore();
     }
 
-    // ── Draw stages from venue ──
-    // Build the polygon in camera-space, then clip against the near plane so corners
-    // behind the camera become near-plane intersection points instead of being skipped
-    // (which previously turned the rectangle into a degenerate triangle).
-    venue.stages.forEach((stage) => {
-      const camCorners = [
-        worldToCamera(stage.x, stage.y, 0),
-        worldToCamera(stage.x + stage.width, stage.y, 0),
-        worldToCamera(stage.x + stage.width, stage.y + stage.height, 0),
-        worldToCamera(stage.x, stage.y + stage.height, 0),
-      ];
-      const clipped = clipPolygonNear(camCorners);
-      if (clipped.length < 3) return;
+    // ── Feste Koerper: Buehnen-Podeste und Waende ──
+    // Beide landen in EINER Malerordnung (hinten zuerst). Vorher wurden erst
+    // alle Buehnen und dann alle Waende gemalt — bei einer flachen Flaeche auf
+    // dem Boden faellt das nicht auf, ein Podest vor einer Wand verschwand
+    // dadurch aber hinter ihr.
+    // Sortiert wird nach dem Abstand in der Grundebene, damit Wand und Podest
+    // denselben Massstab benutzen; `dist` (Kameratiefe) bleibt der Wert fuer
+    // die Schaerfeberechnung.
+    type Solid = { depth: number; draw: () => void };
+    const solids: Solid[] = [];
+    const groundDist = (wx: number, wy: number) => Math.hypot(wx - camPos.x, wy - camPos.y);
 
+    /**
+     * Eine Flaeche des Podests. Die Ecken kommen aus `stageFaces`, werden in
+     * Kameraraum gebracht und an der Near-Plane geschnitten, damit Ecken hinter
+     * der Kamera das Viereck nicht zu einem entarteten Dreieck zusammenfalten.
+     */
+    const drawStageFace = (stage: Stage, face: StageFace) => {
+      const clipped = clipPolygonNear(face.points.map((p) => worldToCamera(p.x, p.y, p.z)));
+      if (clipped.length < 3) return;
       const projected = clipped.map((p) => cameraToScreen(p));
 
-      ctx.strokeStyle = '#3b82f6aa';
-      ctx.fillStyle = '#3b82f622';
+      const base = stageColor(stage);
+      ctx.fillStyle = shadeHex(base, face.shade) + alphaSuffix(stageOpacity(stage));
+      ctx.strokeStyle = shadeHex(base, Math.min(1, face.shade + 0.2)) + 'aa';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(projected[0].sx, projected[0].sy);
@@ -383,33 +410,22 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
+    };
 
-      // Stage label
-      const center = worldToScreen(stage.x + stage.width / 2, stage.y + stage.height / 2, 0);
-      if (!center.behindCamera) {
-        const fontSize = Math.max(8, Math.min(16, 200 / center.dist));
-        ctx.fillStyle = '#3b82f6';
-        ctx.font = `bold ${fontSize}px monospace`;
-        ctx.textAlign = 'center';
-        ctx.fillText(stage.label, center.sx, center.sy + fontSize / 3);
+    venue.stages.forEach((stage) => {
+      // `stageFaces` laesst die abgewandten Seiten und — bei einer Kamera
+      // unterhalb der Oberkante — die Deckflaeche weg (#73).
+      for (const face of stageFaces(stage, camPos.x, camPos.y, cam.z)) {
+        solids.push({ depth: face.depth, draw: () => drawStageFace(stage, face) });
       }
     });
 
-    // ── Draw walls from venue (issue #46) ──
+    // ── Walls from venue (issue #46) ──
     // Each wall is a vertical quad standing on the floor: bottom edge from
     // (x1,y1) to (x2,y2) at z=0, top edge at z=height. Built in camera space and
     // near-plane clipped like the stages so corners behind the camera don't
-    // collapse the quad. Drawn back-to-front (farthest first) so nearer walls
-    // overpaint farther ones.
-    const wallsByDist = walls
-      .map((wall) => {
-        const midX = (wall.x1 + wall.x2) / 2;
-        const midY = (wall.y1 + wall.y2) / 2;
-        return { wall, dist: worldToScreen(midX, midY, 0).dist };
-      })
-      .sort((a, b) => b.dist - a.dist);
-
-    wallsByDist.forEach(({ wall, dist }) => {
+    // collapse the quad.
+    const drawWall = (wall: Wall, dist: number) => {
       const camCorners = [
         worldToCamera(wall.x1, wall.y1, 0),
         worldToCamera(wall.x2, wall.y2, 0),
@@ -422,6 +438,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
 
       const baseColor = wall.color ?? '#6b7280';
       const pattern = wall.pattern ?? 'solid';
+      const len = Math.hypot(wall.x2 - wall.x1, wall.y2 - wall.y1);
 
       // Depth-of-field blur for the wall, so a textured wall makes the focus
       // falloff visible (issue #45). Same falloff model as persons.
@@ -443,50 +460,59 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       ctx.fillStyle = baseColor + 'cc';
       ctx.fill();
 
-      // Bounding box of the projected polygon (pattern is painted in screen space
-      // — not perspective-warped, but it gives the high-frequency detail needed to
-      // judge sharpness/blur).
       const xs = projected.map((p) => p.sx);
-      const ys = projected.map((p) => p.sy);
-      const bx0 = Math.max(-50, Math.min(...xs));
-      const bx1 = Math.min(W + 50, Math.max(...xs));
-      const by0 = Math.max(-50, Math.min(...ys));
-      const by1 = Math.min(H + 50, Math.max(...ys));
 
-      if (pattern === 'grid') {
-        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-        ctx.lineWidth = 1;
-        const step = 16;
-        ctx.beginPath();
-        for (let x = bx0; x <= bx1; x += step) { ctx.moveTo(x, by0); ctx.lineTo(x, by1); }
-        for (let y = by0; y <= by1; y += step) { ctx.moveTo(bx0, y); ctx.lineTo(bx1, y); }
-        ctx.stroke();
-      } else if (pattern === 'flowers') {
-        ctx.fillStyle = 'rgba(255,255,255,0.55)';
-        const step = 26;
-        for (let y = by0; y <= by1; y += step) {
-          for (let x = bx0; x <= bx1; x += step) {
-            // simple 5-petal flower motif
-            for (let k = 0; k < 5; k++) {
-              const a = (k / 5) * Math.PI * 2;
-              ctx.beginPath();
-              ctx.arc(x + Math.cos(a) * 4, y + Math.sin(a) * 4, 2.6, 0, Math.PI * 2);
-              ctx.fill();
-            }
-            ctx.fillStyle = 'rgba(250,204,21,0.85)';
-            ctx.beginPath();
-            ctx.arc(x, y, 2.2, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      // Muster in WANDkoordinaten (#74): die Flaeche wird einmal auf eine
+      // Zwischen-Leinwand gemalt (Kachelzahl steht an der Wand, nicht am Zoom)
+      // und dann streifenweise auf das projizierte Viereck gelegt. Vorher lief
+      // das im Bildschirmraum — daher wuchs die Blumenzahl beim Reinzoomen ins
+      // Unermessliche und ein Bild klebte am Bildschirm statt an der Wand.
+      if (pattern !== 'solid') {
+        const texture = getWallTexture(wall, len, getWallImage);
+        if (texture) {
+          const dirX = len > 0 ? (wall.x2 - wall.x1) / len : 0;
+          const dirY = len > 0 ? (wall.y2 - wall.y1) / len : 0;
+          // Streifenzahl nach Bildschirmbreite: eine ferne Wand braucht wenige.
+          const screenW = Math.max(...xs) - Math.min(...xs);
+          const ranges = stripRanges(stripCount(screenW));
+          for (const { t0, t1 } of ranges) {
+            const ax = wall.x1 + dirX * len * t0;
+            const ay = wall.y1 + dirY * len * t0;
+            const bx = wall.x1 + dirX * len * t1;
+            const by = wall.y1 + dirY * len * t1;
+            const cTopL = worldToCamera(ax, ay, wall.height);
+            const cTopR = worldToCamera(bx, by, wall.height);
+            const cBotL = worldToCamera(ax, ay, 0);
+            // Streifen hinter der Kamera auslassen, statt mit unsinnigen
+            // Koordinaten zu rechnen.
+            if (cTopL.z <= NEAR || cTopR.z <= NEAR || cBotL.z <= NEAR) continue;
+            const pTopL = cameraToScreen(cTopL);
+            const pTopR = cameraToScreen(cTopR);
+            const pBotL = cameraToScreen(cBotL);
+            const sx = t0 * texture.width;
+            const sw = (t1 - t0) * texture.width;
+            if (sw <= 0) continue;
+            const m = stripTransform(
+              sx, sw, texture.height,
+              { x: pTopL.sx, y: pTopL.sy },
+              { x: pTopR.sx, y: pTopR.sy },
+              { x: pBotL.sx, y: pBotL.sy },
+            );
+            ctx.save();
+            // `transform` MULTIPLIZIERT auf die laufende Matrix — anders als
+            // `setTransform`, das sie ersetzt und damit die DPR-Skalierung vom
+            // Anfang des Zeichnens (ctx.scale(dpr, dpr)) verwerfen wuerde. Auf
+            // einem HiDPI-Schirm laege das Muster sonst halb so gross und
+            // verschoben auf der Wand.
+            ctx.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
+            // Halbes Pixel Ueberlappung, sonst blitzen Fugen zwischen den
+            // Streifen durch.
+            ctx.drawImage(texture, sx, 0, sw + 0.5, texture.height, sx, 0, sw + 0.5, texture.height);
+            ctx.restore();
           }
         }
-      } else if (pattern === 'image' && wall.patternImage) {
-        const img = getWallImage(wall.patternImage);
-        if (img) {
-          const tile = ctx.createPattern(img, 'repeat');
-          if (tile) { ctx.fillStyle = tile; ctx.fillRect(bx0, by0, bx1 - bx0, by1 - by0); }
-        }
       }
+
       ctx.restore(); // remove clip
 
       // Outline (still blurred if out of focus).
@@ -498,6 +524,28 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       ctx.closePath();
       ctx.stroke();
       ctx.restore(); // remove blur filter
+    };
+
+    walls.forEach((wall) => {
+      const midX = (wall.x1 + wall.x2) / 2;
+      const midY = (wall.y1 + wall.y2) / 2;
+      const dist = worldToScreen(midX, midY, 0).dist;
+      solids.push({ depth: groundDist(midX, midY), draw: () => drawWall(wall, dist) });
+    });
+
+    solids.sort((a, b) => b.depth - a.depth).forEach((solid) => solid.draw());
+
+    // Buehnen-Beschriftung ueber die Koerper, sonst verdeckt ein naeher
+    // stehendes Podest den Namen des dahinterliegenden.
+    venue.stages.forEach((stage) => {
+      const anchor = stageLabelAnchor(stage);
+      const center = worldToScreen(anchor.x, anchor.y, anchor.z);
+      if (center.behindCamera) return;
+      const fontSize = Math.max(8, Math.min(16, 200 / center.dist));
+      ctx.fillStyle = stageColor(stage);
+      ctx.font = `bold ${fontSize}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.fillText(stage.label, center.sx, center.sy + fontSize / 3);
     });
 
     // ── Draw persons / stage objects ──
@@ -803,11 +851,15 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       // anything inside NEAR as "behindCamera" which would otherwise make the
       // person vanish when zooming in tight, even though they should just
       // become huge.
-      const feetCam = worldToCamera(person.x, person.y, 0);
+      // Steht die Person auf einem Podest, liegen ihre Fuesse auf dessen
+      // Oberkante statt auf dem Boden (#73) — sonst steckt sie bis zur Huefte
+      // in der Buehne.
+      const feetZ = groundHeightAt(venue.stages, person.x, person.y);
+      const feetCam = worldToCamera(person.x, person.y, feetZ);
       // Genuinely behind the camera — no chance of being visible
       if (feetCam.z <= 0.001) return;
       totalInFront++;
-      const headCam = worldToCamera(person.x, person.y, person.height);
+      const headCam = worldToCamera(person.x, person.y, feetZ + person.height);
       const feetProj = cameraToScreen(feetCam);
       const headProj = cameraToScreen(headCam);
 
@@ -1230,7 +1282,9 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     const name = window.prompt('Preset name:', `${cam.focalLength.toFixed(0)}mm f/${cam.aperture.toFixed(1)}`);
     if (!name) return;
     persistPresets([...presets, {
-      id: Date.now().toString(36), name: name.trim(),
+      // Ein Preset gehoert zu genau einer Kamera — sonst faehrt es beim
+      // naechsten Klick irgendeine andere an ihre Position.
+      id: Date.now().toString(36), name: name.trim(), cameraId: cam.id,
       focalLength: cam.focalLength, aperture: cam.aperture, focusDistance: cam.focusDistance,
       pan: cam.pan, tilt: cam.tilt, z: cam.z, trackOffset: cam.trackOffset, x: cam.x, y: cam.y,
     }]);
@@ -1277,6 +1331,12 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     runTransition(cam.id, target, secs);
   };
   const deletePreset = (id: string) => persistPresets(presets.filter((p) => p.id !== id));
+  /** Altbestand/verwaiste Presets dieser Kamera zuschlagen. */
+  const takeOverPreset = (id: string) => persistPresets(assignPreset(presets, id, cam.id));
+
+  // Sichtbar sind nur die Presets DIESER Kamera plus die ohne Zuordnung;
+  // Presets anderer, noch existierender Kameras bleiben aussen vor.
+  const presetGroups = groupPresets(presets, cam.id, cameras.map((c) => c.id));
 
   return (
     <div className="relative w-full h-full flex gap-2 overflow-hidden">
@@ -1294,6 +1354,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         <div ref={wrapRef} className="relative w-full">
           <canvas
             ref={canvasRef}
+            data-preview-canvas
             className="w-full rounded-lg"
             style={{ cursor: focusPickMode ? 'crosshair' : 'grab', display: 'block' }}
             onMouseDown={handleMouseDown}
@@ -1488,17 +1549,24 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         />
 
 
-        {/* Optical presets (#47) */}
+        {/* Presets (#47) — pro Kamera. Die Liste zeigt nur die Presets der
+            aktiven Kamera; Presets anderer Kameras wuerden sonst diese hierher
+            fahren. */}
         <div className="px-2 flex items-center gap-2 flex-wrap">
-          <span className="text-[10px] text-gray-500">Presets</span>
-          {presets.map((p) => (
+          <span className="text-[10px] text-gray-500" title={`Presets von ${cam.label}`}>
+            Presets · {cam.label}
+          </span>
+          {presetGroups.own.map((p) => (
             <span key={p.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-gray-300 hover:border-bc-accent">
-              <button onClick={() => applyPreset(p)} title={`${p.focalLength.toFixed(0)}mm · f/${p.aperture.toFixed(1)} · ${p.focusDistance.toFixed(1)}m${p.pan !== undefined ? ` · Pos (Pan ${p.pan.toFixed(0)}° Tilt ${p.tilt?.toFixed(0)}° H ${p.z?.toFixed(1)}m)` : ''}`}>{p.name}{p.pan !== undefined && <span className="ml-0.5 text-bc-accent" title="enthaelt Kamera-Position">◈</span>}</button>
-              <button onClick={() => deletePreset(p.id)} className="text-gray-600 hover:text-bc-red" title="Delete preset"><FiX size={10} /></button>
+              <button onClick={() => applyPreset(p)} title={`${p.focalLength.toFixed(0)}mm · f/${p.aperture.toFixed(1)} · ${p.focusDistance.toFixed(1)}m${p.pan !== undefined ? ` · Pos (Pan ${p.pan.toFixed(0)}° Tilt ${p.tilt?.toFixed(0)}° H ${p.z?.toFixed(1)}m)` : ''}`}>{p.name}{hasPose(p) && <span className="ml-0.5 text-bc-accent" title="enthaelt Kamera-Position">◈</span>}</button>
+              <button onClick={() => deletePreset(p.id)} className="text-gray-600 hover:text-bc-red" title="Preset loeschen" aria-label={`Preset ${p.name} loeschen`}><FiX size={10} /></button>
             </span>
           ))}
-          <button onClick={addPreset} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-gray-500 hover:text-bc-accent hover:border-bc-accent" title="Save current focal length / aperture / focus as a preset">
-            <FiPlus size={10} /> Add
+          {presetGroups.own.length === 0 && (
+            <span className="text-[10px] text-gray-600">noch keins</span>
+          )}
+          <button onClick={addPreset} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-gray-500 hover:text-bc-accent hover:border-bc-accent" title={`Aktuelle Optik + Position als Preset von ${cam.label} sichern`}>
+            <FiPlus size={10} /> Neu
           </button>
 
           {/* Shot aufnehmen (#62 Punkt 5): friert die aktuelle Ansicht inkl.
@@ -1522,6 +1590,32 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           </button>
           {shotHint && <span className="text-[10px] text-bc-yellow">{shotHint}</span>}
         </div>
+
+        {/* Presets ohne Zuordnung: aus der Zeit vor der Kamera-Bindung oder von
+            einer geloeschten/ausgetauschten Kamera. Sie bleiben anwendbar und
+            lassen sich dieser Kamera zuschlagen — stilles Loeschen waere
+            Datenverlust. */}
+        {presetGroups.unassigned.length > 0 && (
+          <div className="px-2 flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] text-gray-600" title="Presets ohne Kamera-Zuordnung">
+              ohne Zuordnung
+            </span>
+            {presetGroups.unassigned.map((p) => (
+              <span key={p.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-dashed border-bc-border text-gray-500 hover:border-bc-accent">
+                <button onClick={() => applyPreset(p)} title={`Auf ${cam.label} anwenden — ${p.focalLength.toFixed(0)}mm · f/${p.aperture.toFixed(1)}`}>{p.name}{hasPose(p) && <span className="ml-0.5 text-bc-accent">◈</span>}</button>
+                <button
+                  onClick={() => takeOverPreset(p.id)}
+                  className="text-gray-600 hover:text-bc-accent"
+                  title={`${cam.label} zuordnen`}
+                  aria-label={`Preset ${p.name} der Kamera ${cam.label} zuordnen`}
+                >
+                  <FiPlus size={10} />
+                </button>
+                <button onClick={() => deletePreset(p.id)} className="text-gray-600 hover:text-bc-red" title="Preset loeschen" aria-label={`Preset ${p.name} loeschen`}><FiX size={10} /></button>
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Transition-Time (#62 Punkt 4): steuert, wie ein Preset angefahren wird. */}
         <div className="px-2 flex items-center gap-2">

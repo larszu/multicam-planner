@@ -143,3 +143,22 @@ export function formatDistance(m: number): string {
 export function formatAperture(f: number): string {
   return `f/${f < 10 ? f.toFixed(1) : f.toFixed(0)}`;
 }
+
+/**
+ * Eine „Stufe" entlang beliebiger Marken (Zoom/Fokus): zum naechsten Teilstrich
+ * springen. Liegt keiner mehr in der Richtung, um 1/12 der logarithmischen Bahn
+ * weitergehen — so bleibt der Schritt am Bahnende gleichmaessig statt zu klemmen.
+ *
+ * Liegt hier statt im Preview-Tab, weil die Kamera-Eigenschaften im Sidebar
+ * dieselben Regler benutzen — zwei Implementierungen waeren zwei Bedienungen.
+ */
+export function stepAlong(value: number, dir: 1 | -1, min: number, max: number, ticks: number[]): number {
+  const eps = 1e-6;
+  const sorted = [...ticks].sort((a, b) => a - b);
+  const next = dir === 1
+    ? sorted.find((t) => t > value + eps)
+    : [...sorted].reverse().find((t) => t < value - eps);
+  if (next !== undefined) return next;
+  const pos = valueToPos(value, min, max) + dir * (1 / 12);
+  return Math.min(max, Math.max(min, posToValue(pos, min, max)));
+}

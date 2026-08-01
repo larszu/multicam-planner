@@ -4,11 +4,26 @@ import { LENSES, getLensById, getCompatibleLenses, pickInitialMountAndLens } fro
 import { computeFov, computeDof } from '../../utils/fov';
 import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2, FiRotateCcw, FiHome, FiImage, FiColumns, FiUsers, FiVideo } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { BackgroundPlan, StageObjectType, Camera, CameraMountType, WallPattern } from '../../types';
+import type { BackgroundPlan, StageObjectType, Camera, CameraMountType, WallFit, WallPattern } from '../../types';
 import { MOUNT_TYPE_LABELS } from '../../types';
 import { rigsForType, trackSectionPlan } from '../../data/rigs';
 import { clampHeight, clampTrack, rigLimits } from '../../utils/rigLimits';
 import { rigYaw } from '../../utils/camera';
+import { DEFAULT_PATTERN_ROWS, PATTERN_ROWS_MAX, PATTERN_ROWS_MIN } from '../../utils/wallSurface';
+import { FieldRow, Group, Note, Readout, ValueSlider } from './fields';
+// Derselbe Objektiv-Regler wie im Preview-Tab: logarithmische Bahn, Rastung,
+// direkte Zahleneingabe. Zwei Implementierungen waeren zwei Bedienungen.
+import LensSlider from '../Preview/LensSlider';
+import {
+  formatAperture,
+  formatDistance,
+  formatFocal,
+  niceTicks,
+  stepAlong,
+  stepStop,
+  stopsInRange,
+  valueToPos,
+} from '../../utils/lensScale';
 import { CustomCameraForm } from './CustomCameraForm';
 import { CalculationBreakdown } from './CalculationBreakdown';
 import AiPlanAnalysis from './AiPlanAnalysis';
@@ -76,6 +91,32 @@ function AccordionHeader({
   );
 }
 
+/** Kuerzeste bzw. weiteste Fokusdistanz des Reglers (m). */
+const FOCUS_MIN_M = 0.5;
+const FOCUS_MAX_M = 200;
+
+/**
+ * Marken ausduennen. `niceTicks` haelt nur einen kleinen Mindestabstand ein —
+ * das reicht im breiten Preview-Panel, aber in einer 260-px-Spalte klebten
+ * dadurch Beschriftungen aneinander ("500mm900mm"). Der Abstand zaehlt in
+ * Bahn-Anteilen (0..1), damit er auf der logarithmischen Skala stimmt.
+ */
+function sparseTicks(ticks: number[], min: number, max: number, minGap = 0.16): number[] {
+  if (ticks.length === 0) return ticks;
+  const out: number[] = [];
+  for (const t of ticks) {
+    const p = valueToPos(t, min, max);
+    if (out.length === 0 || p - valueToPos(out[out.length - 1], min, max) >= minGap) out.push(t);
+  }
+  // Das Bahnende muss beschriftet bleiben — notfalls faellt die Marke davor weg.
+  const last = ticks[ticks.length - 1];
+  if (out[out.length - 1] !== last) {
+    if (out.length > 1 && valueToPos(last, min, max) - valueToPos(out[out.length - 1], min, max) < minGap) out.pop();
+    out.push(last);
+  }
+  return out;
+}
+
 /** Group lenses by mount for the dropdown */
 function groupByMount(lenses: typeof LENSES) {
   const groups: Record<string, typeof LENSES> = {};
@@ -100,11 +141,19 @@ function sortFavoritesFirst<T extends { id: string; manufacturer?: string; model
   });
 }
 
-function CameraCard({ camId }: { camId: string }) {
+function CameraCard({
+  camId,
+  expanded,
+  toggleOpen,
+}: {
+  camId: string;
+  /** Genau eine Karte ist offen — die der ausgewaehlten Kamera (Akkordeon). */
+  expanded: boolean;
+  toggleOpen: (camId: string) => void;
+}) {
   const {
     cameras,
     selectedCameraId,
-    selectCamera,
     updateCamera,
     removeCamera,
     duplicateCamera,
@@ -118,7 +167,7 @@ function CameraCard({ camId }: { camId: string }) {
   } = useStore();
   const cam = cameras.find((c) => c.id === camId)!;
   const isSelected = cam.id === selectedCameraId;
-  const [expanded, setExpanded] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [showNewLens, setShowNewLens] = useState(false);
   const [newLens, setNewLens] = useState({ manufacturer: '', model: '', focalMin: '10', focalMax: '100', aperture: '2.8', mount: 'B4', type: 'zoom' as 'zoom' | 'prime' });
   const [showNewCustomCam, setShowNewCustomCam] = useState(false);
@@ -171,96 +220,135 @@ function CameraCard({ camId }: { camId: string }) {
   const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, cam.useSpeedbooster, cam.activeMount) : null;
   const effectiveSensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex, cam.activeMount) : camDef?.sensor;
   const coverage = camDef && lensDef ? getCoverageStatus(camDef, lensDef, cam.useSpeedbooster, cam.activeMount, cam.sensorModeIndex) : null;
+  // Grenzen und Marken der drei Objektiv-Regler.
+  const focalMin = lensDef?.focalLengthMin ?? 4;
+  const focalMax = Math.max(focalMin + 1, lensDef?.focalLengthMax ?? 300);
+  // Angezeigte Marken sind duenner als im Preview-Tab (sonst kleben die
+  // Beschriftungen in der schmalen Spalte aneinander); die Schrittweite von
+  // − / + bleibt aber die feine Reihe — Anzeige-Dichte ist nicht Bedien-Dichte.
+  const focalStepTicks = niceTicks(focalMin, focalMax);
+  const focalTicks = sparseTicks(focalStepTicks, focalMin, focalMax);
+  const apertureMin = lensDef?.maxApertureWide ?? 1.4;
+  const apertureMax = 22;
+  // Blendenzahlen sind kurz, brauchen also weniger Abstand als "500mm".
+  const apertureTicks = sparseTicks(stopsInRange(apertureMin, apertureMax), apertureMin, apertureMax, 0.1);
+  const focusStepTicks = niceTicks(FOCUS_MIN_M, FOCUS_MAX_M);
+  const focusTicks = sparseTicks(focusStepTicks, FOCUS_MIN_M, FOCUS_MAX_M);
+
   const fov = effectiveSensor && lensDef ? computeFov(effectiveSensor, cam.focalLength, cam.focusDistance, cam.extenderActive) : null;
   const dof = effectiveSensor && lensDef ? computeDof(effectiveSensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive) : null;
 
   return (
     <div
-      className={`rounded-lg border p-3 mb-2 cursor-pointer transition-colors ${
+      style={{ padding: '8px' }}
+      className={`@container rounded-lg border mb-2 transition-colors ${
         isSelected ? 'border-bc-accent bg-bc-accent/10' : 'border-bc-border bg-bc-panel hover:border-bc-accent/50'
       }`}
-      onClick={() => selectCamera(cam.id)}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Kopfzeile. Bleibt beim Scrollen stehen, damit man bei einer langen
+          Karte nicht raten muss, welche Kamera man gerade verstellt. */}
+      {/* Der Hintergrund muss deckend sein (sonst scrollt der Inhalt sichtbar
+          darunter durch); bei ausgewaehlter Karte ist es die Panel-Farbe mit
+          dem Akzent-Schleier, den `bg-bc-accent/10` sonst transparent legt. */}
+      <div className={`sticky top-0 z-10 -mx-2 -mt-2 rounded-t-lg ${isSelected ? 'bg-[#182234]' : 'bg-bc-panel'}`} style={{ padding: '6px 8px' }}>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cam.color }} />
-          <input
-            className="bg-transparent text-white font-bold text-sm w-20 outline-none"
-            value={cam.label}
-            onChange={(e) => updateCamera(cam.id, { label: e.target.value })}
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-        <div className="flex items-center gap-1">
-          <button onClick={(e) => { e.stopPropagation(); duplicateCamera(cam.id); }} className="p-1 hover:text-bc-accent" title="Duplicate">
-            <FiCopy size={14} />
-          </button>
-          <button onClick={(e) => { e.stopPropagation(); removeCamera(cam.id); }} className="p-1 hover:text-bc-red" title="Remove">
-            <FiTrash2 size={14} />
-          </button>
           <button
-            onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
-            className="p-1 hover:text-bc-accent"
+            type="button"
+            onClick={() => toggleOpen(cam.id)}
+            aria-expanded={expanded}
+            style={{ padding: '4px', minWidth: '28px', minHeight: '28px' }}
+            className="flex min-w-0 flex-1 items-center gap-2 rounded text-left hover:bg-white/[0.05]"
             title={expanded ? 'Details zuklappen' : 'Details aufklappen'}
           >
-            {expanded ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
+            <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: cam.color }} />
+            <span className="truncate text-sm font-bold text-white">{cam.label}</span>
+            <FiChevronDown size={14} className={`ml-auto shrink-0 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
           </button>
+          <div className="flex shrink-0 items-center gap-0.5">
+            <button
+              onClick={() => duplicateCamera(cam.id)}
+              style={{ padding: '6px' }}
+              className="rounded text-gray-400 hover:bg-white/[0.06] hover:text-bc-accent"
+              title="Kamera duplizieren"
+              aria-label={`${cam.label} duplizieren`}
+            >
+              <FiCopy size={14} />
+            </button>
+            {/* Zweistufig: Loeschen liegt direkt neben Duplizieren und war
+                bisher ohne Rueckfrage sofort weg. */}
+            <button
+              onClick={() => (confirmDelete ? removeCamera(cam.id) : setConfirmDelete(true))}
+              onBlur={() => setConfirmDelete(false)}
+              style={{ padding: '6px' }}
+              className={`rounded hover:bg-white/[0.06] ${confirmDelete ? 'text-bc-red' : 'text-gray-400 hover:text-bc-red'}`}
+              title={confirmDelete ? 'Wirklich löschen? Nochmal klicken.' : 'Kamera löschen'}
+              aria-label={confirmDelete ? `${cam.label} wirklich löschen` : `${cam.label} löschen`}
+            >
+              {confirmDelete ? <span className="text-[10px] font-semibold">Löschen?</span> : <FiTrash2 size={14} />}
+            </button>
+          </div>
         </div>
+
+        {/* Kernwerte — im zugeklappten Zustand die Vergleichszeile ueber alle
+            Kameras, im aufgeklappten waeren sie doppelt und entfallen. */}
+        {!expanded && (
+          <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-[10.5px] text-gray-500" style={{ paddingLeft: '4px' }}>
+            <span className="text-gray-400">{camDef?.model ?? '—'}</span>
+            <span>{MOUNT_TYPE_LABELS[cam.mountType ?? 'tripod']}</span>
+            <span className="tabular-nums">{cam.z.toFixed(2)} m</span>
+            <span className="tabular-nums">{cam.focalLength.toFixed(0)} mm</span>
+            {fov && <span className="tabular-nums">{fov.horizontalDeg.toFixed(0)}°</span>}
+          </div>
+        )}
       </div>
 
-      {/* Summary line */}
-      <div className="text-xs text-gray-400 mt-1">
-        {camDef?.manufacturer} {camDef?.model} — {lensDef?.model}
-      </div>
-      {fov && (
-        <div className="text-xs text-gray-500 mt-0.5">
-          {cam.focalLength.toFixed(0)}mm | FOV {fov.horizontalDeg.toFixed(1)}° | {fov.imageWidthAtDistance.toFixed(1)}m wide @ {cam.focusDistance}m
-        </div>
-      )}
-      {/* Adapter badge */}
-      {adapterInfo && (
-        <div
-          className="text-xs mt-0.5 text-bc-yellow cursor-help"
-          title={adapterInfo.notes ?? 'Adapter automatically applied — see Mount section below for details.'}
-        >
-          ⚡ {adapterInfo.name}{adapterInfo.lightLossStops > 0 ? ` (−${adapterInfo.lightLossStops}T)` : ''}{adapterInfo.lightLossStops < 0 ? ` (+${Math.abs(adapterInfo.lightLossStops)}T gain)` : ''}{adapterInfo.cropSensor ? ` → ${adapterInfo.cropSensor.name}` : ''}
-        </div>
-      )}
-      {/* Lens-mount mismatch warning — the picked lens doesn't physically fit
-          the active mount. Calculations are computed against the body's bare
-          sensor (no auto-adapter), so the displayed values won't match reality
-          until the user either switches the Mount selector to the lens's mount
-          or picks a different lens. */}
-      {lensMismatch && lensDef && (
-        <div
-          className="text-xs mt-0.5 text-bc-red cursor-help"
-          title={`Switch the Mount selector below to "${lensDef.mount}" (if available) to fit the matching adapter / plate, or pick a lens that matches the current "${activeMount}" mount.`}
-        >
-          ⚠ Lens mount {lensDef.mount} ≠ active mount {activeMount} — incompatible
-        </div>
-      )}
-      {/* Speed Booster toggle — shown when a focal reducer exists for the
-          fitted lens-mount → body-mount combo (EF/NF → MFT/FZ/E/X). */}
-      {speedBooster && (
-        <label className="flex items-center gap-1.5 text-xs mt-1 text-gray-300 cursor-pointer" onClick={(e) => e.stopPropagation()}>
-          <input
-            type="checkbox"
-            checked={cam.useSpeedbooster}
-            onChange={(e) => updateCamera(cam.id, { useSpeedbooster: e.target.checked })}
-            className="accent-bc-accent"
-          />
-          {speedBooster.name} (focal reducer)
-        </label>
-      )}
-
-      {/* Expanded controls */}
+      {/* Ausgeklappte Eigenschaften */}
       {expanded && (
-        <div className="mt-3 space-y-2 text-xs" onClick={(e) => e.stopPropagation()}>
+        <div className="mt-2 space-y-2 text-xs">
+          <FieldRow label="Name" htmlFor={`name-${cam.id}`}>
+            <input
+              id={`name-${cam.id}`}
+              className="w-full rounded border border-bc-border bg-bc-dark text-white"
+              style={{ padding: '3px 6px' }}
+              value={cam.label}
+              onChange={(e) => updateCamera(cam.id, { label: e.target.value })}
+            />
+          </FieldRow>
+
+          {/* Mount-Mismatch ist ein echtes Problem (die Werte stimmen dann
+              nicht), der Adapter dagegen nur ein Zustand — deshalb getrennte
+              Dringlichkeit statt zweimal Gelb. */}
+          {lensMismatch && lensDef && (
+            <Note tone="warn">
+              Objektiv-Anschluss {lensDef.mount} passt nicht zum aktiven Anschluss {activeMount}. Bis das
+              stimmt, rechnet die App mit dem nackten Sensor — Werte weichen von der Realität ab.
+            </Note>
+          )}
+          {adapterInfo && (
+            <Note tone="info">
+              Adapter: {adapterInfo.name}
+              {adapterInfo.lightLossStops > 0 ? ` (−${adapterInfo.lightLossStops} T)` : ''}
+              {adapterInfo.lightLossStops < 0 ? ` (+${Math.abs(adapterInfo.lightLossStops)} T Gewinn)` : ''}
+              {adapterInfo.cropSensor ? ` → ${adapterInfo.cropSensor.name}` : ''}
+            </Note>
+          )}
+          {speedBooster && (
+            <label className="flex cursor-pointer items-center gap-1.5 text-[11px] text-gray-300">
+              <input
+                type="checkbox"
+                checked={cam.useSpeedbooster}
+                onChange={(e) => updateCamera(cam.id, { useSpeedbooster: e.target.checked })}
+                className="accent-bc-accent"
+              />
+              {speedBooster.name} (Speed Booster)
+            </label>
+          )}
+
+          <Group id="optics" title="Kamera & Objektiv" summary={`${camDef?.model ?? ''} · ${cam.focalLength.toFixed(0)} mm`}>
           {/* Camera selector grouped by type */}
           <label className="block">
             <span className="flex items-center justify-between gap-2 text-gray-400">
-              <span>Camera ({camDef?.mount} mount, {camDef?.sensor.name})</span>
+              <span>Kamera · {camDef?.mount}-Anschluss · {camDef?.sensor.name}</span>
               {camDef && (
                 <span className="flex items-center gap-0.5">
                   {/* Edit applies to every camera. For built-ins it creates a
@@ -269,12 +357,14 @@ function CameraCard({ camId }: { camId: string }) {
                   <button
                     type="button"
                     onClick={() => setEditingCustomCam(camDef.id)}
-                    className="p-1 rounded text-gray-500 hover:text-bc-accent"
+                    style={{ padding: '5px' }}
+                    className="rounded text-gray-500 hover:text-bc-accent"
+                    aria-label="Kameradaten bearbeiten"
                     title={isPureCustom(camDef.id)
-                      ? 'Edit this custom camera'
+                      ? 'Eigene Kamera bearbeiten'
                       : isBuiltInShadow(camDef.id)
-                        ? 'Continue editing this modified built-in'
-                        : 'Edit (creates a modified copy you can tweak — original stays untouched)'}
+                        ? 'Bearbeitung dieser geänderten Vorlage fortsetzen'
+                        : 'Bearbeiten (legt eine änderbare Kopie an — das Original bleibt unangetastet)'}
                   >
                     <FiEdit2 size={12} />
                   </button>
@@ -282,11 +372,13 @@ function CameraCard({ camId }: { camId: string }) {
                     <button
                       type="button"
                       onClick={() => {
-                        if (!confirm(`Reset "${camDef.manufacturer} ${camDef.model}" to its built-in defaults? Your changes will be lost.`)) return;
+                        if (!confirm(`„${camDef.manufacturer} ${camDef.model}" auf die mitgelieferten Daten zurücksetzen? Deine Änderungen gehen verloren.`)) return;
                         useStore.getState().removeCustomCamera(camDef.id);
                       }}
-                      className="p-1 rounded text-gray-500 hover:text-bc-yellow"
-                      title="Reset to the original built-in spec (discards your edits)"
+                      style={{ padding: '5px' }}
+                      className="rounded text-gray-500 hover:text-bc-yellow"
+                      aria-label="Auf mitgelieferte Daten zurücksetzen"
+                      title="Auf die Originaldaten zurücksetzen (verwirft deine Änderungen)"
                     >
                       <FiRotateCcw size={12} />
                     </button>
@@ -297,10 +389,10 @@ function CameraCard({ camId }: { camId: string }) {
                       onClick={() => {
                         const used = useStore.getState().cameras.filter((c) => c.cameraId === camDef.id).length;
                         if (used > 1) {
-                          alert(`Cannot delete "${camDef.manufacturer} ${camDef.model}" — it is still used by ${used} placed camera(s).`);
+                          alert(`„${camDef.manufacturer} ${camDef.model}" lässt sich nicht löschen — ${used} platzierte Kameras nutzen sie noch.`);
                           return;
                         }
-                        if (!confirm(`Delete custom camera "${camDef.manufacturer} ${camDef.model}"?`)) return;
+                        if (!confirm(`Eigene Kamera „${camDef.manufacturer} ${camDef.model}" löschen?`)) return;
                         // Swap this placement to the first built-in so the card stays valid
                         const fallback = CAMERAS[0];
                         updateCamera(cam.id, {
@@ -310,8 +402,10 @@ function CameraCard({ camId }: { camId: string }) {
                         });
                         useStore.getState().removeCustomCamera(camDef.id);
                       }}
-                      className="p-1 rounded text-gray-500 hover:text-bc-red"
-                      title="Delete this custom camera"
+                      style={{ padding: '5px' }}
+                      className="rounded text-gray-500 hover:text-bc-red"
+                      aria-label="Eigene Kamera löschen"
+                      title="Diese eigene Kamera löschen"
                     >
                       <FiTrash2 size={12} />
                     </button>
@@ -319,8 +413,10 @@ function CameraCard({ camId }: { camId: string }) {
                   <button
                     type="button"
                     onClick={() => toggleFavoriteCameraId(camDef.id)}
-                    className={`p-1 rounded ${favoriteCameraIds.includes(camDef.id) ? 'text-bc-yellow' : 'text-gray-500 hover:text-bc-yellow'}`}
-                    title={favoriteCameraIds.includes(camDef.id) ? 'Remove camera favorite' : 'Favorite camera'}
+                    style={{ padding: '5px' }}
+                    className={`rounded ${favoriteCameraIds.includes(camDef.id) ? 'text-bc-yellow' : 'text-gray-500 hover:text-bc-yellow'}`}
+                    aria-label={favoriteCameraIds.includes(camDef.id) ? 'Favorit entfernen' : 'Als Favorit merken'}
+                    title={favoriteCameraIds.includes(camDef.id) ? 'Favorit entfernen' : 'Als Favorit merken'}
                   >
                     <FiStar size={12} fill={favoriteCameraIds.includes(camDef.id) ? 'currentColor' : 'none'} />
                   </button>
@@ -360,15 +456,15 @@ function CameraCard({ camId }: { camId: string }) {
                   <option key={c.id} value={c.id}>{favoriteCameraIds.includes(c.id) ? '* ' : ''}{c.manufacturer} {c.model} [{c.mount}]{tag}</option>
                 );
               })}
-              <option value="__new_custom__">＋ Custom+ Add custom camera…</option>
+              <option value="__new_custom__">＋ Eigene Kamera anlegen…</option>
             </select>
           </label>
 
           {/* Inline custom camera creation form (Custom+ entry in the dropdown) */}
           {showNewCustomCam && (
             <CustomCameraForm
-              title="New Custom Camera"
-              submitLabel="Create & Select"
+              title="Neue eigene Kamera"
+              submitLabel="Anlegen & auswählen"
               onCancel={() => setShowNewCustomCam(false)}
               onSubmit={(spec) => {
                 const newId = addCustomCamera(spec);
@@ -392,7 +488,7 @@ function CameraCard({ camId }: { camId: string }) {
           {editingCustomCam && editingCustomCam === camDef?.id && camDef && (
             <CustomCameraForm
               title={`Edit ${camDef.manufacturer} ${camDef.model}`}
-              submitLabel="Save changes"
+              submitLabel="Änderungen sichern"
               initial={camDef}
               onCancel={() => setEditingCustomCam(null)}
               onSubmit={(spec) => {
@@ -420,10 +516,11 @@ function CameraCard({ camId }: { camId: string }) {
 
           {/* Mount selector — only visible when the body offers swappable mount plates */}
           {camDef && camDef.adaptedMounts && camDef.adaptedMounts.length > 0 && (
-            <label className="block">
-              <span className="text-gray-400">Mount</span>
+            <FieldRow label="Anschluss" htmlFor={`mountplate-${cam.id}`}>
               <select
-                className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
+                id={`mountplate-${cam.id}`}
+                className="block w-full bg-bc-dark border border-bc-border rounded text-white"
+                style={{ padding: '3px 6px' }}
                 value={activeMount}
                 onChange={(e) => {
                   const newMount = e.target.value;
@@ -451,9 +548,9 @@ function CameraCard({ camId }: { camId: string }) {
                   });
                 }}
               >
-                <option value={camDef.mount}>{camDef.mount} (native)</option>
+                <option value={camDef.mount}>{camDef.mount} (nativ)</option>
                 {camDef.adaptedMounts.map((m) => (
-                  <option key={m} value={m}>{m} (mount plate / adapter)</option>
+                  <option key={m} value={m}>{m} (Wechselplatte / Adapter)</option>
                 ))}
               </select>
               {/* Detail card for the active mount adapter, if the body defines one.
@@ -468,10 +565,10 @@ function CameraCard({ camId }: { camId: string }) {
                       ⚡ {ma.name}
                     </div>
                     <div className="text-gray-400 mt-0.5">
-                      {ma.lightLossStops > 0 && <span>Light loss: −{ma.lightLossStops}T · </span>}
-                      {ma.lightLossStops < 0 && <span>Light gain: +{Math.abs(ma.lightLossStops)}T · </span>}
-                      {ma.lightLossStops === 0 && <span>No light loss · </span>}
-                      {ma.cropSensor ? <span>Forces {ma.cropSensor.name}</span> : <span>No sensor crop</span>}
+                      {ma.lightLossStops > 0 && <span>Lichtverlust: −{ma.lightLossStops} T · </span>}
+                      {ma.lightLossStops < 0 && <span>Lichtgewinn: +{Math.abs(ma.lightLossStops)} T · </span>}
+                      {ma.lightLossStops === 0 && <span>Kein Lichtverlust · </span>}
+                      {ma.cropSensor ? <span>erzwingt {ma.cropSensor.name}</span> : <span>kein Sensor-Crop</span>}
                     </div>
                     {ma.notes && (
                       <div className="text-gray-500 mt-1 italic">{ma.notes}</div>
@@ -479,50 +576,45 @@ function CameraCard({ camId }: { camId: string }) {
                   </div>
                 );
               })()}
-            </label>
+            </FieldRow>
           )}
 
-          {/* Image-circle coverage warning */}
+          {/* Bildkreis-Deckung. `marginal` ist ein Dauerzustand dieser
+              Kombination und kein Fehler — nur echtes Vignettieren ist eine
+              Warnung. Vorher hatte beides dieselbe Alarmfarbe. */}
           {coverage && coverage.status !== 'ok' && (
-            <div
-              className={`mt-1 p-2 rounded text-[10px] leading-snug border ${
-                coverage.status === 'vignette'
-                  ? 'border-bc-red/60 bg-bc-red/10 text-red-300'
-                  : 'border-bc-yellow/60 bg-bc-yellow/10 text-bc-yellow'
-              }`}
-              title={`Lens image circle vs sensor diagonal: ${(coverage.ratio * 100).toFixed(0)} %`}
-            >
-              {coverage.status === 'vignette' ? '⛔' : '⚠️'} {coverage.message}
-            </div>
+            <Note tone={coverage.status === 'vignette' ? 'warn' : 'info'}>
+              {coverage.message}
+            </Note>
           )}
 
           {/* Hardware sensor mode (URSA B4 crop, VENICE windows, FX9 S35 etc.) */}
           {camDef?.sensorModes && camDef.sensorModes.length > 1 && (
-            <label className="block">
-              <span className="text-gray-400">Sensor Mode</span>
+            <FieldRow
+              label="Sensor-Modus"
+              htmlFor={`sensormode-${cam.id}`}
+              hint={adapterInfo?.cropSensor ? `Adapter erzwingt ${adapterInfo.cropSensor.name}` : undefined}
+            >
               <select
-                className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
+                id={`sensormode-${cam.id}`}
+                className="block w-full bg-bc-dark border border-bc-border rounded text-white disabled:text-gray-500"
+                style={{ padding: '3px 6px' }}
                 value={cam.sensorModeIndex ?? 0}
                 onChange={(e) => updateCamera(cam.id, { sensorModeIndex: parseInt(e.target.value) })}
                 disabled={!!adapterInfo?.cropSensor}
-                title={adapterInfo?.cropSensor ? 'Adapter crop overrides the sensor mode' : 'Pick the camera body crop mode'}
+                title={adapterInfo?.cropSensor ? 'Der Adapter-Crop übersteuert den Sensor-Modus' : 'Crop-Modus des Kamerabodys'}
               >
                 {camDef.sensorModes.map((mode, idx) => (
                   <option key={idx} value={idx}>{mode.name}</option>
                 ))}
               </select>
-              {adapterInfo?.cropSensor && (
-                <span className="text-[10px] text-bc-yellow">
-                  Adapter forces {adapterInfo.cropSensor.name}
-                </span>
-              )}
-            </label>
+            </FieldRow>
           )}
 
           {/* Lens selector grouped by mount */}
           <label className="block">
             <span className="flex items-center justify-between gap-2 text-gray-400">
-              <span>Lens</span>
+              <span>Objektiv</span>
               {lensDef && (
                 <button
                   type="button"
@@ -559,7 +651,7 @@ function CameraCard({ camId }: { camId: string }) {
                   ))}
                 </optgroup>
               ))}
-              <option value="__new__">＋ Add custom lens…</option>
+              <option value="__new__">＋ Eigenes Objektiv anlegen…</option>
             </select>
           </label>
           {/* Custom lens: delete button for active custom lens */}
@@ -584,19 +676,19 @@ function CameraCard({ camId }: { camId: string }) {
                 }
               }}
               className="text-[10px] text-bc-red hover:text-red-400 mt-0.5"
-            >Remove custom lens "{lensDef.manufacturer} {lensDef.model}"</button>
+            >Eigenes Objektiv „{lensDef.manufacturer} {lensDef.model}" löschen</button>
           )}
           {/* Inline custom lens creation form */}
           {showNewLens && (
             <div className="bg-bc-dark rounded p-2 border border-bc-border space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-gray-300 font-medium text-[11px]">New Custom Lens</span>
+                <span className="text-gray-300 font-medium text-[11px]">Neues eigenes Objektiv</span>
                 <button onClick={() => setShowNewLens(false)} className="text-gray-500 hover:text-white text-xs">✕</button>
               </div>
               <div className="grid grid-cols-2 gap-1">
-                <input placeholder="Manufacturer" className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                <input placeholder="Hersteller" className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
                   value={newLens.manufacturer} onChange={(e) => setNewLens({ ...newLens, manufacturer: e.target.value })} />
-                <input placeholder="Model" className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                <input placeholder="Modell" className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
                   value={newLens.model} onChange={(e) => setNewLens({ ...newLens, model: e.target.value })} />
               </div>
               <div className="grid grid-cols-3 gap-1">
@@ -620,7 +712,7 @@ function CameraCard({ camId }: { camId: string }) {
                 <select className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
                   value={newLens.type} onChange={(e) => setNewLens({ ...newLens, type: e.target.value as 'zoom' | 'prime' })}>
                   <option value="zoom">Zoom</option>
-                  <option value="prime">Prime</option>
+                  <option value="prime">Festbrennweite</option>
                 </select>
               </div>
               <button
@@ -645,121 +737,126 @@ function CameraCard({ camId }: { camId: string }) {
                 }}
                 className="flex items-center gap-1 px-2 py-1 rounded bg-bc-green/20 text-bc-green text-xs hover:bg-bc-green/30 w-full justify-center"
               >
-                <FiPlus size={12} /> Create & Select
+                <FiPlus size={12} /> Anlegen & auswählen
               </button>
             </div>
           )}
 
-          {/* Focal length slider */}
-          <label className="block">
-            <span className="text-gray-400">Focal Length: {cam.focalLength.toFixed(1)}mm{cam.extenderActive > 1 ? ` (eff. ${(cam.focalLength * cam.extenderActive).toFixed(0)}mm)` : ''}</span>
-            <input
-              type="range"
-              className="w-full accent-bc-accent"
-              min={lensDef?.focalLengthMin ?? 4}
-              max={lensDef?.focalLengthMax ?? 300}
-              step={0.1}
-              value={cam.focalLength}
-              onChange={(e) => updateCamera(cam.id, { focalLength: parseFloat(e.target.value) })}
-            />
-          </label>
+          {/* Optische Werte — dieselben Regler wie im Preview-Tab: logarithmische
+              Bahn mit Rastung, Zahl direkt eingebbar. Vorher hatte die Sidebar
+              lineare Regler ohne Anker, also zwei Bedienungen fuer dieselbe Groesse. */}
+          <LensSlider
+            label="Brennweite"
+            value={cam.focalLength}
+            min={focalMin}
+            max={focalMax}
+            ticks={focalTicks}
+            format={formatFocal}
+            unit="mm"
+            note={cam.extenderActive > 1 ? `eff. ${(cam.focalLength * cam.extenderActive).toFixed(0)} mm` : undefined}
+            onChange={(v) => updateCamera(cam.id, { focalLength: v })}
+            onStep={(dir) => updateCamera(cam.id, { focalLength: stepAlong(cam.focalLength, dir, focalMin, focalMax, focalStepTicks) })}
+            title="Brennweite — logarithmisch, rastet auf die Marken. Shift = frei."
+          />
 
-          {/* Aperture */}
-          <label className="block">
-            <span className="text-gray-400">Aperture: f/{cam.aperture.toFixed(1)}{adapterInfo && adapterInfo.lightLossStops !== 0 ? ` (eff. T${(cam.aperture * Math.pow(2, adapterInfo.lightLossStops / 2)).toFixed(1)})` : ''}</span>
-            <input
-              type="range"
-              className="w-full accent-bc-accent"
-              min={lensDef?.maxApertureWide ?? 1.4}
-              max={22}
-              step={0.1}
-              value={cam.aperture}
-              onChange={(e) => updateCamera(cam.id, { aperture: parseFloat(e.target.value) })}
-            />
-          </label>
+          <LensSlider
+            label="Blende"
+            value={cam.aperture}
+            min={apertureMin}
+            max={apertureMax}
+            ticks={apertureTicks}
+            format={formatAperture}
+            prefix="f/"
+            formatTick={(v) => (v < 10 ? v.toFixed(1) : v.toFixed(0))}
+            note={adapterInfo && adapterInfo.lightLossStops !== 0
+              ? `eff. T${(cam.aperture * Math.pow(2, adapterInfo.lightLossStops / 2)).toFixed(1)}`
+              : undefined}
+            onChange={(v) => updateCamera(cam.id, { aperture: v })}
+            onStep={(dir) => updateCamera(cam.id, { aperture: stepStop(cam.aperture, dir, apertureMin, apertureMax) })}
+            title="Blende — Normreihe in vollen Stufen. Shift = stufenlos."
+          />
 
-          {/* Focus distance */}
-          <label className="block">
-            <span className="text-gray-400">Distance: {cam.focusDistance.toFixed(1)}m</span>
-            <input
-              type="range"
-              className="w-full accent-bc-accent"
-              min={0.5}
-              max={200}
-              step={0.5}
-              value={cam.focusDistance}
-              onChange={(e) => updateCamera(cam.id, { focusDistance: parseFloat(e.target.value) })}
-            />
-          </label>
+          <LensSlider
+            label="Fokusdistanz"
+            value={Math.min(Math.max(cam.focusDistance, FOCUS_MIN_M), FOCUS_MAX_M)}
+            min={FOCUS_MIN_M}
+            max={FOCUS_MAX_M}
+            ticks={focusTicks}
+            format={formatDistance}
+            unit="m"
+            onChange={(v) => updateCamera(cam.id, { focusDistance: v })}
+            onStep={(dir) => updateCamera(cam.id, { focusDistance: stepAlong(cam.focusDistance, dir, FOCUS_MIN_M, FOCUS_MAX_M, focusStepTicks) })}
+            title="Entfernung, auf die scharfgestellt ist — nicht der Abstand zur Bühne."
+          />
 
-          {/* Pan */}
-          <label className="block">
-            <span className="text-gray-400">Pan: {cam.pan.toFixed(0)}°</span>
-            <input
-              type="range"
-              className="w-full accent-bc-accent"
-              min={-180}
-              max={180}
-              step={1}
-              value={cam.pan}
-              onChange={(e) => updateCamera(cam.id, { pan: parseFloat(e.target.value) })}
-            />
-          </label>
-
-          {/* Tilt */}
-          <label className="block">
-            <span className="text-gray-400">Tilt: {cam.tilt.toFixed(0)}°</span>
-            <input
-              type="range"
-              className="w-full accent-bc-accent"
-              min={-90}
-              max={45}
-              step={1}
-              value={cam.tilt}
-              onChange={(e) => updateCamera(cam.id, { tilt: parseFloat(e.target.value) })}
-            />
-          </label>
-
-          {/* Extender */}
           {lensDef?.extenderFactors && lensDef.extenderFactors.length > 0 && (
-            <label className="block">
-              <span className="text-gray-400">Extender</span>
+            <FieldRow label="Extender" htmlFor={`ext-${cam.id}`}>
               <select
-                className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
+                id={`ext-${cam.id}`}
+                className="block w-full bg-bc-dark border border-bc-border rounded text-white"
+                style={{ padding: '3px 6px' }}
                 value={cam.extenderActive}
                 onChange={(e) => updateCamera(cam.id, { extenderActive: parseFloat(e.target.value) })}
               >
-                <option value={1}>Off (1×)</option>
+                <option value={1}>Aus (1×)</option>
                 {lensDef.extenderFactors.map((f) => (
                   <option key={f} value={f}>{f}× Extender</option>
                 ))}
               </select>
-            </label>
+            </FieldRow>
           )}
+          </Group>
 
-          {/* Position X / Y */}
-          <div className="grid grid-cols-2 gap-2">
-            <label>
-              <span className="text-gray-400">X (m)</span>
+          <Group id="aim" title="Blickrichtung" summary={`${cam.pan.toFixed(0)}° / ${cam.tilt.toFixed(0)}°`}>
+            <ValueSlider
+              label="Schwenk (Pan)"
+              value={cam.pan}
+              min={-180}
+              max={180}
+              step={1}
+              decimals={0}
+              unit="°"
+              onChange={(v) => updateCamera(cam.id, { pan: v })}
+              title="0° zeigt nach rechts, positive Werte drehen im Uhrzeigersinn."
+            />
+            <ValueSlider
+              label="Neigung (Tilt)"
+              value={cam.tilt}
+              min={-90}
+              max={45}
+              step={1}
+              decimals={0}
+              unit="°"
+              onChange={(v) => updateCamera(cam.id, { tilt: v })}
+              title="Negative Werte neigen nach unten."
+            />
+          </Group>
+
+          <Group id="place" title="Standort & Rig" summary={`${MOUNT_TYPE_LABELS[cam.mountType ?? 'tripod']} · ${cam.z.toFixed(2)} m`}>
+          <FieldRow label="Position (m)">
+            <div className="grid grid-cols-2 gap-2">
               <input
                 type="number"
-                className="w-full bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
+                className="w-full bg-bc-dark border border-bc-border rounded text-white tabular-nums"
+                style={{ padding: '3px 6px' }}
                 value={cam.x}
                 step={0.5}
+                aria-label="Position X in Metern"
+                title="Abstand vom linken Rand (m)"
                 onChange={(e) => updateCamera(cam.id, { x: parseFloat(e.target.value) || 0 })}
               />
-            </label>
-            <label>
-              <span className="text-gray-400">Y (m)</span>
               <input
                 type="number"
-                className="w-full bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
+                className="w-full bg-bc-dark border border-bc-border rounded text-white tabular-nums"
+                style={{ padding: '3px 6px' }}
                 value={cam.y}
                 step={0.5}
+                aria-label="Position Y in Metern"
+                title="Abstand vom oberen Rand (m)"
                 onChange={(e) => updateCamera(cam.id, { y: parseFloat(e.target.value) || 0 })}
               />
-            </label>
-          </div>
+            </div>
+          </FieldRow>
 
           {/* Montage + konkretes Rig. Die Kategorie bestimmt den Bewegungsstil,
               das Rig die echten Maße (Hoehe, Ausleger, Fahrweg). */}
@@ -768,10 +865,11 @@ function CameraCard({ camId }: { camId: string }) {
             const catRigs = rigsForType(limits.type);
             return (
               <>
-                <label className="block">
-                  <span className="text-gray-400">Montage</span>
+                <FieldRow label="Montage" htmlFor={`mount-${cam.id}`}>
                   <select
-                    className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
+                    id={`mount-${cam.id}`}
+                    className="block w-full bg-bc-dark border border-bc-border rounded text-white"
+                    style={{ padding: '3px 6px' }}
                     value={cam.mountType ?? 'tripod'}
                     onChange={(e) => {
                       const newMount = e.target.value as CameraMountType;
@@ -791,13 +889,14 @@ function CameraCard({ camId }: { camId: string }) {
                       <option key={m} value={m}>{MOUNT_TYPE_LABELS[m]}</option>
                     ))}
                   </select>
-                </label>
+                </FieldRow>
 
                 {catRigs.length > 0 && (
-                  <label className="block">
-                    <span className="text-gray-400">Modell</span>
+                  <FieldRow label="Rig-Modell" htmlFor={`rig-${cam.id}`}>
                     <select
-                      className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
+                      id={`rig-${cam.id}`}
+                      className="block w-full bg-bc-dark border border-bc-border rounded text-white"
+                      style={{ padding: '3px 6px' }}
                       value={cam.rigId ?? ''}
                       onChange={(e) => {
                         const rigId = e.target.value || undefined;
@@ -825,221 +924,179 @@ function CameraCard({ camId }: { camId: string }) {
                         {limits.rig.notes ? ` — ${limits.rig.notes}` : ''}
                       </span>
                     )}
-                  </label>
+                  </FieldRow>
                 )}
 
                 {/* Ausrichtung des Rigs im Raum. Eine gelegte Schiene oder ein
                     Kran-Chassis steht fest, waehrend die Kamera darauf
                     schwenkt — darum ein eigener Winkel neben `pan`. Ohne
                     eigenen Wert folgt das Rig der Kamera. */}
-                <label className="block">
-                  <span className="text-gray-400">
-                    Ausrichtung: {rigYaw(cam).toFixed(0)}°{' '}
-                    {cam.rigRotation === undefined
-                      ? <span className="text-[10px] text-gray-600">(folgt der Kamera)</span>
-                      : <span className="text-[10px] text-bc-yellow">(fest ausgerichtet)</span>}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="range"
-                      className="flex-1 accent-bc-yellow"
-                      min={-180}
-                      max={180}
-                      step={1}
-                      value={rigYaw(cam)}
-                      onChange={(e) => updateCamera(cam.id, { rigRotation: parseFloat(e.target.value) })}
-                    />
-                    <input
-                      type="number"
-                      className="w-16 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-white text-xs"
-                      value={Number(rigYaw(cam).toFixed(0))}
-                      step={5}
-                      min={-180}
-                      max={180}
-                      title="Ausrichtung des Rigs in Grad"
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value);
-                        if (Number.isFinite(v)) updateCamera(cam.id, { rigRotation: v });
-                      }}
-                    />
-                    {cam.rigRotation !== undefined && (
+                <ValueSlider
+                  label="Ausrichtung"
+                  value={rigYaw(cam)}
+                  min={-180}
+                  max={180}
+                  step={1}
+                  decimals={0}
+                  unit="°"
+                  hint={cam.rigRotation === undefined ? 'folgt der Kamera' : 'fest ausgerichtet'}
+                  title="Richtung von Schiene, Chassis oder Beinstellung — unabhängig vom Schwenk."
+                  onChange={(v) => updateCamera(cam.id, { rigRotation: v })}
+                  right={
+                    cam.rigRotation !== undefined ? (
                       <button
                         onClick={() => updateCamera(cam.id, { rigRotation: undefined })}
-                        className="text-[10px] text-gray-500 hover:text-white px-1.5 py-0.5 rounded border border-bc-border"
+                        style={{ padding: '2px 5px' }}
+                        className="shrink-0 rounded border border-bc-border text-[10px] text-gray-500 hover:text-white"
                         title="Rig wieder an die Blickrichtung koppeln"
                       >koppeln</button>
-                    )}
-                  </div>
-                </label>
+                    ) : undefined
+                  }
+                />
 
                 {/* Hoehe — durch die echten Grenzen des Rigs begrenzt */}
-                <label className="block">
-                  <span className="text-gray-400">
-                    Hoehe: {cam.z.toFixed(2)}m{' '}
-                    <span className="text-[10px] text-gray-600">
-                      ({limits.minHeightM.toFixed(2)}–{limits.maxHeightM.toFixed(2)}m)
-                    </span>
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="range"
-                      className="flex-1 accent-bc-accent"
-                      min={limits.minHeightM}
-                      max={limits.maxHeightM}
-                      step={limits.pumpM}
-                      value={clampHeight(limits, cam.z)}
-                      onChange={(e) => updateCamera(cam.id, { z: parseFloat(e.target.value) })}
-                    />
-                    <input
-                      type="number"
-                      className="w-16 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-white text-xs"
-                      value={cam.z}
-                      step={0.1}
-                      min={limits.minHeightM}
-                      max={limits.maxHeightM}
-                      title="Objektivhoehe in Metern"
-                      onChange={(e) => updateCamera(cam.id, { z: clampHeight(limits, parseFloat(e.target.value) || 0) })}
-                    />
-                  </div>
-                </label>
+                <ValueSlider
+                  label="Objektivhöhe"
+                  value={clampHeight(limits, cam.z)}
+                  min={limits.minHeightM}
+                  max={limits.maxHeightM}
+                  step={limits.pumpM}
+                  unit="m"
+                  title="Höhe der Linse über dem Boden — begrenzt durch das gewählte Rig."
+                  onChange={(v) => updateCamera(cam.id, { z: clampHeight(limits, v) })}
+                />
 
                 {/* Gelegte Schienenlaenge — nur wo es eine Schiene gibt */}
                 {(limits.type === 'dolly' || limits.type === 'slider') && (
-                  <label className="block">
-                    <span className="text-gray-400">
-                      Schienenlaenge: {limits.trackM.toFixed(2)}m{' '}
-                      {limits.trackIsCustom
-                        ? <span className="text-[10px] text-bc-yellow">(eigene Laenge)</span>
-                        : <span className="text-[10px] text-gray-600">(Vorschlag)</span>}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        className="w-20 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-white text-xs"
-                        value={Number(limits.trackM.toFixed(2))}
-                        step={0.5}
-                        min={0.5}
-                        max={60}
-                        onChange={(e) => {
-                          const v = parseFloat(e.target.value);
-                          if (!Number.isFinite(v)) return;
-                          const len = Math.max(0.5, Math.min(60, v));
-                          // Der Wagen faehrt von der Mitte aus nach beiden
-                          // Seiten, also maximal die halbe Schiene weit.
-                          const half = len / 2;
-                          updateCamera(cam.id, {
-                            trackLengthM: len,
-                            trackOffset: Math.max(-half, Math.min(half, cam.trackOffset ?? 0)),
-                          });
-                        }}
-                        title="Tatsaechlich gelegte Schienenlaenge in Metern"
-                      />
-                      <span className="text-[10px] text-gray-500 flex-1 leading-snug">
-                        {(() => {
-                          const plan = trackSectionPlan(limits.trackM);
-                          return `aus ${plan.sections.map((s) => `${s.count}×${(s.lengthM / 0.3048).toFixed(0)}′`).join(' + ')} = ${plan.total.toFixed(2)} m`;
-                        })()}
-                      </span>
-                      {limits.trackIsCustom && (
+                  <ValueSlider
+                    label="Schienenlänge"
+                    value={limits.trackM}
+                    min={0.5}
+                    max={60}
+                    step={0.5}
+                    unit="m"
+                    hint={(() => {
+                      const plan = trackSectionPlan(limits.trackM);
+                      const parts = plan.sections.map((sec) => `${sec.count}x${(sec.lengthM / 0.3048).toFixed(0)}'`).join(' + ');
+                      return `${limits.trackIsCustom ? 'eigene Länge' : 'Vorschlag'} · aus ${parts} = ${plan.total.toFixed(2)} m`;
+                    })()}
+                    title="Tatsächlich gelegte Schiene. Der Wagen fährt von der Mitte aus je die Hälfte."
+                    onChange={(v) => {
+                      const len = Math.max(0.5, Math.min(60, v));
+                      const half = len / 2;
+                      updateCamera(cam.id, {
+                        trackLengthM: len,
+                        trackOffset: Math.max(-half, Math.min(half, cam.trackOffset ?? 0)),
+                      });
+                    }}
+                    right={
+                      limits.trackIsCustom ? (
                         <button
                           onClick={() => updateCamera(cam.id, { trackLengthM: undefined })}
-                          className="text-[10px] text-gray-500 hover:text-white px-1.5 py-0.5 rounded border border-bc-border"
-                          title="Zurueck auf den Vorschlag des Rigs"
+                          style={{ padding: '2px 5px' }}
+                          className="shrink-0 rounded border border-bc-border text-[10px] text-gray-500 hover:text-white"
+                          title="Zurück auf den Vorschlag des Rigs"
                         >reset</button>
-                      )}
-                    </div>
-                  </label>
+                      ) : undefined
+                    }
+                  />
                 )}
 
                 {/* Live-Fahrweg — Jib-Schwenk, Dolly-Fahrt, Teleskop, Flug */}
                 {limits.travelM > 0 && (
-                  <label className="block">
-                    <span className="text-gray-400">
-                      Fahrweg: {(cam.trackOffset ?? 0).toFixed(2)}m{' '}
-                      <span className="text-[10px] text-gray-600">(±{limits.travelM.toFixed(2)}m)</span>
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="range"
-                        className="flex-1 accent-bc-yellow"
-                        min={-limits.travelM}
-                        max={limits.travelM}
-                        step={0.05}
-                        value={clampTrack(limits, cam.trackOffset ?? 0)}
-                        onChange={(e) => updateCamera(cam.id, { trackOffset: parseFloat(e.target.value) })}
-                      />
+                  <ValueSlider
+                    label="Fahrweg"
+                    value={clampTrack(limits, cam.trackOffset ?? 0)}
+                    min={-limits.travelM}
+                    max={limits.travelM}
+                    step={0.05}
+                    unit="m"
+                    title="Aktuelle Position auf Schiene bzw. Ausleger. Live fahren geht im Rig-Tab."
+                    onChange={(v) => updateCamera(cam.id, { trackOffset: v })}
+                    right={
                       <button
                         onClick={() => updateCamera(cam.id, { trackOffset: 0 })}
-                        className="text-[10px] text-gray-500 hover:text-white px-1.5 py-0.5 rounded border border-bc-border"
+                        style={{ padding: '2px 5px' }}
+                        className="shrink-0 rounded border border-bc-border text-[10px] text-gray-500 hover:text-white"
                         title="Rig auf Null parken"
                       >park</button>
-                    </div>
-                  </label>
+                    }
+                  />
                 )}
               </>
             );
           })()}
 
 
-          {/* Notes — free-form, shown in export when filled */}
-          <label className="block">
-            <span className="text-gray-400">Notes</span>
+          </Group>
+
+          {/* Ergebnis der Optik — Anzeige, keine Bedienung. Standardmaessig zu,
+              weil es beim Einrichten selten gebraucht wird. */}
+          <Group
+            id="result"
+            title="Ergebnis"
+            defaultOpen={false}
+            summary={fov ? `${fov.horizontalDeg.toFixed(0)}° · ${fov.imageWidthAtDistance.toFixed(1)} m breit` : undefined}
+          >
+            {fov && (
+              <>
+                <Readout label="Bildwinkel horizontal" value={`${fov.horizontalDeg.toFixed(1)}°`} />
+                <Readout label={`Bildbreite bei ${cam.focusDistance.toFixed(1)} m`} value={`${fov.imageWidthAtDistance.toFixed(2)} m`} />
+              </>
+            )}
+            {dof && (
+              <>
+                <Readout label="Schärfe von" value={dof.nearLimit < 0.01 ? '0 m' : `${dof.nearLimit.toFixed(2)} m`} />
+                <Readout label="Schärfe bis" value={dof.farLimit === Infinity ? '∞' : `${dof.farLimit.toFixed(2)} m`} />
+                <Readout label="Schärfentiefe gesamt" value={dof.totalDof === Infinity ? '∞' : `${dof.totalDof.toFixed(2)} m`} tone="muted" />
+              </>
+            )}
+            {effectiveSensor && effectiveSensor !== camDef?.sensor && (
+              <Note tone="info">
+                Wirksamer Sensor: {effectiveSensor.name} (Crop ×{effectiveSensor.cropFactor.toFixed(1)})
+              </Note>
+            )}
+            {camDef && lensDef && effectiveSensor && fov && dof && (
+              <div>
+                <button
+                  onClick={() => setShowCalc(!showCalc)}
+                  style={{ padding: '3px 0' }}
+                  className="flex w-full items-center gap-1 text-[10px] text-gray-400 hover:text-bc-accent"
+                  aria-expanded={showCalc}
+                >
+                  {showCalc ? <FiChevronUp size={11} /> : <FiChevronDown size={11} />}
+                  Rechenweg {showCalc ? 'ausblenden' : 'anzeigen'}
+                </button>
+                {showCalc && (
+                  <div className="mt-1">
+                    <CalculationBreakdown
+                      camDef={camDef}
+                      lensDef={lensDef}
+                      sensor={effectiveSensor}
+                      fov={fov}
+                      dof={dof}
+                      focalLength={cam.focalLength}
+                      extender={cam.extenderActive}
+                      aperture={cam.aperture}
+                      focusDistance={cam.focusDistance}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </Group>
+
+          <Group id="note" title="Notiz" defaultOpen={false} summary={cam.notes ? cam.notes.slice(0, 24) : undefined}>
             <textarea
-              className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white text-xs resize-y min-h-[2.5rem]"
+              className="block min-h-[2.5rem] w-full resize-y rounded border border-bc-border bg-bc-dark text-xs text-white"
+              style={{ padding: '4px 6px' }}
               rows={2}
-              placeholder="Mount, operator, shot notes…"
+              placeholder="Montage, Operator, Hinweise zum Shot…"
+              aria-label="Notiz zur Kamera"
               value={cam.notes ?? ''}
               onChange={(e) => updateCamera(cam.id, { notes: e.target.value })}
             />
-          </label>
-
-          {/* DoF readout */}
-          {dof && (
-            <div className="bg-bc-dark rounded p-2 mt-2 border border-bc-border">
-              <span className="text-gray-400">Depth of Field</span>
-              <div className="text-white">
-                Near: {dof.nearLimit < 0.01 ? '0m' : dof.nearLimit.toFixed(2) + 'm'} | Far: {dof.farLimit === Infinity ? '∞' : dof.farLimit.toFixed(2) + 'm'}
-              </div>
-              <div className="text-white">
-                Total: {dof.totalDof === Infinity ? '∞' : dof.totalDof.toFixed(2) + 'm'}
-              </div>
-            </div>
-          )}
-
-          {/* Effective sensor info */}
-          {effectiveSensor && effectiveSensor !== camDef?.sensor && (
-            <div className="bg-bc-dark rounded p-2 border border-bc-border text-bc-yellow">
-              Eff. Sensor: {effectiveSensor.name} (crop ×{effectiveSensor.cropFactor.toFixed(1)})
-            </div>
-          )}
-
-          {/* Calculation trace — step-by-step formula breakdown */}
-          {camDef && lensDef && effectiveSensor && fov && dof && (
-            <div>
-              <button
-                onClick={() => setShowCalc(!showCalc)}
-                className="flex items-center gap-1 text-[10px] text-gray-400 hover:text-bc-accent w-full"
-              >
-                {showCalc ? <FiChevronUp size={11} /> : <FiChevronDown size={11} />}
-                {showCalc ? 'Hide' : 'Show'} calculation breakdown
-              </button>
-              {showCalc && (
-                <div className="mt-1">
-                  <CalculationBreakdown
-                    camDef={camDef}
-                    lensDef={lensDef}
-                    sensor={effectiveSensor}
-                    fov={fov}
-                    dof={dof}
-                    focalLength={cam.focalLength}
-                    extender={cam.extenderActive}
-                    aperture={cam.aperture}
-                    focusDistance={cam.focusDistance}
-                  />
-                </div>
-              )}
-            </div>
-          )}
+          </Group>
         </div>
       )}
     </div>
@@ -1055,6 +1112,23 @@ export default function Sidebar() {
     backgroundPlan, setBackgroundPlan,
     walls, addWall, removeWall, updateWall, wallSnap, setWallSnap,
   } = useStore();
+  const selectedCameraId = useStore((s) => s.selectedCameraId);
+  const selectCamera = useStore((s) => s.selectCamera);
+  // Akkordeon: offen ist die Karte der ausgewaehlten Kamera. Klappt der Nutzer
+  // sie trotzdem zu, merkt sich das genau diese eine Id — dadurch braucht es
+  // keinen Effekt, der bei jeder Auswahl State nachzieht.
+  const [collapsedCameraId, setCollapsedCameraId] = useState<string | null>(null);
+  const toggleCameraCard = useCallback(
+    (camId: string) => {
+      if (camId !== selectedCameraId) {
+        selectCamera(camId);
+        setCollapsedCameraId(null);
+        return;
+      }
+      setCollapsedCameraId((prev) => (prev === camId ? null : camId));
+    },
+    [selectCamera, selectedCameraId],
+  );
   const [venueOpen, setVenueOpen] = useState(false);
   const [stagesOpen, setStagesOpen] = useState(false);
   const [personsOpen, setPersonsOpen] = useState(false);
@@ -1171,12 +1245,14 @@ export default function Sidebar() {
   }, [wallDrawMode]);
 
   return (
-    <div className="w-80 bg-bc-panel border-r border-bc-border h-full flex flex-col overflow-y-auto">
+    // Breite kommt vom Container in App.tsx (fluid); hier nur noch fuellen —
+    // ein zweites `w-80` haette die Spalte bei 320 px festgenagelt.
+    <div className="w-full bg-bc-panel border-r border-bc-border h-full flex flex-col overflow-y-auto">
       {/* Venue settings */}
       <div className={`border-b border-bc-border/60 ${venueOpen ? 'bg-white/[0.015]' : ''}`}>
         <AccordionHeader
           icon={<FiHome size={14} />}
-          title="Venue Settings"
+          title="Veranstaltungsort"
           open={venueOpen}
           onToggle={() => setVenueOpen(!venueOpen)}
         />
@@ -1229,7 +1305,7 @@ export default function Sidebar() {
       <div className={`border-b border-bc-border/60 ${bgOpen ? 'bg-white/[0.015]' : ''}`}>
         <AccordionHeader
           icon={<FiImage size={14} />}
-          title="Floor Plan"
+          title="Grundriss"
           open={bgOpen}
           onToggle={() => setBgOpen(!bgOpen)}
         />
@@ -1374,7 +1450,7 @@ export default function Sidebar() {
       <div className={`border-b border-bc-border/60 ${stagesOpen ? 'bg-white/[0.015]' : ''}`}>
         <AccordionHeader
           icon={<FiMap size={14} />}
-          title="Stages"
+          title="Bühnen"
           count={venue.stages.length}
           open={stagesOpen}
           onToggle={() => setStagesOpen(!stagesOpen)}
@@ -1389,7 +1465,7 @@ export default function Sidebar() {
                     value={s.label}
                     onChange={(e) => updateStage(s.id, { label: e.target.value })}
                   />
-                  <button onClick={() => removeStage(s.id)} className="p-0.5 hover:text-bc-red" title="Remove stage">
+                  <button onClick={() => removeStage(s.id)} style={{ padding: '4px' }} className="rounded hover:text-bc-red" title="Bühne löschen" aria-label="Bühne löschen">
                     <FiTrash2 size={12} />
                   </button>
                 </div>
@@ -1410,9 +1486,55 @@ export default function Sidebar() {
                       onChange={(e) => updateStage(s.id, { width: parseFloat(e.target.value) || 1 })} />
                   </label>
                   <label>
-                    <span className="text-gray-500">H</span>
+                    <span className="text-gray-500">T</span>
                     <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs" value={s.height} step={0.5}
+                      title="Tiefe der Grundfläche in Metern"
                       onChange={(e) => updateStage(s.id, { height: parseFloat(e.target.value) || 1 })} />
+                  </label>
+                </div>
+
+                {/* Podest statt Flaeche (#73): Hoehe, Farbe, Transparenz —
+                    dieselben Stellschrauben wie bei den Wänden. */}
+                <div className="mt-1 flex items-center gap-1">
+                  <label className="flex items-center gap-1 text-gray-500">
+                    Höhe
+                    <input
+                      type="number"
+                      className="w-14 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs tabular-nums"
+                      value={s.elevationM ?? 0}
+                      step={0.1}
+                      min={0}
+                      max={10}
+                      title="Podesthöhe über dem Boden in Metern — 0 bleibt flach"
+                      onChange={(e) => {
+                        const v = parseFloat(e.target.value);
+                        updateStage(s.id, { elevationM: Number.isFinite(v) ? Math.max(0, Math.min(10, v)) : 0 });
+                      }}
+                    />
+                    <span className="text-[10px] text-gray-600">m</span>
+                  </label>
+                  <input
+                    type="color"
+                    className="w-5 h-5 rounded border border-bc-border cursor-pointer bg-transparent shrink-0"
+                    value={s.color ?? '#3b82f6'}
+                    onChange={(e) => updateStage(s.id, { color: e.target.value })}
+                    title="Farbe des Podests"
+                    aria-label="Farbe des Podests"
+                  />
+                  <label className="flex flex-1 items-center gap-1 text-gray-500" title="Deckkraft in Prozent">
+                    <input
+                      type="range"
+                      className="flex-1 accent-bc-accent"
+                      min={10}
+                      max={100}
+                      step={5}
+                      value={Math.round((s.opacity ?? 0.4) * 100)}
+                      aria-label="Deckkraft des Podests in Prozent"
+                      onChange={(e) => updateStage(s.id, { opacity: parseInt(e.target.value, 10) / 100 })}
+                    />
+                    <span className="w-8 text-right text-[10px] tabular-nums text-gray-400">
+                      {Math.round((s.opacity ?? 0.4) * 100)}%
+                    </span>
                   </label>
                 </div>
               </div>
@@ -1421,7 +1543,7 @@ export default function Sidebar() {
               onClick={() => addStage()}
               className="flex items-center gap-1 px-2 py-1 rounded bg-bc-accent/20 text-bc-accent text-xs hover:bg-bc-accent/30 w-full justify-center"
             >
-              <FiPlus size={12} /> Add Stage
+              <FiPlus size={12} /> Bühne hinzufügen
             </button>
           </div>
         )}
@@ -1432,7 +1554,7 @@ export default function Sidebar() {
       <div className={`border-b border-bc-border/60 ${wallsOpen ? 'bg-white/[0.015]' : ''}`}>
         <AccordionHeader
           icon={<FiColumns size={14} />}
-          title="Walls"
+          title="Wände"
           count={walls.length}
           open={wallsOpen}
           onToggle={() => setWallsOpen(!wallsOpen)}
@@ -1443,11 +1565,12 @@ export default function Sidebar() {
               onClick={() => setWallDrawMode((active) => !active)}
               className={`flex items-center gap-1 px-2 py-1 rounded text-xs w-full justify-center ${wallDrawMode ? 'bg-bc-yellow/20 text-bc-yellow hover:bg-bc-yellow/30' : 'bg-bc-dark text-gray-300 hover:text-white border border-bc-border'}`}
             >
-              {wallDrawMode ? 'Stop Drawing' : 'Draw Walls'}
+              {wallDrawMode ? 'Zeichnen beenden' : 'Wände zeichnen'}
             </button>
             {wallDrawMode && (
               <div className="rounded border border-bc-border bg-bc-dark px-2 py-1.5 text-[10px] text-gray-400 leading-relaxed">
-                Click once to place the start point, click again to finish. Hold Shift to snap the angle. Right-click a wall to delete it.
+                Einmal klicken setzt den Startpunkt, nochmal klicken beendet die Wand. Shift rastet den Winkel.
+                Rechtsklick auf eine Wand loescht sie.
               </div>
             )}
             {/* Endpoint snapping toggle (issue #40) */}
@@ -1458,7 +1581,7 @@ export default function Sidebar() {
                 checked={wallSnap}
                 onChange={(e) => setWallSnap(e.target.checked)}
               />
-              Snap wall endpoints together
+              Wandenden aneinander einrasten
             </label>
             {walls.map((w) => (
               <div key={w.id} className="bg-bc-dark rounded p-1.5 border border-bc-border space-y-1.5">
@@ -1478,20 +1601,20 @@ export default function Sidebar() {
                     className="w-5 h-5 rounded border border-bc-border cursor-pointer bg-transparent shrink-0"
                     value={w.color ?? '#6b7280'}
                     onChange={(e) => updateWall(w.id, { color: e.target.value })}
-                    title="Wall colour"
+                    title="Wandfarbe"
                   />
                   <select
                     className="flex-1 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[10px]"
                     value={w.pattern ?? 'solid'}
                     onChange={(e) => updateWall(w.id, { pattern: e.target.value as WallPattern })}
                   >
-                    <option value="solid">Solid</option>
-                    <option value="grid">Grid</option>
-                    <option value="flowers">Flowers</option>
-                    <option value="image">Image…</option>
+                    <option value="solid">Einfarbig</option>
+                    <option value="grid">Raster</option>
+                    <option value="flowers">Blumen</option>
+                    <option value="image">Bild…</option>
                   </select>
                   {w.pattern === 'image' && (
-                    <label className="px-1.5 py-0.5 rounded bg-bc-accent/20 text-bc-accent text-[10px] cursor-pointer hover:bg-bc-accent/30" title="Upload a tiled image">
+                    <label className="px-1.5 py-0.5 rounded bg-bc-accent/20 text-bc-accent text-[10px] cursor-pointer hover:bg-bc-accent/30" title="Kachelbild hochladen">
                       <FiUpload size={10} className="inline" />
                       <input
                         type="file"
@@ -1509,20 +1632,60 @@ export default function Sidebar() {
                     </label>
                   )}
                   <button
-                    onClick={() => walls.forEach((other) => other.id !== w.id && updateWall(other.id, { color: w.color, pattern: w.pattern, patternImage: w.patternImage }))}
+                    onClick={() => walls.forEach((other) => other.id !== w.id && updateWall(other.id, {
+                      color: w.color, pattern: w.pattern, patternImage: w.patternImage,
+                      patternFit: w.patternFit, patternRows: w.patternRows,
+                    }))}
                     className="px-1.5 py-0.5 rounded border border-bc-border text-gray-400 hover:text-bc-accent hover:border-bc-accent text-[10px] shrink-0"
-                    title="Apply this wall's colour & pattern to all walls"
+                    title="Farbe & Muster dieser Wand auf alle Wände übertragen"
                   >
-                    All
+                    alle
                   </button>
                 </div>
+
+                {/* Wie das Muster auf der Wand liegt (#74). Die Anzahl haengt
+                    jetzt an der Wand statt am Zoom. */}
+                {(w.pattern ?? 'solid') !== 'solid' && (
+                  <div className="flex items-center gap-1">
+                    <select
+                      className="flex-1 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[10px]"
+                      value={w.patternFit ?? 'tile'}
+                      onChange={(e) => updateWall(w.id, { patternFit: e.target.value as WallFit })}
+                      title="Wie das Muster auf die Wandfläche gelegt wird"
+                    >
+                      <option value="tile">Kacheln</option>
+                      <option value="scale-v">Skaliert (Höhe)</option>
+                      <option value="scale-h">Skaliert (Breite)</option>
+                      <option value="stretch">Gedehnt</option>
+                    </select>
+                    {(w.patternFit ?? 'tile') === 'tile' && (
+                      <label className="flex items-center gap-1 text-[10px] text-gray-400">
+                        Reihen
+                        <input
+                          type="number"
+                          className="w-12 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[10px] tabular-nums"
+                          min={PATTERN_ROWS_MIN}
+                          max={PATTERN_ROWS_MAX}
+                          step={1}
+                          value={w.patternRows ?? DEFAULT_PATTERN_ROWS}
+                          title="Wiederholungen über die Wandhöhe — die Breite folgt daraus, damit Kacheln nicht verzerren"
+                          onChange={(e) => {
+                            const v = parseInt(e.target.value, 10);
+                            if (!Number.isFinite(v)) return;
+                            updateWall(w.id, { patternRows: Math.max(PATTERN_ROWS_MIN, Math.min(PATTERN_ROWS_MAX, v)) });
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
             <button
               onClick={() => addWall()}
               className="flex items-center gap-1 px-2 py-1 rounded bg-bc-accent/20 text-bc-accent text-xs hover:bg-bc-accent/30 w-full justify-center"
             >
-              <FiPlus size={12} /> Add Wall
+              <FiPlus size={12} /> Wand hinzufügen
             </button>
           </div>
         )}
@@ -1532,7 +1695,7 @@ export default function Sidebar() {
       <div className={`border-b border-bc-border/60 ${personsOpen ? 'bg-white/[0.015]' : ''}`}>
         <AccordionHeader
           icon={<FiUsers size={14} />}
-          title="Objects & Persons"
+          title="Objekte & Personen"
           count={persons.length}
           open={personsOpen}
           onToggle={() => setPersonsOpen(!personsOpen)}
@@ -1562,7 +1725,7 @@ export default function Sidebar() {
                     className="w-5 h-5 rounded border border-bc-border cursor-pointer bg-transparent"
                     value={p.color ?? (OBJECT_PRESETS[p.objectType]?.color ?? '#f59e0b')}
                     onChange={(e) => updatePerson(p.id, { color: e.target.value })}
-                    title="Custom accent colour"
+                    title="Eigene Akzentfarbe"
                   />
                   <span className="text-gray-500">({p.x.toFixed(1)}, {p.y.toFixed(1)})</span>
                   <button onClick={() => removePerson(p.id)} className="ml-auto p-0.5 hover:text-bc-red"><FiTrash2 size={11} /></button>
@@ -1611,7 +1774,7 @@ export default function Sidebar() {
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-bc-accent/20 text-bc-accent">
             <FiVideo size={14} />
           </span>
-          <span className="text-[13.5px] font-semibold text-white">Cameras</span>
+          <span className="text-[13.5px] font-semibold text-white">Kameras</span>
           <span
             style={{ padding: '2px 7px' }}
             className="rounded-full bg-bc-dark text-[10.5px] font-semibold tabular-nums text-gray-300"
@@ -1623,7 +1786,8 @@ export default function Sidebar() {
               onClick={toggleShowAllFov}
               style={{ padding: '6px' }}
               className="rounded hover:bg-bc-border text-gray-400 hover:text-white"
-              title={showAllFov ? 'Hide all FOV' : 'Show all FOV'}
+              title={showAllFov ? 'Bildwinkel aller Kameras ausblenden' : 'Bildwinkel aller Kameras einblenden'}
+              aria-label={showAllFov ? 'Bildwinkel aller Kameras ausblenden' : 'Bildwinkel aller Kameras einblenden'}
             >
               {showAllFov ? <FiEye size={15} /> : <FiEyeOff size={15} />}
             </button>
@@ -1632,18 +1796,23 @@ export default function Sidebar() {
               style={{ padding: '5px 10px' }}
               className="flex items-center gap-1 rounded bg-bc-accent text-white text-xs font-semibold hover:bg-bc-accent/80"
             >
-              <FiPlus size={12} /> Add
+              <FiPlus size={12} /> Neu
             </button>
           </div>
         </div>
 
         <div style={{ padding: '0 14px 12px' }}>
           {cameras.map((cam) => (
-            <CameraCard key={cam.id} camId={cam.id} />
+            <CameraCard
+              key={cam.id}
+              camId={cam.id}
+              expanded={cam.id === selectedCameraId && collapsedCameraId !== cam.id}
+              toggleOpen={toggleCameraCard}
+            />
           ))}
 
           {cameras.length === 0 && (
-            <p className="text-gray-500 text-xs text-center mt-8">No cameras. Click "Add" or load a template.</p>
+            <p className="text-gray-500 text-xs text-center mt-8">Noch keine Kamera. Über „Neu" anlegen oder eine Vorlage laden.</p>
           )}
         </div>
       </div>
@@ -1656,7 +1825,7 @@ export default function Sidebar() {
           }}
           className="w-full py-1.5 rounded bg-bc-red/20 text-bc-red text-xs font-semibold hover:bg-bc-red/30"
         >
-          Clear All
+          Alles löschen
         </button>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { CAMERAS, CAMERA_COLORS } from '../data/cameras';
 import { LENSES, pickInitialMountAndLens } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
 import { loadJSON, saveJSON, saveJSONSafe } from '../utils/storage';
+import { dedupeIds, maxIdSuffix } from '../utils/idRepair';
 import { fromVenueExchange, type VenueExchange } from '../utils/venueExchange';
 import type { AvPlan } from '../utils/avplan';
 
@@ -874,18 +875,43 @@ export const useStore = create<AppState>((set, get) => ({
       alert('Unsupported project file format.');
       return;
     }
-    nextId = 1;
-    stageId = 1;
-    personId = 1;
-    // Re-assign IDs to avoid conflicts. mountType is preserved (re-added in
-     // this version) and defaults to 'tripod' for older project files that
-    // never had it.
-    const cameras = project.cameras.map((c) => ({
-      ...c,
-      id: uid(),
-      useSpeedbooster: c.useSpeedbooster ?? false,
-      mountType: c.mountType ?? 'tripod',
+    // Ids der Datei BEHALTEN (#72). Frueher wurden Kamera-Ids neu vergeben und
+    // die Zaehler auf 1 gesetzt, waehrend Personen/Buehnen/Waende ihre alten Ids
+    // behielten — der naechste "Hinzufuegen"-Klick vergab dann eine Id, die es
+    // schon gab, und beide Objekte hingen am selben Datensatz. Ausserdem
+    // verlieren neu vergebene Kamera-Ids die Zuordnung von Shots, Takes und
+    // Presets. Stattdessen: Dubletten innerhalb der Datei reparieren und die
+    // Zaehler hinter die hoechste vergebene Nummer setzen.
+    const loadedPersons = project.persons.map((p) => ({
+      ...p,
+      objectType: p.objectType ?? 'person',
+      width: p.width ?? 0.5,
     }));
+    const loadedWalls = project.walls ?? [];
+    const loadedStages = project.venue?.stages ?? [];
+
+    // Zaehler zuerst hochsetzen, damit die Reparatur unten garantiert freie
+    // Nummern zieht. `nextId` bedient Kameras UND Waende.
+    nextId = maxIdSuffix([
+      ...project.cameras.map((c) => c.id),
+      ...loadedWalls.map((w) => w.id),
+    ]) + 1;
+    personId = maxIdSuffix(loadedPersons.map((p) => p.id)) + 1;
+    stageId = maxIdSuffix(loadedStages.map((st) => st.id)) + 1;
+
+    const camerasFixed = dedupeIds(
+      project.cameras.map((c) => ({
+        ...c,
+        useSpeedbooster: c.useSpeedbooster ?? false,
+        mountType: c.mountType ?? 'tripod',
+      })),
+      () => uid(),
+    );
+    const personsFixed = dedupeIds(loadedPersons, personUid);
+    const wallsFixed = dedupeIds(loadedWalls, () => uid('wall'));
+    const stagesFixed = dedupeIds(loadedStages, stageUid);
+    const cameras = camerasFixed.items;
+
     let bgPlan = project.backgroundPlan;
     if (bgPlan && 'scale' in bgPlan && !('scaleX' in bgPlan)) {
       const legacy = bgPlan as BackgroundPlan & { scale?: number };
@@ -894,16 +920,12 @@ export const useStore = create<AppState>((set, get) => ({
       bgPlan = { ...rest, scaleX: s, scaleY: s };
     }
     set({
-      venue: project.venue,
+      venue: { ...project.venue, stages: stagesFixed.items },
       cameras,
-      persons: project.persons.map((p) => ({
-        ...p,
-        objectType: p.objectType ?? 'person',
-        width: p.width ?? 0.5,
-      })),
+      persons: personsFixed.items,
       backgroundPlan: bgPlan,
       selectedCameraId: cameras[0]?.id ?? null,
-      walls: project.walls ?? [],
+      walls: wallsFixed.items,
       projectVersion: project.projectVersion,
       lastSavedVersion: project.projectVersion,
     });
@@ -911,6 +933,12 @@ export const useStore = create<AppState>((set, get) => ({
 
   importVenueExchange: (ex) => {
     const r = fromVenueExchange(ex);
+    // Wie beim Laden eines Plans (#72): der Austausch bringt fremde Ids mit,
+    // die Zaehler muessen dahinter stehen, sonst kollidiert das naechste neue
+    // Objekt mit einem importierten.
+    nextId = Math.max(nextId, maxIdSuffix(r.walls.map((w) => w.id)) + 1);
+    personId = Math.max(personId, maxIdSuffix(r.persons.map((p) => p.id)) + 1);
+    stageId = Math.max(stageId, maxIdSuffix((r.venue.stages ?? []).map((st) => st.id)) + 1);
     set((s) => ({
       venue: r.venue,
       persons: r.persons,
