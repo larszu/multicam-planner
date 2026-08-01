@@ -15,6 +15,7 @@ import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import type { BackgroundPlan, Stage, StageObjectType } from '../../types';
 import { FLAT_STAGE_M, groundHeightAt, stageColor, stageOpacity, stageTopZ } from '../../utils/stageBody';
 import { FiLock, FiUnlock } from 'react-icons/fi';
+import { VIEW3D_FOV_DEG, defaultCameraPos, defaultPitchRad } from '../../utils/view3d';
 import robotoFont from '../../assets/fonts/Roboto-Regular.ttf';
 
 // ── Apple-Silicon / Electron 3D-view fix (issue #35) ──
@@ -181,21 +182,23 @@ function VenueWalls({ widthM, heightM }: { widthM: number; heightM: number }) {
  * Scroll    = move forward/back (dolly)
  * Ctrl      = sprint (2×)
  */
-function FPSControls({ mouseLookEnabled }: { mouseLookEnabled: boolean }) {
+function FPSControls({ mouseLookEnabled, defaultPitch }: { mouseLookEnabled: boolean; defaultPitch: number }) {
   const { camera, gl } = useThree();
   const keys = useRef<Set<string>>(new Set());
   const yaw = useRef(0);
-  const pitch = useRef(-0.3);
+  const pitch = useRef(defaultPitch);
   const isLooking = useRef(false);
   const speed = 6; // m/s base
 
-  // Sync yaw from initial camera orientation, keep pitch tilted down
+  // Sync yaw from initial camera orientation; die Neigung kommt aus der
+  // Hallengroesse (utils/view3d.ts), damit die hintere Hallenkante immer oben
+  // im Bild sitzt statt in der Mitte.
   useEffect(() => {
     const dir = new THREE.Vector3();
     camera.getWorldDirection(dir);
     yaw.current = Math.atan2(-dir.x, -dir.z);
-    pitch.current = -0.35; // ~20° downward so the venue floor is always visible
-  }, [camera]);
+    pitch.current = defaultPitch;
+  }, [camera, defaultPitch]);
 
   // Listen for reset event
   useEffect(() => {
@@ -203,11 +206,12 @@ function FPSControls({ mouseLookEnabled }: { mouseLookEnabled: boolean }) {
       const detail = (e as CustomEvent).detail;
       camera.position.set(detail.x, detail.y, detail.z);
       yaw.current = 0;
-      pitch.current = -0.3;
+      // Zuruecksetzen muss dieselbe Ausrichtung liefern wie der Start.
+      pitch.current = typeof detail.pitch === 'number' ? detail.pitch : defaultPitch;
     };
     window.addEventListener('multicam-3d-reset', handleReset);
     return () => window.removeEventListener('multicam-3d-reset', handleReset);
-  }, [camera]);
+  }, [camera, defaultPitch]);
 
   useEffect(() => {
     const registry = getExportRegistry();
@@ -921,11 +925,16 @@ export default function Venue3D() {
     }
   }, [cameras, unlockedCameraId]);
 
+  // Startausrichtung: Position und Neigung stammen aus derselben Quelle wie
+  // beim Einhaengen, sonst zeigt "Ansicht zuruecksetzen" woanders hin.
+  const [camX, camY, camZ] = defaultCameraPos(venue.widthM, venue.heightM);
+  const startPitch = defaultPitchRad(venue.widthM, venue.heightM);
+
   const handleReset = useCallback(() => {
     window.dispatchEvent(new CustomEvent('multicam-3d-reset', {
-      detail: { x: venue.widthM / 2, y: 15, z: venue.heightM + 10 },
+      detail: { x: camX, y: camY, z: camZ, pitch: startPitch },
     }));
-  }, [venue.widthM, venue.heightM]);
+  }, [camX, camY, camZ, startPitch]);
 
   return (
     <div style={{ width: '100%', height: '100%', minHeight: 500, position: 'relative' }}>
@@ -957,12 +966,12 @@ export default function Venue3D() {
         onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#60a5fa'; }}
         onMouseLeave={(e) => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = '#334155'; }}
       >
-        ↻ Reset View
+        ↻ Ansicht zurücksetzen
       </button>
 
       <Canvas shadows gl={{ preserveDrawingBuffer: true }}>
-        <PerspectiveCamera makeDefault position={[venue.widthM / 2, 15, venue.heightM + 10]} fov={50} />
-        <FPSControls mouseLookEnabled={unlockedCameraId === null} />
+        <PerspectiveCamera makeDefault position={[camX, camY, camZ]} fov={VIEW3D_FOV_DEG} />
+        <FPSControls mouseLookEnabled={unlockedCameraId === null} defaultPitch={startPitch} />
 
         {/* Improved lighting */}
         <ambientLight intensity={0.7} color="#e8eaf0" />
