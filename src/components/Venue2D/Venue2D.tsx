@@ -6,6 +6,8 @@ import { getLensById } from '../../data/lenses';
 import { computeFov } from '../../utils/fov';
 import type { VenueCamera, Wall } from '../../types';
 import { effectiveCameraPos, rigYaw } from '../../utils/camera';
+import { stageColor, stageTopZ } from '../../utils/stageBody';
+import { alphaSuffix, shadeHex } from '../../utils/color';
 import RigOverlay, { RIG_HANDLE_RADIUS } from './RigOverlay';
 import { getExportRegistry } from '../../store/exportRegistry';
 import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react';
@@ -662,9 +664,27 @@ export default function Venue2D() {
             onContextMenu={(e) => openContextMenu('stage', s.id, !!s.locked, e)}
             onTransformEnd={(e) => handleStageTransformEnd(s.id, e)}
           >
-            <Rect width={s.width * ppm} height={s.height * ppm} fill="rgba(59,130,246,0.15)" stroke={selectedStageId === s.id ? '#60a5fa' : '#3b82f6'} strokeWidth={selectedStageId === s.id ? 3 : 2} cornerRadius={4} />
-            <Text x={4} y={4} text={s.locked ? `${s.label} 🔒` : s.label} fontSize={12} fill="#3b82f6" fontStyle="bold" />
-            <Text x={4} y={s.height * ppm - 16} text={`${s.width}×${s.height}m`} fontSize={9} fill="#3b82f688" />
+            {/* Farbe wie in 3D/Preview, damit dieselbe Buehne ueberall gleich
+                aussieht. Die Fuellung bleibt bewusst duenn (nicht `s.opacity`)
+                — im Grundriss soll der Hintergrundplan durchscheinen. */}
+            <Rect
+              width={s.width * ppm}
+              height={s.height * ppm}
+              fill={stageColor(s) + alphaSuffix(0.15)}
+              stroke={selectedStageId === s.id ? shadeHex(stageColor(s), 1.3) : stageColor(s)}
+              strokeWidth={selectedStageId === s.id ? 3 : 2}
+              cornerRadius={4}
+            />
+            <Text x={4} y={4} text={s.locked ? `${s.label} 🔒` : s.label} fontSize={12} fill={stageColor(s)} fontStyle="bold" />
+            {/* Podesthoehe mit in die Maßzeile, sonst sieht man im Grundriss
+                nicht, dass die Buehne erhoeht ist (#73). */}
+            <Text
+              x={4}
+              y={s.height * ppm - 16}
+              text={`${s.width}×${s.height}m${stageTopZ(s) > 0 ? ` · ${stageTopZ(s).toFixed(2)}m hoch` : ''}`}
+              fontSize={9}
+              fill={stageColor(s) + '88'}
+            />
           </Group>
         ))}
         {/* Resize handles for the selected stage */}

@@ -5,7 +5,10 @@ import { computeFov, computeDof } from '../../utils/fov';
 import { effectiveCameraPos } from '../../utils/camera';
 import { getExportRegistry } from '../../store/exportRegistry';
 import { useRef, useEffect, useLayoutEffect, useCallback, useState } from 'react';
-import type { ShotTransition, StageObjectType, VenueCamera, Wall } from '../../types';
+import type { ShotTransition, Stage, StageObjectType, VenueCamera, Wall } from '../../types';
+import type { StageFace } from '../../utils/stageBody';
+import { groundHeightAt, stageColor, stageFaces, stageLabelAnchor, stageOpacity } from '../../utils/stageBody';
+import { alphaSuffix, shadeHex } from '../../utils/color';
 import { FiChevronLeft, FiChevronRight, FiUnlock, FiLock, FiPlus, FiX, FiCamera } from 'react-icons/fi';
 import { loadJSON, saveJSON } from '../../utils/storage';
 import {
@@ -373,24 +376,31 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       ctx.restore();
     }
 
-    // ── Draw stages from venue ──
-    // Build the polygon in camera-space, then clip against the near plane so corners
-    // behind the camera become near-plane intersection points instead of being skipped
-    // (which previously turned the rectangle into a degenerate triangle).
-    venue.stages.forEach((stage) => {
-      const camCorners = [
-        worldToCamera(stage.x, stage.y, 0),
-        worldToCamera(stage.x + stage.width, stage.y, 0),
-        worldToCamera(stage.x + stage.width, stage.y + stage.height, 0),
-        worldToCamera(stage.x, stage.y + stage.height, 0),
-      ];
-      const clipped = clipPolygonNear(camCorners);
-      if (clipped.length < 3) return;
+    // ── Feste Koerper: Buehnen-Podeste und Waende ──
+    // Beide landen in EINER Malerordnung (hinten zuerst). Vorher wurden erst
+    // alle Buehnen und dann alle Waende gemalt — bei einer flachen Flaeche auf
+    // dem Boden faellt das nicht auf, ein Podest vor einer Wand verschwand
+    // dadurch aber hinter ihr.
+    // Sortiert wird nach dem Abstand in der Grundebene, damit Wand und Podest
+    // denselben Massstab benutzen; `dist` (Kameratiefe) bleibt der Wert fuer
+    // die Schaerfeberechnung.
+    type Solid = { depth: number; draw: () => void };
+    const solids: Solid[] = [];
+    const groundDist = (wx: number, wy: number) => Math.hypot(wx - camPos.x, wy - camPos.y);
 
+    /**
+     * Eine Flaeche des Podests. Die Ecken kommen aus `stageFaces`, werden in
+     * Kameraraum gebracht und an der Near-Plane geschnitten, damit Ecken hinter
+     * der Kamera das Viereck nicht zu einem entarteten Dreieck zusammenfalten.
+     */
+    const drawStageFace = (stage: Stage, face: StageFace) => {
+      const clipped = clipPolygonNear(face.points.map((p) => worldToCamera(p.x, p.y, p.z)));
+      if (clipped.length < 3) return;
       const projected = clipped.map((p) => cameraToScreen(p));
 
-      ctx.strokeStyle = '#3b82f6aa';
-      ctx.fillStyle = '#3b82f622';
+      const base = stageColor(stage);
+      ctx.fillStyle = shadeHex(base, face.shade) + alphaSuffix(stageOpacity(stage));
+      ctx.strokeStyle = shadeHex(base, Math.min(1, face.shade + 0.2)) + 'aa';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(projected[0].sx, projected[0].sy);
@@ -400,33 +410,22 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
+    };
 
-      // Stage label
-      const center = worldToScreen(stage.x + stage.width / 2, stage.y + stage.height / 2, 0);
-      if (!center.behindCamera) {
-        const fontSize = Math.max(8, Math.min(16, 200 / center.dist));
-        ctx.fillStyle = '#3b82f6';
-        ctx.font = `bold ${fontSize}px monospace`;
-        ctx.textAlign = 'center';
-        ctx.fillText(stage.label, center.sx, center.sy + fontSize / 3);
+    venue.stages.forEach((stage) => {
+      // `stageFaces` laesst die abgewandten Seiten und — bei einer Kamera
+      // unterhalb der Oberkante — die Deckflaeche weg (#73).
+      for (const face of stageFaces(stage, camPos.x, camPos.y, cam.z)) {
+        solids.push({ depth: face.depth, draw: () => drawStageFace(stage, face) });
       }
     });
 
-    // ── Draw walls from venue (issue #46) ──
+    // ── Walls from venue (issue #46) ──
     // Each wall is a vertical quad standing on the floor: bottom edge from
     // (x1,y1) to (x2,y2) at z=0, top edge at z=height. Built in camera space and
     // near-plane clipped like the stages so corners behind the camera don't
-    // collapse the quad. Drawn back-to-front (farthest first) so nearer walls
-    // overpaint farther ones.
-    const wallsByDist = walls
-      .map((wall) => {
-        const midX = (wall.x1 + wall.x2) / 2;
-        const midY = (wall.y1 + wall.y2) / 2;
-        return { wall, dist: worldToScreen(midX, midY, 0).dist };
-      })
-      .sort((a, b) => b.dist - a.dist);
-
-    wallsByDist.forEach(({ wall, dist }) => {
+    // collapse the quad.
+    const drawWall = (wall: Wall, dist: number) => {
       const camCorners = [
         worldToCamera(wall.x1, wall.y1, 0),
         worldToCamera(wall.x2, wall.y2, 0),
@@ -525,6 +524,28 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       ctx.closePath();
       ctx.stroke();
       ctx.restore(); // remove blur filter
+    };
+
+    walls.forEach((wall) => {
+      const midX = (wall.x1 + wall.x2) / 2;
+      const midY = (wall.y1 + wall.y2) / 2;
+      const dist = worldToScreen(midX, midY, 0).dist;
+      solids.push({ depth: groundDist(midX, midY), draw: () => drawWall(wall, dist) });
+    });
+
+    solids.sort((a, b) => b.depth - a.depth).forEach((solid) => solid.draw());
+
+    // Buehnen-Beschriftung ueber die Koerper, sonst verdeckt ein naeher
+    // stehendes Podest den Namen des dahinterliegenden.
+    venue.stages.forEach((stage) => {
+      const anchor = stageLabelAnchor(stage);
+      const center = worldToScreen(anchor.x, anchor.y, anchor.z);
+      if (center.behindCamera) return;
+      const fontSize = Math.max(8, Math.min(16, 200 / center.dist));
+      ctx.fillStyle = stageColor(stage);
+      ctx.font = `bold ${fontSize}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.fillText(stage.label, center.sx, center.sy + fontSize / 3);
     });
 
     // ── Draw persons / stage objects ──
@@ -830,11 +851,15 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       // anything inside NEAR as "behindCamera" which would otherwise make the
       // person vanish when zooming in tight, even though they should just
       // become huge.
-      const feetCam = worldToCamera(person.x, person.y, 0);
+      // Steht die Person auf einem Podest, liegen ihre Fuesse auf dessen
+      // Oberkante statt auf dem Boden (#73) — sonst steckt sie bis zur Huefte
+      // in der Buehne.
+      const feetZ = groundHeightAt(venue.stages, person.x, person.y);
+      const feetCam = worldToCamera(person.x, person.y, feetZ);
       // Genuinely behind the camera — no chance of being visible
       if (feetCam.z <= 0.001) return;
       totalInFront++;
-      const headCam = worldToCamera(person.x, person.y, person.height);
+      const headCam = worldToCamera(person.x, person.y, feetZ + person.height);
       const feetProj = cameraToScreen(feetCam);
       const headProj = cameraToScreen(headCam);
 
