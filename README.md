@@ -2,7 +2,7 @@
 
 A fast, focused broadcast camera & lens planning tool for multicam setups. Calculate FOV/DoF, plan camera positions in 2D & 3D, and preview live camera views. Available as a web app and Windows desktop application._
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Lizenz: proprietär](https://img.shields.io/badge/Lizenz-proprietär-critical.svg)](LICENSE)
 
 ---
 
@@ -131,13 +131,13 @@ If MulticamPlanner saves you time on your next show, consider buying me a coffee
   </a>
 </p>
 
-Donations are completely optional — the app stays MIT-licensed and free either way. 🙌
+Donations are completely optional — the app stays free to use. It is proprietary software, not open source. 🙌
 
 ---
 
 ## 📝 License
 
-MIT — see [LICENSE](LICENSE)
+Proprietär — © 2026 Lars Zumpe, alle Rechte vorbehalten. Nutzung der veröffentlichten Builds ist kostenlos; Weiterverbreitung und abgeleitete Werke sind es nicht. Siehe [LICENSE](LICENSE).
 
 ---
 
