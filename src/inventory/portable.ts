@@ -3,7 +3,11 @@
 import type { InventoryItem, StorageNode, InventorySet, InventoryUnit } from './types';
 
 export const INVENTORY_FORMAT = 'avplan-inventory';
-export const INVENTORY_FORMAT_VERSION = 1;
+// Version 2 (ADR-002): `InventoryItem.deviceTypeId`. Die Erhoehung schuetzt
+// vor stillem Verlust — ein Stand ohne das Feld wuerde eine Datei importieren
+// und beim Re-Export ohne das Feld zurueckschreiben. Mit der Version weigert
+// er sich stattdessen. Aeltere Dateien lesen wir unveraendert weiter.
+export const INVENTORY_FORMAT_VERSION = 2;
 
 export interface InventorySnapshot {
   items: InventoryItem[];

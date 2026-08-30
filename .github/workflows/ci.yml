@@ -1,0 +1,39 @@
+name: CI
+
+# Der Merge-Gate. Selbst-Merge ist nur bei gruenem CI erlaubt — auf Pull
+# Requests lief bisher aber gar kein Check, den es haette gruen oder rot
+# machen koennen: release.yml haengt an Tags.
+#
+# Geprueft wird, was ein Beitragender lokal auch laeuft: Lint, Build (der
+# `tsc -b` einschliesst, also den Type-Check) und die Tests. electron-builder
+# bleibt draussen — das gehoert zu release.yml und braucht Signatur-Material.
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: 'npm'
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Tests
+        run: npm test
+      - name: Build (inkl. Type-Check)
+        run: npm run build
