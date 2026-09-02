@@ -498,4 +498,9 @@ export interface ProjectFile {
    * modelliert (Kruemmung, Reflexionsgrad), je Wand-Id.
    */
   wallForeign?: Record<string, import('../utils/venueExchange').ForeignWallFields>;
+  /**
+   * ADR-005 — Personen-Felder aus einem eingelesenen Raum, die MultiCam nicht
+   * modelliert (Pose, Blickrichtung), je Personen-Id.
+   */
+  personForeign?: Record<string, import('../utils/venueExchange').ForeignPersonFields>;
 }

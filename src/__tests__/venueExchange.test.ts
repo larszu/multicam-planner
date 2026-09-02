@@ -3,6 +3,7 @@ import {
   toVenueExchange,
   fromVenueExchange,
   mergeOwnWallFields,
+  mergeOwnPersonFields,
   parseVenueExchange,
   VENUE_EXCHANGE_KIND,
   VENUE_EXCHANGE_VERSION,
@@ -348,5 +349,75 @@ describe('ADR-005 — Waende ueberleben den Venue-Round-Trip', () => {
     const own = [{ id: 'w9', x1: 0, y1: 0, x2: 1, y2: 0, height: 3, label: '' }] as unknown as Wall[];
     const merged = mergeOwnWallFields(fromVenueExchange(wallVenue()), { walls: own });
     expect(merged.walls.map((w) => w.id)).toEqual(['w1']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ADR-005 — der Personen-Datenpfad, Gegenrichtung zu light#47.
+//
+// Light kennt an einer Figur Pose und Blickrichtung; MultiCams
+// ReferencePerson ist ein Buehnen-Objekt mit Grundflaeche und Art. Die beiden
+// Felder fielen weg, und lights Import setzt danach `pose ?? 'standing'` und
+// `facing ?? 270` ein: eine sitzende, nach Osten blickende Figur stand nach
+// einem Round-Trip durch MultiCam und schaute nach vorn.
+
+describe('ADR-005 — Pose und Blickrichtung ueberleben den MultiCam-Round-Trip', () => {
+  const personVenue = (over: Record<string, unknown> = {}) => ({
+    kind: 'venue-exchange' as const, formatVersion: 1 as const, app: 'light-planner',
+    appVersion: '1.0.0', exportedAt: 't',
+    venue: {
+      name: 'Halle', widthM: 20, heightM: 12, walls: [], stageObjects: [],
+      persons: [{ id: 'p1', x: 3, y: 4, height: 1.75, label: 'Talent', pose: 'sitting', facing: 90, ...over }],
+    },
+  }) as unknown as VenueExchange;
+
+  const roundTrip = (over: Record<string, unknown> = {}) => {
+    const imported = fromVenueExchange(personVenue(over));
+    return toVenueExchange({
+      venue: imported.venue, persons: imported.persons, walls: imported.walls,
+      backgroundPlan: imported.backgroundPlan,
+      appVersion: '1.0.0', exportedAt: 't2',
+      personForeign: imported.personForeign,
+    } as never).venue.persons[0];
+  };
+
+  it('gibt Pose und Blickrichtung unveraendert zurueck', () => {
+    const out = roundTrip();
+    expect(out.pose).toBe('sitting');
+    expect(out.facing).toBe(90);
+  });
+
+  it('behaelt die eigene Geometrie als fuehrend', () => {
+    const out = roundTrip();
+    expect(out.x).toBe(3);
+    expect(out.height).toBe(1.75);
+  });
+
+  it('hebt die Standardwerte nicht auf', () => {
+    // 'standing' und 270 setzt lights Import ohnehin ein. Sie zu speichern
+    // hiesse zu behaupten, jemand habe sie gesetzt.
+    const imported = fromVenueExchange(personVenue({ pose: 'standing', facing: 270 }));
+    expect(imported.personForeign).toEqual({});
+  });
+
+  it('rettet die eigene Sperre vor der Projektion (Regel 2)', () => {
+    // Das Austauschformat kennt kein `locked`; ohne die Zusammenfuehrung
+    // loeschte jeder Venue-Import die Sperren, die der Nutzer gesetzt hat.
+    const own = [{
+      id: 'p1', x: 0, y: 0, height: 1.75, width: 0.5, label: '',
+      objectType: 'person', locked: true,
+    }] as unknown as ReferencePerson[];
+    const merged = mergeOwnPersonFields(fromVenueExchange(personVenue()), { persons: own });
+    expect(merged.persons[0].locked).toBe(true);
+    // Die Projektion bleibt fuer die Geometrie fuehrend.
+    expect(merged.persons[0].x).toBe(3);
+  });
+
+  it('holt eine geloeschte Figur nicht zurueck', () => {
+    const own = [{
+      id: 'p9', x: 0, y: 0, height: 1.75, width: 0.5, label: '', objectType: 'person', locked: true,
+    }] as unknown as ReferencePerson[];
+    const merged = mergeOwnPersonFields(fromVenueExchange(personVenue()), { persons: own });
+    expect(merged.persons.map((p) => p.id)).toEqual(['p1']);
   });
 });
