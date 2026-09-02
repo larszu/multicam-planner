@@ -98,6 +98,22 @@ export interface ForeignFloorPlanFields {
   pageIndex?: number;
 }
 
+/**
+ * ADR-005 — Wand-Felder, die MultiCam nicht modelliert.
+ *
+ * Light kennt gekruemmte Waende (`cx`/`cy`, ein Bezier-Kontrollpunkt) und
+ * einen Reflexionsgrad. MultiCams Wand ist eine Strecke. Die Felder fielen
+ * beim Import weg und wurden beim Export nicht geschrieben — lights Import
+ * setzt danach `reflectance ?? 0.5` ein, und die fehlende Kruemmung heisst
+ * nicht „unbekannt", sondern **gerade**. Eine gebogene Wand kam nach einem
+ * Round-Trip durch MultiCam als Strecke zurueck.
+ */
+export interface ForeignWallFields {
+  cx?: number;
+  cy?: number;
+  reflectance?: number;
+}
+
 export interface MultiCamVenueInput {
   venue: Venue;
   persons: ReferencePerson[];
@@ -109,6 +125,8 @@ export interface MultiCamVenueInput {
   stageForeign?: Record<string, ForeignStageFields>;
   /** Siehe ForeignFloorPlanFields. Fehlt es, bleibt es bei `kind: 'image'`. */
   floorPlanForeign?: ForeignFloorPlanFields;
+  /** Siehe ForeignWallFields, je Wand-Id. */
+  wallForeign?: Record<string, ForeignWallFields>;
 }
 
 function bgToFloorPlan(
@@ -139,6 +157,7 @@ function bgToFloorPlan(
 export function toVenueExchange(input: MultiCamVenueInput): VenueExchange {
   const { venue, persons, walls, backgroundPlan } = input;
   const foreign = input.stageForeign ?? {};
+  const wallForeign = input.wallForeign ?? {};
   return {
     kind: VENUE_EXCHANGE_KIND,
     formatVersion: VENUE_EXCHANGE_VERSION,
@@ -153,9 +172,20 @@ export function toVenueExchange(input: MultiCamVenueInput): VenueExchange {
         id: p.id, x: p.x, y: p.y, height: p.height, label: p.label,
         width: p.width, objectType: p.objectType, color: p.color,
       })),
-      walls: walls.map((w) => ({
-        id: w.id, x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2, height: w.height, label: w.label,
-      })),
+      walls: walls.map((w) => {
+        // ADR-005 — `color` modelliert MultiCam selbst und schrieb es trotzdem
+        // nicht: eine blau gestrichene Wand kam nach einem Venue-Round-Trip
+        // grau zurueck. Kruemmung und Reflexionsgrad modelliert es nicht und
+        // gibt sie unveraendert weiter.
+        const f = wallForeign[w.id];
+        return {
+          id: w.id, x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2, height: w.height, label: w.label,
+          ...(w.color !== undefined ? { color: w.color } : {}),
+          ...(f?.cx !== undefined ? { cx: f.cx } : {}),
+          ...(f?.cy !== undefined ? { cy: f.cy } : {}),
+          ...(f?.reflectance !== undefined ? { reflectance: f.reflectance } : {}),
+        };
+      }),
       // MultiCam-Stage ist eine flache 2D-Zone (width × height-in-Plan); die
       // Plan-Tiefe wandert ins `depth`-Feld. Die Podest-Hoehe bleibt 0, wenn
       // die Buehne hier entstanden ist — und kommt zurueck, wenn sie
@@ -186,6 +216,8 @@ export interface MultiCamVenueResult {
   stageForeign: Record<string, ForeignStageFields>;
   /** Siehe ForeignFloorPlanFields. Leer, wenn die Datei nichts davon trug. */
   floorPlanForeign: ForeignFloorPlanFields;
+  /** Siehe ForeignWallFields. Nur Waende mit wirklich fremden Werten. */
+  wallForeign: Record<string, ForeignWallFields>;
 }
 
 function floorPlanToBg(fp: VenueExchangeFloorPlan): BackgroundPlan {
@@ -221,11 +253,29 @@ export function fromVenueExchange(ex: VenueExchange): MultiCamVenueResult {
     })),
     walls: (v.walls ?? []).map((w) => ({
       id: w.id, x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2, height: w.height, label: w.label ?? '',
+      ...(w.color !== undefined ? { color: w.color } : {}),
     })),
     backgroundPlan: v.floorPlan ? floorPlanToBg(v.floorPlan) : null,
     stageForeign: collectStageForeign(v.stageObjects ?? []),
     floorPlanForeign: collectFloorPlanForeign(v.floorPlan),
+    wallForeign: collectWallForeign(v.walls ?? []),
   };
+}
+
+/** Hebt je Wand auf, was MultiCam nicht modelliert. Eine gerade Wand ohne
+ *  Reflexionsgrad bekommt keinen Eintrag. */
+function collectWallForeign(
+  walls: VenueExchangeWall[],
+): Record<string, ForeignWallFields> {
+  const out: Record<string, ForeignWallFields> = {};
+  for (const w of walls) {
+    const f: ForeignWallFields = {};
+    if (typeof w.cx === 'number') f.cx = w.cx;
+    if (typeof w.cy === 'number') f.cy = w.cy;
+    if (typeof w.reflectance === 'number') f.reflectance = w.reflectance;
+    if (Object.keys(f).length > 0) out[w.id] = f;
+  }
+  return out;
 }
 
 /** Hebt auf, was MultiCams BackgroundPlan nicht kennt. `kind: 'image'` wird
@@ -275,4 +325,39 @@ export function parseVenueExchange(text: string): VenueExchange {
   }
   if (!data.venue) throw new Error('Venue-Austauschdatei ohne venue-Block.');
   return data as VenueExchange;
+}
+
+/**
+ * ADR-005, Regel 2 — eine Projektion darf den vollen Stand nicht ueberschreiben.
+ *
+ * Der geteilte Raum ist fuer Existenz und Geometrie kanonisch: hat eine
+ * Nachbar-App eine Wand verschoben oder geloescht, gilt das. Er kann aber nur
+ * die Felder tragen, die das Austauschformat kennt — MultiCams
+ * `pattern`, `patternImage`, `patternFit` und `patternRows` gehoeren nicht dazu.
+ *
+ * Ohne diese Zusammenfuehrung loeschte jeder Venue-Import die Wand-Muster, die
+ * der Nutzer eingerichtet hatte: `importVenueExchange` setzte `walls` im Ganzen
+ * neu. Dasselbe Muster wie `mergeOwnVenueFields` im light-planner.
+ */
+export function mergeOwnWallFields(
+  projected: MultiCamVenueResult,
+  own: { walls: Wall[] },
+): MultiCamVenueResult {
+  const mine = new Map((own.walls ?? []).map((w) => [w.id, w]));
+  return {
+    ...projected,
+    walls: projected.walls.map((w) => {
+      const o = mine.get(w.id);
+      if (!o) return w;
+      return {
+        ...w,
+        ...(o.pattern !== undefined ? { pattern: o.pattern } : {}),
+        ...(o.patternImage !== undefined ? { patternImage: o.patternImage } : {}),
+        ...(o.patternFit !== undefined ? { patternFit: o.patternFit } : {}),
+        ...(o.patternRows !== undefined ? { patternRows: o.patternRows } : {}),
+        // `color` traegt das Austauschformat jetzt selbst; die Projektion
+        // gewinnt also, sonst kaeme eine vom Nachbarn geaenderte Farbe nie an.
+      };
+    }),
+  };
 }

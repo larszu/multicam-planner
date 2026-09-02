@@ -25,6 +25,7 @@ const state = (avForeign: { lighting?: unknown; cabling?: unknown }) => ({
   avForeign,
   stageForeign: {},
   floorPlanForeign: {},
+  wallForeign: {},
 });
 
 const LIGHTING = { fixtures: [{ id: 'f1', dimming: 0.7, gelFilterIds: ['L201'] }] };

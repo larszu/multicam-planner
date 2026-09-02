@@ -493,4 +493,9 @@ export interface ProjectFile {
    * zurueck. Gehoert aus demselben Grund in die Datei wie `stageForeign`.
    */
   floorPlanForeign?: import('../utils/venueExchange').ForeignFloorPlanFields;
+  /**
+   * ADR-005 — Wand-Felder aus einem eingelesenen Raum, die MultiCam nicht
+   * modelliert (Kruemmung, Reflexionsgrad), je Wand-Id.
+   */
+  wallForeign?: Record<string, import('../utils/venueExchange').ForeignWallFields>;
 }
