@@ -212,6 +212,11 @@ interface AppState {
   floorPlanForeign: ForeignFloorPlanFields;
   wallForeign: Record<string, ForeignWallFields>;
   personForeign: Record<string, ForeignPersonFields>;
+  /** ADR-005 — Anzahl der beim letzten Laden reparierten doppelten Ids,
+   *  `null` wenn nichts zu reparieren war. Nicht persistiert: das
+   *  beschreibt einen Ladevorgang, nicht das Projekt. */
+  lastIdRepair: number | null;
+  dismissIdRepair: () => void;
   /** Importiert ein .avplan-Gesamtprojekt: laedt den cameras-Slot nativ,
    *  ueberlagert den geteilten Raum und bewahrt lighting/cabling verlustfrei. */
   importAvPlan: (avplan: AvPlan) => void;
@@ -995,7 +1000,23 @@ export const useStore = create<AppState>((set, get) => ({
       floorPlanForeign: project.floorPlanForeign ?? {},
       wallForeign: project.wallForeign ?? {},
       personForeign: project.personForeign ?? {},
+      // ADR-005, Regel 3 — die Reparatur wird gesagt.
+      //
+      // `dedupeIds` vergibt fuer jede doppelte Id eine frische. Das ist richtig
+      // (siehe idRepair), aber nicht folgenlos: der Modulkopf dort haelt fest,
+      // dass Shots, Takes und Presets an `VenueCamera.id` haengen und der
+      // Fokus-Lock an `ReferencePerson.id`. Bekommt die ZWEITE Kamera einer
+      // doppelten Id eine neue, zeigen deren Shots ab jetzt auf die erste.
+      //
+      // `DedupeResult.repaired` zaehlt genau das — und wurde bisher von keiner
+      // Zeile ausserhalb der Tests gelesen. Der Zaehler war da, die Meldung
+      // fehlte. Als Kanal, nicht als Dialog: ein Store kennt kein `alert`
+      // (das gibt es im Test- und Server-Kontext nicht) und keine Sprache.
+      lastIdRepair:
+        camerasFixed.repaired + personsFixed.repaired +
+          wallsFixed.repaired + stagesFixed.repaired || null,
     });
+
   },
 
   importVenueExchange: (ex) => {
@@ -1030,6 +1051,8 @@ export const useStore = create<AppState>((set, get) => ({
   floorPlanForeign: {},
   wallForeign: {},
   personForeign: {},
+  lastIdRepair: null,
+  dismissIdRepair: () => set({ lastIdRepair: null }),
   importAvPlan: (avplan) => {
     const cameras = avplan.domains.cameras as ProjectFile | undefined;
     if (cameras) get().applyProjectFile(cameras);
