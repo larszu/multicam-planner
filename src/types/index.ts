@@ -469,4 +469,12 @@ export interface ProjectFile {
   persons: ReferencePerson[];
   backgroundPlan: BackgroundPlan | null;
   walls?: Wall[];
+  /**
+   * ADR-005 — Fremde .avplan-Domaenen (lighting/cabling), die MultiCam nicht
+   * bearbeitet. Sie gehoeren in die Projektdatei, nicht nur in den Store:
+   * lagen sie nur im Speicher, war jedes Speichern-und-neu-Oeffnen zwischen
+   * Import und Export ein vollstaendiger Verlust des Licht- und Kabelplans.
+   * Opak durchgereicht, nie interpretiert.
+   */
+  avForeign?: { lighting?: unknown; cabling?: unknown };
 }

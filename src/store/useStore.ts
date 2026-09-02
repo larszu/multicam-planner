@@ -13,6 +13,42 @@ import type { AvPlan } from '../utils/avplan';
 // because the workflow runs `npm version <tag>` before invoking the build.
 export const APP_VERSION = __APP_VERSION__;
 
+/**
+ * ADR-005 — Die Nutzlast des nativen Speicherns, als pure Funktion.
+ *
+ * Herausgezogen, weil genau sie den Verlust verursacht hat und vorher nicht
+ * pruefbar war: der bestehende Format-Test baut den Re-Export von Hand aus
+ * `loaded.domains` und konnte deshalb nie bemerken, dass die App die
+ * Fremd-Domaenen zwischen Speichern und Laden verliert. Was zugesichert wird,
+ * muss aufrufbar sein, ohne einen Download auszuloesen.
+ */
+export function buildProjectFile(s: {
+  projectVersion: number;
+  venue: Venue;
+  cameras: VenueCamera[];
+  persons: ReferencePerson[];
+  walls: Wall[];
+  backgroundPlan: BackgroundPlan | null;
+  avForeign: { lighting?: unknown; cabling?: unknown };
+}): ProjectFile {
+  return {
+    formatVersion: 1,
+    appVersion: APP_VERSION,
+    projectVersion: s.projectVersion,
+    savedAt: new Date().toISOString(),
+    venue: s.venue,
+    cameras: s.cameras,
+    persons: s.persons,
+    walls: s.walls ?? [],
+    backgroundPlan: s.backgroundPlan,
+    // ADR-005 — Fremd-Domaenen gehoeren in die Datei. Nur schreiben, wenn
+    // welche da sind: ein leeres Feld in jeder Datei waere Ballast.
+    ...(s.avForeign.lighting !== undefined || s.avForeign.cabling !== undefined
+      ? { avForeign: s.avForeign }
+      : {}),
+  };
+}
+
 interface AppState {
   // Venue
   venue: Venue;
@@ -841,27 +877,16 @@ export const useStore = create<AppState>((set, get) => ({
   bumpVersion: () => set((s) => ({ projectVersion: s.projectVersion + 1 })),
 
   saveProject: () => {
-    const s = get();
-    const project: ProjectFile = {
-      formatVersion: 1,
-      appVersion: APP_VERSION,
-      projectVersion: s.projectVersion,
-      savedAt: new Date().toISOString(),
-      venue: s.venue,
-      cameras: s.cameras,
-      persons: s.persons,
-      walls: s.walls ?? [],
-      backgroundPlan: s.backgroundPlan,
-    };
+    const project = buildProjectFile(get());
     const json = JSON.stringify(project, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${s.venue.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_v${s.projectVersion}.mcplan`;
+    a.download = `${project.venue.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_v${project.projectVersion}.mcplan`;
     a.click();
     URL.revokeObjectURL(url);
-    set({ lastSavedVersion: s.projectVersion });
+    set({ lastSavedVersion: project.projectVersion });
   },
 
   loadProject: async (file: File) => {
@@ -928,6 +953,11 @@ export const useStore = create<AppState>((set, get) => ({
       walls: wallsFixed.items,
       projectVersion: project.projectVersion,
       lastSavedVersion: project.projectVersion,
+      // ADR-005 — was die Datei an fremden Domaenen mitbringt, kommt zurueck in
+      // den Store, damit der naechste .avplan-Export es wieder mitgibt. Eine
+      // Datei ohne sie setzt zurueck: sonst leckten die Domaenen des zuletzt
+      // geoeffneten Projekts in das naechste.
+      avForeign: project.avForeign ?? {},
     });
   },
 
