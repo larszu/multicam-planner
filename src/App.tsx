@@ -168,6 +168,8 @@ function useLayoutModel() {
 
 export default function App() {
   const { sidebarCollapsed, setSidebarCollapsed } = useStore();
+  const idRepairCount = useStore((state) => state.lastIdRepair);
+  const dismissIdRepair = useStore((state) => state.dismissIdRepair);
   const [sidebarTab, setSidebarTab] = useState<'cameras' | 'templates'>('cameras');
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [model, setModel] = useLayoutModel();
@@ -424,6 +426,33 @@ export default function App() {
   return (
     <ErrorBoundary>
     <div className="h-screen flex flex-col bg-bc-dark text-gray-200">
+      {/* ADR-005, Regel 3 — beim Laden reparierte doppelte Ids werden gesagt.
+          `dedupeIds` zaehlte sie schon, nur las es niemand: Shots, Takes und
+          Presets haengen an der Kamera-Id, der Fokus-Lock an der Personen-Id.
+          Wer eine neue Id bekommt, verliert diese Verweise an das erste Objekt
+          mit der alten. */}
+      {idRepairCount !== null && (
+        <div
+          role="status"
+          className="flex items-start gap-3 border-b border-amber-600/60 bg-amber-950/60 px-4 py-2 text-sm text-amber-100"
+        >
+          <div className="flex-1">
+            <strong className="font-semibold">
+              {idRepairCount} doppelte Id(s) in der Projektdatei repariert.
+            </strong>{' '}
+            Betroffene Objekte haben eine neue Id bekommen. Verweise darauf —
+            Shots, Takes, Presets und Fokus-Sperren — zeigen jetzt auf das
+            jeweils erste Objekt mit der alten Id und sind zu prüfen.
+          </div>
+          <button
+            type="button"
+            onClick={dismissIdRepair}
+            className="rounded bg-amber-800/60 px-2 py-0.5 text-xs hover:bg-amber-700/60"
+          >
+            OK
+          </button>
+        </div>
+      )}
       <Header
         onSelectTab={handleSelectTab}
         onSetLayoutMode={handleSetLayoutMode}

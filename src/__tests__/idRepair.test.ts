@@ -76,3 +76,58 @@ describe('dedupeIds', () => {
     expect(res.repaired).toBe(2);
   });
 });
+
+// ---------------------------------------------------------------------------
+// ADR-005, Regel 3 — die Reparatur wird gesagt.
+//
+// `repaired` zaehlte die vergebenen Ersatz-Ids und wurde von keiner Zeile
+// ausserhalb dieser Datei gelesen. Der Zaehler war da, die Meldung fehlte —
+// dabei haengen laut Modulkopf Shots, Takes und Presets an VenueCamera.id und
+// der Fokus-Lock an ReferencePerson.id: bekommt die zweite Kamera einer
+// doppelten Id eine neue, zeigen deren Shots ab jetzt auf die erste.
+
+describe('ADR-005 — applyProjectFile meldet reparierte Ids', () => {
+  const file = (over: Record<string, unknown> = {}) =>
+    ({
+      formatVersion: 1, appVersion: '1.0.0', projectVersion: 1, savedAt: 't',
+      venue: { name: 'H', widthM: 20, heightM: 12, stages: [] },
+      cameras: [], persons: [], walls: [], backgroundPlan: null,
+      ...over,
+    }) as never;
+
+  const load = async (over: Record<string, unknown> = {}) => {
+    const { useStore } = await import('../store/useStore');
+    useStore.getState().applyProjectFile(file(over));
+    return useStore.getState().lastIdRepair;
+  };
+
+  const cam = { id: 'cam-1', label: 'A', cameraId: 'c', lensId: 'l', x: 0, y: 0, rotation: 0 };
+  const person = { id: 'p-1', x: 0, y: 0, height: 1.75, width: 0.5, label: '', objectType: 'person' };
+
+  it('meldet eine reparierte Kamera-Id', async () => {
+    expect(await load({ cameras: [cam, { ...cam, label: 'B' }] })).toBe(1);
+  });
+
+  it('zaehlt ueber alle Listen zusammen', async () => {
+    expect(await load({ cameras: [cam, { ...cam }], persons: [person, { ...person }] })).toBe(2);
+  });
+
+  it('schweigt, wenn nichts zu reparieren war', async () => {
+    // Eine Meldung bei jedem Laden waere Rauschen und wuerde weggeklickt.
+    expect(await load({ cameras: [cam] })).toBeNull();
+  });
+
+  it('setzt die Meldung beim naechsten sauberen Laden zurueck', async () => {
+    // Sonst haengt der Hinweis am naechsten Projekt, das ihn nicht verdient
+    // hat — derselbe Fehler wie ein leckendes avForeign.
+    await load({ cameras: [cam, { ...cam }] });
+    expect(await load({ cameras: [cam] })).toBeNull();
+  });
+
+  it('laesst sich wegklicken', async () => {
+    const { useStore } = await import('../store/useStore');
+    await load({ cameras: [cam, { ...cam }] });
+    useStore.getState().dismissIdRepair();
+    expect(useStore.getState().lastIdRepair).toBeNull();
+  });
+});
