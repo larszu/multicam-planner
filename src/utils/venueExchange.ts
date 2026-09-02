@@ -52,6 +52,31 @@ export interface VenueExchange {
   };
 }
 
+/**
+ * ADR-005 — Buehnen-Felder, die MultiCam nicht modelliert, je Buehnen-Id
+ * aufgehoben.
+ *
+ * MultiCams Buehne ist eine flache 2D-Zone: sie hat Breite und Plan-Tiefe,
+ * aber keine Podest-Hoehe, keine Drehung und keinen Polygon-Umriss. Das
+ * Austauschformat kennt alle drei. Bisher schrieb der Export deshalb fuer
+ * JEDE Buehne `height: 0` — und das ist nicht dasselbe wie „weiss ich nicht":
+ * ein 0,6 m hohes Podest aus dem Light-Planner kam nach einem
+ * MultiCam-Round-Trip als flacher Boden zurueck.
+ *
+ * `height` ist im Austauschtyp Pflicht, kann also nicht weggelassen werden —
+ * eine Aenderung daran waere eine Aenderung am eingefrorenen Draht-Vertrag.
+ * Stattdessen hebt MultiCam auf, was es nicht versteht, und gibt es beim
+ * Export unveraendert zurueck. Fuer eine MultiCam-eigene Buehne gibt es
+ * nichts Aufgehobenes, und `height: 0` bleibt — dort ist es zutreffend und
+ * keine Erfindung.
+ */
+export interface ForeignStageFields {
+  height?: number;
+  height2?: number;
+  rotation?: number;
+  points?: { x: number; y: number }[];
+}
+
 export interface MultiCamVenueInput {
   venue: Venue;
   persons: ReferencePerson[];
@@ -59,6 +84,8 @@ export interface MultiCamVenueInput {
   backgroundPlan: BackgroundPlan | null;
   appVersion: string;
   exportedAt: string;
+  /** Siehe ForeignStageFields. Fehlt es, verhaelt sich der Export wie bisher. */
+  stageForeign?: Record<string, ForeignStageFields>;
 }
 
 function bgToFloorPlan(bg: BackgroundPlan): VenueExchangeFloorPlan {
@@ -79,6 +106,7 @@ function bgToFloorPlan(bg: BackgroundPlan): VenueExchangeFloorPlan {
 /** MultiCam-Venue → neutrales Austauschformat. */
 export function toVenueExchange(input: MultiCamVenueInput): VenueExchange {
   const { venue, persons, walls, backgroundPlan } = input;
+  const foreign = input.stageForeign ?? {};
   return {
     kind: VENUE_EXCHANGE_KIND,
     formatVersion: VENUE_EXCHANGE_VERSION,
@@ -97,10 +125,19 @@ export function toVenueExchange(input: MultiCamVenueInput): VenueExchange {
         id: w.id, x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2, height: w.height, label: w.label,
       })),
       // MultiCam-Stage ist eine flache 2D-Zone (width × height-in-Plan); die
-      // Plan-Tiefe wandert ins `depth`-Feld, die Podest-Hoehe ist hier 0.
-      stageObjects: venue.stages.map((s) => ({
-        id: s.id, x: s.x, y: s.y, width: s.width, depth: s.height, height: 0, label: s.label,
-      })),
+      // Plan-Tiefe wandert ins `depth`-Feld. Die Podest-Hoehe bleibt 0, wenn
+      // die Buehne hier entstanden ist — und kommt zurueck, wenn sie
+      // eingelesen wurde (siehe ForeignStageFields).
+      stageObjects: venue.stages.map((s) => {
+        const f = foreign[s.id];
+        return {
+          id: s.id, x: s.x, y: s.y, width: s.width, depth: s.height, label: s.label,
+          height: f?.height ?? 0,
+          ...(f?.height2 !== undefined ? { height2: f.height2 } : {}),
+          ...(f?.rotation !== undefined ? { rotation: f.rotation } : {}),
+          ...(f?.points !== undefined ? { points: f.points } : {}),
+        };
+      }),
       floorPlan: backgroundPlan ? bgToFloorPlan(backgroundPlan) : undefined,
     },
   };
@@ -111,6 +148,8 @@ export interface MultiCamVenueResult {
   persons: ReferencePerson[];
   walls: Wall[];
   backgroundPlan: BackgroundPlan | null;
+  /** Siehe ForeignStageFields. Nur Buehnen mit wirklich fremden Werten. */
+  stageForeign: Record<string, ForeignStageFields>;
 }
 
 function floorPlanToBg(fp: VenueExchangeFloorPlan): BackgroundPlan {
@@ -148,7 +187,28 @@ export function fromVenueExchange(ex: VenueExchange): MultiCamVenueResult {
       id: w.id, x1: w.x1, y1: w.y1, x2: w.x2, y2: w.y2, height: w.height, label: w.label ?? '',
     })),
     backgroundPlan: v.floorPlan ? floorPlanToBg(v.floorPlan) : null,
+    stageForeign: collectStageForeign(v.stageObjects ?? []),
   };
+}
+
+/** Hebt je Buehne auf, was MultiCam nicht modelliert. Eine Buehne ohne solche
+ *  Werte bekommt keinen Eintrag — ein leeres Objekt je Buehne waere Ballast
+ *  und wuerde behaupten, es habe etwas zu bewahren gegeben. Eine Hoehe von 0
+ *  ist ebenfalls nichts zu bewahren: das ist genau der Wert, den der Export
+ *  ohnehin schreibt. */
+function collectStageForeign(
+  objs: VenueExchangeStageObject[],
+): Record<string, ForeignStageFields> {
+  const out: Record<string, ForeignStageFields> = {};
+  for (const s of objs) {
+    const f: ForeignStageFields = {};
+    if (typeof s.height === 'number' && s.height !== 0) f.height = s.height;
+    if (s.height2 !== undefined) f.height2 = s.height2;
+    if (s.rotation !== undefined) f.rotation = s.rotation;
+    if (s.points !== undefined) f.points = s.points;
+    if (Object.keys(f).length > 0) out[s.id] = f;
+  }
+  return out;
 }
 
 /** Parst + validiert eine Austauschdatei. Wirft bei falschem Format. */

@@ -477,4 +477,13 @@ export interface ProjectFile {
    * Opak durchgereicht, nie interpretiert.
    */
   avForeign?: { lighting?: unknown; cabling?: unknown };
+  /**
+   * ADR-005 — Buehnen-Felder aus einem eingelesenen Raum, die MultiCam nicht
+   * modelliert (Podest-Hoehe, Drehung, Polygon-Umriss), je Buehnen-Id.
+   *
+   * Gehoert aus demselben Grund in die Datei wie `avForeign`: laege es nur im
+   * Speicher, waere jedes Speichern-und-neu-Oeffnen zwischen Import und Export
+   * genau der Verlust, den das Feld verhindern soll.
+   */
+  stageForeign?: Record<string, import('../utils/venueExchange').ForeignStageFields>;
 }
