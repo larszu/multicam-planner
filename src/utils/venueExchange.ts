@@ -108,6 +108,21 @@ export interface ForeignFloorPlanFields {
  * nicht „unbekannt", sondern **gerade**. Eine gebogene Wand kam nach einem
  * Round-Trip durch MultiCam als Strecke zurueck.
  */
+/**
+ * ADR-005 — Personen-Felder, die MultiCam nicht modelliert.
+ *
+ * Light kennt an einer Figur Pose (stehend/sitzend) und Blickrichtung.
+ * MultiCams `ReferencePerson` ist ein Buehnen-Objekt mit Grundflaeche und Art —
+ * beides gibt es dort nicht. Die Felder fielen weg, und lights Import setzt
+ * danach `pose ?? 'standing'` und `facing ?? 270` ein: eine sitzende, nach
+ * Osten blickende Figur stand nach einem Round-Trip durch MultiCam und schaute
+ * nach vorn.
+ */
+export interface ForeignPersonFields {
+  pose?: 'standing' | 'sitting';
+  facing?: number;
+}
+
 export interface ForeignWallFields {
   cx?: number;
   cy?: number;
@@ -127,6 +142,8 @@ export interface MultiCamVenueInput {
   floorPlanForeign?: ForeignFloorPlanFields;
   /** Siehe ForeignWallFields, je Wand-Id. */
   wallForeign?: Record<string, ForeignWallFields>;
+  /** Siehe ForeignPersonFields, je Personen-Id. */
+  personForeign?: Record<string, ForeignPersonFields>;
 }
 
 function bgToFloorPlan(
@@ -158,6 +175,7 @@ export function toVenueExchange(input: MultiCamVenueInput): VenueExchange {
   const { venue, persons, walls, backgroundPlan } = input;
   const foreign = input.stageForeign ?? {};
   const wallForeign = input.wallForeign ?? {};
+  const personForeign = input.personForeign ?? {};
   return {
     kind: VENUE_EXCHANGE_KIND,
     formatVersion: VENUE_EXCHANGE_VERSION,
@@ -168,10 +186,17 @@ export function toVenueExchange(input: MultiCamVenueInput): VenueExchange {
       name: venue.name,
       widthM: venue.widthM,
       heightM: venue.heightM,
-      persons: persons.map((p) => ({
-        id: p.id, x: p.x, y: p.y, height: p.height, label: p.label,
-        width: p.width, objectType: p.objectType, color: p.color,
-      })),
+      persons: persons.map((p) => {
+        // ADR-005 — Pose und Blickrichtung modelliert MultiCam nicht und gibt
+        // sie unveraendert weiter.
+        const f = personForeign[p.id];
+        return {
+          id: p.id, x: p.x, y: p.y, height: p.height, label: p.label,
+          width: p.width, objectType: p.objectType, color: p.color,
+          ...(f?.pose !== undefined ? { pose: f.pose } : {}),
+          ...(f?.facing !== undefined ? { facing: f.facing } : {}),
+        };
+      }),
       walls: walls.map((w) => {
         // ADR-005 — `color` modelliert MultiCam selbst und schrieb es trotzdem
         // nicht: eine blau gestrichene Wand kam nach einem Venue-Round-Trip
@@ -218,6 +243,8 @@ export interface MultiCamVenueResult {
   floorPlanForeign: ForeignFloorPlanFields;
   /** Siehe ForeignWallFields. Nur Waende mit wirklich fremden Werten. */
   wallForeign: Record<string, ForeignWallFields>;
+  /** Siehe ForeignPersonFields. Nur Figuren mit wirklich fremden Werten. */
+  personForeign: Record<string, ForeignPersonFields>;
 }
 
 function floorPlanToBg(fp: VenueExchangeFloorPlan): BackgroundPlan {
@@ -259,7 +286,25 @@ export function fromVenueExchange(ex: VenueExchange): MultiCamVenueResult {
     stageForeign: collectStageForeign(v.stageObjects ?? []),
     floorPlanForeign: collectFloorPlanForeign(v.floorPlan),
     wallForeign: collectWallForeign(v.walls ?? []),
+    personForeign: collectPersonForeign(v.persons ?? []),
   };
+}
+
+/** Hebt je Figur auf, was MultiCam nicht modelliert. Die Standardwerte,
+ *  die lights Import ohnehin einsetzt ('standing', 270), werden NICHT
+ *  aufgehoben — sie zu speichern hiesse zu behaupten, jemand habe sie
+ *  gesetzt. */
+function collectPersonForeign(
+  persons: VenueExchangePerson[],
+): Record<string, ForeignPersonFields> {
+  const out: Record<string, ForeignPersonFields> = {};
+  for (const p of persons) {
+    const f: ForeignPersonFields = {};
+    if (p.pose !== undefined && p.pose !== 'standing') f.pose = p.pose;
+    if (typeof p.facing === 'number' && p.facing !== 270) f.facing = p.facing;
+    if (Object.keys(f).length > 0) out[p.id] = f;
+  }
+  return out;
 }
 
 /** Hebt je Wand auf, was MultiCam nicht modelliert. Eine gerade Wand ohne
@@ -339,6 +384,25 @@ export function parseVenueExchange(text: string): VenueExchange {
  * der Nutzer eingerichtet hatte: `importVenueExchange` setzte `walls` im Ganzen
  * neu. Dasselbe Muster wie `mergeOwnVenueFields` im light-planner.
  */
+/**
+ * ADR-005, Regel 2 — dasselbe fuer Figuren. Das Austauschformat kennt kein
+ * `locked`; ohne diese Zusammenfuehrung loeschte jeder Venue-Import die Sperren,
+ * die der Nutzer gesetzt hat.
+ */
+export function mergeOwnPersonFields(
+  projected: MultiCamVenueResult,
+  own: { persons: ReferencePerson[] },
+): MultiCamVenueResult {
+  const mine = new Map((own.persons ?? []).map((p) => [p.id, p]));
+  return {
+    ...projected,
+    persons: projected.persons.map((p) => {
+      const o = mine.get(p.id);
+      return o?.locked !== undefined ? { ...p, locked: o.locked } : p;
+    }),
+  };
+}
+
 export function mergeOwnWallFields(
   projected: MultiCamVenueResult,
   own: { walls: Wall[] },
