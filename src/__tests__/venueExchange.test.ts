@@ -177,3 +177,88 @@ describe('ADR-005 — fremde Buehnen-Felder ueberleben den MultiCam-Round-Trip',
     expect(out.rotation).toBeUndefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// ADR-005, Inkrement 4 — zweiter Fall derselben Naht.
+//
+// MultiCams BackgroundPlan ist eine Bitmap mit Massstab und Versatz: kein Name,
+// kein Sperr-Flag, keine Seitenzahl, keine Angabe ueber die Quelle. Der Export
+// schrieb deshalb unbedingt `kind: 'image'`. Fuer einen in MultiCam
+// hochgeladenen Plan stimmt das; fuer einen aus dem Light-Planner uebernommenen
+// PDF-Grundriss nicht — aus Seite 3 von 5 eines gesperrten Plans wurde ein
+// namenloses, entsperrtes Bild ohne Seitenbezug.
+
+describe('ADR-005 — fremde Gebaeudeplan-Felder ueberleben den Round-Trip', () => {
+  const pdfVenue = (fp: Record<string, unknown> = {}) => ({
+    kind: 'venue-exchange' as const,
+    formatVersion: 1 as const,
+    app: 'light-planner',
+    appVersion: '1.0.0',
+    exportedAt: '2026-01-01T00:00:00.000Z',
+    venue: {
+      name: 'Halle', widthM: 20, heightM: 12, persons: [], walls: [], stageObjects: [],
+      floorPlan: {
+        src: 'data:image/png;base64,AAA', naturalWidth: 800, naturalHeight: 600,
+        widthMeters: 20, heightMeters: 15, offsetX: 0, offsetY: 0, opacity: 0.5,
+        name: 'EG_Grundriss.pdf', locked: true, kind: 'pdf', pageCount: 5, pageIndex: 2,
+        ...fp,
+      },
+    },
+  }) as unknown as VenueExchange;
+
+  const roundTrip = (fp: Record<string, unknown> = {}) => {
+    const imported = fromVenueExchange(pdfVenue(fp));
+    return toVenueExchange({
+      venue: imported.venue, persons: imported.persons, walls: imported.walls,
+      backgroundPlan: imported.backgroundPlan,
+      appVersion: '1.0.0', exportedAt: '2026-01-02T00:00:00.000Z',
+      stageForeign: imported.stageForeign,
+      floorPlanForeign: imported.floorPlanForeign,
+    }).venue.floorPlan;
+  };
+
+  it('behaelt die PDF-Herkunft statt alles zum Bild zu erklaeren', () => {
+    expect(roundTrip()?.kind).toBe('pdf');
+  });
+
+  it('behaelt Seite, Seitenzahl, Name und Sperre', () => {
+    const out = roundTrip();
+    expect(out?.pageIndex).toBe(2);
+    expect(out?.pageCount).toBe(5);
+    expect(out?.name).toBe('EG_Grundriss.pdf');
+    expect(out?.locked).toBe(true);
+  });
+
+  it('behaelt die eigene Kalibrierung als fuehrend', () => {
+    // Aufheben heisst nicht Einfrieren: Massstab und Versatz modelliert
+    // MultiCam, die gewinnen.
+    const out = roundTrip();
+    expect(out?.naturalWidth).toBe(800);
+    expect(out?.widthMeters).toBe(20);
+    expect(out?.opacity).toBe(0.5);
+  });
+
+  it('hebt ein blosses kind image nicht auf', () => {
+    // Das ist der Wert, den der Export ohnehin schreibt. Ihn zu speichern
+    // hiesse zu behaupten, eine fremde App habe ihn gesetzt.
+    const imported = fromVenueExchange(
+      pdfVenue({ kind: 'image', name: undefined, locked: undefined, pageCount: undefined, pageIndex: undefined }),
+    );
+    expect(imported.floorPlanForeign).toEqual({});
+  });
+
+  it('schreibt weiterhin kind image fuer einen eigenen Plan', () => {
+    const out = toVenueExchange({
+      venue: { name: 'H', widthM: 10, heightM: 10, stages: [] },
+      persons: [], walls: [],
+      backgroundPlan: {
+        dataUrl: 'data:image/png;base64,BBB', scaleX: 0.02, scaleY: 0.02,
+        offsetX: 0, offsetY: 0, opacity: 1, widthPx: 500, heightPx: 500,
+      },
+      appVersion: '1.0.0', exportedAt: 't',
+    } as never).venue.floorPlan;
+    expect(out?.kind).toBe('image');
+    expect(out?.pageIndex).toBeUndefined();
+    expect(out?.name).toBeUndefined();
+  });
+});

@@ -161,6 +161,7 @@ export default function Header({
       // ADR-005 — was MultiCam am eingelesenen Raum nicht modelliert, geht
       // unveraendert wieder mit hinaus.
       stageForeign: s.stageForeign,
+      floorPlanForeign: s.floorPlanForeign,
     });
     const blob = new Blob([JSON.stringify(ex, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -203,6 +204,7 @@ export default function Header({
       venue: s.venue, persons: s.persons, walls: s.walls, backgroundPlan: s.backgroundPlan,
       appVersion: APP_VERSION, exportedAt: now,
       stageForeign: s.stageForeign,
+      floorPlanForeign: s.floorPlanForeign,
     }).venue;
     const avplan = makeAvPlan({
       app: 'multicam-planner', appVersion: APP_VERSION, exportedAt: now, venue,
