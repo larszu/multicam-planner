@@ -94,3 +94,86 @@ describe('venueExchange (MultiCam)', () => {
     expect(() => parseVenueExchange(JSON.stringify(toVenueExchange(input)))).not.toThrow();
   });
 });
+
+// ---------------------------------------------------------------------------
+// ADR-005 (Verlustfrei oder laut), Inkrement 4.
+//
+// MultiCams Buehne ist eine flache 2D-Zone. Das Austauschformat kennt aber
+// Podest-Hoehe, Drehung und Polygon-Umriss, und `height` ist dort PFLICHT.
+// Der Export schrieb deshalb fuer jede Buehne `height: 0` — und das ist nicht
+// dasselbe wie "weiss ich nicht": ein 0,6 m hohes Podest aus dem Light-Planner
+// kam nach einem MultiCam-Round-Trip als flacher Boden zurueck. Dieselbe
+// Klasse wie der Videohub-Dump: eine erfundene Zahl, keine fehlende.
+
+describe('ADR-005 — fremde Buehnen-Felder ueberleben den MultiCam-Round-Trip', () => {
+  const foreignVenue = (over: Record<string, unknown> = {}) => ({
+    kind: 'venue-exchange' as const,
+    formatVersion: 1 as const,
+    app: 'light-planner',
+    appVersion: '1.0.0',
+    exportedAt: '2026-01-01T00:00:00.000Z',
+    venue: {
+      name: 'Halle',
+      widthM: 30,
+      heightM: 18,
+      persons: [],
+      walls: [],
+      stageObjects: [
+        { id: 'st1', x: 1, y: 2, width: 6, depth: 4, height: 0.6, label: 'Podest', ...over },
+      ],
+    },
+  });
+
+  const roundTrip = (over: Record<string, unknown> = {}) => {
+    const imported = fromVenueExchange(foreignVenue(over));
+    return toVenueExchange({
+      venue: imported.venue,
+      persons: imported.persons,
+      walls: imported.walls,
+      backgroundPlan: imported.backgroundPlan,
+      appVersion: '1.0.0',
+      exportedAt: '2026-01-02T00:00:00.000Z',
+      stageForeign: imported.stageForeign,
+    }).venue.stageObjects[0];
+  };
+
+  it('gibt die Podest-Hoehe unveraendert zurueck', () => {
+    expect(roundTrip().height).toBe(0.6);
+  });
+
+  it('gibt Drehung und Polygon-Umriss zurueck', () => {
+    const points = [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }];
+    const out = roundTrip({ rotation: 45, points, height2: 1.2 });
+    expect(out.rotation).toBe(45);
+    expect(out.points).toEqual(points);
+    expect(out.height2).toBe(1.2);
+  });
+
+  it('behaelt die eigene Geometrie als fuehrend', () => {
+    // Aufheben heisst nicht Einfrieren: was MultiCam MODELLIERT, gewinnt.
+    const out = roundTrip();
+    expect(out.x).toBe(1);
+    expect(out.width).toBe(6);
+    expect(out.depth).toBe(4);
+  });
+
+  it('hebt fuer eine flache Buehne nichts auf', () => {
+    // Ein Eintrag je Buehne waere Ballast — und die Behauptung, es habe etwas
+    // zu bewahren gegeben. Hoehe 0 ist genau der Wert, den der Export ohnehin
+    // schreibt.
+    const imported = fromVenueExchange(foreignVenue({ height: 0 }));
+    expect(imported.stageForeign).toEqual({});
+  });
+
+  it('schreibt weiterhin 0 fuer eine Buehne ohne aufgehobenen Wert', () => {
+    // Eine in MultiCam entstandene Buehne IST flach. Dort ist 0 zutreffend
+    // und keine Erfindung.
+    const out = toVenueExchange({
+      venue: { name: 'H', widthM: 10, heightM: 10, stages: [{ id: 'neu', x: 0, y: 0, width: 2, height: 2, label: '' }] },
+      persons: [], walls: [], backgroundPlan: null,
+      appVersion: '1.0.0', exportedAt: '2026-01-02T00:00:00.000Z',
+    } as never).venue.stageObjects[0];
+    expect(out.height).toBe(0);
+    expect(out.rotation).toBeUndefined();
+  });
+});

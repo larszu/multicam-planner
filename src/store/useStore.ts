@@ -5,7 +5,11 @@ import { LENSES, pickInitialMountAndLens } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
 import { loadJSON, saveJSON, saveJSONSafe } from '../utils/storage';
 import { dedupeIds, maxIdSuffix } from '../utils/idRepair';
-import { fromVenueExchange, type VenueExchange } from '../utils/venueExchange';
+import {
+  fromVenueExchange,
+  type VenueExchange,
+  type ForeignStageFields,
+} from '../utils/venueExchange';
 import type { AvPlan } from '../utils/avplan';
 
 // Injected by Vite from package.json. In a release build that came through
@@ -30,6 +34,7 @@ export function buildProjectFile(s: {
   walls: Wall[];
   backgroundPlan: BackgroundPlan | null;
   avForeign: { lighting?: unknown; cabling?: unknown };
+  stageForeign: Record<string, ForeignStageFields>;
 }): ProjectFile {
   return {
     formatVersion: 1,
@@ -45,6 +50,10 @@ export function buildProjectFile(s: {
     // welche da sind: ein leeres Feld in jeder Datei waere Ballast.
     ...(s.avForeign.lighting !== undefined || s.avForeign.cabling !== undefined
       ? { avForeign: s.avForeign }
+      : {}),
+    // ADR-005 — dito fuer die Buehnen-Felder, die MultiCam nicht modelliert.
+    ...(Object.keys(s.stageForeign ?? {}).length > 0
+      ? { stageForeign: s.stageForeign }
       : {}),
   };
 }
@@ -181,6 +190,7 @@ interface AppState {
   /** Fremde .avplan-Domaenen (lighting/cabling), die MultiCam nicht bearbeitet,
    *  aber beim Export 1:1 wieder mitgibt — damit nichts verloren geht. */
   avForeign: { lighting?: unknown; cabling?: unknown };
+  stageForeign: Record<string, ForeignStageFields>;
   /** Importiert ein .avplan-Gesamtprojekt: laedt den cameras-Slot nativ,
    *  ueberlagert den geteilten Raum und bewahrt lighting/cabling verlustfrei. */
   importAvPlan: (avplan: AvPlan) => void;
@@ -958,6 +968,9 @@ export const useStore = create<AppState>((set, get) => ({
       // Datei ohne sie setzt zurueck: sonst leckten die Domaenen des zuletzt
       // geoeffneten Projekts in das naechste.
       avForeign: project.avForeign ?? {},
+      // Wie avForeign: eine Datei ohne das Feld setzt zurueck, sonst leckten
+      // die Buehnen-Hoehen des zuletzt geoeffneten Projekts ins naechste.
+      stageForeign: project.stageForeign ?? {},
     });
   },
 
@@ -974,11 +987,13 @@ export const useStore = create<AppState>((set, get) => ({
       persons: r.persons,
       walls: r.walls,
       backgroundPlan: r.backgroundPlan,
+      stageForeign: r.stageForeign,
       projectVersion: s.projectVersion + 1,
     }));
   },
 
   avForeign: {},
+  stageForeign: {},
   importAvPlan: (avplan) => {
     const cameras = avplan.domains.cameras as ProjectFile | undefined;
     if (cameras) get().applyProjectFile(cameras);
