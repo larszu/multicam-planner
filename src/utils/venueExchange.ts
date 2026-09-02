@@ -77,6 +77,27 @@ export interface ForeignStageFields {
   points?: { x: number; y: number }[];
 }
 
+/**
+ * ADR-005 — Gebaeudeplan-Felder, die MultiCam nicht modelliert.
+ *
+ * MultiCams `BackgroundPlan` ist eine Bitmap mit Massstab und Versatz: kein
+ * Name, kein Sperr-Flag, keine Seitenzahl, keine Angabe, ob die Quelle ein PDF
+ * war. Der Export schrieb deshalb unbedingt `kind: 'image'`.
+ *
+ * Fuer einen in MultiCam hochgeladenen Plan ist das wahr. Fuer einen aus dem
+ * Light-Planner uebernommenen PDF-Grundriss nicht: aus Seite 3 von 5 eines
+ * gesperrten `EG_Grundriss.pdf` wurde ein namenloses, entsperrtes Bild ohne
+ * Seitenbezug. Dieselbe Sorte Schaden wie bei der Podest-Hoehe — ein falscher
+ * Wert, kein fehlender.
+ */
+export interface ForeignFloorPlanFields {
+  name?: string;
+  locked?: boolean;
+  kind?: 'image' | 'pdf';
+  pageCount?: number;
+  pageIndex?: number;
+}
+
 export interface MultiCamVenueInput {
   venue: Venue;
   persons: ReferencePerson[];
@@ -86,9 +107,14 @@ export interface MultiCamVenueInput {
   exportedAt: string;
   /** Siehe ForeignStageFields. Fehlt es, verhaelt sich der Export wie bisher. */
   stageForeign?: Record<string, ForeignStageFields>;
+  /** Siehe ForeignFloorPlanFields. Fehlt es, bleibt es bei `kind: 'image'`. */
+  floorPlanForeign?: ForeignFloorPlanFields;
 }
 
-function bgToFloorPlan(bg: BackgroundPlan): VenueExchangeFloorPlan {
+function bgToFloorPlan(
+  bg: BackgroundPlan,
+  foreign: ForeignFloorPlanFields = {},
+): VenueExchangeFloorPlan {
   return {
     src: bg.dataUrl,
     naturalWidth: bg.widthPx,
@@ -99,7 +125,13 @@ function bgToFloorPlan(bg: BackgroundPlan): VenueExchangeFloorPlan {
     offsetX: bg.offsetX,
     offsetY: bg.offsetY,
     opacity: bg.opacity,
-    kind: 'image',
+    // ADR-005 — `kind: 'image'` gilt nur, solange nichts anderes bekannt ist.
+    // Ein uebernommener PDF-Grundriss behaelt seine Herkunft und seine Seite.
+    kind: foreign.kind ?? 'image',
+    ...(foreign.name !== undefined ? { name: foreign.name } : {}),
+    ...(foreign.locked !== undefined ? { locked: foreign.locked } : {}),
+    ...(foreign.pageCount !== undefined ? { pageCount: foreign.pageCount } : {}),
+    ...(foreign.pageIndex !== undefined ? { pageIndex: foreign.pageIndex } : {}),
   };
 }
 
@@ -138,7 +170,9 @@ export function toVenueExchange(input: MultiCamVenueInput): VenueExchange {
           ...(f?.points !== undefined ? { points: f.points } : {}),
         };
       }),
-      floorPlan: backgroundPlan ? bgToFloorPlan(backgroundPlan) : undefined,
+      floorPlan: backgroundPlan
+        ? bgToFloorPlan(backgroundPlan, input.floorPlanForeign)
+        : undefined,
     },
   };
 }
@@ -150,6 +184,8 @@ export interface MultiCamVenueResult {
   backgroundPlan: BackgroundPlan | null;
   /** Siehe ForeignStageFields. Nur Buehnen mit wirklich fremden Werten. */
   stageForeign: Record<string, ForeignStageFields>;
+  /** Siehe ForeignFloorPlanFields. Leer, wenn die Datei nichts davon trug. */
+  floorPlanForeign: ForeignFloorPlanFields;
 }
 
 function floorPlanToBg(fp: VenueExchangeFloorPlan): BackgroundPlan {
@@ -188,6 +224,23 @@ export function fromVenueExchange(ex: VenueExchange): MultiCamVenueResult {
     })),
     backgroundPlan: v.floorPlan ? floorPlanToBg(v.floorPlan) : null,
     stageForeign: collectStageForeign(v.stageObjects ?? []),
+    floorPlanForeign: collectFloorPlanForeign(v.floorPlan),
+  };
+}
+
+/** Hebt auf, was MultiCams BackgroundPlan nicht kennt. `kind: 'image'` wird
+ *  NICHT aufgehoben: das ist der Wert, den der Export ohnehin schreibt, und
+ *  ihn zu speichern hiesse zu behaupten, eine fremde App habe ihn gesetzt. */
+function collectFloorPlanForeign(
+  fp: VenueExchangeFloorPlan | undefined,
+): ForeignFloorPlanFields {
+  if (!fp) return {};
+  return {
+    ...(fp.name !== undefined ? { name: fp.name } : {}),
+    ...(fp.locked !== undefined ? { locked: fp.locked } : {}),
+    ...(fp.kind !== undefined && fp.kind !== 'image' ? { kind: fp.kind } : {}),
+    ...(fp.pageCount !== undefined ? { pageCount: fp.pageCount } : {}),
+    ...(fp.pageIndex !== undefined ? { pageIndex: fp.pageIndex } : {}),
   };
 }
 
