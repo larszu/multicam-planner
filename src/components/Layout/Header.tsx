@@ -162,6 +162,7 @@ export default function Header({
       // unveraendert wieder mit hinaus.
       stageForeign: s.stageForeign,
       floorPlanForeign: s.floorPlanForeign,
+      wallForeign: s.wallForeign,
     });
     const blob = new Blob([JSON.stringify(ex, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -205,6 +206,7 @@ export default function Header({
       appVersion: APP_VERSION, exportedAt: now,
       stageForeign: s.stageForeign,
       floorPlanForeign: s.floorPlanForeign,
+      wallForeign: s.wallForeign,
     }).venue;
     const avplan = makeAvPlan({
       app: 'multicam-planner', appVersion: APP_VERSION, exportedAt: now, venue,

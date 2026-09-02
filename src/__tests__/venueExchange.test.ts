@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   toVenueExchange,
   fromVenueExchange,
+  mergeOwnWallFields,
   parseVenueExchange,
   VENUE_EXCHANGE_KIND,
   VENUE_EXCHANGE_VERSION,
@@ -260,5 +261,92 @@ describe('ADR-005 — fremde Gebaeudeplan-Felder ueberleben den Round-Trip', () 
     expect(out?.kind).toBe('image');
     expect(out?.pageIndex).toBeUndefined();
     expect(out?.name).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ADR-005 — der Wand-Datenpfad. Drei verschiedene Fehler an einer Stelle.
+
+describe('ADR-005 — Waende ueberleben den Venue-Round-Trip', () => {
+  const wallVenue = (over: Record<string, unknown> = {}) => ({
+    kind: 'venue-exchange' as const, formatVersion: 1 as const, app: 'light-planner',
+    appVersion: '1.0.0', exportedAt: 't',
+    venue: {
+      name: 'Halle', widthM: 20, heightM: 12, persons: [], stageObjects: [],
+      walls: [{
+        id: 'w1', x1: 0, y1: 0, x2: 12, y2: 0, height: 4, label: 'Nord',
+        cx: 6, cy: 2, reflectance: 0.9, color: '#3366ff', ...over,
+      }],
+    },
+  }) as unknown as VenueExchange;
+
+  const exportWalls = (
+    walls: Wall[],
+    wallForeign: Record<string, { cx?: number; cy?: number; reflectance?: number }> = {},
+  ) => toVenueExchange({
+    venue: { name: 'H', widthM: 20, heightM: 12, stages: [] },
+    persons: [], walls, backgroundPlan: null,
+    appVersion: '1.0.0', exportedAt: 't', wallForeign,
+  } as never).venue.walls;
+
+  it('haelt Kruemmung und Reflexionsgrad ueber den Round-Trip', () => {
+    // Eine fehlende Kruemmung heisst nicht "unbekannt", sondern GERADE — die
+    // gebogene Wand kam als Strecke zurueck.
+    const imported = fromVenueExchange(wallVenue());
+    expect(imported.wallForeign['w1']).toEqual({ cx: 6, cy: 2, reflectance: 0.9 });
+    const out = exportWalls(imported.walls, imported.wallForeign)[0];
+    expect(out.cx).toBe(6);
+    expect(out.cy).toBe(2);
+    expect(out.reflectance).toBe(0.9);
+  });
+
+  it('schreibt die eigene Wandfarbe, die es bisher verschwieg', () => {
+    // `color` modelliert MultiCam selbst und liess es trotzdem weg: eine blau
+    // gestrichene Wand kam nach einem Venue-Round-Trip grau zurueck.
+    const out = exportWalls([
+      { id: 'w1', x1: 0, y1: 0, x2: 5, y2: 0, height: 3, label: '', color: '#3366ff' },
+    ] as unknown as Wall[])[0];
+    expect(out.color).toBe('#3366ff');
+  });
+
+  it('liest die Wandfarbe auch wieder ein', () => {
+    expect(fromVenueExchange(wallVenue()).walls[0].color).toBe('#3366ff');
+  });
+
+  it('hebt fuer eine gerade Wand ohne Reflexionsgrad nichts auf', () => {
+    const imported = fromVenueExchange(
+      wallVenue({ cx: undefined, cy: undefined, reflectance: undefined }),
+    );
+    expect(imported.wallForeign).toEqual({});
+  });
+
+  it('rettet die eigenen Wand-Muster vor der Projektion (Regel 2)', () => {
+    // Der Kern: importVenueExchange setzte `walls` im Ganzen neu, und jeder
+    // Venue-Import loeschte damit die Muster, die der Nutzer eingerichtet hatte.
+    const own = [{
+      id: 'w1', x1: 0, y1: 0, x2: 5, y2: 0, height: 3, label: '',
+      pattern: 'image', patternImage: 'data:image/png;base64,AAA',
+      patternFit: 'stretch', patternRows: 4,
+    }] as unknown as Wall[];
+    const merged = mergeOwnWallFields(fromVenueExchange(wallVenue()), { walls: own });
+    expect(merged.walls[0].pattern).toBe('image');
+    expect(merged.walls[0].patternImage).toBe('data:image/png;base64,AAA');
+    expect(merged.walls[0].patternFit).toBe('stretch');
+    expect(merged.walls[0].patternRows).toBe(4);
+  });
+
+  it('laesst die Projektion bei Geometrie und Farbe gewinnen', () => {
+    // Aufheben heisst nicht Einfrieren: hat der Nachbar die Wand verlaengert
+    // oder umgestrichen, gilt das.
+    const own = [{ id: 'w1', x1: 0, y1: 0, x2: 5, y2: 0, height: 3, label: '', color: '#ff0000' }] as unknown as Wall[];
+    const merged = mergeOwnWallFields(fromVenueExchange(wallVenue()), { walls: own });
+    expect(merged.walls[0].x2).toBe(12);
+    expect(merged.walls[0].color).toBe('#3366ff');
+  });
+
+  it('holt eine geloeschte Wand nicht zurueck', () => {
+    const own = [{ id: 'w9', x1: 0, y1: 0, x2: 1, y2: 0, height: 3, label: '' }] as unknown as Wall[];
+    const merged = mergeOwnWallFields(fromVenueExchange(wallVenue()), { walls: own });
+    expect(merged.walls.map((w) => w.id)).toEqual(['w1']);
   });
 });
