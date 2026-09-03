@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FiPlus, FiTrash2, FiKey, FiZap, FiX } from 'react-icons/fi';
 import { SENSORS } from '../../data/cameras';
 import type { Camera, SensorSize } from '../../types';
+import { isEstimate } from '../../types';
 
 /**
  * Shared form for both creating and editing a custom camera. Used inline in the
@@ -88,6 +89,10 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
   const [pendingKey, setPendingKey] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  // Der Beleg je Feld, wie ihn die Abfrage geliefert hat. Ohne ihn sah eine
+  // geratene Sensorbreite genauso aus wie eine aus dem Datenblatt — und die
+  // Sensormasse treiben die Bildwinkel-Rechnung.
+  const [aiSources, setAiSources] = useState<Camera['specSource']>(initial?.specSource);
 
   const addMode = () => setModes([...modes, { name: '', widthMm: '', heightMm: '' }]);
   const removeMode = (i: number) => setModes(modes.filter((_, idx) => idx !== i));
@@ -135,6 +140,7 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
       resolutions: initial?.resolutions ?? ['HD'],
       type,
       sensorModes: parsedModes.length > 0 ? parsedModes : undefined,
+      specSource: aiSources,
     });
   };
 
@@ -158,6 +164,12 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
   };
 
   const applyAiResult = (data: GeminiCameraResult) => {
+    if (Array.isArray(data.verification)) {
+      const entries = data.verification
+        .filter((v) => typeof v?.field === 'string' && typeof v?.source === 'string')
+        .map((v) => [v.field as string, { value: String(v.value ?? ''), source: v.source as string }] as const);
+      if (entries.length > 0) setAiSources(Object.fromEntries(entries));
+    }
     if (data.manufacturer && !manufacturer.trim()) setManufacturer(String(data.manufacturer));
     if (data.model && !model.trim()) setModel(String(data.model));
     if (typeof data.mount === 'string' && data.mount.trim()) {
@@ -266,6 +278,26 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
       {aiError && (
         <div className="text-[10px] text-bc-red bg-bc-red/10 border border-bc-red/30 rounded px-1.5 py-1">
           {aiError}
+        </div>
+      )}
+
+      {/* Woher die Werte stammen. Die Abfrage liefert je Feld eine Quelle;
+          ohne diese Liste stuende im Formular eine geratene Sensorbreite
+          genauso da wie eine aus dem Datenblatt — und sie treibt die
+          Bildwinkel-Rechnung. Schaetzungen sind eigens gekennzeichnet, weil
+          sie der Grund sind, warum es die Liste ueberhaupt braucht. */}
+      {aiSources && Object.keys(aiSources).length > 0 && (
+        <div className="text-[10px] border border-bc-line rounded px-1.5 py-1 space-y-0.5">
+          <div className="opacity-70">Herkunft der Werte — bitte prüfen:</div>
+          {Object.entries(aiSources).map(([field, entry]) => (
+            <div key={field} className="flex gap-1">
+              <span className={isEstimate(entry) ? 'text-bc-amber' : 'opacity-60'}>
+                {isEstimate(entry) ? '≈' : '✓'}
+              </span>
+              <span className="opacity-70">{field}:</span>
+              <span className="opacity-90 truncate" title={entry.source}>{entry.source}</span>
+            </div>
+          ))}
         </div>
       )}
 
@@ -523,8 +555,16 @@ function buildPrompt(manufacturer: string, model: string): string {
     '  "mount": "B4"|"EF"|"PL"|"E"|"MFT"|"RF"|"L"|"FZ"|"integrated"|"M12",',
     '  "adaptedMounts": string[],   // mount plates the body can swap to, excluding the native mount',
     '  "type": "broadcast"|"cinema"|"ptz"|"mirrorless"|"camcorder"|"eng",',
-    '  "sensorModes": [{ "name": string, "widthMm": number, "heightMm": number }]',
+    '  "sensorModes": [{ "name": string, "widthMm": number, "heightMm": number }],',
+    '  "verification": [{ "field": string, "value": string, "source": string }]',
     '}',
+    '',
+    'For EVERY field you deliver, add one entry to "verification" naming the',
+    'field, the value, and where it comes from — a concrete citation such as',
+    '"Sony FX9 spec sheet: 35.7 x 18.8 mm". If a value is not documented and',
+    'you are inferring it, say so and start the source with "estimate:". The',
+    'sensor dimensions drive the field-of-view calculation, so a guess that',
+    'looks like a datasheet reading is worse than no answer.',
     '',
     'Fill every field you can confirm; omit any you cannot. sensorModes should',
     "list ALL distinct hardware sensor crop modes the body exposes (e.g. URSA",
@@ -540,6 +580,8 @@ function buildPrompt(manufacturer: string, model: string): string {
 interface GeminiCameraResult {
   manufacturer?: string;
   model?: string;
+  /** Beleg je geliefertem Feld — siehe `Camera.specSource`. */
+  verification?: { field?: string; value?: string; source?: string }[];
   sensor?: { name?: string; widthMm: number; heightMm: number };
   mount?: string;
   adaptedMounts?: string[];

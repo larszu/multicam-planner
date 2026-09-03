@@ -46,7 +46,35 @@ export interface Camera {
    * the badge will show the adapter name with 0 stops loss and no crop.
    */
   mountAdapters?: Record<string, AdapterInfo>;
+  /**
+   * Woher die Kenndaten stammen — Feldname -> Beleg.
+   *
+   * WARUM. Die KI-Abfrage in `CustomCameraForm` holt Sensormasse, Mount und
+   * Crop-Modi und schrieb sie ohne jede Quellenangabe ins Formular. Die
+   * Sensormasse treiben die Bildwinkel- und Schaerfentiefe-Rechnung: eine
+   * geratene Zahl sah dort genauso aus wie eine aus dem Datenblatt und
+   * genauso wie eine von Hand getippte.
+   *
+   * Der `light-planner` fuehrt dasselbe Feld in derselben Form
+   * (`Fixture.specSource`). Das ist Absicht: eine Idee, ein Vokabular — zwei
+   * verschiedene fuer dieselbe Frage liefen unweigerlich auseinander.
+   *
+   * `value` ist der Wert, DEN DER BELEG STUETZT. Aendert der Nutzer das Feld
+   * danach, steht hier weiterhin der alte — und die Anzeige kann sagen, dass
+   * der Beleg nicht mehr passt, statt ihn still auf die neue Zahl zu beziehen.
+   */
+  specSource?: Record<string, { value: string; source: string }>;
 }
+
+/** Ein Beleg, dessen Wert nicht mehr zum Feld passt — der Nutzer hat es geaendert. */
+export const isStaleSource = (
+  entry: { value: string; source: string } | undefined,
+  current: unknown,
+): boolean => entry !== undefined && String(current) !== entry.value;
+
+/** Ein Beleg, der eine Schaetzung ist und keine Ablesung. */
+export const isEstimate = (entry: { source: string } | undefined): boolean =>
+  entry !== undefined && /gesch(ä|ae)tzt|estimat/i.test(entry.source);
 
 // ── Adapter result ──
 export interface AdapterInfo {
