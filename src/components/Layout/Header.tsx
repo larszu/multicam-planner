@@ -212,7 +212,14 @@ export default function Header({
     }).venue;
     const avplan = makeAvPlan({
       app: 'multicam-planner', appVersion: APP_VERSION, exportedAt: now, venue,
-      domains: { cameras: cameraDoc, lighting: s.avForeign.lighting, cabling: s.avForeign.cabling },
+      domains: {
+        // Fremde Slots zuerst: so kann ein gleichnamiger fremder Slot nie den
+        // eigenen ueberschreiben.
+        ...(s.avForeign.unknownDomains ?? {}),
+        cameras: cameraDoc,
+        lighting: s.avForeign.lighting,
+        cabling: s.avForeign.cabling,
+      },
     });
     const blob = new Blob([JSON.stringify(avplan, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
