@@ -476,7 +476,13 @@ export interface ProjectFile {
    * Import und Export ein vollstaendiger Verlust des Licht- und Kabelplans.
    * Opak durchgereicht, nie interpretiert.
    */
-  avForeign?: { lighting?: unknown; cabling?: unknown };
+  avForeign?: {
+    lighting?: unknown;
+    cabling?: unknown;
+    /** Slots, die das FORMAT nicht benennt — unveraendert mitgefuehrt, damit
+     *  sie nicht in jeder Richtung still verlorengehen (ADR-005). */
+    unknownDomains?: Record<string, unknown>;
+  };
   /**
    * ADR-005 — Buehnen-Felder aus einem eingelesenen Raum, die MultiCam nicht
    * modelliert (Podest-Hoehe, Drehung, Polygon-Umriss), je Buehnen-Id.

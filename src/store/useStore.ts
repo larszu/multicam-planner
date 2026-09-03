@@ -16,7 +16,7 @@ import {
   mergeOwnWallFields,
   mergeOwnPersonFields,
 } from '../utils/venueExchange';
-import type { AvPlan } from '../utils/avplan';
+import { pickUnknownDomains, type AvPlan } from '../utils/avplan';
 
 // Injected by Vite from package.json. In a release build that came through
 // the GitHub Actions workflow this matches the git release tag exactly,
@@ -39,7 +39,7 @@ export function buildProjectFile(s: {
   persons: ReferencePerson[];
   walls: Wall[];
   backgroundPlan: BackgroundPlan | null;
-  avForeign: { lighting?: unknown; cabling?: unknown };
+  avForeign: { lighting?: unknown; cabling?: unknown; unknownDomains?: Record<string, unknown> };
   stageForeign: Record<string, ForeignStageFields>;
   floorPlanForeign: ForeignFloorPlanFields;
   wallForeign: Record<string, ForeignWallFields>;
@@ -208,7 +208,7 @@ interface AppState {
   importVenueExchange: (ex: VenueExchange) => void;
   /** Fremde .avplan-Domaenen (lighting/cabling), die MultiCam nicht bearbeitet,
    *  aber beim Export 1:1 wieder mitgibt — damit nichts verloren geht. */
-  avForeign: { lighting?: unknown; cabling?: unknown };
+  avForeign: { lighting?: unknown; cabling?: unknown; unknownDomains?: Record<string, unknown> };
   stageForeign: Record<string, ForeignStageFields>;
   floorPlanForeign: ForeignFloorPlanFields;
   wallForeign: Record<string, ForeignWallFields>;
@@ -1065,6 +1065,15 @@ export const useStore = create<AppState>((set, get) => ({
       kind: 'venue-exchange', formatVersion: 1, app: avplan.app,
       appVersion: avplan.appVersion, exportedAt: avplan.exportedAt, venue: avplan.venue,
     });
-    set({ avForeign: { lighting: avplan.domains.lighting, cabling: avplan.domains.cabling } });
+    // ADR-005 — auch die Slots mitnehmen, die dieses Format gar nicht
+    // benennt. Vorher endeten sie hier: die Datei wurde angenommen, der
+    // fremde Inhalt war weg.
+    set({
+      avForeign: {
+        lighting: avplan.domains.lighting,
+        cabling: avplan.domains.cabling,
+        unknownDomains: pickUnknownDomains(avplan),
+      },
+    });
   },
 }));

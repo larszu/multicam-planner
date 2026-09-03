@@ -20,12 +20,47 @@ export interface AvPlan {
   appVersion: string;
   exportedAt: string;
   venue: AvVenue;
+  /**
+   * Die Domaenen-Slots. Die drei bekannten sind benannt; der Index-Zugang
+   * daneben ist die eigentliche Aenderung.
+   *
+   * VORHER ging ein vierter Slot — eine kuenftige Audio- oder Rigging-Domaene,
+   * eine App, die es noch nicht gibt — in JEDER der drei Richtungen verloren:
+   * `parseAvPlan` nahm die Datei an, die App baute `domains` beim Export aus
+   * genau den Slots neu, die sie kennt, und der Rest verschwand. Weder bewahrt
+   * noch verweigert noch gemeldet — alle drei Auswege aus ADR-005 Regel 3
+   * verfehlt.
+   */
   domains: {
     cameras?: unknown;
     lighting?: unknown;
     cabling?: unknown;
+    [slot: string]: unknown;
   };
 }
+
+/**
+ * Die Slots, die dieses Format benennt. Als Daten, nicht als Prosa: nur so
+ * kann `unknownDomainSlots` die Frage „was kenne ich hier nicht?" ueberhaupt
+ * stellen, und nur so faellt ein Guard auf, wenn ein vierter Slot benannt
+ * wird, ohne die Liste nachzuziehen.
+ */
+export const KNOWN_DOMAIN_SLOTS = ['cameras', 'lighting', 'cabling'] as const;
+
+/** Slot-Namen in dieser Datei, die das Format nicht benennt. */
+export const unknownDomainSlots = (plan: AvPlan): string[] =>
+  Object.keys(plan.domains ?? {})
+    .filter((slot) => !(KNOWN_DOMAIN_SLOTS as readonly string[]).includes(slot))
+    .filter((slot) => plan.domains[slot] !== undefined)
+    .sort();
+
+/** Die unbekannten Slots als eigenes Objekt — so wandern sie ins Projektfile. */
+export const pickUnknownDomains = (plan: AvPlan): Record<string, unknown> => {
+  const out: Record<string, unknown> = {};
+  for (const slot of unknownDomainSlots(plan)) out[slot] = plan.domains[slot];
+  return out;
+};
+
 
 export function makeAvPlan(args: {
   app: string;
