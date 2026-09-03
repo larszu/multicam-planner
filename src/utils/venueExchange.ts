@@ -245,6 +245,13 @@ export interface MultiCamVenueResult {
   wallForeign: Record<string, ForeignWallFields>;
   /** Siehe ForeignPersonFields. Nur Figuren mit wirklich fremden Werten. */
   personForeign: Record<string, ForeignPersonFields>;
+  /**
+   * ADR-005 — ob die Datei ueberhaupt Raum-Masse trug. `widthM`/`heightM` sind
+   * im Austauschformat OPTIONAL; `venue.widthM/heightM` oben stehen dann auf
+   * der Notloesung 20x12. Ohne dieses Flag ist der Unterschied zwischen
+   * „die Datei sagt 20x12" und „die Datei sagt nichts" nicht mehr sichtbar.
+   */
+  venueDimsInFile: boolean;
 }
 
 function floorPlanToBg(fp: VenueExchangeFloorPlan): BackgroundPlan {
@@ -267,6 +274,10 @@ export function fromVenueExchange(ex: VenueExchange): MultiCamVenueResult {
   return {
     venue: {
       name: v.name || 'Venue',
+      // Die 20x12 sind eine NOTLOESUNG fuer den Fall, dass gar kein Bestand
+      // da ist — nicht die Aussage der Datei. `venueDimsInFile` unten sagt,
+      // ob wirklich etwas dastand; `mergeOwnVenueDims` haelt sonst den
+      // eigenen Stand (ADR-005, Regel 2).
       widthM: v.widthM ?? 20,
       heightM: v.heightM ?? 12,
       stages: (v.stageObjects ?? []).map((s) => ({
@@ -287,6 +298,7 @@ export function fromVenueExchange(ex: VenueExchange): MultiCamVenueResult {
     floorPlanForeign: collectFloorPlanForeign(v.floorPlan),
     wallForeign: collectWallForeign(v.walls ?? []),
     personForeign: collectPersonForeign(v.persons ?? []),
+    venueDimsInFile: typeof v.widthM === 'number' || typeof v.heightM === 'number',
   };
 }
 
@@ -400,6 +412,29 @@ export function mergeOwnPersonFields(
       const o = mine.get(p.id);
       return o?.locked !== undefined ? { ...p, locked: o.locked } : p;
     }),
+  };
+}
+
+/**
+ * ADR-005, Regel 2 — eine Projektion darf nicht ueberschreiben.
+ *
+ * `widthM`/`heightM` sind im Austauschformat optional. Trug die Datei sie
+ * nicht, setzte der Import den Raum bisher auf die Notloesung 20x12 m —
+ * eine 45x30-m-Halle war nach dem Import eine andere Halle, und beim naechsten
+ * Export stand die erfundene Groesse als Tatsache in der Datei.
+ *
+ * Sagt die Datei nichts, bleibt der eigene Stand. Sagt sie etwas, gewinnt sie:
+ * fuer Existenz und Geometrie ist die Projektion kanonisch, genau wie bei
+ * Waenden und Figuren.
+ */
+export function mergeOwnVenueDims(
+  projected: MultiCamVenueResult,
+  own: { widthM: number; heightM: number },
+): MultiCamVenueResult {
+  if (projected.venueDimsInFile) return projected;
+  return {
+    ...projected,
+    venue: { ...projected.venue, widthM: own.widthM, heightM: own.heightM },
   };
 }
 

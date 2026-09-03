@@ -4,6 +4,7 @@ import {
   fromVenueExchange,
   mergeOwnWallFields,
   mergeOwnPersonFields,
+  mergeOwnVenueDims,
   parseVenueExchange,
   VENUE_EXCHANGE_KIND,
   VENUE_EXCHANGE_VERSION,
@@ -419,5 +420,69 @@ describe('ADR-005 — Pose und Blickrichtung ueberleben den MultiCam-Round-Trip'
     }] as unknown as ReferencePerson[];
     const merged = mergeOwnPersonFields(fromVenueExchange(personVenue()), { persons: own });
     expect(merged.persons.map((p) => p.id)).toEqual(['p1']);
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// ADR-005, Inkrement 4, Regel 2 — eine Datei ohne Raum-Masse setzt den Raum
+// nicht zurueck.
+//
+// `widthM`/`heightM` sind im Austauschformat OPTIONAL — der light-planner
+// modelliert die Raumgroesse gar nicht und schreibt sie nur, wenn er sie
+// vorher eingelesen hat (light#46). Kommt so eine Datei bei MultiCam an,
+// stand hier bisher die Notloesung:
+//
+//   widthM: v.widthM ?? 20,
+//   heightM: v.heightM ?? 12,
+//
+// ...und `importVenueExchange` setzte `venue: r.venue` als Ganzes. Eine
+// 45x30-m-Halle war nach dem Venue-Import also eine 20x12-m-Halle — und beim
+// naechsten Export stand die erfundene Groesse als Tatsache in der Datei, wo
+// sie vorher ausdruecklich gefehlt hatte.
+describe('Raum-Masse: was die Datei nicht sagt, setzt nichts zurueck', () => {
+  const ohneMasse = (): VenueExchange => ({
+    kind: 'venue-exchange', formatVersion: 1, app: 'light-planner',
+    appVersion: '1.0', exportedAt: 't',
+    venue: { name: 'Halle', persons: [], walls: [], stageObjects: [] },
+  });
+  const mitMassen = (widthM: number, heightM: number): VenueExchange => ({
+    ...ohneMasse(),
+    venue: { ...ohneMasse().venue, widthM, heightM },
+  });
+
+  it('merkt sich, ob die Datei ueberhaupt Masse trug', () => {
+    expect(fromVenueExchange(ohneMasse()).venueDimsInFile).toBe(false);
+    expect(fromVenueExchange(mitMassen(45, 30)).venueDimsInFile).toBe(true);
+  });
+
+  it('haelt den eigenen Raum, wenn die Datei schweigt', () => {
+    const merged = mergeOwnVenueDims(fromVenueExchange(ohneMasse()), { widthM: 45, heightM: 30 });
+    expect(merged.venue.widthM).toBe(45);
+    expect(merged.venue.heightM).toBe(30);
+  });
+
+  it('laesst die Datei gewinnen, wenn sie etwas sagt', () => {
+    // Fuer Existenz und Geometrie ist die Projektion kanonisch — genau wie
+    // bei Waenden und Figuren. Nur das Schweigen darf nicht ueberschreiben.
+    const merged = mergeOwnVenueDims(fromVenueExchange(mitMassen(12, 8)), { widthM: 45, heightM: 30 });
+    expect(merged.venue.widthM).toBe(12);
+    expect(merged.venue.heightM).toBe(8);
+  });
+
+  it('haelt den eigenen Stand auch, wenn nur eines der beiden Masse fehlt', () => {
+    // Teil-Angabe zaehlt als Aussage: wer widthM schreibt, hat den Raum
+    // vermessen. Sonst schluesse man aus einem fehlenden heightM auf
+    // „nichts gesagt" und ueberschriebe die gerade gelesene Breite.
+    const halb: VenueExchange = { ...ohneMasse(), venue: { ...ohneMasse().venue, widthM: 12 } };
+    const r = fromVenueExchange(halb);
+    expect(r.venueDimsInFile).toBe(true);
+    expect(mergeOwnVenueDims(r, { widthM: 45, heightM: 30 }).venue.widthM).toBe(12);
+  });
+
+  it('ohne eigenen Bestand bleibt die Notloesung — sie ist nur nicht mehr die Aussage der Datei', () => {
+    const r = fromVenueExchange(ohneMasse());
+    expect(r.venue.widthM).toBe(20);
+    expect(r.venue.heightM).toBe(12);
+    expect(r.venueDimsInFile).toBe(false);
   });
 });
