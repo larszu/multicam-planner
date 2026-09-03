@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import { loadJSON, saveJSON } from '../utils/storage';
 import type { InventoryItem, StorageNode, InventorySet, InventoryUnit } from './types';
 import type { InventorySnapshot } from './portable';
+import { mergeById } from './merge';
 
 const KEY = 'multicam:inventory';
 
@@ -76,11 +77,9 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     const inUnits = Array.isArray(snap.units) ? snap.units : [];
     const total = inItems.length + inNodes.length + inSets.length + inUnits.length;
     set((st) => {
-      const mergeById = <T extends { id: string }>(base: T[], add: T[]): T[] => {
-        const byId = new Map(base.map((x) => [x.id, x]));
-        for (const x of add) byId.set(x.id, x);
-        return [...byId.values()];
-      };
+      // ADR-005, Regel 2 — hier stand `byId.set(x.id, x)`: der eingehende
+      // Datensatz ersetzte den vorhandenen als Ganzes. Eine v1-Datei ohne
+      // `deviceTypeId` loeschte damit still die bestaetigte Typ-Identitaet.
       const next: Persisted = {
         items: mode === 'replace' ? inItems : mergeById(st.items, inItems),
         nodes: mode === 'replace' ? inNodes : mergeById(st.nodes, inNodes),

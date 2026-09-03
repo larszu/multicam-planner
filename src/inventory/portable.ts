@@ -3,10 +3,18 @@
 import type { InventoryItem, StorageNode, InventorySet, InventoryUnit } from './types';
 
 export const INVENTORY_FORMAT = 'avplan-inventory';
-// Version 2 (ADR-002): `InventoryItem.deviceTypeId`. Die Erhoehung schuetzt
-// vor stillem Verlust — ein Stand ohne das Feld wuerde eine Datei importieren
-// und beim Re-Export ohne das Feld zurueckschreiben. Mit der Version weigert
-// er sich stattdessen. Aeltere Dateien lesen wir unveraendert weiter.
+// Version 2 (ADR-002): `InventoryItem.deviceTypeId`.
+//
+// ADR-005, Inkrement 4 — hier stand als Begruendung, ein Stand ohne das Feld
+// wuerde es beim Re-Export verlieren. Das ist aus dem cable-planner kopiert
+// und trifft HIER nicht zu: dort baut `healItem` jeden Artikel Feld fuer Feld
+// neu auf, hier reicht die Kette parse -> Store -> serialize die Objekte
+// unveraendert durch, ein unbekanntes Feld ueberlebt also.
+//
+// Was die Version hier wirklich leistet: sie weist eine ZU NEUE Datei ab,
+// statt sie halb zu lesen. Die andere Richtung — eine zu ALTE Datei, die beim
+// Zusammenfuehren etwas WEGNIMMT — deckt sie nicht ab; dafuer ist `merge.ts`
+// da. Aeltere Dateien lesen wir unveraendert weiter.
 export const INVENTORY_FORMAT_VERSION = 2;
 
 export interface InventorySnapshot {
