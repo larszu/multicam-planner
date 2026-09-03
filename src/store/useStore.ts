@@ -7,6 +7,7 @@ import { loadJSON, saveJSON, saveJSONSafe } from '../utils/storage';
 import { dedupeIds, maxIdSuffix } from '../utils/idRepair';
 import {
   fromVenueExchange,
+  mergeOwnVenueDims,
   type VenueExchange,
   type ForeignStageFields,
   type ForeignFloorPlanFields,
@@ -1023,9 +1024,12 @@ export const useStore = create<AppState>((set, get) => ({
     // ADR-005, Regel 2 — die Projektion ist fuer Existenz und Geometrie
     // kanonisch, traegt aber MultiCams Wand-Muster nicht. Ohne die
     // Zusammenfuehrung loeschte jeder Venue-Import sie.
-    const r = mergeOwnPersonFields(
-      mergeOwnWallFields(fromVenueExchange(ex), { walls: get().walls }),
-      { persons: get().persons },
+    const r = mergeOwnVenueDims(
+      mergeOwnPersonFields(
+        mergeOwnWallFields(fromVenueExchange(ex), { walls: get().walls }),
+        { persons: get().persons },
+      ),
+      { widthM: get().venue.widthM, heightM: get().venue.heightM },
     );
     // Wie beim Laden eines Plans (#72): der Austausch bringt fremde Ids mit,
     // die Zaehler muessen dahinter stehen, sonst kollidiert das naechste neue
