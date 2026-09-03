@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { isEstimate, isStaleSource } from '../types';
+// Quelltext per `?raw` statt ueber node:fs — dieselbe Machart wie
+// `cameraListContract.test.ts`. `tsc -b` kennt hier keine Node-Typen, ein
+// `readFileSync` bricht also den Build, obwohl vitest damit laeuft.
+import formSrc from '../components/Sidebar/CustomCameraForm.tsx?raw';
 
 // ---------------------------------------------------------------------------
 // Confirmed-State-Disziplin (Initiative 10), hier in der Form, die dieser
@@ -26,8 +28,6 @@ import { isEstimate, isStaleSource } from '../types';
 // dieselbe Frage liefen unweigerlich auseinander.
 // ---------------------------------------------------------------------------
 
-const src = (rel: string) => readFileSync(resolve(__dirname, '..', rel), 'utf8');
-
 describe('Schaetzung und Ablesung sind unterscheidbar', () => {
   it('erkennt die Schaetzung in beiden Sprachen', () => {
     // Der Prompt verlangt „estimate:", der light-planner „geschätzt" — die
@@ -51,7 +51,7 @@ describe('Schaetzung und Ablesung sind unterscheidbar', () => {
 });
 
 describe('die Abfrage verlangt den Beleg ueberhaupt', () => {
-  const form = src('components/Sidebar/CustomCameraForm.tsx');
+  const form = formSrc;
 
   it('fordert im Prompt eine Quelle je Feld', () => {
     // Der Kern dieses Schritts. Ohne diese Zeilen liefert das Modell wieder
