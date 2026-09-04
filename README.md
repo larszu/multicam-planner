@@ -121,6 +121,19 @@ page. It can also be triggered manually via the Actions tab for testing.
 
 ---
 
+## 📚 Documentation
+
+- [`docs/MERGE_INTO_CABLE_PLANNER.md`](docs/MERGE_INTO_CABLE_PLANNER.md) — what
+  would have to change to integrate MulticamPlanner (or part of it) into
+  `cable-planner`.
+- [`docs/venue-suite-architecture.md`](docs/venue-suite-architecture.md) —
+  extends that guide with `light-planner` and a shared venue data model.
+
+`npm run docs:reachable` fails the build if a document under `docs/` is not
+reachable by links from an entry page. Both were orphaned until 2026-09-04.
+
+---
+
 ## ❤️ Support / Donate
 
 If MulticamPlanner saves you time on your next show, consider buying me a coffee:
