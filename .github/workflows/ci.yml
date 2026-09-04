@@ -37,3 +37,9 @@ jobs:
         run: npm test
       - name: Build (inkl. Type-Check)
         run: npm run build
+
+      # Beide Dokumente unter docs/ waren bis 2026-09-04 von keiner
+      # Einstiegsseite aus verlinkt. Ein Dokument, das nur findet, wer den
+      # Ordner durchblaettert, ist praktisch nicht vorhanden.
+      - name: Dokumentation ist auffindbar
+        run: npm run docs:reachable
