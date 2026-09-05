@@ -6,6 +6,7 @@
 //                         daraus "Als PDF sichern". Spart eine PDF-Library.
 import type { Shot, Shotlist } from '../types';
 import { TRANSITION_LABEL, transitionSeconds } from './cameraTransition';
+import { stampLine, type DocumentStamp } from './documentStamp';
 
 /** Kachel-Geometrie des Kontaktbogens in Pixeln. */
 const TILE_W = 480;
@@ -70,6 +71,7 @@ function clip(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): st
 export async function renderStoryboardSheet(
   shotlist: Shotlist,
   venueName?: string,
+  stamp?: DocumentStamp,
 ): Promise<HTMLCanvasElement> {
   const { shots } = shotlist;
   const { width, height } = contactSheetSize(shots.length);
@@ -95,6 +97,15 @@ export async function renderStoryboardSheet(
     .filter(Boolean)
     .join(' · ');
   ctx.fillText(sub, PAD, PAD + 32);
+  // Stand-Angabe rechts in der Kopfzeile (ADR-004). Rechtsbuendig, damit sie
+  // dem Titel nicht in die Quere kommt, wenn der Shotlist-Name lang ist.
+  if (stamp) {
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#6f7787';
+    ctx.font = '13px system-ui, sans-serif';
+    ctx.fillText(stampLine(stamp), width - PAD, PAD + 34);
+    ctx.textAlign = 'left';
+  }
 
   // Bilder parallel laden, damit der Bogen nicht seriell auf jedes wartet.
   const images = await Promise.all(shots.map((s) => (s.thumbnail ? loadImage(s.thumbnail) : null)));
@@ -163,8 +174,12 @@ export async function renderStoryboardSheet(
 }
 
 /** Loest den Download des Kontaktbogens als PNG aus. */
-export async function exportStoryboardPng(shotlist: Shotlist, venueName?: string): Promise<void> {
-  const canvas = await renderStoryboardSheet(shotlist, venueName);
+export async function exportStoryboardPng(
+  shotlist: Shotlist,
+  venueName?: string,
+  stamp?: DocumentStamp,
+): Promise<void> {
+  const canvas = await renderStoryboardSheet(shotlist, venueName, stamp);
   const url = canvas.toDataURL('image/png');
   const a = document.createElement('a');
   const safe = (shotlist.name || 'shotlist').replace(/[^\w-]+/g, '_');
@@ -181,7 +196,11 @@ const esc = (s: string) =>
   );
 
 /** Druckbares Storyboard-HTML (A4 quer, 2 Spalten). */
-export function buildStoryboardHtml(shotlist: Shotlist, venueName?: string): string {
+export function buildStoryboardHtml(
+  shotlist: Shotlist,
+  venueName?: string,
+  stamp?: DocumentStamp,
+): string {
   const tiles = shotlist.shots
     .map((shot, i) => {
       const img = shot.thumbnail
@@ -224,7 +243,14 @@ export function buildStoryboardHtml(shotlist: Shotlist, venueName?: string): str
   .meta { color: #555; font-size: 9pt; margin-top: 0.8mm; }
   .meta.dim { color: #888; }
   .note { font-style: italic; color: #444; font-size: 9pt; margin-top: 1.2mm; }
+  /* Der Stempel steht auf JEDER Seite: ein Storyboard wird auseinandergerissen
+     und einzeln verteilt, und ein Blatt ohne Stand ist genau das Blatt, dessen
+     Alter niemand kennt. Ein fixiertes Element wird in einem @page-Kontext
+     pro Seite wiederholt. (Keine Backticks in diesem Kommentar: er steht in
+     einem Template-Literal und wuerde es beenden.) */
+  .stamp { position: fixed; bottom: 0; left: 0; right: 0; color: #888; font-size: 8pt; }
 </style></head><body>
+${stamp ? `<div class="stamp">${esc(stampLine(stamp))}</div>` : ''}
 <h1>${esc(shotlist.name || 'Shotlist')}</h1>
 <div class="sub">${sub}</div>
 <div class="grid">
@@ -237,8 +263,8 @@ ${tiles}
  * Oeffnet den nativen Druckdialog mit dem Storyboard ("Als PDF sichern").
  * Laeuft ueber ein verstecktes iframe, damit kein Popup-Blocker zuschlaegt.
  */
-export function printStoryboard(shotlist: Shotlist, venueName?: string): void {
-  const html = buildStoryboardHtml(shotlist, venueName);
+export function printStoryboard(shotlist: Shotlist, venueName?: string, stamp?: DocumentStamp): void {
+  const html = buildStoryboardHtml(shotlist, venueName, stamp);
   const frame = document.createElement('iframe');
   frame.style.position = 'fixed';
   frame.style.right = '0';

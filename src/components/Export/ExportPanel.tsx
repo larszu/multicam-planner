@@ -5,6 +5,8 @@ import { getLensById } from '../../data/lenses';
 import { computeFov, computeDof, personHeightInFrame } from '../../utils/fov';
 import { getExportRegistry } from '../../store/exportRegistry';
 import type { VenueCamera } from '../../types';
+import { cameraSheetFingerprint } from '../../utils/documentContent';
+import { stampForStand, stampLine } from '../../utils/documentStamp';
 
 export type ExportMode = 'current' | 'all' | 'widetele' | 'all-widetele';
 
@@ -98,7 +100,11 @@ export default function ExportPanel() {
     const tileW = (EW - padding * 3) / 2;
     const tileH = Math.round(tileW * 9 / 16);
     const calcH = 260;
-    const totalH = headerH + padding + tileH + padding + tileH + padding + calcH + padding;
+    // Eigenes Band fuer die Stempelzeile (ADR-004). Der vorhandene
+    // `padding`-Streifen unten sind 20 px -- eine 13-px-Zeile daringequetscht
+    // klebte am Rand und waere beim Beschneiden das erste, was wegfaellt.
+    const stampH = 30;
+    const totalH = headerH + padding + tileH + padding + tileH + padding + calcH + padding + stampH;
 
     const out = document.createElement('canvas');
     out.width = EW;
@@ -315,6 +321,53 @@ export default function ExportPanel() {
       col++;
       if (col >= 3) { col = 0; row++; }
     });
+
+    // ── Stempelzeile (ADR-004) ──
+    // Was auf DIESEM Blatt steht, geht ein: die eigene Kamera samt Optik und
+    // Aufstellung, die Notiz, und die Kameraliste am Fuss -- die ist auf der
+    // Karte zu sehen, also gehoert sie in den Fingerabdruck. Die Kachelbilder
+    // brauchen keine eigenen Zeilen: sie sind Renderings genau dieses
+    // Zustands und wuerden dieselben Zeilen liefern.
+    //
+    // Keine Revision und damit keine Abweichungs-Behauptung (Regel 2): der
+    // MultiCam-Planner zaehlt Aenderungen (`projectVersion`), statt Staende
+    // festzuschreiben. Diese Zahl steht bereits in der Kopfzeile -- sie kann
+    // aber kollidieren, wenn zwei Leute dieselbe Datei unterschiedlich
+    // weiterbearbeiten. Genau diese Luecke schliesst der Fingerabdruck.
+    const stamp = stampForStand({
+      project: venue.name || 'MultiCam',
+      current: cameraSheetFingerprint({
+        label: `${targetCam.label}${variant}`,
+        camera: `${camDef.manufacturer} ${camDef.model}`,
+        lens: `${lensDef.manufacturer} ${lensDef.model}`,
+        optik: [
+          focalLength, targetCam.extenderActive, targetCam.aperture, targetCam.focusDistance,
+          sensor.name, sensor.widthMm, sensor.heightMm, camDef.mount, targetCam.activeMount ?? '',
+          targetCam.useSpeedbooster ? 'sb' : '', targetCam.sensorModeIndex ?? '',
+          fov.horizontalDeg.toFixed(2), fov.verticalDeg.toFixed(2),
+          dof.nearLimit.toFixed(2), String(dof.farLimit), dof.hyperfocal.toFixed(2),
+          personPx.toFixed(0),
+        ],
+        position: [targetCam.x, targetCam.y, targetCam.z, targetCam.pan, targetCam.tilt],
+        adapter: adapterInfo?.name,
+        notes: targetCam.notes ?? '',
+        alle: cameras.map((c) => {
+          const cd = getCameraById(c.cameraId, useStore.getState().customCameras);
+          const ld = getLensById(c.lensId, useStore.getState().customLenses);
+          return {
+            id: c.id,
+            label: c.label,
+            camera: cd ? `${cd.manufacturer} ${cd.model}` : '',
+            lens: ld ? `${ld.manufacturer} ${ld.model}` : '',
+          };
+        }),
+      }),
+      now: new Date(),
+    });
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '13px monospace';
+    ctx.fillText(stampLine(stamp), padding, totalH - stampH + 18);
 
     // ── Download ──
     const filename = `${targetCam.label.replace(/\s+/g, '_')}${opts?.variantLabel ? `_${opts.variantLabel.replace(/\s+/g, '_')}` : ''}_${venue.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_v${projectVersion}.png`;

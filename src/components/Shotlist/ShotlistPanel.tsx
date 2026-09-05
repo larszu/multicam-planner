@@ -26,6 +26,8 @@ import {
 } from '../../utils/motionProfile';
 import { MOUNT_TYPE_LABELS, type CameraMountType } from '../../types';
 import { exportStoryboardPng, printStoryboard, shotOpticsLabel } from '../../utils/storyboard';
+import { storyboardFingerprint } from '../../utils/documentContent';
+import { stampForStand } from '../../utils/documentStamp';
 import type { Shot } from '../../types';
 
 /**
@@ -195,17 +197,36 @@ export default function ShotlistPanel() {
     return () => window.removeEventListener('keydown', onKey);
   }, [step]);
 
+  /**
+   * Stand-Angabe fuer das Storyboard (ADR-004). Der MultiCam-Planner kennt
+   * keinen festgeschriebenen Stand — er zaehlt Aenderungen, statt sie
+   * festzuschreiben. Also nennt der Stempel keine Revision und behauptet keine
+   * Abweichung (Regel 2): kein Bezugspunkt, keine Aussage. Was er sagt, ist
+   * genau die Frage von der Baustelle: Projekt, Zeitpunkt, acht Zeichen.
+   */
+  const stempel = useCallback(
+    () =>
+      list
+        ? stampForStand({
+            project: venue.name || list.name || 'Storyboard',
+            current: storyboardFingerprint(list),
+            now: new Date(),
+          })
+        : undefined,
+    [list, venue.name],
+  );
+
   const doExportPng = useCallback(async () => {
     if (!list || list.shots.length === 0) return;
     setBusy(true);
     try {
-      await exportStoryboardPng(list, venue.name);
+      await exportStoryboardPng(list, venue.name, stempel());
     } catch {
       flash('Export fehlgeschlagen.');
     } finally {
       setBusy(false);
     }
-  }, [flash, list, venue.name]);
+  }, [flash, list, stempel, venue.name]);
 
   const btn =
     'px-2 py-1 rounded text-[11px] border border-bc-border text-gray-300 hover:text-white hover:border-bc-accent/60 disabled:opacity-40 disabled:hover:text-gray-300 disabled:hover:border-bc-border transition-colors';
@@ -293,7 +314,7 @@ export default function ShotlistPanel() {
         </button>
         <button
           className={btn}
-          onClick={() => list && printStoryboard(list, venue.name)}
+          onClick={() => list && printStoryboard(list, venue.name, stempel())}
           disabled={!list || shots.length === 0}
           title="Storyboard drucken / als PDF sichern"
         >
