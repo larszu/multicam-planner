@@ -15,7 +15,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "docs:reachable": "node scripts/docs-reachable.mjs"
+    "docs:reachable": "node scripts/docs-reachable.mjs",
+    "actions:check": "node scripts/actions-node-runtime.mjs"
   },
   "build": {
     "appId": "com.larszu.multicamplanner",

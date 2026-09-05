@@ -21,12 +21,11 @@ on:
 permissions:
   contents: write
 
-# actions/checkout@v5 and actions/setup-node@v5 ship Node 24 natively. A few
-# JS actions (upload-artifact@v4, download-artifact@v4, action-gh-release@v2)
-# still lack a Node-24 release, so we force them onto Node 24 to silence the
-# runtime-deprecation warning. Drop this once those actions publish v5.
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+# Kein FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 mehr. Hier stand, upload-artifact,
+# download-artifact und action-gh-release haetten "still lack a Node-24
+# release" -- am 2026-09-05 galt das fuer keine einzige mehr (v6/v7, v7/v8, v3).
+# Der Satz war nicht bloss veraltet, er war die Begruendung dafuer, nicht
+# nachzusehen. `npm run actions:check` fragt jetzt die action.yml jedes Pins.
 
 jobs:
   build:
@@ -104,7 +103,7 @@ jobs:
         run: ls -lh release/ || true
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: multicam-planner-${{ matrix.name }}
           path: |
@@ -124,12 +123,12 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: artifacts
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             artifacts/**/*.exe
