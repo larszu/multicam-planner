@@ -43,3 +43,11 @@ jobs:
       # Ordner durchblaettert, ist praktisch nicht vorhanden.
       - name: Dokumentation ist auffindbar
         run: npm run docs:reachable
+
+      # Fragt die action.yml jedes Pins nach ihrer Node-Version, statt sie in
+      # einem Kommentar zu behaupten. Am 2026-09-05 liefen in `release.yml`
+      # drei Actions auf node20, und der Kommentar daneben begruendete das mit
+      # einem Stand, den es nicht mehr gab. Der Lauf folgt eine Ebene in
+      # Composite-Actions hinein -- dort steckt node20 sonst unsichtbar drin.
+      - name: Actions laufen auf einer unterstuetzten Node-Version
+        run: npm run actions:check
