@@ -6,6 +6,7 @@ import { LENSES, pickInitialMountAndLens } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
 import { loadJSON, saveJSON, saveJSONSafe } from '../utils/storage';
 import { dedupeIds, maxIdSuffix } from '../utils/idRepair';
+import { normaliseCardExtras } from '../utils/cameraCardExtras';
 import {
   fromVenueExchange,
   mergeOwnVenueDims,
@@ -1015,6 +1016,12 @@ export const useStore = create<AppState>((set, get) => ({
         ...c,
         useSpeedbooster: c.useSpeedbooster ?? false,
         mountType: c.mountType ?? 'tripod',
+        // Bedarfe 59/60/61 — Rigging, Comms und Kit normalisieren. Ein
+        // unbekannter Zugangs-Wert und eine Traglast, die keine Zahl ist,
+        // fliegen hier raus: beide stuenden sonst auf einem Blatt, nach dem
+        // sich jemand auf ein Podest stellt. Leere Bloecke werden ganz
+        // weggelassen, statt als `{}` in jeder Projektdatei zu liegen.
+        ...normaliseCardExtras(c),
       })),
       () => uid(),
     );

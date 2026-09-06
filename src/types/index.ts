@@ -251,6 +251,55 @@ export interface BackgroundPlan {
 }
 
 // ── Placed camera in the venue ──
+/**
+ * Wie der Operator an die Position kommt (Bedarf 59).
+ *
+ * `unstated` ist ein WERT und keine Luecke — dieselbe Regel wie bei der
+ * Archiv-Frage im Cable-Planner: „niemand hat es gesagt" ist etwas anderes als
+ * „ebenerdig". Ein Vorgabewert `none` liesse eine Position, an der eine Leiter
+ * gebraucht wird, wie eine harmlose aussehen.
+ */
+export type RiggingAccess = 'ladder' | 'stairs' | 'ramp' | 'level' | 'unstated';
+
+export interface RiggingSpec {
+  /** Podest/Praktikabel im Klartext („4×4 ft Intellistage"). */
+  riser?: string;
+  /** Hoehe der Standflaeche in Metern. */
+  riserHeightM?: number;
+  /**
+   * Traglast in kg, WIE SIE AUF DEM DATENBLATT STEHT.
+   *
+   * Wird nicht gerechnet und nicht geschaetzt. Podeste sind Standard-Mietware
+   * mit veroeffentlichten Werten (Intellistage, Proaim); wer keinen hat, hat
+   * keinen — und dann steht das da.
+   */
+  loadLimitKg?: number;
+  access?: RiggingAccess;
+  /** Welcher Stromkreis/welche Dose die Position versorgt. */
+  powerDrop?: string;
+  notes?: string;
+}
+
+/** Comms an einer Kameraposition (Bedarf 60). */
+export interface PositionComms {
+  /** Der Kanal, auf dem diese Position hoert. */
+  channel?: string;
+  /** Die Kennung des Beltpacks — damit zwei Positionen nicht dasselbe fordern. */
+  beltpackId?: string;
+  /** Antennenzone/Funkzelle, in der die Position liegt. */
+  antennaZone?: string;
+  /**
+   * Der Akku-Plan.
+   *
+   * Steht hier, weil der Beleg ihn ausdruecklich nennt: der Operator „cannot
+   * leave a tripod to change a beltpack battery". Eine Position, an der
+   * niemand waehrend der Show weg kann, braucht einen anderen Plan als eine
+   * am Gang — und dieser Unterschied ist eine Planungsentscheidung, keine
+   * Messung.
+   */
+  batteryPlan?: string;
+}
+
 export interface VenueCamera {
   id: string;
   label: string; // CAM 1, CAM 2 …
@@ -297,6 +346,36 @@ export interface VenueCamera {
    * pro Aufbau anders lang.
    */
   trackLengthM?: number;
+  /**
+   * Bedarf 59 — was an dieser Position gebaut werden muss.
+   *
+   *   > Riser/platform, height, load rating, ladder access and power are
+   *   > agreed verbally or in a separate staging order; THE CAMERA OP FINDS
+   *   > OUT ON SITE.
+   *
+   * Alle Felder optional und KEINES mit Vorgabewert: eine Traglast, die die
+   * Anwendung sich ausgedacht hat, steht auf einem Blatt, nach dem sich jemand
+   * auf ein Podest stellt. „Nicht angegeben" ist die einzige ehrliche Antwort,
+   * solange niemand nachgesehen hat — und die Kamerakarte sagt sie laut.
+   */
+  rigging?: RiggingSpec;
+  /**
+   * Bedarf 60 — Comms an dieser Position.
+   *
+   *   > Channel assignment is verbal; operators get lost on the wrong channel,
+   *   > hit dead zones at far positions, and cannot leave a tripod to change a
+   *   > beltpack battery.
+   */
+  comms?: PositionComms;
+  /**
+   * Bedarf 61 — was ausser Body und Optik an dieser Position steht.
+   *
+   * Eine Liste im Klartext, keine Artikelnummern: der Bedarf will, dass die
+   * Liste nicht ZWEIMAL getippt wird — nicht, dass dieser Planer einen
+   * Mietkatalog fuehrt. Die Zeilen wandern in den Kamerakarten-Ausdruck und in
+   * die `.avplan`, aus der der Cable-Planner die Bedarfsliste baut.
+   */
+  kit?: string[];
   /**
    * Preview drag-direction overrides. Persisted per camera so an operator with
    * a preferred swing direction keeps it across sessions.
