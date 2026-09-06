@@ -1,8 +1,10 @@
 # 🎥 MultiCam Planner
 
-A fast, focused broadcast camera & lens planning tool for multicam setups. Calculate FOV/DoF, plan camera positions in 2D & 3D, and preview live camera views. Available as a web app and Windows desktop application._
+A fast, focused broadcast camera & lens planning tool for multicam setups. Calculate FOV/DoF, plan camera positions in 2D & 3D, and preview live camera views. Available as a web app and Windows desktop application.
 
 [![Lizenz: proprietär](https://img.shields.io/badge/Lizenz-proprietär-critical.svg)](LICENSE)
+
+![MultiCam Planner – 2D-Grundriss mit Bühne, Kamera- und Objektpanel](docs/screenshot.png)
 
 ---
 
