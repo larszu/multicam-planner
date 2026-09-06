@@ -7,6 +7,13 @@ import { getExportRegistry } from '../../store/exportRegistry';
 import type { VenueCamera } from '../../types';
 import { cameraSheetFingerprint } from '../../utils/documentContent';
 import { presetRows } from '../../utils/ptzPresets';
+import {
+  UNSTATED,
+  cardExtraRows,
+  commsLines,
+  kitLines,
+  riggingLines,
+} from '../../utils/cameraCardExtras';
 import { stampForStand, stampLine } from '../../utils/documentStamp';
 
 export type ExportMode = 'current' | 'all' | 'widetele' | 'all-widetele';
@@ -253,6 +260,51 @@ export default function ExportPanel() {
       cy += lineH;
     });
 
+    // ── BEDARFE 59/60/61 — Rigging, Comms und Kit auf die Karte ──
+    //
+    // Diese Bloecke stehen IMMER da, auch wenn nichts eingetragen ist. Eine
+    // weggelassene Zeile liest sich als „gibt es nichts zu sagen"; genau daran
+    // scheitert der Zettel heute. „nicht angegeben" liest sich als Auftrag.
+    cy += 8;
+    ctx.fillStyle = '#3b82f6';
+    ctx.font = 'bold 13px monospace';
+    ctx.fillText('RIGGING', cx, cy);
+    cy += lineH;
+    ctx.font = '13px monospace';
+    ctx.fillStyle = '#e5e7eb';
+    for (const line of riggingLines(targetCam)) {
+      ctx.fillStyle = line.includes(UNSTATED) ? '#f59e0b' : '#e5e7eb';
+      ctx.fillText(line, cx, cy);
+      cy += lineH;
+    }
+
+    cy += 8;
+    ctx.fillStyle = '#3b82f6';
+    ctx.font = 'bold 13px monospace';
+    ctx.fillText('COMMS', cx, cy);
+    cy += lineH;
+    ctx.font = '13px monospace';
+    for (const line of commsLines(targetCam)) {
+      ctx.fillStyle = line.includes(UNSTATED) ? '#f59e0b' : '#e5e7eb';
+      ctx.fillText(line, cx, cy);
+      cy += lineH;
+    }
+
+    const kit = kitLines(targetCam);
+    if (kit.length > 0) {
+      cy += 8;
+      ctx.fillStyle = '#3b82f6';
+      ctx.font = 'bold 13px monospace';
+      ctx.fillText('KIT AN DIESER POSITION', cx, cy);
+      cy += lineH;
+      ctx.font = '13px monospace';
+      ctx.fillStyle = '#e5e7eb';
+      for (const k of kit) {
+        ctx.fillText(`· ${k}`, cx, cy);
+        cy += lineH;
+      }
+    }
+
     // ── Notes (only if filled) ──
     const notes = (targetCam.notes ?? '').trim();
     if (notes) {
@@ -398,6 +450,11 @@ export default function ExportPanel() {
         notes: targetCam.notes ?? '',
         // Was auf dem Blatt steht, geht ein.
         presets: presetZeilen.map((r) => [r.nummer, r.shot, r.segment, r.optik, r.stand]),
+        // Bedarfe 59/60/61 — dieselbe Regel: ein geaenderter Comms-Kanal ist
+        // ein anderes Blatt, auch wenn Kamera und Optik gleich blieben. Und
+        // genau dieser Fall ist der, bei dem jemand mit dem alten Zettel auf
+        // den falschen Kanal schaltet.
+        extras: cardExtraRows(targetCam),
         alle: cameras.map((c) => {
           const cd = getCameraById(c.cameraId, useStore.getState().customCameras);
           const ld = getLensById(c.lensId, useStore.getState().customLenses);

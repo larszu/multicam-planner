@@ -56,6 +56,15 @@ export const cameraSheetFingerprint = (input: {
    * der Fingerabdruck bleibt der, den dieselbe Karte vorher hatte.
    */
   presets?: StampCell[][];
+  /**
+   * Bedarfe 59/60/61 — Rigging, Comms und Kit der Position.
+   *
+   * Sie stehen auf dem Blatt, also gehen sie ein. Der Fall, um den es geht:
+   * zwei Karten derselben Kamera, gleiche Optik, gleiche Position — und ein
+   * anderer Comms-Kanal. Ohne diese Zeilen traegen beide denselben Stempel,
+   * und der Operator mit dem aelteren Blatt schaltet auf den falschen Kanal.
+   */
+  extras?: StampCell[][];
 }): string =>
   documentFingerprint(
     ['kamerakarte'],
@@ -64,6 +73,7 @@ export const cameraSheetFingerprint = (input: {
       ['optik', ...input.optik],
       ['pos', ...input.position],
       ...(input.presets ?? []).map((zeile) => ['preset', ...zeile] as StampCell[]),
+      ...(input.extras ?? []),
       ['adapter', input.adapter ?? ''],
       ['notiz', input.notes ?? ''],
       // Nach `id` sortiert: die Reihenfolge im Store ist eine
