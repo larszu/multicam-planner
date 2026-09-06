@@ -44,6 +44,18 @@ export const cameraSheetFingerprint = (input: {
   notes?: string;
   /** Die Kameraliste am Fuss der Karte. */
   alle: CameraSummaryRow[];
+  /**
+   * Bedarf 14 — die Preset-Tabelle, wenn die Karte eine zeigt.
+   *
+   * Sie steht auf dem Blatt, also geht sie ein. Genau darum geht es in
+   * diesem Modul: was zu SEHEN ist, muss in den Fingerabdruck. Eine Karte,
+   * auf der Preset 3 „Pult" heisst und eine zweite, auf der es „Publikum"
+   * heisst, sind zwei Blaetter — auch wenn Kamera und Optik gleich blieben.
+   *
+   * Leer, wenn die Karte keine Tabelle hat. Dann faellt der Block weg und
+   * der Fingerabdruck bleibt der, den dieselbe Karte vorher hatte.
+   */
+  presets?: StampCell[][];
 }): string =>
   documentFingerprint(
     ['kamerakarte'],
@@ -51,6 +63,7 @@ export const cameraSheetFingerprint = (input: {
       ['kopf', input.label, input.camera, input.lens],
       ['optik', ...input.optik],
       ['pos', ...input.position],
+      ...(input.presets ?? []).map((zeile) => ['preset', ...zeile] as StampCell[]),
       ['adapter', input.adapter ?? ''],
       ['notiz', input.notes ?? ''],
       // Nach `id` sortiert: die Reihenfolge im Store ist eine

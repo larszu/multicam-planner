@@ -342,6 +342,61 @@ export interface VenueCamera {
   notes?: string;
   /** When true, the camera marker can't be dragged in the 2D plan. */
   locked?: boolean;
+  /**
+   * Bedarf 14 -- die Presets einer PTZ-Kamera als PROJEKT-Dokumentation.
+   *
+   * Heute leben sie ausschliesslich im Geraetespeicher: eine Nummer, sonst
+   * nichts. Wer die Nummer nicht auswendig weiss, weiss nicht, welchen Shot
+   * sie liefert -- und wenn jemand die Kamera anfasst und das Preset nicht
+   * ueberschreibt, ist der abgerufene Shot live falsch, ohne Operator, der
+   * ihn rettet.
+   */
+  presets?: PtzPreset[];
+}
+
+/**
+ * Ein gespeichertes PTZ-Preset -- Nummer, benannter Shot, und der Zustand
+ * ZUM ZEITPUNKT DES SPEICHERNS.
+ *
+ * Warum der Zustand mitgeschrieben wird und nicht auf die Kamera verweist:
+ *
+ *   > A common cause of preset trouble is adjusting the camera's position or
+ *   > focus after saving it and then forgetting to overwrite that preset.
+ *
+ * Ein Preset, das auf die AKTUELLEN Werte der Kamera zeigt, koennte diesen
+ * Fall gar nicht bemerken -- es waere per Konstruktion immer aktuell und
+ * damit als Dokument wertlos. Nur weil hier steht, wie es beim Speichern
+ * aussah, laesst sich sagen, dass es seither nicht mehr stimmt.
+ */
+export interface PtzPreset {
+  /** Preset-Nummer im Geraet. Sie ist der Griff, den jemand am Pult tippt. */
+  number: number;
+  /** Der benannte Shot -- „Weit Buehne", „Pult", „Publikum links". Das ist
+   *  der eigentliche Inhalt dieses Bedarfs: aus einer Nummer wird eine
+   *  Auskunft. */
+  name: string;
+  /** Welches Segment des Ablaufs er bedient (Begruessung, Predigt, Band …).
+   *  Optional -- nicht jeder Shot gehoert zu genau einem Segment. */
+  segment?: string;
+  /** Schwenk in Grad, gleiche Konvention wie `VenueCamera.pan`. */
+  pan: number;
+  /** Neigung in Grad, gleiche Konvention wie `VenueCamera.tilt`. */
+  tilt: number;
+  /** Brennweite in mm zum Zeitpunkt des Speicherns. */
+  focalLength: number;
+  /** Fokusentfernung in Metern zum Zeitpunkt des Speicherns. */
+  focusDistance: number;
+  /** ISO-Zeitstempel des Speicherns. */
+  savedAt: string;
+  /**
+   * Wo die Kamera STAND, als das Preset gespeichert wurde.
+   *
+   * Pan und Tilt sind Winkel des Kamerakoerpers. Wird der Koerper versetzt,
+   * zeigt derselbe Winkel woanders hin -- jedes Preset der Kamera ist damit
+   * ueberholt, ohne dass sich am Preset etwas geaendert haette. Genau das ist
+   * der „nudge" aus dem Befund, und nur mit dieser Angabe faellt er auf.
+   */
+  savedAtPosition: { x: number; y: number; z: number };
 }
 
 // ── Stage / target zone ──

@@ -6,6 +6,7 @@ import { computeFov, computeDof, personHeightInFrame } from '../../utils/fov';
 import { getExportRegistry } from '../../store/exportRegistry';
 import type { VenueCamera } from '../../types';
 import { cameraSheetFingerprint } from '../../utils/documentContent';
+import { presetRows } from '../../utils/ptzPresets';
 import { stampForStand, stampLine } from '../../utils/documentStamp';
 
 export type ExportMode = 'current' | 'all' | 'widetele' | 'all-widetele';
@@ -104,7 +105,15 @@ export default function ExportPanel() {
     // `padding`-Streifen unten sind 20 px -- eine 13-px-Zeile daringequetscht
     // klebte am Rand und waere beim Beschneiden das erste, was wegfaellt.
     const stampH = 30;
-    const totalH = headerH + padding + tileH + padding + tileH + padding + calcH + padding + stampH;
+    // Bedarf 14 — die Preset-Tabelle bekommt eigene Hoehe, und zwar nur wenn
+    // es Presets GIBT. Ein fester Block waere auf jeder Karte ohne PTZ eine
+    // leere Flaeche, und die Karte ist ohnehin schon voll.
+    const presetZeilen = presetRows(targetCam);
+    const presetRowH = 18;
+    const presetH = presetZeilen.length > 0 ? 40 + presetZeilen.length * presetRowH + 12 : 0;
+    const totalH =
+      headerH + padding + tileH + padding + tileH + padding + calcH +
+      (presetH > 0 ? padding + presetH : 0) + padding + stampH;
 
     const out = document.createElement('canvas');
     out.width = EW;
@@ -322,6 +331,42 @@ export default function ExportPanel() {
       if (col >= 3) { col = 0; row++; }
     });
 
+    // ── PTZ-Presets (Bedarf 14) ──
+    // Nummer -> benannter Shot -> Segment, genau die drei Spalten des
+    // Bedarfs, plus Optik (ein Shot ohne Brennweite ist nicht nachstellbar)
+    // und Stand (nur damit ist „ist das noch aktuell?" beantwortbar).
+    if (presetH > 0) {
+      const py = summaryY + calcH + padding;
+      ctx.fillStyle = '#1a1d27';
+      ctx.fillRect(padding, py, EW - padding * 2, presetH);
+      ctx.strokeStyle = '#2a2d3a';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(padding, py, EW - padding * 2, presetH);
+
+      ctx.fillStyle = '#3b82f6';
+      ctx.font = 'bold 15px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText('PTZ-PRESETS', padding + 16, py + 24);
+
+      const spalten = [padding + 16, padding + 70, padding + 400, padding + 700, EW - padding - 120];
+      ctx.font = 'bold 12px monospace';
+      ctx.fillStyle = '#6b7280';
+      ['NR', 'SHOT', 'SEGMENT', 'OPTIK', 'STAND'].forEach((h, i) => ctx.fillText(h, spalten[i], py + 40));
+
+      ctx.font = '12px monospace';
+      presetZeilen.forEach((r, i) => {
+        const ry = py + 40 + (i + 1) * presetRowH;
+        ctx.fillStyle = '#93c5fd';
+        ctx.fillText(r.nummer, spalten[0], ry);
+        ctx.fillStyle = '#e5e7eb';
+        ctx.fillText(r.shot.substring(0, 40), spalten[1], ry);
+        ctx.fillStyle = '#9ca3af';
+        ctx.fillText((r.segment || '—').substring(0, 32), spalten[2], ry);
+        ctx.fillText(r.optik, spalten[3], ry);
+        ctx.fillText(r.stand, spalten[4], ry);
+      });
+    }
+
     // ── Stempelzeile (ADR-004) ──
     // Was auf DIESEM Blatt steht, geht ein: die eigene Kamera samt Optik und
     // Aufstellung, die Notiz, und die Kameraliste am Fuss -- die ist auf der
@@ -351,6 +396,8 @@ export default function ExportPanel() {
         position: [targetCam.x, targetCam.y, targetCam.z, targetCam.pan, targetCam.tilt],
         adapter: adapterInfo?.name,
         notes: targetCam.notes ?? '',
+        // Was auf dem Blatt steht, geht ein.
+        presets: presetZeilen.map((r) => [r.nummer, r.shot, r.segment, r.optik, r.stand]),
         alle: cameras.map((c) => {
           const cd = getCameraById(c.cameraId, useStore.getState().customCameras);
           const ld = getLensById(c.lensId, useStore.getState().customLenses);
