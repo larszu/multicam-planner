@@ -60,6 +60,28 @@ export interface InventoryItem {
   supplier?: string
   /** Eigentum (owned/rented/subhire). */
   ownership?: InventoryOwnership
+  /**
+   * Wann fremdes Material zurueckmuss (ISO-Datum, Bedarf 82).
+   *
+   * Der Bedarf zieht die Grenze selbst: „the achievable win is a flag on the
+   * inventory unit, NOT A SUPPLIER PORTAL. […] mark ownership and return date
+   * inside the job and stop there." Kein Bestellwesen — ein Datum.
+   *
+   * Und er sagt, warum: „the failure mode is not losing sub-hire gear, IT IS
+   * KEEPING IT THREE WEEKS TOO LONG." Jeder Tag darueber ist eine weitere
+   * Mietwoche.
+   *
+   * Ohne `ownership` ausser `owned` bedeutungslos.
+   *
+   * TEIL DES WIRE-CONTRACTS `avplan-inventory` und deshalb in ALLEN DREI Apps
+   * identisch. Die Formatversion bleibt bei 2: ein hinzugefuegtes OPTIONALES
+   * Feld ist in beide Richtungen vertraeglich (unbekannte Schluessel werden
+   * beim Lesen ignoriert, ein fehlendes ist erlaubt). Eine 3 haette dagegen
+   * jede aeltere App die Datei ABLEHNEN lassen — `parseInventory` verwirft
+   * `f.version > INVENTORY_FORMAT_VERSION` —, und zwar so lange, bis alle
+   * drei ausgeliefert sind.
+   */
+  returnDue?: string
   /** Fester Etiketten-Code (projektübergreifend). */
   code?: string
   /** Codeart des Etiketts (QR oder Barcode). */
