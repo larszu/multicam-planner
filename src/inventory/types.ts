@@ -219,8 +219,23 @@ export interface InventoryUnit {
   id: string
   /** Referenz auf das Artikel-Modell (`InventoryItem.id`). */
   itemId: string
-  /** Seriennummer (Hersteller oder intern). */
-  serial?: string
+  /**
+   * Die HERSTELLER-Seriennummer.
+   *
+   * Bedarf 107 — das Feld hiess „Hersteller ODER intern", und genau das ist
+   * der Defekt: ein Feld fuer zwei Identitaeten zwingt das Lager zur Wahl,
+   * und die andere landet mit Filzstift auf dem Case. Gebraucht werden beide,
+   * von verschiedenen Leuten: die Herstellernummer fuer Versicherung,
+   * Sub-Vermietung und Wartung, die Hausnummer fuer alles Interne.
+   */
+  serial?: string;
+  /**
+   * Die HAUS-EIGENE Referenz („AV-0421") — die Nummer, unter der dieses Haus
+   * die Einheit fuehrt. Steht NEBEN `serial` und nicht statt ihr; ein
+   * Altbestand, in dem die Hausnummer im `serial`-Feld steht, wird NICHT
+   * automatisch umgeraeumt.
+   */
+  houseRef?: string;
   /** Fester Etiketten-Code der Einheit. */
   code?: string
   codeType?: InventoryCodeType

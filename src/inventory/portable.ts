@@ -15,7 +15,13 @@ export const INVENTORY_FORMAT = 'avplan-inventory';
 // statt sie halb zu lesen. Die andere Richtung — eine zu ALTE Datei, die beim
 // Zusammenfuehren etwas WEGNIMMT — deckt sie nicht ab; dafuer ist `merge.ts`
 // da. Aeltere Dateien lesen wir unveraendert weiter.
-export const INVENTORY_FORMAT_VERSION = 2;
+//
+// Version 3 (Bedarf 107): `InventoryUnit.houseRef` — die haus-eigene Referenz
+// neben der Hersteller-Seriennummer. Die Erhoehung ist hier nicht optional,
+// auch wenn dieser Planer Felder unveraendert durchreicht: sie steht in
+// ALLEN DREI Apps auf demselben Wert, und bliebe sie hier auf 2, wiese dieser
+// Planer jede Datei ab, die der cable-planner ab jetzt schreibt.
+export const INVENTORY_FORMAT_VERSION = 3;
 
 export interface InventorySnapshot {
   items: InventoryItem[];
@@ -80,11 +86,40 @@ export function resolveInventoryCode(
 ): ScanMatch | null {
   const needle = norm(raw);
   if (!needle) return null;
-  const unit = src.units.find((u) => norm(u.code) === needle || norm(u.serial) === needle);
+  // Bedarf 107 — die Hausreferenz ist die wahrscheinlichste Eingabe von allen:
+  // sie klebt auf dem Case und wird abgetippt, wenn der Aufkleber unlesbar
+  // geworden ist.
+  const unit = src.units.find(
+    (u) => norm(u.code) === needle || norm(u.houseRef) === needle || norm(u.serial) === needle,
+  );
   if (unit) return { kind: 'unit', unit };
   const node = src.nodes.find((n) => norm(n.code) === needle);
   if (node) return { kind: 'node', node };
   const item = src.items.find((it) => norm(it.code) === needle);
   if (item) return { kind: 'item', item };
   return null;
+}
+
+/**
+ * Wie eine Einheit auf einem Blatt dieses Planers heisst (Bedarf 107).
+ *
+ * Dieser Planer zeigt Einheiten nur intern an — Scan-Treffer, Bestandsliste —
+ * also gilt hier durchgehend die HAUS-Sicht: die Hausreferenz vorne, weil sie
+ * die Nummer ist, die auf dem Case klebt. Fehlt sie, wird die Herstellernummer
+ * genommen und BENANNT: „S0134-77 (Herstellernummer)" ist eine Auskunft,
+ * dieselbe Nummer nackt waere eine Verwechslung.
+ *
+ * Die volle Regel mit beiden Lese-Richtungen steht im cable-planner
+ * (`lib/unitIdentity.ts`); dort werden auch Versicherungs- und Sub-Hire-Blätter
+ * gedruckt. Hier steht bewusst nur die Haelfte, die dieser Planer braucht —
+ * dieselbe Duplikation wie beim Format selbst, und mit demselben Grund.
+ */
+export function unitLabel(unit: InventoryUnit): string {
+  const house = unit.houseRef?.trim();
+  if (house) return house;
+  const serial = unit.serial?.trim();
+  if (serial) return `${serial} (Herstellernummer)`;
+  const code = unit.code?.trim();
+  if (code) return code;
+  return 'ohne Nummer';
 }

@@ -5,7 +5,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { FiX, FiPlus, FiTrash2, FiDownload, FiUpload, FiSearch } from 'react-icons/fi';
 import { useInventoryStore, type InventoryItemInput } from './store';
-import { serializeInventory, parseInventory, resolveInventoryCode } from './portable';
+import { serializeInventory, parseInventory, resolveInventoryCode, unitLabel } from './portable';
 import type { InventoryItem } from './types';
 
 interface Props {
@@ -86,7 +86,7 @@ export function InventoryDialog({ open, onClose }: Props) {
       setScanResult(`Artikel: ${m.item.model}`);
       setForm({ ...m.item });
     } else if (m.kind === 'node') setScanResult(`Lagerort: ${m.node.name}`);
-    else setScanResult(`Einheit: ${m.unit.serial || m.unit.code || m.unit.id.slice(0, 6)}`);
+    else setScanResult(`Einheit: ${unitLabel(m.unit)}`);
     setScan('');
   };
 

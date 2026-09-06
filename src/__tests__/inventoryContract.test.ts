@@ -26,12 +26,12 @@ import type { InventoryItem, StorageNode, InventorySet, InventoryUnit } from '..
 // Eingefrorener Contract — MUSS in allen drei Repos identisch sein.
 const CONTRACT = {
   format: 'avplan-inventory',
-  version: 2,
+  version: 3,
   envelopeKeys: ['app', 'exportedAt', 'format', 'items', 'nodes', 'sets', 'units', 'version'],
   itemKeys: ['category', 'code', 'codeType', 'createdAt', 'deviceTypeId', 'dimensions', 'id', 'locationId', 'manufacturer', 'materialKinds', 'model', 'notes', 'ownership', 'quantity', 'rentPricePerDay', 'returnDue', 'stockLocation', 'supplier', 'updatedAt'],
   nodeKeys: ['code', 'codeType', 'createdAt', 'dimensions', 'id', 'kind', 'name', 'notes', 'parentId', 'updatedAt'],
   setKeys: ['components', 'createdAt', 'id', 'name', 'notes', 'updatedAt'],
-  unitKeys: ['code', 'codeType', 'condition', 'createdAt', 'history', 'id', 'itemId', 'locationId', 'notes', 'serial', 'updatedAt'],
+  unitKeys: ['code', 'codeType', 'condition', 'createdAt', 'history', 'houseRef', 'id', 'itemId', 'locationId', 'notes', 'serial', 'updatedAt'],
 } as const;
 
 // Voll besetzte Muster-Entitaeten (jedes Feld gesetzt) — TS erzwingt, dass sie
@@ -54,7 +54,7 @@ const set: InventorySet = {
   notes: 'x', createdAt: 't', updatedAt: 't',
 };
 const unit: InventoryUnit = {
-  id: 'u1', itemId: 'i1', serial: 'SN-1', code: 'UNI-1', codeType: 'qr', locationId: 'n1',
+  id: 'u1', itemId: 'i1', serial: 'SN-1', houseRef: 'AV-0421', code: 'UNI-1', codeType: 'qr', locationId: 'n1',
   condition: 'ok', notes: 'x', history: [{ at: 't', kind: 'created', detail: 'x' }],
   createdAt: 't', updatedAt: 't',
 };
