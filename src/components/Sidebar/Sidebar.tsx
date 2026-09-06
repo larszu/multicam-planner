@@ -3,6 +3,7 @@ import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor, getCoverage
 import { LENSES, getLensById, getCompatibleLenses, pickInitialMountAndLens } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
 import { checkPresets, presetRows, type PresetFinding } from '../../utils/ptzPresets';
+import { conflictsForCamera, conflictText } from '../../utils/sightline';
 import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2, FiRotateCcw, FiHome, FiImage, FiColumns, FiUsers, FiVideo } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { BackgroundPlan, StageObjectType, Camera, CameraMountType, WallFit, WallPattern } from '../../types';
@@ -189,6 +190,9 @@ function CameraCard({
     savePresetFromCamera,
     updatePreset,
     removePreset,
+    walls,
+    persons,
+    venue,
   } = useStore();
   const cam = cameras.find((c) => c.id === camId)!;
   const isSelected = cam.id === selectedCameraId;
@@ -213,6 +217,15 @@ function CameraCard({
   // (`preserve-manual-memoization`) -- `cam` entsteht hier aus `cameras.find`
   // und ist bei jedem Render ein anderes Objekt.
   const presetBefunde = checkPresets(cam, { lens: lensDef, isPtz: istPtz });
+
+  // Bedarf 12 -- Sichtlinien-Konflikte dieser Kamera. Sie stehen hier und
+  // nicht in einem eigenen Dialog: der Konflikt entsteht beim SETZEN der
+  // Kamera, und eine Warnung, die man erst suchen muss, wird in der Probe
+  // gefunden statt in der Planung -- genau das, was der Bedarf beklagt.
+  const sichtKonflikte = conflictsForCamera(
+    { cameras: [cam], walls, persons, stages: venue.stages },
+    cam.id,
+  );
   const allLenses = [...LENSES, ...customLenses];
   // The active mount controls lens compatibility — when the user has swapped
   // the body's mount plate (e.g. URSA Broadcast B4 → EF), only lenses for
@@ -1121,6 +1134,21 @@ function CameraCard({
               </div>
             )}
           </Group>
+
+          {/* Bedarf 12 — was zwischen Kamera und Motiv steht.
+              Ohne eigene Gruppe und ohne Aufklappen: eine Sichtlinien-Sperre
+              ist kein Detail, das man sucht. Sie steht offen da, sobald es
+              eine gibt, und verschwindet, sobald sie weg ist. */}
+          {sichtKonflikte.length > 0 && (
+            <Note tone="warn">
+              <div className="font-medium">Sichtlinie versperrt</div>
+              <ul className="mt-0.5 space-y-0.5">
+                {sichtKonflikte.map((k) => (
+                  <li key={`${k.kind}-${k.obstacleId}`}>{conflictText(k)}</li>
+                ))}
+              </ul>
+            </Note>
+          )}
 
           {/* Bedarf 14 — die Presets als Dokumentation. Nur bei PTZ-Kameras:
               eine Handkamera speichert keine, und ein leeres Feld dafuer
