@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { VenueCamera, Venue, ViewTab, EditMode, ReferencePerson, BackgroundPlan, Stage, ProjectFile, VenueTemplate, StageObjectType, Lens, Wall, Camera, Shot, Shotlist, RigTake } from '../types';
+import type { VenueCamera, Venue, ViewTab, EditMode, ReferencePerson, BackgroundPlan, Stage, ProjectFile, VenueTemplate, StageObjectType, Lens, Wall, Camera, Shot, Shotlist, RigTake, PtzPreset } from '../types';
+import { presetFromCamera, nextPresetNumber } from '../utils/ptzPresets';
 import { CAMERAS, CAMERA_COLORS } from '../data/cameras';
 import { LENSES, pickInitialMountAndLens } from '../data/lenses';
 import { TEMPLATES } from '../data/templates';
@@ -123,6 +124,19 @@ interface AppState {
   addCamera: (cameraId?: string, lensId?: string) => void;
   removeCamera: (id: string) => void;
   updateCamera: (id: string, updates: Partial<VenueCamera>) => void;
+  /**
+   * Bedarf 14 — ein Preset aus der AKTUELLEN Stellung der Kamera speichern.
+   *
+   * Der Zustand wird kopiert und nicht verlinkt: nur so laesst sich spaeter
+   * sagen, dass die Kamera seither versetzt wurde. Ein Preset, das auf die
+   * aktuellen Werte zeigt, waere per Konstruktion immer aktuell — und als
+   * Dokument damit wertlos.
+   */
+  savePresetFromCamera: (id: string, name: string, segment?: string) => void;
+  /** Felder eines Presets aendern (Name, Segment, Nummer). */
+  updatePreset: (id: string, number: number, patch: Partial<Pick<PtzPreset, 'name' | 'segment' | 'number'>>) => void;
+  /** Ein Preset entfernen. */
+  removePreset: (id: string, number: number) => void;
   moveCamera: (id: string, x: number, y: number) => void;
   duplicateCamera: (id: string) => void;
 
@@ -615,6 +629,41 @@ export const useStore = create<AppState>((set, get) => ({
   updateCamera: (id, updates) =>
     set((s) => ({
       cameras: s.cameras.map((c) => (c.id === id ? { ...c, ...updates } : c)),
+      projectVersion: s.projectVersion + 1,
+    })),
+
+  savePresetFromCamera: (id, name, segment) =>
+    set((s) => ({
+      cameras: s.cameras.map((c) => {
+        if (c.id !== id) return c;
+        const presets = c.presets ?? [];
+        const neu = presetFromCamera(
+          c,
+          nextPresetNumber(presets),
+          name,
+          new Date().toISOString(),
+          segment,
+        );
+        return { ...c, presets: [...presets, neu] };
+      }),
+      projectVersion: s.projectVersion + 1,
+    })),
+
+  updatePreset: (id, number, patch) =>
+    set((s) => ({
+      cameras: s.cameras.map((c) =>
+        c.id === id
+          ? { ...c, presets: (c.presets ?? []).map((p) => (p.number === number ? { ...p, ...patch } : p)) }
+          : c,
+      ),
+      projectVersion: s.projectVersion + 1,
+    })),
+
+  removePreset: (id, number) =>
+    set((s) => ({
+      cameras: s.cameras.map((c) =>
+        c.id === id ? { ...c, presets: (c.presets ?? []).filter((p) => p.number !== number) } : c,
+      ),
       projectVersion: s.projectVersion + 1,
     })),
 

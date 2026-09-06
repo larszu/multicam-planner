@@ -2,6 +2,7 @@ import { useStore, OBJECT_PRESETS } from '../../store/useStore';
 import { CAMERAS, getCameraById, getAdapterInfo, getEffectiveSensor, getCoverageStatus, getSpeedBooster, speedBoosterExists } from '../../data/cameras';
 import { LENSES, getLensById, getCompatibleLenses, pickInitialMountAndLens } from '../../data/lenses';
 import { computeFov, computeDof } from '../../utils/fov';
+import { checkPresets, presetRows, type PresetFinding } from '../../utils/ptzPresets';
 import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2, FiRotateCcw, FiHome, FiImage, FiColumns, FiUsers, FiVideo } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { BackgroundPlan, StageObjectType, Camera, CameraMountType, WallFit, WallPattern } from '../../types';
@@ -141,6 +142,27 @@ function sortFavoritesFirst<T extends { id: string; manufacturer?: string; model
   });
 }
 
+/**
+ * Bedarf 14 — Befundtext. Ausgeschriebener `switch` und keine Schluessel-
+ * Zusammensetzung: dieser Planer hat kein i18n-Dict, aber die Regel „ein
+ * Text je Fall, im Quelltext lesbar" gilt hier genauso — eine aus dem
+ * `kind` gebaute Zeichenkette waere beim Suchen unauffindbar.
+ */
+const presetFindingText = (f: PresetFinding): string => {
+  switch (f.kind) {
+    case 'duplicate-number':
+      return `Preset ${f.number}: ${f.values?.[0] ?? ''}× vergeben — das Gerät hält nur eines`;
+    case 'unnamed':
+      return `Preset ${f.number} hat keinen Namen — dann ist es wieder nur eine Nummer`;
+    case 'focal-out-of-lens-range':
+      return `Preset ${f.number}: ${f.values?.[0] ?? ''} mm liegt außerhalb des Objektivs (${f.values?.[1] ?? ''}–${f.values?.[2] ?? ''} mm)`;
+    case 'camera-moved-since-save':
+      return `Preset ${f.number}: Kamera seit dem Speichern ${f.values?.[0] ?? ''} m versetzt — Pan/Tilt zeigen woanders hin`;
+    case 'not-a-ptz':
+      return 'Diese Kamera ist keine PTZ — sie speichert keine Presets';
+  }
+};
+
 function CameraCard({
   camId,
   expanded,
@@ -164,6 +186,9 @@ function CameraCard({
     favoriteLensIds,
     toggleFavoriteCameraId,
     toggleFavoriteLensId,
+    savePresetFromCamera,
+    updatePreset,
+    removePreset,
   } = useStore();
   const cam = cameras.find((c) => c.id === camId)!;
   const isSelected = cam.id === selectedCameraId;
@@ -174,9 +199,20 @@ function CameraCard({
   const [editingCustomCam, setEditingCustomCam] = useState<string | null>(null);
   const [showCalc, setShowCalc] = useState(false);
 
+  // Bedarf 14 — Presets. `istPtz` kommt aus dem Katalog-Datensatz und nicht
+  // aus dem Modellnamen: „PTZ" im Namen ist keine Eigenschaft des Geraets.
+  const [presetName, setPresetName] = useState('');
+  const [presetSegment, setPresetSegment] = useState('');
+
   const { customCameras, addCustomCamera } = useStore();
   const camDef = getCameraById(cam.cameraId, customCameras);
   const lensDef = getLensById(cam.lensId) ?? customLenses.find((l) => l.id === cam.lensId);
+  const istPtz = camDef?.type === 'ptz';
+  // Ohne `useMemo`: die Pruefung ist eine Schleife ueber eine Handvoll
+  // Presets, und der React-Compiler weist ein Memo auf `cam` zurueck
+  // (`preserve-manual-memoization`) -- `cam` entsteht hier aus `cameras.find`
+  // und ist bei jedem Render ein anderes Objekt.
+  const presetBefunde = checkPresets(cam, { lens: lensDef, isPtz: istPtz });
   const allLenses = [...LENSES, ...customLenses];
   // The active mount controls lens compatibility — when the user has swapped
   // the body's mount plate (e.g. URSA Broadcast B4 → EF), only lenses for
@@ -1085,6 +1121,97 @@ function CameraCard({
               </div>
             )}
           </Group>
+
+          {/* Bedarf 14 — die Presets als Dokumentation. Nur bei PTZ-Kameras:
+              eine Handkamera speichert keine, und ein leeres Feld dafuer
+              waere eine Frage, die niemand hat. */}
+          {istPtz && (
+            <Group
+              id="presets"
+              title="PTZ-Presets"
+              defaultOpen={false}
+              summary={(cam.presets?.length ?? 0) > 0 ? `${cam.presets!.length}` : undefined}
+            >
+              <div className="space-y-1.5 text-xs">
+                <p className="text-gray-400">
+                  Aus einer Nummer wird eine Auskunft. Gespeichert wird die Stellung von JETZT —
+                  wird die Kamera später versetzt, sagt die Liste es.
+                </p>
+
+                <div className="flex gap-1">
+                  <input
+                    className="min-w-0 flex-1 rounded border border-bc-border bg-bc-dark px-1.5 py-1 text-white"
+                    placeholder="Shot benennen (z. B. Weit Bühne)"
+                    aria-label="Name des Presets"
+                    value={presetName}
+                    onChange={(e) => setPresetName(e.target.value)}
+                  />
+                  <input
+                    className="w-24 rounded border border-bc-border bg-bc-dark px-1.5 py-1 text-white"
+                    placeholder="Segment"
+                    aria-label="Segment des Presets"
+                    value={presetSegment}
+                    onChange={(e) => setPresetSegment(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="rounded border border-bc-border px-2 py-1 text-gray-300 hover:text-white disabled:opacity-40"
+                    disabled={!presetName.trim()}
+                    onClick={() => {
+                      savePresetFromCamera(cam.id, presetName.trim(), presetSegment.trim() || undefined);
+                      setPresetName('');
+                      setPresetSegment('');
+                    }}
+                  >
+                    Speichern
+                  </button>
+                </div>
+
+                {presetRows(cam).length === 0 ? (
+                  <div className="text-gray-500">Noch kein Preset dokumentiert.</div>
+                ) : (
+                  <table className="w-full text-left">
+                    <tbody>
+                      {presetRows(cam).map((r) => (
+                        <tr key={r.nummer} className="border-t border-bc-border align-top">
+                          <td className="py-1 pr-1 font-mono text-blue-400">{r.nummer}</td>
+                          <td className="py-1 pr-1">
+                            <input
+                              className="w-full rounded border border-transparent bg-transparent px-0.5 text-white hover:border-bc-border"
+                              aria-label={`Name von Preset ${r.nummer}`}
+                              value={cam.presets?.find((p) => String(p.number) === r.nummer)?.name ?? ''}
+                              onChange={(e) => updatePreset(cam.id, Number(r.nummer), { name: e.target.value })}
+                            />
+                            <div className="text-gray-500">{r.optik}</div>
+                          </td>
+                          <td className="py-1 pr-1 text-gray-400">{r.segment || '—'}</td>
+                          <td className="py-1 pr-1 text-gray-500">{r.stand}</td>
+                          <td className="py-1 text-right">
+                            <button
+                              type="button"
+                              aria-label={`Preset ${r.nummer} entfernen`}
+                              className="text-gray-500 hover:text-red-400"
+                              onClick={() => removePreset(cam.id, Number(r.nummer))}
+                            >
+                              ×
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+
+                {presetBefunde.length > 0 && (
+                  <ul className="space-y-0.5 text-amber-400">
+                    {presetBefunde.map((f: PresetFinding, i: number) => (
+                      <li key={`${f.kind}-${f.number ?? i}`}>{presetFindingText(f)}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </Group>
+          )}
 
           <Group id="note" title="Notiz" defaultOpen={false} summary={cam.notes ? cam.notes.slice(0, 24) : undefined}>
             <textarea
