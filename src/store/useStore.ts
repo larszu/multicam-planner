@@ -7,6 +7,7 @@ import { TEMPLATES } from '../data/templates';
 import { loadJSON, saveJSON, saveJSONSafe } from '../utils/storage';
 import { dedupeIds, maxIdSuffix } from '../utils/idRepair';
 import { normaliseCardExtras } from '../utils/cameraCardExtras';
+import { normaliseCoverage } from '../utils/lensReach';
 import {
   fromVenueExchange,
   mergeOwnVenueDims,
@@ -1037,6 +1038,10 @@ export const useStore = create<AppState>((set, get) => ({
         // sich jemand auf ein Podest stellt. Leere Bloecke werden ganz
         // weggelassen, statt als `{}` in jeder Projektdatei zu liegen.
         ...normaliseCardExtras(c),
+        // Bedarf 58 — der Deckungsauftrag. Eine unlesbare Stufe fliegt ganz
+        // raus; eine Motiv-Kennung ohne Motiv BLEIBT, weil sie ein Befund ist
+        // und kein Ladefehler.
+        ...normaliseCoverage(c),
       })),
       () => uid(),
     );

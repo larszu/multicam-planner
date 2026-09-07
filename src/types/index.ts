@@ -459,6 +459,44 @@ export interface VenueCamera {
    * ihn rettet.
    */
   presets?: PtzPreset[];
+  /**
+   * Bedarf 58 — welchen Ausschnitt diese Position liefern MUSS.
+   *
+   *   > Lens choice per position is guessed from experience or checked ad hoc
+   *   > with an online focal-length calculator; the wrong glass shows up on
+   *   > the truck.
+   *
+   * Ohne diesen Auftrag ist die Frage „reicht die Optik?" nicht gestellt und
+   * damit auch nicht beantwortbar: `focalLength` ist der AKTUELLE Zustand des
+   * Reglers und keine Anforderung — gegen ihn geprueft waere jede Optik immer
+   * ausreichend, weil der Regler ihre Grenzen gar nicht verlassen kann.
+   *
+   * Deshalb optional und ohne Vorgabewert. `utils/lensReach.ts` rechnet.
+   */
+  coverage?: CoverageAssignment;
+}
+
+/** Auf welcher Achse gemessen wird. */
+export type ReachAxis = 'width' | 'height';
+
+/**
+ * Die Einstellungsgroessen (Bedarf 58).
+ *
+ * `footprint` ist der Fall aus dem Beleg — „10 ft of stage from about 100 ft":
+ * die volle Breite eines Motivs, nicht seine Hoehe. `custom` traegt ein
+ * eigenes Mass, damit die Konvention hinter den uebrigen Stufen ueberstimmbar
+ * bleibt statt geglaubt werden zu muessen.
+ */
+export type FramingName = 'wide' | 'full' | 'medium' | 'close' | 'detail' | 'footprint' | 'custom';
+
+export interface CoverageAssignment {
+  /** `ReferencePerson.id` — das Motiv, das diese Position liefern muss. */
+  subjectId: string;
+  framing: FramingName;
+  /** Nur bei `framing: 'custom'`: das geforderte Mass in Metern. */
+  extentM?: number;
+  /** Nur bei `framing: 'custom'`: auf welcher Achse. Sonst sagt es die Stufe. */
+  axis?: ReachAxis;
 }
 
 /**
