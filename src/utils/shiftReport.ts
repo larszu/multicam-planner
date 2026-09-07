@@ -55,6 +55,14 @@ import {
   shadingFindings,
   type ShadingFinding,
 } from './shadingCapability';
+import { PAINT_FUNCTION_LABEL } from './shadingCapability';
+import {
+  REGISTRY_FINDING_LABEL,
+  matchGroups,
+  registryFindings,
+  type MatchGroup,
+  type RegistryFinding,
+} from './paintRegistry';
 import { esc, printHtml } from './storyboard';
 import { stampLine, type DocumentStamp } from './documentStamp';
 
@@ -75,6 +83,16 @@ export const SHIFT_UNSTATED = PAINT_UNSTATED;
 /** Was in der Fehler-Spalte steht, wenn nichts gemeldet wurde. */
 export const NO_FAULTS = 'keine gemeldet';
 
+/**
+ * Was bei einer Abgleich-Gruppe steht, in der sich NICHTS gemeinsam
+ * einstellen laesst.
+ *
+ * Ein Satz und keine leere Zelle: eine leere Zelle liest sich als „noch nicht
+ * ausgefuellt", und genau dieser Fall ist der, in dem jemand in der Probe
+ * feststellt, dass die Gruppe nicht zusammengeht.
+ */
+export const NOTHING_SHARED = 'nichts — diese Gruppe ist vom Pult aus nicht abgleichbar';
+
 /** Ein Befund auf dem Blatt, egal aus welcher Pruefung er kommt. */
 export interface ShiftFinding {
   /** Kurzform der Art, wie sie in der jeweiligen Pruefung heisst. */
@@ -93,6 +111,12 @@ export interface ShiftRow {
   reference: string;
   /** Welches Bedienfeld diese Position schattiert. */
   panel: string;
+  /** Bedarf 47 — wo der Zustand am Geraet liegt, wenn er keine Datei ist. */
+  slot: string;
+  /** Bedarf 47 — auf welchem Body er gesetzt wurde. */
+  bodySerial: string;
+  /** Bedarf 47 — mit wem diese Position gleich aussehen soll. */
+  matchGroup: string;
   /** Was waehrend der Show kaputtgegangen ist. Leer heisst: nichts gemeldet. */
   faults: string[];
   /**
@@ -105,6 +129,11 @@ export interface ShiftRow {
 export interface ShiftReport {
   /** Eine Zeile je Position, nach Beschriftung sortiert. */
   rows: ShiftRow[];
+  /**
+   * Bedarf 47 — die Abgleich-Gruppen samt dem, was sich in ihnen ueberhaupt
+   * gemeinsam einstellen laesst. GERECHNET, nicht gefuehrt.
+   */
+  groups: MatchGroup[];
   /** Der Herkunfts-Satz. Steht IM Bericht, damit er mitgedruckt wird. */
   paintSource: typeof PAINT_SOURCE_NOTE;
   /** Positionen mit mindestens einem Befund — GERECHNET, nicht gefuehrt. */
@@ -128,6 +157,11 @@ const ausSchattierung = (f: ShadingFinding): ShiftFinding => ({
   text: f.text,
 });
 
+const ausRegister = (f: RegistryFinding): ShiftFinding => ({
+  label: REGISTRY_FINDING_LABEL[f.kind],
+  text: f.text,
+});
+
 /**
  * Das Blatt fuer die Uebergabe.
  *
@@ -147,6 +181,9 @@ export const buildShiftReport = (cameras: readonly VenueCamera[]): ShiftReport =
       setBy: text(p?.setBy),
       reference: text(p?.reference),
       panel: text(p?.panel),
+      slot: text(p?.slot),
+      bodySerial: text(p?.bodySerial),
+      matchGroup: text(cam.matchGroup),
       faults: (cam.faults ?? []).map((f) => f.trim()).filter(Boolean),
       findings: [
         ...checkPaint(cam, cameras).map(ausPaint),
@@ -156,6 +193,11 @@ export const buildShiftReport = (cameras: readonly VenueCamera[]): ShiftReport =
         // naechste Schicht greift sonst am Pult nach einem Regler, den es
         // fuer diese Kamera gar nicht gibt.
         ...shadingFindings(cam, cameras).map(ausSchattierung),
+        // Bedarf 47 — was der Wiederauffindbarkeit im Weg steht, und wo die
+        // Abgleich-Absicht nicht aufgeht. Auf dieses Blatt und nicht nur in
+        // die Leiste: die naechste Schicht sucht sonst eine Datei, die es
+        // unter keinem Namen gibt.
+        ...registryFindings(cam, cameras).map(ausRegister),
       ],
     };
   });
@@ -168,6 +210,7 @@ export const buildShiftReport = (cameras: readonly VenueCamera[]): ShiftReport =
 
   return {
     rows,
+    groups: matchGroups(cameras),
     paintSource: PAINT_SOURCE_NOTE,
     withFindings: rows.filter((r) => r.findings.length > 0),
   };
@@ -210,12 +253,39 @@ export const buildShiftReportHtml = (
     <tr><th>Gesetzt von</th><td>${esc(r.setBy)}</td></tr>
     <tr><th>Referenz</th><td>${esc(r.reference)}</td></tr>
     <tr><th>Bedienfeld</th><td>${esc(r.panel)}</td></tr>
+    <tr><th>Platz am Gerät</th><td>${esc(r.slot)}</td></tr>
+    <tr><th>Body-Nr.</th><td>${esc(r.bodySerial)}</td></tr>
+    <tr><th>Abgleich-Gruppe</th><td>${esc(r.matchGroup)}</td></tr>
     <tr><th>Fehler</th><td>${fehler}</td></tr>
     ${befunde}
   </table>
 </section>`;
     })
     .join('\n');
+
+  // Bedarf 47 — die Gruppen ans Ende, EINMAL. Sie sind eine Aussage ueber die
+  // Show und nicht ueber eine Position; an jeder Zeile wiederholt waeren sie
+  // dieselbe Tapete, die den Rest des Blattes mit ungelesen macht. Ohne
+  // Gruppen steht hier nichts: ein leerer Abschnitt „Abgleich-Gruppen" liest
+  // sich als „es gibt keine noetigen", und das ist eine Behauptung.
+  const gruppen =
+    report.groups.length === 0
+      ? ''
+      : `<section class="pos">
+  <h2>Abgleich-Gruppen</h2>
+  <table>
+${report.groups
+  .map((g) => {
+    const wer = g.members.map((m) => esc(m.label)).join(', ');
+    const kann =
+      g.shared.length > 0
+        ? g.shared.map((f) => esc(PAINT_FUNCTION_LABEL[f])).join(', ')
+        : `<span class="dim">${esc(NOTHING_SHARED)}</span>`;
+    return `    <tr><th>${esc(g.name)}</th><td>${wer}<br /><span class="dim">gemeinsam einstellbar:</span> ${kann}</td></tr>`;
+  })
+  .join('\n')}
+  </table>
+</section>`;
 
   const sub = [venueName, `${report.rows.length} Positionen`]
     .filter((v): v is string => !!v)
@@ -246,6 +316,7 @@ ${stamp ? `<div class="stamp">${esc(stampLine(stamp))}</div>` : ''}
 <div class="sub">${sub}</div>
 <div class="herkunft">${esc(report.paintSource)}</div>
 ${zeilen}
+${gruppen}
 </body></html>`;
 };
 

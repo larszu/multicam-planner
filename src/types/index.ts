@@ -528,6 +528,19 @@ export interface VenueCamera {
    * — und das ist der Satz, den der Bedarf abschaffen will.
    */
   controlPath?: ControlPath;
+  /**
+   * Bedarf 47 — welche Positionen gleich aussehen MUESSEN.
+   *
+   *   > Synchronize settings across multiple cameras for uniform color
+   *   > grading.  (companion-module-requests#1792, 25. Feb 2025)
+   *
+   * Ein freier Name („Buehne", „Publikum"), keine Kennung: Gruppen sind eine
+   * Absicht des Bildtechnikers und keine Eigenschaft der Anlage. Abgleichen
+   * laesst sich eine Gruppe nur ueber das, was JEDES ihrer Mitglieder
+   * fernsteuern kann — das rechnet `paintRegistry` gegen die Tabelle aus
+   * Bedarf 48 und meldet, wer herausfaellt.
+   */
+  matchGroup?: string;
 }
 
 /**
@@ -557,6 +570,29 @@ export interface PaintState {
    * waere eine zweite Wahrheit neben der auf dem Pult.
    */
   panel?: string;
+  /**
+   * Bedarf 47 — WO der Zustand liegt, wenn er keinen Dateinamen hat.
+   *
+   *   > Device-side storage is five unnamed slots on an SD card in an Arduino
+   *   > box; on vendor CCUs the scene file has no show/venue/lighting-state
+   *   > identity.
+   *
+   * Klartext („SD-Platz 3", „Scene File 05", „RCP-Speicher 2"), keine
+   * Nummerierung: welche Plaetze es gibt, weiss das Geraet, und eine hier
+   * erfundene Zaehlung waere eine zweite Wahrheit neben der auf dem Pult.
+   * Ein Zustand OHNE Datei und OHNE Platz ist nicht wiederfindbar — und
+   * genau das meldet `paintRegistry`.
+   */
+  slot?: string;
+  /**
+   * Bedarf 47 — auf WELCHEM Body er gesetzt wurde.
+   *
+   * `savedWith.cameraId` ist das MODELL. Stehen zwei gleiche Bodies in der
+   * Show, sagt es nicht, welcher es war — und eine Szenendatei traegt die
+   * Eigenheiten genau eines Sensors. Freitext, weil dieser Planer kein
+   * Serien-Register fuehrt; die Nummer steht auf dem Geraet.
+   */
+  bodySerial?: string;
   /** Womit sie abgeglichen wurde. Ohne das ist „passt noch" unbeantwortbar. */
   savedWith?: PaintContext;
   notes?: string;

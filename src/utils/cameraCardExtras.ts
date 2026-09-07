@@ -43,6 +43,7 @@ import type { RiggingAccess, VenueCamera } from '../types';
 import type { StampCell } from './documentStamp';
 import { PAINT_UNSTATED, paintLines } from './paintState';
 import { shadingLines } from './shadingCapability';
+import { registryLines } from './paintRegistry';
 
 export const ACCESS_LABEL: Readonly<Record<RiggingAccess, string>> = {
   ladder: 'Leiter',
@@ -143,6 +144,11 @@ export const cardExtraRows = (cam: VenueCamera): StampCell[][] => [
   // greift. Und zwei Karten derselben Position mit verschiedenen Wegen sind
   // zwei verschiedene Blaetter, auch wenn sonst alles gleich blieb.
   ['shading', ...shadingLines(cam)],
+  // Bedarf 47 — WO der Zustand liegt und auf welchem Body. Nur mit
+  // Bildzustand: eine Position ohne einen bekommt keine Frage nach seinem
+  // Platz gestellt. Zwei Karten mit demselben Dateinamen, aber verschiedenen
+  // Body-Nummern sind zwei verschiedene Blaetter.
+  ...(registryLines(cam).length > 0 ? [['registry', ...registryLines(cam)] as StampCell[]] : []),
 ];
 
 /**

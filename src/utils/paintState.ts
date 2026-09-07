@@ -269,6 +269,8 @@ export function normalisePaint(raw: unknown): Pick<VenueCamera, 'paint'> {
     ...(str(p.setBy) ? { setBy: str(p.setBy) } : {}),
     ...(str(p.reference) ? { reference: str(p.reference) } : {}),
     ...(str(p.panel) ? { panel: str(p.panel) } : {}),
+    ...(str(p.slot) ? { slot: str(p.slot) } : {}),
+    ...(str(p.bodySerial) ? { bodySerial: str(p.bodySerial) } : {}),
     ...(str(p.notes) ? { notes: str(p.notes) } : {}),
     ...(Object.keys(savedWith).length > 0 ? { savedWith } : {}),
   };

@@ -18,6 +18,7 @@ import { stampForStand, stampLine } from '../../utils/documentStamp';
 import { coverageLines, reachReport } from '../../utils/lensReach';
 import { paintLines } from '../../utils/paintState';
 import { shadingLines } from '../../utils/shadingCapability';
+import { registryLines } from '../../utils/paintRegistry';
 
 export type ExportMode = 'current' | 'all' | 'widetele' | 'all-widetele';
 
@@ -342,7 +343,10 @@ export default function ExportPanel() {
     // Bildzustand vorgesehen hat, bekommt keine Frage gestellt. MIT Eintrag
     // stehen alle vier Zeilen da, auch die leeren — eine weggelassene liest
     // sich als „dazu gibt es nichts zu sagen".
-    const bildZeilen = paintLines(targetCam);
+    // Bedarf 47 — Platz und Body-Nummer stehen im selben Block wie der
+    // Bildzustand: „wo ist er" ist die zweite Haelfte derselben Frage, und
+    // ein eigener Kasten daneben zerrisse sie.
+    const bildZeilen = [...paintLines(targetCam), ...registryLines(targetCam)];
     if (bildZeilen.length > 0) {
       cy += 8;
       ctx.fillStyle = '#3b82f6';
