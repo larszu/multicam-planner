@@ -50,6 +50,11 @@ import type { VenueCamera } from '../types';
 import { PAINT_UNSTATED, checkPaint, type PaintFinding } from './paintState';
 import { PAINT_FINDING_LABEL } from './paintState';
 import { CARD_FINDING_LABEL, cardFindings, type CardFinding } from './cameraCardExtras';
+import {
+  SHADING_FINDING_LABEL,
+  shadingFindings,
+  type ShadingFinding,
+} from './shadingCapability';
 import { esc, printHtml } from './storyboard';
 import { stampLine, type DocumentStamp } from './documentStamp';
 
@@ -118,6 +123,11 @@ const ausKarte = (f: CardFinding): ShiftFinding => ({
   text: f.text,
 });
 
+const ausSchattierung = (f: ShadingFinding): ShiftFinding => ({
+  label: SHADING_FINDING_LABEL[f.kind],
+  text: f.text,
+});
+
 /**
  * Das Blatt fuer die Uebergabe.
  *
@@ -141,6 +151,11 @@ export const buildShiftReport = (cameras: readonly VenueCamera[]): ShiftReport =
       findings: [
         ...checkPaint(cam, cameras).map(ausPaint),
         ...cardFindings(cam, cameras).map(ausKarte),
+        // Bedarf 48 — was diese Position ueber ihren Fernsteuerweg NICHT
+        // kann. Gehoert auf dieses Blatt und nicht nur in die Leiste: die
+        // naechste Schicht greift sonst am Pult nach einem Regler, den es
+        // fuer diese Kamera gar nicht gibt.
+        ...shadingFindings(cam, cameras).map(ausSchattierung),
       ],
     };
   });

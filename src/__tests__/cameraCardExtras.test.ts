@@ -11,6 +11,7 @@ import {
   riggingLines,
 } from '../utils/cameraCardExtras';
 import { paintLines } from '../utils/paintState';
+import { shadingLines } from '../utils/shadingCapability';
 import { cameraSheetFingerprint } from '../utils/documentContent';
 import type { VenueCamera } from '../types';
 import extrasQuelle from '../utils/cameraCardExtras.ts?raw';
@@ -230,11 +231,13 @@ describe('die Karte zeichnet die Blöcke', () => {
     //
     // Und die Zahl wird GERECHNET statt eingetragen: sie ist die Anzahl der
     // Zeilen-Bauer, die „nicht angegeben" liefern können (Rigging, Comms,
-    // Bildzustand). Eine feste 2 hätte beim vierten Block wieder rot gemeldet,
-    // ohne dass etwas kaputt gewesen wäre — und wer sie dann hochzählt, hat
-    // die Prüfung entwertet, statt sie zu erfüllen.
+    // Bildzustand, Schattierung). Eine feste 2 hätte beim vierten Block wieder
+    // rot gemeldet, ohne dass etwas kaputt gewesen wäre — und wer sie dann
+    // hochzählt, hat die Prüfung entwertet, statt sie zu erfüllen. Genau
+    // dieser Fall trat mit Bedarf 48 ein: der Block kam dazu, die Zahl wuchs
+    // von selbst mit.
     const leer = cam({ paint: { sceneFile: 'irgendeine.scene' } });
-    const bauer = [riggingLines, commsLines, paintLines];
+    const bauer = [riggingLines, commsLines, paintLines, shadingLines];
     const traegt = bauer.filter((f) => f(leer).some((l) => l.includes(UNSTATED)));
     const treffer = panelQuelle.match(/line\.includes\(UNSTATED\) \? '#f59e0b'/g) ?? [];
     expect(treffer).toHaveLength(traegt.length);

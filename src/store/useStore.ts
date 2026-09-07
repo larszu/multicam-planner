@@ -9,6 +9,7 @@ import { dedupeIds, maxIdSuffix } from '../utils/idRepair';
 import { normaliseCardExtras } from '../utils/cameraCardExtras';
 import { normaliseCoverage } from '../utils/lensReach';
 import { normalisePaint } from '../utils/paintState';
+import { normaliseControlPath } from '../utils/shadingCapability';
 import {
   fromVenueExchange,
   mergeOwnVenueDims,
@@ -1047,6 +1048,11 @@ export const useStore = create<AppState>((set, get) => ({
         // `savedWith` ohne brauchbare Werte ebenso, weil eine halbe
         // Abgleich-Angabe eine Pruefung vortaeuschte, die nicht stattfand.
         ...normalisePaint(c),
+        // Bedarf 48 — der Fernsteuerweg. Ein unbekannter Wert fliegt raus
+        // statt durchzurutschen: `shadingVerdict` schlaege sonst in einer
+        // Tabelle nach, die ihn nicht kennt, und die Karte behauptete eine
+        // Kann-Liste aus `undefined`.
+        ...normaliseControlPath(c),
       })),
       () => uid(),
     );

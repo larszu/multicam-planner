@@ -44,6 +44,10 @@ const cam = (over: Partial<VenueCamera> = {}): VenueCamera =>
     // Zeile fluten — geprueft wird hier das Uebergabe-Blatt, nicht sie.
     rigging: { riser: '4x4', riserHeightM: 0.4, loadLimitKg: 300, access: 'level', powerDrop: 'A1' },
     comms: { channel: 'C', beltpackId: 'BP1', batteryPlan: 'Wechsel 18:00' },
+    // Bedarf 48: ein Fernsteuerweg, der Farbtemperatur UND Schwarzabgleich
+    // kann — sonst meldete jede Zeile dieses Blattes zu Recht die beiden
+    // Luecken, und geprueft wuerde hier die Uebergabe, nicht sie.
+    controlPath: 'blackmagic',
     ...over,
   }) as VenueCamera;
 
