@@ -1,3 +1,5 @@
+import type { SourceIdentity } from '../utils/sourceIdentity';
+
 // ── Sensor ──
 export interface SensorSize {
   name: string;
@@ -421,6 +423,32 @@ export interface VenueCamera {
   notes?: string;
   /** When true, the camera marker can't be dragged in the 2D plan. */
   locked?: boolean;
+  /**
+   * BEDARF 130 — woran diese Kamera im Netz wiederzuerkennen ist.
+   *
+   *   > After a NIC outage and an OBS restart, NDI ports were reshuffled and
+   *   > receivers displayed incorrect scene labels — the label says one
+   *   > camera, the picture is another, so a shading correction lands on the
+   *   > WRONG camera.
+   *
+   * Beleg: `zbynekdrlik/camera-box#1180` (August 2026, im eigenen Tracker
+   * eines Live-Produktions-Teams als P0).
+   *
+   * Der PLAN ist die Autoritaet: hier steht, wie die Quelle heisst, und der
+   * Abgleich (`utils/sourceIdentity.ts`) haelt das gegen das, was im Netz
+   * wirklich da ist. Optional und ohne Vorgabewert — eine erfundene
+   * Geraete-Kennung waere schlimmer als keine: sie saehe aus wie ein Beweis.
+   */
+  source?: SourceIdentity;
+  /**
+   * BEDARF 130 — an welcher Stelle der Quellenliste sie beim letzten Mal
+   * stand.
+   *
+   * KEINE Identitaet. Sie steht hier nur, damit ein Positions-Treffer
+   * ueberhaupt benannt werden kann — und der Abgleich macht ihn nie gruen:
+   * genau diese Zuordnung wurde im Beleg vertauscht.
+   */
+  lastSourceIndex?: number;
   /**
    * Bedarf 14 -- die Presets einer PTZ-Kamera als PROJEKT-Dokumentation.
    *

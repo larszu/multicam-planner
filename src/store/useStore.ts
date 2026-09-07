@@ -126,6 +126,16 @@ interface AppState {
   removeCamera: (id: string) => void;
   updateCamera: (id: string, updates: Partial<VenueCamera>) => void;
   /**
+   * BEDARF 130 — die Quellenliste, wie sie im Empfaenger steht, eingelesen.
+   *
+   * Sie liegt im Store und NICHT im Projekt: sie ist die Wirklichkeit von
+   * heute Nachmittag und keine Planung. Wer sie mit abspeicherte, haette beim
+   * naechsten Aufbau einen Abgleich gegen den Zustand von vor drei Wochen —
+   * und der saehe gruen aus.
+   */
+  sourceListText: string;
+  setSourceListText: (t: string) => void;
+  /**
    * Bedarf 14 — ein Preset aus der AKTUELLEN Stellung der Kamera speichern.
    *
    * Der Zustand wird kopiert und nicht verlinkt: nur so laesst sich spaeter
@@ -370,6 +380,11 @@ const defaultVenue: Venue = {
 
 export const useStore = create<AppState>((set, get) => ({
   venue: defaultVenue,
+  sourceListText: '',
+  // Kein `projectVersion++`: die eingelesene Liste ist kein Teil des Projekts,
+  // und ein Tastendruck darin darf keinen Stand „geaendert" melden.
+  setSourceListText: (t) => set({ sourceListText: t }),
+
   setVenue: (v) => set((s) => ({ venue: v, projectVersion: s.projectVersion + 1 })),
 
   // ── Stages ──
