@@ -28,8 +28,8 @@ import formSrc from '../components/Sidebar/CustomCameraForm.tsx?raw';
 // dieselbe Frage liefen unweigerlich auseinander.
 // ---------------------------------------------------------------------------
 
-describe('Schaetzung und Ablesung sind unterscheidbar', () => {
-  it('erkennt die Schaetzung in beiden Sprachen', () => {
+describe('Schätzung und Ablesung sind unterscheidbar', () => {
+  it('erkennt die Schätzung in beiden Sprachen', () => {
     // Der Prompt verlangt „estimate:", der light-planner „geschätzt" — die
     // Erkennung muss beide tragen, sonst ist eine Schaetzung in einem der
     // beiden Planer stillschweigend eine Ablesung.
@@ -50,7 +50,7 @@ describe('Schaetzung und Ablesung sind unterscheidbar', () => {
   });
 });
 
-describe('die Abfrage verlangt den Beleg ueberhaupt', () => {
+describe('die Abfrage verlangt den Beleg überhaupt', () => {
   const form = formSrc;
 
   it('fordert im Prompt eine Quelle je Feld', () => {
@@ -78,7 +78,7 @@ describe('die Abfrage verlangt den Beleg ueberhaupt', () => {
     expect(form).toContain('isEstimate(entry)');
   });
 
-  it('behaelt einen vorhandenen Beleg beim Bearbeiten', () => {
+  it('behält einen vorhandenen Beleg beim Bearbeiten', () => {
     expect(form).toContain('initial?.specSource');
   });
 });

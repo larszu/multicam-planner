@@ -254,7 +254,7 @@ export function buildStoryboardHtml(
      und einzeln verteilt, und ein Blatt ohne Stand ist genau das Blatt, dessen
      Alter niemand kennt. Ein fixiertes Element wird in einem @page-Kontext
      pro Seite wiederholt. (Keine Backticks in diesem Kommentar: er steht in
-     einem Template-Literal und wuerde es beenden.) */
+     einem Template-Literal und würde es beenden.) */
   .stamp { position: fixed; bottom: 0; left: 0; right: 0; color: #888; font-size: 8pt; }
 </style></head><body>
 ${stamp ? `<div class="stamp">${esc(stampLine(stamp))}</div>` : ''}

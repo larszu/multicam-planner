@@ -348,7 +348,7 @@ export default function Header({
             className={`flex items-center gap-1.5 rounded-md text-xs font-medium transition-colors border ${
               editMode !== 'all' ? 'border-bc-yellow/60 bg-bc-yellow/15 text-bc-yellow' : 'border-bc-border bg-bc-dark text-gray-300 hover:text-white'
             }`}
-            title="Bearbeiten-Modus — sperrt alles ausser der gewaehlten Kategorie"
+            title="Bearbeiten-Modus — sperrt alles ausser der gewählten Kategorie"
           >
             <FiEdit2 size={13} />
             <span>{editModes.find((m) => m.id === editMode)?.label ?? 'All'}</span>

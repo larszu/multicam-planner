@@ -64,7 +64,7 @@ const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 export const MOTION_PROFILES: Record<CameraMountType, MotionProfile> = {
   tripod: {
     label: 'Stativ',
-    hint: 'Kurzer, praeziser Schwenk mit klarem Ein- und Ausstieg.',
+    hint: 'Kurzer, präziser Schwenk mit klarem Ein- und Ausstieg.',
     ease: easeCubic,
     maxTravelMps: 0.3, maxRotDps: 60, maxLiftMps: 0.15, maxZoomRatioPerS: 2.2,
     jitterDeg: 0, minDurationS: 0.4,
@@ -78,7 +78,7 @@ export const MOTION_PROFILES: Record<CameraMountType, MotionProfile> = {
   },
   pedestal: {
     label: 'Pedestal',
-    hint: 'Sauber gefuehrt, Saeule hebt/senkt gleichmaessig.',
+    hint: 'Sauber geführt, Säule hebt/senkt gleichmäßig.',
     ease: easeCubic,
     maxTravelMps: 0.8, maxRotDps: 50, maxLiftMps: 0.4, maxZoomRatioPerS: 2.0,
     jitterDeg: 0, minDurationS: 0.6,
@@ -92,7 +92,7 @@ export const MOTION_PROFILES: Record<CameraMountType, MotionProfile> = {
   },
   technocrane: {
     label: 'Technocrane',
-    hint: 'Teleskopierender Arm — weichste und laengste Fahrt.',
+    hint: 'Teleskopierender Arm — weichste und längste Fahrt.',
     ease: easeQuintic,
     // Teleskop faehrt real mit ~1.45 m/s (Techno 22).
     maxTravelMps: 1.45, maxRotDps: 30, maxLiftMps: 1.0, maxZoomRatioPerS: 1.6,
@@ -100,21 +100,21 @@ export const MOTION_PROFILES: Record<CameraMountType, MotionProfile> = {
   },
   dolly: {
     label: 'Dolly',
-    hint: 'Traege Masse: langer Anlauf, langes Ausrollen.',
+    hint: 'Träge Masse: langer Anlauf, langes Ausrollen.',
     ease: easeQuintic,
     maxTravelMps: 1.2, maxRotDps: 40, maxLiftMps: 0.25, maxZoomRatioPerS: 1.8,
     jitterDeg: 0, minDurationS: 1.0,
   },
   slider: {
     label: 'Slider',
-    hint: 'Kurzer, sehr gleichmaessiger Weg — feine Kontrolle.',
+    hint: 'Kurzer, sehr gleichmäßiger Weg — feine Kontrolle.',
     ease: easeCubic,
     maxTravelMps: 0.4, maxRotDps: 45, maxLiftMps: 0.1, maxZoomRatioPerS: 2.0,
     jitterDeg: 0, minDurationS: 0.8,
   },
   cablecam: {
     label: 'Cable-Cam',
-    hint: 'Fliegend an Seilen — weite, weiche Boegen, pendelt leicht nach.',
+    hint: 'Fliegend an Seilen — weite, weiche Bögen, pendelt leicht nach.',
     ease: easeSettle,
     maxTravelMps: 12, maxRotDps: 60, maxLiftMps: 6, maxZoomRatioPerS: 1.8,
     jitterDeg: 0.08, minDurationS: 1.5,
@@ -127,7 +127,7 @@ export const MOTION_PROFILES: Record<CameraMountType, MotionProfile> = {
     jitterDeg: 0.15, minDurationS: 1.0,
   },
   scissorlift: {
-    label: 'Hebebuehne',
+    label: 'Hebebühne',
     hint: 'Hebt langsam und ruhig; horizontal kaum beweglich.',
     ease: easeQuintic,
     maxTravelMps: 0.3, maxRotDps: 40, maxLiftMps: 0.35, maxZoomRatioPerS: 1.9,
@@ -135,7 +135,7 @@ export const MOTION_PROFILES: Record<CameraMountType, MotionProfile> = {
   },
   remotehead: {
     label: 'Remote-Head',
-    hint: 'Motorisch praezise, sehr schnelle Schwenks moeglich.',
+    hint: 'Motorisch präzise, sehr schnelle Schwenks möglich.',
     ease: easeCubic,
     maxTravelMps: 0.2, maxRotDps: 180, maxLiftMps: 0.1, maxZoomRatioPerS: 2.5,
     jitterDeg: 0, minDurationS: 0.2,
@@ -149,28 +149,28 @@ export const MOTION_PROFILES: Record<CameraMountType, MotionProfile> = {
   },
   rickshaw: {
     label: 'Rickshaw',
-    hint: 'Geschoben — gleichmaessig, aber nicht ganz ruhig.',
+    hint: 'Geschoben — gleichmäßig, aber nicht ganz ruhig.',
     ease: easeQuintic,
     maxTravelMps: 2.5, maxRotDps: 50, maxLiftMps: 0.2, maxZoomRatioPerS: 1.9,
     jitterDeg: 0.18, minDurationS: 1.0,
   },
   gimbal: {
     label: 'Gimbal',
-    hint: 'Weich gefuehrt, flinker als Steadicam.',
+    hint: 'Weich geführt, flinker als Steadicam.',
     ease: easeQuad,
     maxTravelMps: 1.6, maxRotDps: 90, maxLiftMps: 0.5, maxZoomRatioPerS: 2.0,
     jitterDeg: 0.05, minDurationS: 0.5,
   },
   steadicam: {
     label: 'Steadicam',
-    hint: 'Schwebend, laeuft leicht ueber und pendelt sich ein.',
+    hint: 'Schwebend, läuft leicht über und pendelt sich ein.',
     ease: easeSettle,
     maxTravelMps: 1.8, maxRotDps: 70, maxLiftMps: 0.6, maxZoomRatioPerS: 1.9,
     jitterDeg: 0.12, minDurationS: 0.8,
   },
   handheld: {
     label: 'Handheld',
-    hint: 'Nie ganz ruhig — feines Zittern ueberlagert die Fahrt.',
+    hint: 'Nie ganz ruhig — feines Zittern überlagert die Fahrt.',
     ease: easeQuad,
     maxTravelMps: 1.5, maxRotDps: 120, maxLiftMps: 0.7, maxZoomRatioPerS: 2.4,
     jitterDeg: 0.35, minDurationS: 0.3,

@@ -19,14 +19,14 @@ interface Item {
   notes?: string;
 }
 
-describe('mergeDefined — was die Datei nicht sagt, loescht nichts', () => {
-  it('haelt den vorhandenen Wert, wenn der eingehende undefined ist', () => {
+describe('mergeDefined — was die Datei nicht sagt, löscht nichts', () => {
+  it('hält den vorhandenen Wert, wenn der eingehende undefined ist', () => {
     const base: Item = { id: 'a', model: 'X', deviceTypeId: 'dt-1' };
     const over: Item = { id: 'a', model: 'X', deviceTypeId: undefined };
     expect(mergeDefined(base, over).deviceTypeId).toBe('dt-1');
   });
 
-  it('uebernimmt einen gesetzten Wert — auch leeren String, 0 und false', () => {
+  it('übernimmt einen gesetzten Wert — auch leeren String, 0 und false', () => {
     // Leerer String ist eine Aussage, undefined ist keine. Der Unterschied
     // ist der ganze Punkt.
     expect(mergeDefined({ notes: 'alt' }, { notes: '' }).notes).toBe('');
@@ -40,7 +40,7 @@ describe('mergeById — der eigentliche Fall', () => {
     { id: 'i2', model: 'SM58' },
   ];
 
-  it('eine aeltere v1-Datei loescht die bestaetigte deviceTypeId NICHT mehr', () => {
+  it('eine ältere v1-Datei löscht die bestätigte deviceTypeId NICHT mehr', () => {
     const v1: Item[] = [{ id: 'i1', model: 'ULXD2', deviceTypeId: undefined, notes: undefined }];
     const merged = mergeById(local, v1).find((x) => x.id === 'i1')!;
     expect(merged.deviceTypeId).toBe('dt-shure-ulxd2');
@@ -55,7 +55,7 @@ describe('mergeById — der eigentliche Fall', () => {
     expect(merged.deviceTypeId).toBe('dt-shure-ulxd2');
   });
 
-  it('haengt unbekannte Artikel an und haelt die Reihenfolge', () => {
+  it('hängt unbekannte Artikel an und hält die Reihenfolge', () => {
     const out = mergeById(local, [{ id: 'i9', model: 'Neu' }]);
     expect(out.map((x) => x.id)).toEqual(['i1', 'i2', 'i9']);
   });

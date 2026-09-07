@@ -34,7 +34,7 @@ const backgroundPlan: BackgroundPlan = {
 const input = { venue, persons, walls, backgroundPlan, appVersion: '0.4.0', exportedAt: '2026-06-30T00:00:00.000Z' };
 
 describe('venueExchange (MultiCam)', () => {
-  it('exportiert ein gueltiges venue-exchange-Dokument', () => {
+  it('exportiert ein gültiges venue-exchange-Dokument', () => {
     const ex = toVenueExchange(input);
     expect(ex.kind).toBe(VENUE_EXCHANGE_KIND);
     expect(ex.formatVersion).toBe(VENUE_EXCHANGE_VERSION);
@@ -49,7 +49,7 @@ describe('venueExchange (MultiCam)', () => {
     expect(ex.venue.floorPlan?.heightMeters).toBeCloseTo(0.02 * 700, 6);
   });
 
-  it('Round-Trip erhaelt das geteilte Venue (inkl. Floor-Plan-Skalierung)', () => {
+  it('Round-Trip erhält das geteilte Venue (inkl. Floor-Plan-Skalierung)', () => {
     const back = fromVenueExchange(toVenueExchange(input));
     expect(back.venue.name).toBe('Halle A');
     expect(back.venue.widthM).toBe(24);
@@ -108,7 +108,7 @@ describe('venueExchange (MultiCam)', () => {
 // kam nach einem MultiCam-Round-Trip als flacher Boden zurueck. Dieselbe
 // Klasse wie der Videohub-Dump: eine erfundene Zahl, keine fehlende.
 
-describe('ADR-005 — fremde Buehnen-Felder ueberleben den MultiCam-Round-Trip', () => {
+describe('ADR-005 — fremde Bühnen-Felder überleben den MultiCam-Round-Trip', () => {
   const foreignVenue = (over: Record<string, unknown> = {}) => ({
     kind: 'venue-exchange' as const,
     formatVersion: 1 as const,
@@ -140,11 +140,11 @@ describe('ADR-005 — fremde Buehnen-Felder ueberleben den MultiCam-Round-Trip',
     }).venue.stageObjects[0];
   };
 
-  it('gibt die Podest-Hoehe unveraendert zurueck', () => {
+  it('gibt die Podest-Höhe unverändert zurück', () => {
     expect(roundTrip().height).toBe(0.6);
   });
 
-  it('gibt Drehung und Polygon-Umriss zurueck', () => {
+  it('gibt Drehung und Polygon-Umriss zurück', () => {
     const points = [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }];
     const out = roundTrip({ rotation: 45, points, height2: 1.2 });
     expect(out.rotation).toBe(45);
@@ -152,7 +152,7 @@ describe('ADR-005 — fremde Buehnen-Felder ueberleben den MultiCam-Round-Trip',
     expect(out.height2).toBe(1.2);
   });
 
-  it('behaelt die eigene Geometrie als fuehrend', () => {
+  it('behält die eigene Geometrie als führend', () => {
     // Aufheben heisst nicht Einfrieren: was MultiCam MODELLIERT, gewinnt.
     const out = roundTrip();
     expect(out.x).toBe(1);
@@ -160,7 +160,7 @@ describe('ADR-005 — fremde Buehnen-Felder ueberleben den MultiCam-Round-Trip',
     expect(out.depth).toBe(4);
   });
 
-  it('hebt fuer eine flache Buehne nichts auf', () => {
+  it('hebt für eine flache Bühne nichts auf', () => {
     // Ein Eintrag je Buehne waere Ballast — und die Behauptung, es habe etwas
     // zu bewahren gegeben. Hoehe 0 ist genau der Wert, den der Export ohnehin
     // schreibt.
@@ -168,7 +168,7 @@ describe('ADR-005 — fremde Buehnen-Felder ueberleben den MultiCam-Round-Trip',
     expect(imported.stageForeign).toEqual({});
   });
 
-  it('schreibt weiterhin 0 fuer eine Buehne ohne aufgehobenen Wert', () => {
+  it('schreibt weiterhin 0 für eine Bühne ohne aufgehobenen Wert', () => {
     // Eine in MultiCam entstandene Buehne IST flach. Dort ist 0 zutreffend
     // und keine Erfindung.
     const out = toVenueExchange({
@@ -191,7 +191,7 @@ describe('ADR-005 — fremde Buehnen-Felder ueberleben den MultiCam-Round-Trip',
 // PDF-Grundriss nicht — aus Seite 3 von 5 eines gesperrten Plans wurde ein
 // namenloses, entsperrtes Bild ohne Seitenbezug.
 
-describe('ADR-005 — fremde Gebaeudeplan-Felder ueberleben den Round-Trip', () => {
+describe('ADR-005 — fremde Gebäudeplan-Felder überleben den Round-Trip', () => {
   const pdfVenue = (fp: Record<string, unknown> = {}) => ({
     kind: 'venue-exchange' as const,
     formatVersion: 1 as const,
@@ -220,11 +220,11 @@ describe('ADR-005 — fremde Gebaeudeplan-Felder ueberleben den Round-Trip', () 
     }).venue.floorPlan;
   };
 
-  it('behaelt die PDF-Herkunft statt alles zum Bild zu erklaeren', () => {
+  it('behält die PDF-Herkunft statt alles zum Bild zu erklären', () => {
     expect(roundTrip()?.kind).toBe('pdf');
   });
 
-  it('behaelt Seite, Seitenzahl, Name und Sperre', () => {
+  it('behält Seite, Seitenzahl, Name und Sperre', () => {
     const out = roundTrip();
     expect(out?.pageIndex).toBe(2);
     expect(out?.pageCount).toBe(5);
@@ -232,7 +232,7 @@ describe('ADR-005 — fremde Gebaeudeplan-Felder ueberleben den Round-Trip', () 
     expect(out?.locked).toBe(true);
   });
 
-  it('behaelt die eigene Kalibrierung als fuehrend', () => {
+  it('behält die eigene Kalibrierung als führend', () => {
     // Aufheben heisst nicht Einfrieren: Massstab und Versatz modelliert
     // MultiCam, die gewinnen.
     const out = roundTrip();
@@ -250,7 +250,7 @@ describe('ADR-005 — fremde Gebaeudeplan-Felder ueberleben den Round-Trip', () 
     expect(imported.floorPlanForeign).toEqual({});
   });
 
-  it('schreibt weiterhin kind image fuer einen eigenen Plan', () => {
+  it('schreibt weiterhin kind image für einen eigenen Plan', () => {
     const out = toVenueExchange({
       venue: { name: 'H', widthM: 10, heightM: 10, stages: [] },
       persons: [], walls: [],
@@ -269,7 +269,7 @@ describe('ADR-005 — fremde Gebaeudeplan-Felder ueberleben den Round-Trip', () 
 // ---------------------------------------------------------------------------
 // ADR-005 — der Wand-Datenpfad. Drei verschiedene Fehler an einer Stelle.
 
-describe('ADR-005 — Waende ueberleben den Venue-Round-Trip', () => {
+describe('ADR-005 — Wände überleben den Venue-Round-Trip', () => {
   const wallVenue = (over: Record<string, unknown> = {}) => ({
     kind: 'venue-exchange' as const, formatVersion: 1 as const, app: 'light-planner',
     appVersion: '1.0.0', exportedAt: 't',
@@ -291,7 +291,7 @@ describe('ADR-005 — Waende ueberleben den Venue-Round-Trip', () => {
     appVersion: '1.0.0', exportedAt: 't', wallForeign,
   } as never).venue.walls;
 
-  it('haelt Kruemmung und Reflexionsgrad ueber den Round-Trip', () => {
+  it('hält Krümmung und Reflexionsgrad über den Round-Trip', () => {
     // Eine fehlende Kruemmung heisst nicht "unbekannt", sondern GERADE — die
     // gebogene Wand kam als Strecke zurueck.
     const imported = fromVenueExchange(wallVenue());
@@ -315,7 +315,7 @@ describe('ADR-005 — Waende ueberleben den Venue-Round-Trip', () => {
     expect(fromVenueExchange(wallVenue()).walls[0].color).toBe('#3366ff');
   });
 
-  it('hebt fuer eine gerade Wand ohne Reflexionsgrad nichts auf', () => {
+  it('hebt für eine gerade Wand ohne Reflexionsgrad nichts auf', () => {
     const imported = fromVenueExchange(
       wallVenue({ cx: undefined, cy: undefined, reflectance: undefined }),
     );
@@ -337,7 +337,7 @@ describe('ADR-005 — Waende ueberleben den Venue-Round-Trip', () => {
     expect(merged.walls[0].patternRows).toBe(4);
   });
 
-  it('laesst die Projektion bei Geometrie und Farbe gewinnen', () => {
+  it('lässt die Projektion bei Geometrie und Farbe gewinnen', () => {
     // Aufheben heisst nicht Einfrieren: hat der Nachbar die Wand verlaengert
     // oder umgestrichen, gilt das.
     const own = [{ id: 'w1', x1: 0, y1: 0, x2: 5, y2: 0, height: 3, label: '', color: '#ff0000' }] as unknown as Wall[];
@@ -346,7 +346,7 @@ describe('ADR-005 — Waende ueberleben den Venue-Round-Trip', () => {
     expect(merged.walls[0].color).toBe('#3366ff');
   });
 
-  it('holt eine geloeschte Wand nicht zurueck', () => {
+  it('holt eine gelöschte Wand nicht zurück', () => {
     const own = [{ id: 'w9', x1: 0, y1: 0, x2: 1, y2: 0, height: 3, label: '' }] as unknown as Wall[];
     const merged = mergeOwnWallFields(fromVenueExchange(wallVenue()), { walls: own });
     expect(merged.walls.map((w) => w.id)).toEqual(['w1']);
@@ -362,7 +362,7 @@ describe('ADR-005 — Waende ueberleben den Venue-Round-Trip', () => {
 // `facing ?? 270` ein: eine sitzende, nach Osten blickende Figur stand nach
 // einem Round-Trip durch MultiCam und schaute nach vorn.
 
-describe('ADR-005 — Pose und Blickrichtung ueberleben den MultiCam-Round-Trip', () => {
+describe('ADR-005 — Pose und Blickrichtung überleben den MultiCam-Round-Trip', () => {
   const personVenue = (over: Record<string, unknown> = {}) => ({
     kind: 'venue-exchange' as const, formatVersion: 1 as const, app: 'light-planner',
     appVersion: '1.0.0', exportedAt: 't',
@@ -382,13 +382,13 @@ describe('ADR-005 — Pose und Blickrichtung ueberleben den MultiCam-Round-Trip'
     } as never).venue.persons[0];
   };
 
-  it('gibt Pose und Blickrichtung unveraendert zurueck', () => {
+  it('gibt Pose und Blickrichtung unverändert zurück', () => {
     const out = roundTrip();
     expect(out.pose).toBe('sitting');
     expect(out.facing).toBe(90);
   });
 
-  it('behaelt die eigene Geometrie als fuehrend', () => {
+  it('behält die eigene Geometrie als führend', () => {
     const out = roundTrip();
     expect(out.x).toBe(3);
     expect(out.height).toBe(1.75);
@@ -414,7 +414,7 @@ describe('ADR-005 — Pose und Blickrichtung ueberleben den MultiCam-Round-Trip'
     expect(merged.persons[0].x).toBe(3);
   });
 
-  it('holt eine geloeschte Figur nicht zurueck', () => {
+  it('holt eine gelöschte Figur nicht zurück', () => {
     const own = [{
       id: 'p9', x: 0, y: 0, height: 1.75, width: 0.5, label: '', objectType: 'person', locked: true,
     }] as unknown as ReferencePerson[];
@@ -439,7 +439,7 @@ describe('ADR-005 — Pose und Blickrichtung ueberleben den MultiCam-Round-Trip'
 // 45x30-m-Halle war nach dem Venue-Import also eine 20x12-m-Halle — und beim
 // naechsten Export stand die erfundene Groesse als Tatsache in der Datei, wo
 // sie vorher ausdruecklich gefehlt hatte.
-describe('Raum-Masse: was die Datei nicht sagt, setzt nichts zurueck', () => {
+describe('Raum-Masse: was die Datei nicht sagt, setzt nichts zurück', () => {
   const ohneMasse = (): VenueExchange => ({
     kind: 'venue-exchange', formatVersion: 1, app: 'light-planner',
     appVersion: '1.0', exportedAt: 't',
@@ -450,18 +450,18 @@ describe('Raum-Masse: was die Datei nicht sagt, setzt nichts zurueck', () => {
     venue: { ...ohneMasse().venue, widthM, heightM },
   });
 
-  it('merkt sich, ob die Datei ueberhaupt Masse trug', () => {
+  it('merkt sich, ob die Datei überhaupt Masse trug', () => {
     expect(fromVenueExchange(ohneMasse()).venueDimsInFile).toBe(false);
     expect(fromVenueExchange(mitMassen(45, 30)).venueDimsInFile).toBe(true);
   });
 
-  it('haelt den eigenen Raum, wenn die Datei schweigt', () => {
+  it('hält den eigenen Raum, wenn die Datei schweigt', () => {
     const merged = mergeOwnVenueDims(fromVenueExchange(ohneMasse()), { widthM: 45, heightM: 30 });
     expect(merged.venue.widthM).toBe(45);
     expect(merged.venue.heightM).toBe(30);
   });
 
-  it('laesst die Datei gewinnen, wenn sie etwas sagt', () => {
+  it('lässt die Datei gewinnen, wenn sie etwas sagt', () => {
     // Fuer Existenz und Geometrie ist die Projektion kanonisch — genau wie
     // bei Waenden und Figuren. Nur das Schweigen darf nicht ueberschreiben.
     const merged = mergeOwnVenueDims(fromVenueExchange(mitMassen(12, 8)), { widthM: 45, heightM: 30 });
@@ -469,7 +469,7 @@ describe('Raum-Masse: was die Datei nicht sagt, setzt nichts zurueck', () => {
     expect(merged.venue.heightM).toBe(8);
   });
 
-  it('haelt den eigenen Stand auch, wenn nur eines der beiden Masse fehlt', () => {
+  it('hält den eigenen Stand auch, wenn nur eines der beiden Masse fehlt', () => {
     // Teil-Angabe zaehlt als Aussage: wer widthM schreibt, hat den Raum
     // vermessen. Sonst schluesse man aus einem fehlenden heightM auf
     // „nichts gesagt" und ueberschriebe die gerade gelesene Breite.
@@ -479,7 +479,7 @@ describe('Raum-Masse: was die Datei nicht sagt, setzt nichts zurueck', () => {
     expect(mergeOwnVenueDims(r, { widthM: 45, heightM: 30 }).venue.widthM).toBe(12);
   });
 
-  it('ohne eigenen Bestand bleibt die Notloesung — sie ist nur nicht mehr die Aussage der Datei', () => {
+  it('ohne eigenen Bestand bleibt die Notlösung — sie ist nur nicht mehr die Aussage der Datei', () => {
     const r = fromVenueExchange(ohneMasse());
     expect(r.venue.widthM).toBe(20);
     expect(r.venue.heightM).toBe(12);

@@ -44,11 +44,11 @@ describe('Aufzeichnen', () => {
     expect(sampleFromCamera(cam(), 0).state.trackOffset).toBe(0);
   });
 
-  it('laesst die Ausrichtung weg, solange sie der Kamera folgt', () => {
+  it('lässt die Ausrichtung weg, solange sie der Kamera folgt', () => {
     expect(sampleFromCamera(cam(), 0).rigRotation).toBeUndefined();
   });
 
-  it('duennt zu dichte Punkte aus', () => {
+  it('dünnt zu dichte Punkte aus', () => {
     let s: TakeSample[] = [sampleFromCamera(cam(), 0)];
     s = appendSample(s, sampleFromCamera(cam(), TAKE_SAMPLE_MIN_S / 2));
     expect(s).toHaveLength(1); // zu frueh
@@ -56,13 +56,13 @@ describe('Aufzeichnen', () => {
     expect(s).toHaveLength(2);
   });
 
-  it('mutiert die uebergebene Liste nicht', () => {
+  it('mutiert die übergebene Liste nicht', () => {
     const before: TakeSample[] = [sampleFromCamera(cam(), 0)];
     appendSample(before, sampleFromCamera(cam(), 1));
     expect(before).toHaveLength(1);
   });
 
-  it('deckelt die Laenge, damit der Speicher nicht platzt', () => {
+  it('deckelt die Länge, damit der Speicher nicht platzt', () => {
     const full: TakeSample[] = Array.from({ length: TAKE_MAX_SAMPLES }, (_, i) =>
       sampleFromCamera(cam(), i * TAKE_SAMPLE_MIN_S),
     );
@@ -87,16 +87,16 @@ describe('Wiedergabe', () => {
     expect(mid.tilt).toBeCloseTo(-5, 6);
   });
 
-  it('haelt vor dem Start und nach dem Ende still', () => {
+  it('hält vor dem Start und nach dem Ende still', () => {
     expect(sampleTakeAt(t, -5)!.trackOffset).toBe(0);
     expect(sampleTakeAt(t, 99)!.trackOffset).toBe(2);
   });
 
-  it('gibt bei leerem Take nichts zurueck', () => {
+  it('gibt bei leerem Take nichts zurück', () => {
     expect(sampleTakeAt(take([]), 0)).toBeNull();
   });
 
-  it('faehrt Fahrweg und Neigung gleichzeitig zurueck', () => {
+  it('fährt Fahrweg und Neigung gleichzeitig zurück', () => {
     // Wenn beim Aufnehmen zwei Achsen liefen, muessen sie auch zusammen
     // wiedergegeben werden.
     const q = sampleTakeAt(t, 0.5)!;
@@ -104,7 +104,7 @@ describe('Wiedergabe', () => {
     expect(q.tilt).toBeCloseTo(-2.5, 6);
   });
 
-  it('trifft dichte Punkte ueber die Binaersuche', () => {
+  it('trifft dichte Punkte über die Binärsuche', () => {
     const many = take(
       Array.from({ length: 500 }, (_, i) => sampleFromCamera(cam({ z: i / 100 }), i * 0.04)),
     );
@@ -112,7 +112,7 @@ describe('Wiedergabe', () => {
     expect(at.z).toBeCloseTo(1, 6);
   });
 
-  it('nimmt beim Pan den kuerzeren Weg ueber die 180°-Grenze', () => {
+  it('nimmt beim Pan den kürzeren Weg über die 180°-Grenze', () => {
     const around = take([
       sampleFromCamera(cam({ pan: 170 }), 0),
       sampleFromCamera(cam({ pan: -170 }), 1),

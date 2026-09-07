@@ -95,7 +95,7 @@ describe('die Herkunft der Tabelle steht als Wert da', () => {
     }
   });
 
-  it('haelt die beiden Sony-CCU-Wege gleich — solange die Quelle es tut', () => {
+  it('hält die beiden Sony-CCU-Wege gleich — solange die Quelle es tut', () => {
     // Sie zusammenzufassen waere bequem und der Anfang einer zweiten
     // Wahrheit. Getrennt gefuehrt faellt es auf, wenn die Bridge einen von
     // beiden aendert — und dann gehoert hier nachgesehen, nicht angeglichen.
@@ -137,7 +137,7 @@ describe('shadingVerdict', () => {
     expect(shadingVerdict(cam({ controlPath: 'blackmagic' }), 'colorTemp')).toBe('im-bus');
   });
 
-  it('zaehlt auf, was geht — in Pult-Reihenfolge', () => {
+  it('zählt auf, was geht — in Pult-Reihenfolge', () => {
     expect(remoteFunctions(cam({ controlPath: 'panasonic-ptz' }))).toEqual(['iris', 'bars']);
     expect(remoteFunctions(cam())).toEqual([]);
     expect(remoteFunctions(cam({ controlPath: 'none' }))).toEqual([]);
@@ -190,7 +190,7 @@ describe('fleetMatch', () => {
   const ptz = cam({ id: 'c1', label: 'CAM 1', controlPath: 'panasonic-ptz' });
   const bm = cam({ id: 'c2', label: 'CAM 2', controlPath: 'blackmagic' });
 
-  it('rechnet den Schnitt, ueber den sich abgleichen laesst', () => {
+  it('rechnet den Schnitt, über den sich abgleichen lässt', () => {
     // Genau der Fall aus dem Beleg: Panasonic PTZ neben Blackmagic. Gemeinsam
     // ist NUR die Blende — alles andere kann eine von beiden nicht.
     const m = fleetMatch([ptz, bm]);
@@ -211,7 +211,7 @@ describe('fleetMatch', () => {
     expect(gegen?.text).toContain('Farbbalken');
   });
 
-  it('meldet den Riss NUR an der Position, die herausfaellt', () => {
+  it('meldet den Riss NUR an der Position, die herausfällt', () => {
     // Sony-CCU plus eine dazugestellte PTZ: die CCU kann alles, was die PTZ
     // kann, und mehr. Ihr denselben Satz zu melden waere die Warnung ohne
     // Anlass — nach der dritten liest niemand mehr die mit Anlass.
@@ -231,7 +231,7 @@ describe('fleetMatch', () => {
     expect(arten(bm, [bm, b2])).toEqual([]);
   });
 
-  it('laesst eine Position ohne Weg den Schnitt NICHT schrumpfen', () => {
+  it('lässt eine Position ohne Weg den Schnitt NICHT schrumpfen', () => {
     // Unbekannt ist nicht dasselbe wie „kann nichts". Wuerde sie mitzaehlen,
     // waere der Schnitt jeder halb ausgefuellten Show leer — und die Meldung
     // damit wertlos.
@@ -243,7 +243,7 @@ describe('fleetMatch', () => {
     expect(arten(offen, [bm, offen])).toEqual(['path-unstated']);
   });
 
-  it('zaehlt „von Hand am Body" sehr wohl mit', () => {
+  it('zählt „von Hand am Body" sehr wohl mit', () => {
     // Das ist keine Unbekannte, sondern eine Entscheidung — und die groesste
     // Luecke, die eine Flotte haben kann.
     const hand = cam({ id: 'c4', label: 'CAM 4', controlPath: 'none' });
@@ -285,7 +285,7 @@ describe('was auf der Karte und auf dem Blatt steht', () => {
     expect(z[1]).not.toContain('Farbtemperatur');
   });
 
-  it('schraenkt die Kann-Zeile auf der Karte selbst ein', () => {
+  it('schränkt die Kann-Zeile auf der Karte selbst ein', () => {
     // Ein weitergereichtes Blatt traegt sonst eine Zusicherung, die niemand
     // gegeben hat: die Tabelle gilt fuer den WEG, nicht fuer das Modell.
     expect(shadingLines(cam({ controlPath: 'blackmagic' }))[1]).toContain(BUS_SCOPE_SHORT);
@@ -322,7 +322,7 @@ describe('was auf der Karte und auf dem Blatt steht', () => {
     expect(cardExtraRows(cam()).some((r) => r[0] === 'shading')).toBe(true);
   });
 
-  it('steht auf dem Uebergabe-Blatt', () => {
+  it('steht auf dem Übergabe-Blatt', () => {
     // Die naechste Schicht greift sonst am Pult nach einem Regler, den es
     // fuer diese Kamera gar nicht gibt.
     const ptz = cam({ controlPath: 'panasonic-ptz' });
@@ -349,7 +349,7 @@ describe('normaliseControlPath', () => {
     expect(normaliseControlPath(null)).toEqual({});
   });
 
-  it('laeuft auf dem Lade-Pfad', () => {
+  it('läuft auf dem Lade-Pfad', () => {
     expect(storeQuelle).toMatch(/\.\.\.normaliseControlPath\(c\)/);
   });
 });

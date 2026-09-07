@@ -28,7 +28,7 @@ const wall = (over: Partial<Wall> = {}): Wall => ({
 });
 
 describe('tileGrid', () => {
-  it('haelt die gewuenschte Anzahl in der Hoehe ein', () => {
+  it('hält die gewünschte Anzahl in der Höhe ein', () => {
     // "wie viele Blumen in der Höhe auf der Wand sichtbar sein sollen"
     expect(tileGrid('tile', 10, 3, 6).rows).toBe(6);
   });
@@ -38,16 +38,16 @@ describe('tileGrid', () => {
     expect(tileGrid('tile', 10, 3, 6)).toEqual({ cols: 20, rows: 6 });
   });
 
-  it('beruecksichtigt das Seitenverhaeltnis der Vorlage', () => {
+  it('berücksichtigt das Seitenverhältnis der Vorlage', () => {
     // Ein 2:1-Bild belegt doppelt so viel Breite je Kachel → halb so viele Spalten.
     expect(tileGrid('tile', 10, 3, 6, 2).cols).toBe(10);
   });
 
-  it('legt bei "gedehnt" genau ein Bild ueber die Wand', () => {
+  it('legt bei "gedehnt" genau ein Bild über die Wand', () => {
     expect(tileGrid('stretch', 10, 3, 6)).toEqual({ cols: 1, rows: 1 });
   });
 
-  it('skaliert auf die Hoehe und wiederholt waagerecht', () => {
+  it('skaliert auf die Höhe und wiederholt waagerecht', () => {
     // Bild 1:1, Wandhoehe 3 m → Kachel 3 m breit → 10 m / 3 m ≈ 3 Spalten.
     expect(tileGrid('scale-v', 10, 3, 6)).toEqual({ cols: 3, rows: 1 });
   });
@@ -59,7 +59,7 @@ describe('tileGrid', () => {
     expect(tileGrid('scale-h', 10, 3, 6, 10)).toEqual({ cols: 1, rows: 3 });
   });
 
-  it('faengt unsinnige Reihenzahlen ab', () => {
+  it('fängt unsinnige Reihenzahlen ab', () => {
     expect(tileGrid('tile', 10, 3, 0).rows).toBe(DEFAULT_PATTERN_ROWS);
     expect(tileGrid('tile', 10, 3, 9999).rows).toBe(PATTERN_ROWS_MAX);
     expect(tileGrid('tile', 10, 3, -5).rows).toBe(DEFAULT_PATTERN_ROWS);
@@ -80,18 +80,18 @@ describe('tileGrid', () => {
 });
 
 describe('textureSize', () => {
-  it('behaelt das Seitenverhaeltnis der Wand', () => {
+  it('behält das Seitenverhältnis der Wand', () => {
     const { w, h } = textureSize(10, 5);
     expect(w / h).toBeCloseTo(2, 1);
   });
 
-  it('deckelt sehr lange Waende', () => {
+  it('deckelt sehr lange Wände', () => {
     const { w, h } = textureSize(400, 3);
     expect(w).toBeLessThanOrEqual(2048);
     expect(h).toBeGreaterThan(0);
   });
 
-  it('liefert auch fuer Nullmaße etwas Zeichenbares', () => {
+  it('liefert auch für Nullmaße etwas Zeichenbares', () => {
     const { w, h } = textureSize(0, 0);
     expect(w).toBeGreaterThan(0);
     expect(h).toBeGreaterThan(0);
@@ -99,7 +99,7 @@ describe('textureSize', () => {
 });
 
 describe('surfaceKey', () => {
-  it('aendert sich mit jeder Eigenschaft, die das Aussehen bestimmt', () => {
+  it('ändert sich mit jeder Eigenschaft, die das Aussehen bestimmt', () => {
     const base = surfaceKey(wall({ pattern: 'flowers' }), 10);
     expect(surfaceKey(wall({ pattern: 'grid' }), 10)).not.toBe(base);
     expect(surfaceKey(wall({ pattern: 'flowers', patternRows: 9 }), 10)).not.toBe(base);
@@ -109,7 +109,7 @@ describe('surfaceKey', () => {
     expect(surfaceKey(wall({ pattern: 'flowers' }), 12)).not.toBe(base);
   });
 
-  it('bleibt gleich, wenn sich nichts Sichtbares aendert', () => {
+  it('bleibt gleich, wenn sich nichts Sichtbares ändert', () => {
     // Sonst wuerde die Textur in jedem Bild neu gemalt.
     expect(surfaceKey(wall({ pattern: 'flowers', label: 'A' }), 10))
       .toBe(surfaceKey(wall({ pattern: 'flowers', label: 'B' }), 10));
@@ -117,7 +117,7 @@ describe('surfaceKey', () => {
 });
 
 describe('Streifen-Mapping', () => {
-  it('zerlegt die Wand lueckenlos', () => {
+  it('zerlegt die Wand lückenlos', () => {
     const r = stripRanges(4);
     expect(r).toHaveLength(4);
     expect(r[0].t0).toBe(0);
@@ -130,7 +130,7 @@ describe('Streifen-Mapping', () => {
     expect(stripRanges(-3)).toHaveLength(1);
   });
 
-  it('nimmt mehr Streifen fuer breite Waende, gedeckelt', () => {
+  it('nimmt mehr Streifen für breite Wände, gedeckelt', () => {
     expect(stripCount(24)).toBeLessThan(stripCount(600));
     expect(stripCount(100000)).toBeLessThanOrEqual(64);
     expect(stripCount(1)).toBeGreaterThanOrEqual(4);
@@ -149,7 +149,7 @@ describe('Streifen-Mapping', () => {
     expect(apply(0, 80).y).toBeCloseTo(bl.y, 10);
   });
 
-  it('beruecksichtigt den Versatz des Quellausschnitts', () => {
+  it('berücksichtigt den Versatz des Quellausschnitts', () => {
     const tl = { x: 10, y: 0 };
     const tr = { x: 20, y: 0 };
     const bl = { x: 10, y: 30 };

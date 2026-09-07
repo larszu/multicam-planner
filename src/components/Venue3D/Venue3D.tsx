@@ -681,7 +681,7 @@ function CameraRig({
                     <button type="button" onClick={() => onEditModeChange('move')} style={buttonStyle(editMode === 'move')} title="Standort auf dem Boden">
                       XY
                     </button>
-                    <button type="button" onClick={() => onEditModeChange('height')} style={buttonStyle(editMode === 'height')} title="Hoehe">
+                    <button type="button" onClick={() => onEditModeChange('height')} style={buttonStyle(editMode === 'height')} title="Höhe">
                       Z
                     </button>
                     <button type="button" onClick={() => onEditModeChange('pan')} style={buttonStyle(editMode === 'pan')} title="Schwenk">

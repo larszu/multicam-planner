@@ -1476,7 +1476,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                   }
                   return next;
                 })}
-                title="Brennweite ueber die echten Objektiv-Grenzen hinaus durchfahren"
+                title="Brennweite über die echten Objektiv-Grenzen hinaus durchfahren"
                 className={`px-1.5 py-0.5 rounded text-[9px] font-medium border transition-colors ${manualZoom ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
               >
                 Manual
@@ -1525,7 +1525,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                   }
                   return next;
                 })}
-                title="Blende ueber die echten Objektiv-Grenzen hinaus durchfahren"
+                title="Blende über die echten Objektiv-Grenzen hinaus durchfahren"
                 className={`px-1.5 py-0.5 rounded text-[9px] font-medium border transition-colors ${manualAperture ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
               >
                 Manual
@@ -1545,7 +1545,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           onChange={(v) => useStore.getState().updateCamera(cam.id, { focusDistance: Math.max(0.1, v), lockedPersonId: undefined })}
           onStep={(dir) => useStore.getState().updateCamera(cam.id, { focusDistance: stepAlong(cam.focusDistance, dir, FOCUS_MIN, focusMax, focusTicks), lockedPersonId: undefined })}
           note={cam.lockedPersonId ? 'locked' : undefined}
-          title="Fokusdistanz — nah fein, fern grob (logarithmisch). Zahl anklicken fuer direkte Eingabe."
+          title="Fokusdistanz — nah fein, fern grob (logarithmisch). Zahl anklicken für direkte Eingabe."
         />
 
 
@@ -1558,8 +1558,8 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           </span>
           {presetGroups.own.map((p) => (
             <span key={p.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-gray-300 hover:border-bc-accent">
-              <button onClick={() => applyPreset(p)} title={`${p.focalLength.toFixed(0)}mm · f/${p.aperture.toFixed(1)} · ${p.focusDistance.toFixed(1)}m${p.pan !== undefined ? ` · Pos (Pan ${p.pan.toFixed(0)}° Tilt ${p.tilt?.toFixed(0)}° H ${p.z?.toFixed(1)}m)` : ''}`}>{p.name}{hasPose(p) && <span className="ml-0.5 text-bc-accent" title="enthaelt Kamera-Position">◈</span>}</button>
-              <button onClick={() => deletePreset(p.id)} className="text-gray-600 hover:text-bc-red" title="Preset loeschen" aria-label={`Preset ${p.name} loeschen`}><FiX size={10} /></button>
+              <button onClick={() => applyPreset(p)} title={`${p.focalLength.toFixed(0)}mm · f/${p.aperture.toFixed(1)} · ${p.focusDistance.toFixed(1)}m${p.pan !== undefined ? ` · Pos (Pan ${p.pan.toFixed(0)}° Tilt ${p.tilt?.toFixed(0)}° H ${p.z?.toFixed(1)}m)` : ''}`}>{p.name}{hasPose(p) && <span className="ml-0.5 text-bc-accent" title="enthält Kamera-Position">◈</span>}</button>
+              <button onClick={() => deletePreset(p.id)} className="text-gray-600 hover:text-bc-red" title="Preset löschen" aria-label={`Preset ${p.name} löschen`}><FiX size={10} /></button>
             </span>
           ))}
           {presetGroups.own.length === 0 && (
@@ -1611,7 +1611,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                 >
                   <FiPlus size={10} />
                 </button>
-                <button onClick={() => deletePreset(p.id)} className="text-gray-600 hover:text-bc-red" title="Preset loeschen" aria-label={`Preset ${p.name} loeschen`}><FiX size={10} /></button>
+                <button onClick={() => deletePreset(p.id)} className="text-gray-600 hover:text-bc-red" title="Preset löschen" aria-label={`Preset ${p.name} löschen`}><FiX size={10} /></button>
               </span>
             ))}
           </div>

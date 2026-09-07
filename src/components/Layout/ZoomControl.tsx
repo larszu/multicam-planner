@@ -51,7 +51,7 @@ export default function ZoomControl() {
         type="button"
         onClick={reset}
         className="px-1.5 min-w-[3rem] text-center text-xs tabular-nums text-gray-300 hover:text-white transition-colors"
-        title="Auf 100 % zuruecksetzen (Strg 0)"
+        title="Auf 100 % zurücksetzen (Strg 0)"
       >
         {pct}%
       </button>
@@ -60,8 +60,8 @@ export default function ZoomControl() {
         onClick={inc}
         disabled={zoom >= ZOOM_MAX - 1e-6}
         className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-bc-border disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-        title="Groesser (Strg +)"
-        aria-label="UI vergroessern"
+        title="Größer (Strg +)"
+        aria-label="UI vergrößern"
       >
         <FiPlus size={12} />
       </button>

@@ -65,7 +65,7 @@ describe('effectiveCameraPos', () => {
     expect(pos.y).toBeCloseTo(5, 5);
   });
 
-  it('faehrt entlang der Rig-Achse, nicht der Blickrichtung', () => {
+  it('fährt entlang der Rig-Achse, nicht der Blickrichtung', () => {
     // Schiene liegt quer (0°), die Kamera schaut nach oben (-90°): der Wagen
     // rollt trotzdem nach rechts.
     const cam = makeCam({ pan: -90, rigRotation: 0, trackOffset: 2 });
@@ -74,7 +74,7 @@ describe('effectiveCameraPos', () => {
     expect(pos.y).toBeCloseTo(5, 5);
   });
 
-  it('laesst den Pan die Fahrt nicht mehr verschieben, wenn das Rig fest ist', () => {
+  it('lässt den Pan die Fahrt nicht mehr verschieben, wenn das Rig fest ist', () => {
     const rail = { rigRotation: 0, trackOffset: 3 };
     const a = effectiveCameraPos(makeCam({ pan: 0, ...rail }));
     const b = effectiveCameraPos(makeCam({ pan: 137, ...rail }));

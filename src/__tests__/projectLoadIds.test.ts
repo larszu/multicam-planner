@@ -88,8 +88,8 @@ describe('Plan laden — Ids (#72)', () => {
     const s = useStore.getState();
     expect(unique(s.persons), `Personen: ${ids(s.persons)}`).toBe(true);
     expect(unique(s.cameras), `Kameras: ${ids(s.cameras)}`).toBe(true);
-    expect(unique(s.walls), `Waende: ${ids(s.walls)}`).toBe(true);
-    expect(unique(s.venue.stages), `Buehnen: ${ids(s.venue.stages)}`).toBe(true);
+    expect(unique(s.walls), `Wände: ${ids(s.walls)}`).toBe(true);
+    expect(unique(s.venue.stages), `Bühnen: ${ids(s.venue.stages)}`).toBe(true);
   });
 
   it('bewegt beim Verschieben eines neuen Objekts kein altes mit', async () => {
@@ -107,13 +107,13 @@ describe('Plan laden — Ids (#72)', () => {
     expect(useStore.getState().persons.filter((p) => p.x === 17)).toHaveLength(1);
   });
 
-  it('behaelt die Kamera-Ids, damit Shots/Presets ihre Kamera behalten', async () => {
+  it('behält die Kamera-Ids, damit Shots/Presets ihre Kamera behalten', async () => {
     const useStore = await freshStore();
     useStore.getState().applyProjectFile(plan());
     expect(ids(useStore.getState().cameras)).toEqual(['cam-1', 'cam-2']);
   });
 
-  it('behaelt den Fokus-Lock auf eine geladene Person', async () => {
+  it('behält den Fokus-Lock auf eine geladene Person', async () => {
     const useStore = await freshStore();
     const p = plan();
     p.cameras[0] = { ...p.cameras[0], lockedPersonId: 'person-2' };
@@ -122,7 +122,7 @@ describe('Plan laden — Ids (#72)', () => {
     expect(useStore.getState().persons.some((x) => x.id === locked)).toBe(true);
   });
 
-  it('repariert einen Plan, der schon doppelte Ids enthaelt', async () => {
+  it('repariert einen Plan, der schon doppelte Ids enthält', async () => {
     // Wer vor dem Fix gespeichert hat, traegt den Schaden in der Datei.
     const useStore = await freshStore();
     useStore.getState().applyProjectFile(

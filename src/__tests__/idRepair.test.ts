@@ -6,11 +6,11 @@ import { dedupeIds, maxIdSuffix } from '../utils/idRepair';
 // waren doppelte Ids.
 
 describe('maxIdSuffix', () => {
-  it('findet die hoechste Nummer', () => {
+  it('findet die höchste Nummer', () => {
     expect(maxIdSuffix(['cam-1', 'cam-7', 'cam-3'])).toBe(7);
   });
 
-  it('mischt Praefixe, weil ein Zaehler mehrere bedient', () => {
+  it('mischt Präfixe, weil ein Zähler mehrere bedient', () => {
     // `nextId` vergibt sowohl cam- als auch wall-Ids.
     expect(maxIdSuffix(['cam-2', 'wall-9'])).toBe(9);
   });
@@ -19,11 +19,11 @@ describe('maxIdSuffix', () => {
     expect(maxIdSuffix(['stage-0', 'custom-abc', 'take-x9y'])).toBe(0);
   });
 
-  it('liefert 0 fuer eine leere Liste', () => {
+  it('liefert 0 für eine leere Liste', () => {
     expect(maxIdSuffix([])).toBe(0);
   });
 
-  it('laesst sich nicht von Nummern in der Mitte taeuschen', () => {
+  it('lässt sich nicht von Nummern in der Mitte täuschen', () => {
     expect(maxIdSuffix(['cam-12-alt'])).toBe(0);
   });
 });
@@ -34,14 +34,14 @@ describe('dedupeIds', () => {
     return () => `neu-${n++}`;
   };
 
-  it('laesst eindeutige Ids unangetastet', () => {
+  it('lässt eindeutige Ids unangetastet', () => {
     const items = [{ id: 'a' }, { id: 'b' }];
     const res = dedupeIds(items, gen());
     expect(res.items).toEqual(items);
     expect(res.repaired).toBe(0);
   });
 
-  it('repariert Dubletten und behaelt den ersten Eintrag', () => {
+  it('repariert Dubletten und behält den ersten Eintrag', () => {
     // Der erste behaelt die Id, damit ein Fokus-Lock oder Shot, der schon auf
     // sie zeigt, weiter auf ein existierendes Objekt trifft.
     const res = dedupeIds([{ id: 'a', v: 1 }, { id: 'a', v: 2 }], gen());
@@ -51,7 +51,7 @@ describe('dedupeIds', () => {
     expect(res.repaired).toBe(1);
   });
 
-  it('vergibt auch fuer leere Ids eine neue', () => {
+  it('vergibt auch für leere Ids eine neue', () => {
     const res = dedupeIds([{ id: '' }], gen());
     expect(res.items[0].id).toBe('neu-100');
     expect(res.repaired).toBe(1);
@@ -108,7 +108,7 @@ describe('ADR-005 — applyProjectFile meldet reparierte Ids', () => {
     expect(await load({ cameras: [cam, { ...cam, label: 'B' }] })).toBe(1);
   });
 
-  it('zaehlt ueber alle Listen zusammen', async () => {
+  it('zählt über alle Listen zusammen', async () => {
     expect(await load({ cameras: [cam, { ...cam }], persons: [person, { ...person }] })).toBe(2);
   });
 
@@ -117,14 +117,14 @@ describe('ADR-005 — applyProjectFile meldet reparierte Ids', () => {
     expect(await load({ cameras: [cam] })).toBeNull();
   });
 
-  it('setzt die Meldung beim naechsten sauberen Laden zurueck', async () => {
+  it('setzt die Meldung beim nächsten sauberen Laden zurück', async () => {
     // Sonst haengt der Hinweis am naechsten Projekt, das ihn nicht verdient
     // hat — derselbe Fehler wie ein leckendes avForeign.
     await load({ cameras: [cam, { ...cam }] });
     expect(await load({ cameras: [cam] })).toBeNull();
   });
 
-  it('laesst sich wegklicken', async () => {
+  it('lässt sich wegklicken', async () => {
     const { useStore } = await import('../store/useStore');
     await load({ cameras: [cam, { ...cam }] });
     useStore.getState().dismissIdRepair();

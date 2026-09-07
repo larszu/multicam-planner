@@ -448,15 +448,15 @@ export default function RigControlPanel() {
         <div className="flex gap-3 items-start">
           <Deflector
             label="Pan / Tilt (← → ↑ ↓)"
-            hint="Ziehen schwenkt und neigt — gleichzeitig mit der Fahrt moeglich."
+            hint="Ziehen schwenkt und neigt — gleichzeitig mit der Fahrt möglich."
             axes="xy"
             size={220}
             onChange={(i) => { padRef.current = i; startLoop(); }}
           />
           <div className="flex-1 min-w-0 space-y-2">
             <Deflector
-              label={hasTravel ? 'Fahrweg (J / L)' : 'Fahrweg — dieses Rig faehrt nicht'}
-              hint={hasTravel ? 'Ziehen faehrt den Wagen; loslassen stoppt.' : 'Stativ, Hi-Hat & Co. haben keinen Fahrweg.'}
+              label={hasTravel ? 'Fahrweg (J / L)' : 'Fahrweg — dieses Rig fährt nicht'}
+              hint={hasTravel ? 'Ziehen fährt den Wagen; loslassen stoppt.' : 'Stativ, Hi-Hat & Co. haben keinen Fahrweg.'}
               axes="x"
               size={40}
               disabled={!hasTravel}
@@ -464,7 +464,7 @@ export default function RigControlPanel() {
             />
             <div className="grid grid-cols-3 gap-1 text-[11px]">
               <Readout label="Fahrweg" value={hasTravel ? `${(cam.trackOffset ?? 0).toFixed(2)} m` : '—'} sub={hasTravel ? `±${limits.travelM.toFixed(2)} m` : ''} />
-              <Readout label="Hoehe" value={`${cam.z.toFixed(2)} m`} sub={`${limits.minHeightM.toFixed(2)}–${limits.maxHeightM.toFixed(2)}`} />
+              <Readout label="Höhe" value={`${cam.z.toFixed(2)} m`} sub={`${limits.minHeightM.toFixed(2)}–${limits.maxHeightM.toFixed(2)}`} />
               <Readout label="Pan" value={`${cam.pan.toFixed(1)}°`} />
               <Readout label="Tilt" value={`${cam.tilt.toFixed(1)}°`} />
               <Readout label="Ausrichtung" value={`${rigYaw(cam).toFixed(0)}°`} sub={cam.rigRotation === undefined ? 'folgt Kamera' : 'fest'} />
@@ -476,7 +476,7 @@ export default function RigControlPanel() {
         {/* Tastenlegende */}
         <div className="rounded border border-bc-border bg-bc-dark px-2 py-1.5 text-[10px] text-gray-400 leading-relaxed">
           <b className="text-gray-300">Tasten</b> — <b>J/L</b> Fahrweg · <b>← →</b> Pan · <b>↑ ↓</b> Tilt ·
-          {' '}<b>R/F</b> Hoehe · <b>[ ]</b> Rig ausrichten · <b>, .</b> Zoom · <b>0</b> parken ·
+          {' '}<b>R/F</b> Höhe · <b>[ ]</b> Rig ausrichten · <b>, .</b> Zoom · <b>0</b> parken ·
           {' '}<b>1/2/3</b> Tempo. Mehrere Tasten gleichzeitig fahren mehrere Achsen zusammen.
         </div>
 
@@ -503,12 +503,12 @@ export default function RigControlPanel() {
               Wiedergabe stoppen
             </button>
           )}
-          <span className="ml-auto text-gray-600">{takes.length} Fahrt(en) fuer {cam.label}</span>
+          <span className="ml-auto text-gray-600">{takes.length} Fahrt(en) für {cam.label}</span>
         </div>
 
         {takeStorageFull && (
           <div className="rounded border border-bc-red/60 bg-bc-red/10 px-2 py-1 text-[11px] text-bc-red">
-            Der Speicher ist voll — die letzte Fahrt konnte nicht gesichert werden. Aeltere Fahrten loeschen.
+            Der Speicher ist voll — die letzte Fahrt konnte nicht gesichert werden. Ältere Fahrten löschen.
           </div>
         )}
 
@@ -516,8 +516,8 @@ export default function RigControlPanel() {
         <div className="space-y-1">
           {takes.length === 0 && (
             <p className="text-gray-600 text-[11px]">
-              Noch keine Fahrt aufgezeichnet. „Fahrt aufzeichnen" druecken, fahren, „Stop" — die Bewegung
-              laesst sich danach beliebig oft abspielen.
+              Noch keine Fahrt aufgezeichnet. „Fahrt aufzeichnen" drücken, fahren, „Stop" — die Bewegung
+              lässt sich danach beliebig oft abspielen.
             </p>
           )}
           {takes.map((t) => (
@@ -536,7 +536,7 @@ export default function RigControlPanel() {
               <button
                 onClick={() => { if (playingId === t.id) stopPlayback(); removeRigTake(t.id); }}
                 className="text-gray-500 hover:text-bc-red p-0.5"
-                title="Fahrt loeschen"
+                title="Fahrt löschen"
               >
                 <FiTrash2 size={12} />
               </button>
@@ -546,7 +546,7 @@ export default function RigControlPanel() {
 
         {otherTakes.length > 0 && (
           <div className="text-[10px] text-gray-600 flex items-center gap-1">
-            <FiCrosshair size={10} /> {otherTakes.length} weitere Fahrt(en) gehoeren zu anderen Kameras.
+            <FiCrosshair size={10} /> {otherTakes.length} weitere Fahrt(en) gehören zu anderen Kameras.
           </div>
         )}
       </div>

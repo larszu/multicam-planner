@@ -8,7 +8,7 @@ import {
 const venue = { name: 'Halle', widthM: 20, heightM: 12, persons: [], walls: [], stageObjects: [] };
 
 describe('avplan (MultiCam — Slot "cameras")', () => {
-  it('Round-Trip erhaelt alle Domaenen 1:1', () => {
+  it('Round-Trip erhält alle Domänen 1:1', () => {
     const ex = makeAvPlan({
       app: 'multicam-planner', appVersion: '0.4.0', exportedAt: 't', venue,
       domains: {
@@ -53,7 +53,7 @@ describe('avplan (MultiCam — Slot "cameras")', () => {
 // Domaenen-Slot durch. `parseAvPlan` nahm die Datei trotzdem an — weder
 // bewahrt noch verweigert noch gemeldet, das einzige der drei denkbaren
 // Verhalten, das nicht vertretbar ist. Entschieden: bewahren.
-describe('unbekannte Domaenen-Slots', () => {
+describe('unbekannte Domänen-Slots', () => {
   const withForeign = () =>
     makeAvPlan({
       app: 'irgendwer', appVersion: '9.9.9', exportedAt: 't', venue,
@@ -68,7 +68,7 @@ describe('unbekannte Domaenen-Slots', () => {
     expect(unknownDomainSlots(withForeign())).toEqual(['audio', 'rigging']);
   });
 
-  it('haelt keinen der drei bekannten Slots faelschlich fuer fremd', () => {
+  it('hält keinen der drei bekannten Slots fälschlich für fremd', () => {
     for (const slot of KNOWN_DOMAIN_SLOTS) {
       const plan = makeAvPlan({
         app: 'x', appVersion: '1', exportedAt: 't', venue, domains: { [slot]: {} },
@@ -77,7 +77,7 @@ describe('unbekannte Domaenen-Slots', () => {
     }
   });
 
-  it('haelt einen leeren Slot nicht faelschlich fuer vorhanden', () => {
+  it('hält einen leeren Slot nicht fälschlich für vorhanden', () => {
     const plan = makeAvPlan({
       app: 'x', appVersion: '1', exportedAt: 't', venue,
       domains: { cameras: {}, audio: undefined },
@@ -85,7 +85,7 @@ describe('unbekannte Domaenen-Slots', () => {
     expect(unknownDomainSlots(plan)).toEqual([]);
   });
 
-  it('ueberlebt die Runde Datei -> parse -> Export -> parse', () => {
+  it('überlebt die Runde Datei -> parse -> Export -> parse', () => {
     const loaded = parseAvPlan(JSON.stringify(withForeign()));
     const carried = pickUnknownDomains(loaded);
     expect(carried).toEqual({ audio: { channels: 32 }, rigging: { points: 4 } });
@@ -106,7 +106,7 @@ describe('unbekannte Domaenen-Slots', () => {
     expect(after.formatVersion).toBe(1);
   });
 
-  it('laesst einen fremden Slot nie den eigenen ueberschreiben', () => {
+  it('lässt einen fremden Slot nie den eigenen überschreiben', () => {
     const re = makeAvPlan({
       app: 'multicam-planner', appVersion: '0.4.0', exportedAt: 't', venue,
       domains: {

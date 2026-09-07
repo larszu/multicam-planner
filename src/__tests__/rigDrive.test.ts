@@ -47,13 +47,13 @@ describe('Tastenbelegung', () => {
     }
   });
 
-  it('summiert gedrueckte Tasten zu Auslenkungen', () => {
+  it('summiert gedrückte Tasten zu Auslenkungen', () => {
     const input = driveFromKeys(['l', 'arrowup']);
     expect(input.travel).toBe(1);
     expect(input.tilt).toBe(1);
   });
 
-  it('hebt gegenlaeufige Tasten auf', () => {
+  it('hebt gegenläufige Tasten auf', () => {
     expect(driveFromKeys(['j', 'l']).travel).toBe(0);
   });
 
@@ -61,7 +61,7 @@ describe('Tastenbelegung', () => {
     expect(isIdle(driveFromKeys(['x', 'y']))).toBe(true);
   });
 
-  it('ueberlagert Tastatur und Pad, bleibt aber bei ±1', () => {
+  it('überlagert Tastatur und Pad, bleibt aber bei ±1', () => {
     const merged = mergeInput({ pan: 1 }, { pan: 1, tilt: -0.5 });
     expect(merged.pan).toBe(1);
     expect(merged.tilt).toBe(-0.5);
@@ -83,7 +83,7 @@ describe('wrap180', () => {
 });
 
 describe('applyDrive', () => {
-  it('faehrt mehrere Achsen im selben Frame', () => {
+  it('fährt mehrere Achsen im selben Frame', () => {
     // Das ist der Kern: Dolly verschieben WAEHREND man neigt.
     const c = cam({ trackOffset: 0, trackLengthM: 8 });
     const patch = applyDrive(ctx(c), { travel: 1, tilt: -1 }, 1);
@@ -92,7 +92,7 @@ describe('applyDrive', () => {
     expect(patch!.tilt).toBeLessThan(0);
   });
 
-  it('haelt sich an das Tempo des Rigs', () => {
+  it('hält sich an das Tempo des Rigs', () => {
     const c = cam({ trackOffset: 0, trackLengthM: 20 });
     const p = profileForMount('dolly');
     const dt = 0.2;
@@ -110,14 +110,14 @@ describe('applyDrive', () => {
     );
   });
 
-  it('faehrt nicht ueber das Schienenende hinaus', () => {
+  it('fährt nicht über das Schienenende hinaus', () => {
     // ±1 m Fahrweg, Wagen steht schon fast am Ende.
     const c = cam({ trackOffset: 0.95, trackLengthM: 2 });
     const patch = applyDrive(ctx(c), { travel: 1 }, 0.25);
     expect(patch!.trackOffset).toBeCloseTo(1, 6);
   });
 
-  it('laesst ein Rig ohne Fahrweg nicht fahren', () => {
+  it('lässt ein Rig ohne Fahrweg nicht fahren', () => {
     const c = cam({ trackOffset: 0 });
     const patch = applyDrive(ctx(c, 'tripod'), { travel: 1 }, 1);
     expect(patch).toBeNull();
@@ -130,7 +130,7 @@ describe('applyDrive', () => {
     expect(down!.tilt).toBe(TILT_RANGE.min);
   });
 
-  it('laesst den Pan umlaufen statt anzuschlagen', () => {
+  it('lässt den Pan umlaufen statt anzuschlagen', () => {
     const patch = applyDrive(ctx(cam({ pan: 179 })), { pan: 1 }, 1, 5);
     expect(patch!.pan).toBeLessThan(0); // ueber 180 hinaus → negativ
   });
@@ -167,7 +167,7 @@ describe('applyDrive', () => {
     expect(weit!.focalLength).toBe(8);
   });
 
-  it('meldet nichts zurueck, wenn nichts anliegt', () => {
+  it('meldet nichts zurück, wenn nichts anliegt', () => {
     expect(applyDrive(ctx(cam()), {}, 1)).toBeNull();
     expect(applyDrive(ctx(cam()), { travel: 0 } as DriveInput, 1)).toBeNull();
   });

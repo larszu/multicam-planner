@@ -37,7 +37,7 @@ describe('Fingerabdruck — gleiche Ableitung wie cable- und light-planner', () 
     expect(documentFingerprint(['Kanal', 'Typ'], [['1', 'Fresnel'], ['2', 'PAR']])).toBe('397133df');
   });
 
-  it('ist stabil und laengenfest', () => {
+  it('ist stabil und längenfest', () => {
     expect(fingerprint('abc')).toBe(fingerprint('abc'));
     expect(fingerprint('irgendwas')).toHaveLength(8);
   });
@@ -76,7 +76,7 @@ describe('stampForStand — keine Behauptung ohne Bezugspunkt', () => {
     expect(ab.drifted).toBe(true);
   });
 
-  it('haengt Label und Vergleichswert aneinander — anders als der Rohbau', () => {
+  it('hängt Label und Vergleichswert aneinander — anders als der Rohbau', () => {
     // `buildStamp` laesst eine Revision OHNE Vergleichswert zu; dann stuende
     // „Rev 3" auf einem Blatt, das seit Rev 3 zwoelf Aenderungen gesehen hat.
     // `stampForStand` kann das gar nicht erst ausdruecken.
@@ -92,7 +92,7 @@ describe('stampLine', () => {
     expect(stampLine(ab)).toContain('Stand Montag + Änderungen');
   });
 
-  it('traegt Projekt, Zeitpunkt und Fingerabdruck', () => {
+  it('trägt Projekt, Zeitpunkt und Fingerabdruck', () => {
     const s = stampForStand({ project: 'Halle A', current: 'deadbeef', now: NOW });
     expect(stampLine(s)).toContain('Halle A');
     expect(stampLine(s)).toContain('#deadbeef');
@@ -135,7 +135,7 @@ describe('Kamerakarte', () => {
     );
   });
 
-  it('ist unabhaengig von der Reihenfolge im Store', () => {
+  it('ist unabhängig von der Reihenfolge im Store', () => {
     // Die Reihenfolge, in der Kameras angelegt wurden, ist auf dem Blatt nicht
     // zu sehen (die Liste wird sortiert gezeichnet). Ein Stempel, der darauf
     // anschlaegt, meldete eine Abweichung, die keiner gemacht hat — und ein
@@ -205,7 +205,7 @@ describe('Storyboard', () => {
     );
   });
 
-  it('merkt, ob ein Framegrab da ist — aber haengt nicht am Bildinhalt', () => {
+  it('merkt, ob ein Framegrab da ist — aber hängt nicht am Bildinhalt', () => {
     const ohne = liste([shot('a')]);
     const mit = liste([shot('a', { thumbnail: 'data:image/jpeg;base64,AAA' })]);
     const anderes = liste([shot('a', { thumbnail: 'data:image/jpeg;base64,BBB' })]);
@@ -215,7 +215,7 @@ describe('Storyboard', () => {
     expect(storyboardFingerprint(mit)).toBe(storyboardFingerprint(anderes));
   });
 
-  it('haengt am Namen der Liste — der steht als Ueberschrift auf dem Blatt', () => {
+  it('hängt am Namen der Liste — der steht als Überschrift auf dem Blatt', () => {
     expect(storyboardFingerprint(liste([shot('a')]))).not.toBe(
       storyboardFingerprint(liste([shot('a')], 'Generalprobe')),
     );
@@ -232,7 +232,7 @@ describe('Druckfassung', () => {
     expect(buildStoryboardHtml(l, 'Halle A')).not.toContain('class="stamp"');
   });
 
-  it('traegt die Stempelzeile, wenn einer da ist', () => {
+  it('trägt die Stempelzeile, wenn einer da ist', () => {
     const s = stampForStand({ project: 'Halle A', current: 'deadbeef', now: NOW });
     const html = buildStoryboardHtml(l, 'Halle A', s);
     expect(html).toContain('class="stamp"');

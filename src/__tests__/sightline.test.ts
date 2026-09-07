@@ -64,7 +64,7 @@ describe('die Zielrichtung', () => {
 });
 
 describe('was NICHT gemeldet wird', () => {
-  it('eine Wand, ueber die die Linie hinweggeht', () => {
+  it('eine Wand, über die die Linie hinweggeht', () => {
     // Der wichtigste Fall. Kamera auf 2 m, waagerecht, Wand 1 m hoch: sie
     // steht in der Linie und blockiert nichts. Eine 2D-Pruefung meldete sie.
     expect(sightlineConflicts({ ...leer, cameras: [kamera()], walls: [wand({ height: 1 })] })).toEqual([]);
@@ -143,7 +143,7 @@ describe('was gemeldet wird', () => {
     expect(k[0].obstacleLabel).toBe('Pult');
   });
 
-  it('ein erhoehtes Podest quer in der Linie', () => {
+  it('ein erhöhtes Podest quer in der Linie', () => {
     const k = sightlineConflicts({ ...leer, cameras: [kamera({ z: 0.2 })], stages: [podest({ elevationM: 1 })] });
     expect(k).toHaveLength(1);
     expect(k[0].kind).toBe('stage');
@@ -151,7 +151,7 @@ describe('was gemeldet wird', () => {
     expect(k[0].atDistanceM).toBe(4);
   });
 
-  it('rechnet die Hoehe an der KREUZUNGSSTELLE, nicht am Motiv', () => {
+  it('rechnet die Höhe an der KREUZUNGSSTELLE, nicht am Motiv', () => {
     // Kamera auf 3 m, Tilt -20 Grad, Wand 2 m hoch bei 5 m. Am Motiv (10 m)
     // ist die Linie tief, an der Wand noch hoch genug.
     const hoch = kamera({ z: 3, tilt: -20, focusDistance: 10 });
@@ -196,7 +196,7 @@ describe('was die Datei NICHT tut', () => {
     expect(quelle).not.toMatch(/new Date\(\)|Date\.now\(\)|useStore/);
   });
 
-  it('nimmt fuer ein Buehnenobjekt genau die Breite aus dem Datensatz', () => {
+  it('nimmt für ein Bühnenobjekt genau die Breite aus dem Datensatz', () => {
     // Als Kreis mit `width` als DURCHMESSER genaehert: der Planer fuehrt nur
     // eine Breite und keine Tiefe, ein Rechteck bekaeme seine zweite Kante
     // frei erfunden. Der erste Versuch dieses Tests verbot Woerter im
@@ -226,7 +226,7 @@ describe('Erreichbarkeit', () => {
     expect(sidebarQuelle).toMatch(/\{sichtKonflikte\.length > 0 && \(\s*\n\s*<Note tone="warn">/);
   });
 
-  it('rechnet gegen den GESAMTEN Aufbau, nicht nur gegen Waende', () => {
+  it('rechnet gegen den GESAMTEN Aufbau, nicht nur gegen Wände', () => {
     // Der Befund nennt Pult, Monitor, Traverse und Lautsprecherstapel -- nur
     // Waende zu pruefen liesse genau die Faelle liegen, die er aufzaehlt.
     expect(sidebarQuelle).toContain('{ cameras: [cam], walls, persons, stages: venue.stages }');

@@ -45,7 +45,7 @@ describe('Shotlist-Store', () => {
     expect(s.activeShotlistId).toBe(id);
   });
 
-  it('haengt Shots in Aufnahme-Reihenfolge an', async () => {
+  it('hängt Shots in Aufnahme-Reihenfolge an', async () => {
     const useStore = await freshStore();
     const list = useStore.getState().addShotlist();
     useStore.getState().addShot(list, sampleShot('A'));
@@ -76,7 +76,7 @@ describe('Shotlist-Store', () => {
     expect(useStore.getState().shotlists[0].shots.map((s) => s.name)).toEqual(['A', 'B', 'C']);
   });
 
-  it('laesst die Sequenz bei ungueltigen Drop-Indizes unveraendert', async () => {
+  it('lässt die Sequenz bei ungültigen Drop-Indizes unverändert', async () => {
     const useStore = await freshStore();
     const list = useStore.getState().addShotlist();
     ['A', 'B'].forEach((n) => useStore.getState().addShot(list, sampleShot(n)));
@@ -89,7 +89,7 @@ describe('Shotlist-Store', () => {
     expect(useStore.getState().shotlists[0].shots.map((s) => s.name)).toEqual(before);
   });
 
-  it('aktualisiert und loescht einzelne Shots', async () => {
+  it('aktualisiert und löscht einzelne Shots', async () => {
     const useStore = await freshStore();
     const list = useStore.getState().addShotlist();
     const a = useStore.getState().addShot(list, sampleShot('A'));
@@ -104,7 +104,7 @@ describe('Shotlist-Store', () => {
     expect(useStore.getState().shotlists[0].shots.map((s) => s.name)).toEqual(['B']);
   });
 
-  it('setzt currentShotId zurueck, wenn genau dieser Shot geloescht wird', async () => {
+  it('setzt currentShotId zurück, wenn genau dieser Shot gelöscht wird', async () => {
     const useStore = await freshStore();
     const list = useStore.getState().addShotlist();
     const a = useStore.getState().addShot(list, sampleShot('A')); // addShot setzt current
@@ -113,7 +113,7 @@ describe('Shotlist-Store', () => {
     expect(useStore.getState().currentShotId).toBeNull();
   });
 
-  it('waehlt nach dem Loeschen der aktiven Liste die naechste aus', async () => {
+  it('wählt nach dem Löschen der aktiven Liste die nächste aus', async () => {
     const useStore = await freshStore();
     const first = useStore.getState().addShotlist('A');
     const second = useStore.getState().addShotlist('B');
@@ -122,7 +122,7 @@ describe('Shotlist-Store', () => {
     expect(useStore.getState().activeShotlistId).toBe(first);
   });
 
-  it('persistiert Shotlisten und laedt sie neu ein', async () => {
+  it('persistiert Shotlisten und lädt sie neu ein', async () => {
     const useStore = await freshStore();
     const list = useStore.getState().addShotlist('Persistiert');
     useStore.getState().addShot(list, sampleShot('A'));
@@ -147,7 +147,7 @@ describe('Shotlist-Store', () => {
     expect(useStore.getState().shotlistStorageFull).toBe(true);
   });
 
-  it('ueberspringt kaputte Eintraege beim Laden', async () => {
+  it('überspringt kaputte Einträge beim Laden', async () => {
     store['multicam-shotlists'] = JSON.stringify([
       { id: 'ok', name: 'Gut', shots: [] },
       { id: 'kaputt' }, // kein shots-Array

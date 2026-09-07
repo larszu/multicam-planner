@@ -47,7 +47,7 @@ const cam = (over: Partial<VenueCamera> = {}): VenueCamera =>
 
 const shot = (over: Partial<Shot> = {}): Shot => ({
   id: 's1',
-  name: 'WS Buehne',
+  name: 'WS Bühne',
   cameraId: 'cam-1',
   state: shotStateFromCamera(cam()),
   transition: 'fast',
@@ -65,7 +65,7 @@ describe('transitionSeconds', () => {
     expect(transitionSeconds('manual', 6)).toBe(6);
   });
 
-  it('faellt bei unbrauchbarer Manuell-Zeit auf 0 zurueck (harter Schnitt)', () => {
+  it('fällt bei unbrauchbarer Manuell-Zeit auf 0 zurück (harter Schnitt)', () => {
     // Sonst wuerde eine negative/NaN-Dauer die Fahrt nie beenden.
     expect(transitionSeconds('manual', -5)).toBe(0);
     expect(transitionSeconds('manual', Number.NaN)).toBe(0);
@@ -111,7 +111,7 @@ describe('interpolateCamera', () => {
     expect(patch.focalLength).toBe(40);
   });
 
-  it('laesst nicht-numerische Felder waehrend der Fahrt unangetastet', () => {
+  it('lässt nicht-numerische Felder während der Fahrt unangetastet', () => {
     // `lockedPersonId: undefined` darf erst am Ende greifen, nicht mittendrin.
     const patch = interpolateCamera(cam(), { pan: 10, lockedPersonId: undefined }, 0.5);
     expect('lockedPersonId' in patch).toBe(false);
@@ -137,19 +137,19 @@ describe('shotStateFromCamera / shotTargetFromState', () => {
     expect(shotStateFromCamera(cam({ trackOffset: undefined })).trackOffset).toBe(0);
   });
 
-  it('loest beim Anfahren den Fokus-Lock', () => {
+  it('löst beim Anfahren den Fokus-Lock', () => {
     const target = shotTargetFromState(shotStateFromCamera(cam()));
     expect(target.lockedPersonId).toBeUndefined();
     expect('lockedPersonId' in target).toBe(true);
   });
 
-  it('schlaegt einen sprechenden Shot-Namen vor', () => {
+  it('schlägt einen sprechenden Shot-Namen vor', () => {
     expect(defaultShotName(cam())).toBe('CAM 1 · 35mm');
   });
 });
 
 describe('stepShotIndex', () => {
-  it('laeuft zyklisch vorwaerts und rueckwaerts (Q/E)', () => {
+  it('läuft zyklisch vorwärts und rückwärts (Q/E)', () => {
     expect(stepShotIndex(0, 3, 1)).toBe(1);
     expect(stepShotIndex(2, 3, 1)).toBe(0);
     expect(stepShotIndex(0, 3, -1)).toBe(2);
@@ -195,14 +195,14 @@ describe('Storyboard-Aufbereitung', () => {
     expect(contactSheetSize(2).width).toBeLessThan(contactSheetSize(3).width);
   });
 
-  it('waechst der Kontaktbogen zeilenweise, sobald die Spalten voll sind', () => {
+  it('wächst der Kontaktbogen zeilenweise, sobald die Spalten voll sind', () => {
     const three = contactSheetSize(3); // 3 Spalten, 1 Zeile
     const four = contactSheetSize(4); // 3 Spalten, 2 Zeilen
     expect(four.width).toBe(three.width);
     expect(four.height).toBeGreaterThan(three.height);
   });
 
-  it('behaelt auch fuer 0 Shots eine gueltige Groesse', () => {
+  it('behält auch für 0 Shots eine gültige Größe', () => {
     const empty = contactSheetSize(0);
     expect(empty.width).toBeGreaterThan(0);
     expect(empty.height).toBeGreaterThan(0);

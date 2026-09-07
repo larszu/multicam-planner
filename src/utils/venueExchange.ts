@@ -375,10 +375,10 @@ function collectStageForeign(
 export function parseVenueExchange(text: string): VenueExchange {
   const data = JSON.parse(text) as Partial<VenueExchange>;
   if (!data || data.kind !== VENUE_EXCHANGE_KIND) {
-    throw new Error('Keine gueltige Venue-Austauschdatei (kind != venue-exchange).');
+    throw new Error('Keine gültige Venue-Austauschdatei (kind != venue-exchange).');
   }
   if (data.formatVersion !== VENUE_EXCHANGE_VERSION) {
-    throw new Error(`Nicht unterstuetzte Venue-Austausch-Version: ${data.formatVersion}`);
+    throw new Error(`Nicht unterstützte Venue-Austausch-Version: ${data.formatVersion}`);
   }
   if (!data.venue) throw new Error('Venue-Austauschdatei ohne venue-Block.');
   return data as VenueExchange;

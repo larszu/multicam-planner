@@ -22,7 +22,7 @@ describe('Katalog-Integritaet', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('nennt fuer jedes Rig einen sinnvollen Hoehenbereich', () => {
+  it('nennt für jedes Rig einen sinnvollen Höhenbereich', () => {
     for (const r of RIGS) {
       expect(r.maxHeightM).toBeGreaterThan(r.minHeightM);
       expect(r.minHeightM).toBeGreaterThanOrEqual(0);
@@ -39,7 +39,7 @@ describe('Katalog-Integritaet', () => {
   it('deckt jede Montage-Kategorie mit mindestens einem Rig ab', () => {
     // Sonst haette der Nutzer eine Kategorie ohne auswaehlbares Modell.
     for (const m of Object.keys(MOUNT_TYPE_LABELS) as CameraMountType[]) {
-      expect(rigsForType(m).length, `keine Rigs fuer ${m}`).toBeGreaterThan(0);
+      expect(rigsForType(m).length, `keine Rigs für ${m}`).toBeGreaterThan(0);
     }
   });
 
@@ -53,7 +53,7 @@ describe('Katalog-Integritaet', () => {
 describe('Jimmy Jib Triangle', () => {
   const jibs = RIGS.filter((r) => r.id.startsWith('jimmyjib-triangle-'));
 
-  it('fuehrt die lieferbaren Laengen 6–40 ft', () => {
+  it('führt die lieferbaren Längen 6–40 ft', () => {
     const feet = jibs
       .map((r) => Number(r.id.replace('jimmyjib-triangle-', '').replace('ft', '')))
       .sort((a, b) => a - b);
@@ -65,7 +65,7 @@ describe('Jimmy Jib Triangle', () => {
     expect(j18.armLengthM).toBeCloseTo(18 * FT, 2);
   });
 
-  it('reicht mit laengerem Ausleger hoeher', () => {
+  it('reicht mit längerem Ausleger höher', () => {
     const short = getRigById('jimmyjib-triangle-12ft') as CameraRig;
     const long = getRigById('jimmyjib-triangle-30ft') as CameraRig;
     expect(long.maxHeightM).toBeGreaterThan(short.maxHeightM);
@@ -80,7 +80,7 @@ describe('Jimmy Jib Triangle', () => {
 });
 
 describe('Technocrane', () => {
-  it('fuehrt mehrere Laengen mit Teleskopweg', () => {
+  it('führt mehrere Längen mit Teleskopweg', () => {
     const cranes = rigsForType('technocrane');
     expect(cranes.length).toBeGreaterThanOrEqual(6);
     for (const c of cranes) expect(c.telescopeM!).toBeGreaterThan(0);
@@ -93,7 +93,7 @@ describe('Technocrane', () => {
     expect(t22.armLengthM).toBeCloseTo(27.08 * FT, 2); // 27'1" Arm
   });
 
-  it('steigt in Hoehe und Teleskopweg mit der Baugroesse', () => {
+  it('steigt in Höhe und Teleskopweg mit der Baugröße', () => {
     const t15 = getRigById('techno-15') as CameraRig;
     const st30 = getRigById('supertechno-30') as CameraRig;
     const st75 = getRigById('supertechno-75') as CameraRig;
@@ -104,31 +104,31 @@ describe('Technocrane', () => {
 });
 
 describe('Dolly-Schienen aus Sektionen', () => {
-  it('kennt die gaengigen Sektionen 4/8/10 ft', () => {
+  it('kennt die gängigen Sektionen 4/8/10 ft', () => {
     const inFeet = TRACK_SECTIONS_M.map((m) => Math.round(m / FT));
     expect(inFeet).toEqual([4, 8, 10]);
   });
 
-  it('legt eine Wunschlaenge aus groessten Sektionen zuerst', () => {
+  it('legt eine Wunschlänge aus größten Sektionen zuerst', () => {
     const plan = trackSectionPlan(10 * FT); // genau eine 10-ft-Sektion
     expect(plan.total).toBeCloseTo(10 * FT, 2);
     expect(plan.sections).toEqual([{ lengthM: TRACK_SECTIONS_M[2], count: 1 }]);
   });
 
-  it('kombiniert Sektionen fuer Zwischenlaengen', () => {
+  it('kombiniert Sektionen für Zwischenlängen', () => {
     const plan = trackSectionPlan(18 * FT); // 10 + 8
     expect(plan.total).toBeCloseTo(18 * FT, 2);
     expect(plan.sections.reduce((n, s) => n + s.count, 0)).toBe(2);
   });
 
-  it('rundet nach OBEN auf, statt die Strecke zu kuerzen', () => {
+  it('rundet nach OBEN auf, statt die Strecke zu kürzen', () => {
     // 5 ft gewuenscht: eine 4-ft-Sektion reicht nicht, also kommt eine zweite
     // dazu — eine zu kurze Schiene waere im Aufbau nutzlos.
     const plan = trackSectionPlan(5 * FT);
     expect(plan.total).toBeGreaterThanOrEqual(5 * FT - 1e-9);
   });
 
-  it('liefert fuer 0 eine leere Strecke', () => {
+  it('liefert für 0 eine leere Strecke', () => {
     expect(trackSectionPlan(0).total).toBe(0);
     expect(trackSectionPlan(-5).total).toBe(0);
   });
@@ -144,7 +144,7 @@ describe('rigLimits — Rangfolge der Quellen', () => {
     expect(l.maxHeightM).toBeGreaterThan(l.minHeightM);
   });
 
-  it('uebernimmt die Maße des gewaehlten Rigs', () => {
+  it('übernimmt die Maße des gewählten Rigs', () => {
     const l = rigLimits({ mountType: 'technocrane', rigId: 'supertechno-75' });
     expect(l.rig?.id).toBe('supertechno-75');
     expect(l.maxHeightM).toBeCloseTo(80 * FT, 1);
@@ -158,13 +158,13 @@ describe('rigLimits — Rangfolge der Quellen', () => {
     expect(l.maxHeightM).toBeLessThan(3);
   });
 
-  it('laesst die eigene Schienenlaenge alles ueberschreiben', () => {
+  it('lässt die eigene Schienenlänge alles überschreiben', () => {
     const l = rigLimits({ mountType: 'dolly', rigId: 'fisher-10', trackLengthM: 12.5 });
     expect(l.trackM).toBe(12.5);
     expect(l.trackIsCustom).toBe(true);
   });
 
-  it('markiert den Rig-Vorschlag als nicht-eigene Laenge', () => {
+  it('markiert den Rig-Vorschlag als nicht-eigene Länge', () => {
     const l = rigLimits({ mountType: 'dolly', rigId: 'fisher-10' });
     expect(l.trackIsCustom).toBe(false);
     expect(l.trackM).toBeGreaterThan(0);
@@ -175,7 +175,7 @@ describe('rigLimits — Rangfolge der Quellen', () => {
     expect(hasTrack(rigLimits({ mountType: 'dolly' }))).toBe(true);
   });
 
-  it('klemmt Hoehe und Fahrweg in die Grenzen', () => {
+  it('klemmt Höhe und Fahrweg in die Grenzen', () => {
     const l = rigLimits({ mountType: 'tripod', rigId: 'tripod-baby' });
     expect(clampHeight(l, 99)).toBe(l.maxHeightM);
     expect(clampHeight(l, -5)).toBe(l.minHeightM);
@@ -187,7 +187,7 @@ describe('rigLimits — Rangfolge der Quellen', () => {
     expect(clampTrack(rigLimits({ mountType: 'tripod' }), 5)).toBe(0);
   });
 
-  it('trennt Schienenlaenge und Fahrweg', () => {
+  it('trennt Schienenlänge und Fahrweg', () => {
     // Bei der Schiene ist die Angabe die gelegte Strecke — der Wagen faehrt
     // von der Mitte aus nur die Haelfte in jede Richtung.
     const rail = rigLimits({ mountType: 'dolly', trackLengthM: 12 });
@@ -200,7 +200,7 @@ describe('rigLimits — Rangfolge der Quellen', () => {
     expect(jib.travelM).toBe(jib.trackM);
   });
 
-  it('liefert fuer jede Kamera ein Bewegungsprofil zur Kategorie', () => {
+  it('liefert für jede Kamera ein Bewegungsprofil zur Kategorie', () => {
     const l = rigLimits(cam({ mountType: 'cablecam', rigId: 'spidercam-field' }));
     expect(profileForMount(l.type)).toBe(MOTION_PROFILES.cablecam);
   });

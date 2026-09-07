@@ -64,7 +64,7 @@ describe('Bedarf 63 — der Bildzustand der Position', () => {
   });
 
   // -- 2 --------------------------------------------------------------------
-  it('ein vollstaendiger, passender Eintrag meldet nichts', () => {
+  it('ein vollständiger, passender Eintrag meldet nichts', () => {
     expect(checkPaint(cam({ paint: voll }), [])).toEqual([]);
   });
 
@@ -131,7 +131,7 @@ describe('Bedarf 63 — der Bildzustand der Position', () => {
     ]);
   });
 
-  it('Angaben ohne Dateinamen sind eine Notiz ueber nichts', () => {
+  it('Angaben ohne Dateinamen sind eine Notiz über nichts', () => {
     const ohneDatei = checkPaint(cam({ paint: { setBy: 'jemand', setAt: '2026-09-06' } }), []);
     expect(ohneDatei.map((f) => f.kind)).toEqual(['file-unstated']);
     // Und die drei „fehlt"-Befunde kommen NICHT dazu: ohne Datei ist die
@@ -194,7 +194,7 @@ describe('Bedarf 63 — der Bildzustand der Position', () => {
   });
 
   // -- 8 --------------------------------------------------------------------
-  it('beim Laden faellt raus, was nicht lesbar ist', () => {
+  it('beim Laden fällt raus, was nicht lesbar ist', () => {
     expect(normalisePaint({ paint: voll })).toEqual({ paint: voll });
     // Bedarf 50 — das Bedienfeld ueberlebt das Laden. Ohne diese Zeile fiel
     // es still weg, und auf dem Uebergabe-Blatt stuende „nicht angegeben",

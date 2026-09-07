@@ -108,7 +108,7 @@ describe('auf welchem Body', () => {
     expect(arten(a, [a, b])).not.toContain('serial-unstated');
   });
 
-  it('verlangt sie nicht fuer einen Zustand, den es gar nicht gibt', () => {
+  it('verlangt sie nicht für einen Zustand, den es gar nicht gibt', () => {
     // Ohne Datei und ohne Platz ist `unfindable` die Meldung. Eine zweite
     // daneben („und die Body-Nummer fehlt auch") ist Rauschen an einem
     // Eintrag, der ohnehin verloren ist.
@@ -138,7 +138,7 @@ describe('Abgleich-Gruppen', () => {
     expect(g?.split).toEqual([]);
   });
 
-  it('meldet an der Position, die HERAUSFAELLT', () => {
+  it('meldet an der Position, die HERAUSFÄLLT', () => {
     // Der Fall aus dem Beleg: eine Panasonic-PTZ in einer Gruppe mit
     // Blackmagic-Bodies. Gemeinsam geht die Blende, sonst nichts.
     const a = bm({ id: 'a', label: 'CAM 1' });
@@ -331,7 +331,7 @@ describe('normaliseMatchGroup', () => {
     expect(normaliseMatchGroup(null)).toEqual({});
   });
 
-  it('laeuft auf dem Lade-Pfad', () => {
+  it('läuft auf dem Lade-Pfad', () => {
     expect(storeQuelle).toMatch(/\.\.\.normaliseMatchGroup\(c\)/);
   });
 });

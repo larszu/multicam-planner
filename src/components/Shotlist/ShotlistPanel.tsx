@@ -147,7 +147,7 @@ export default function ShotlistPanel() {
     if (!res.hadThumbnail) {
       // Sollte dank Offscreen-Render praktisch nie passieren — nur wenn gar
       // keine Preview gemountet ist (z. B. Panel allein im Grid-Preset).
-      flash('Shot gespeichert — ohne Bild (Preview nicht verfuegbar).');
+      flash('Shot gespeichert — ohne Bild (Preview nicht verfügbar).');
     }
   }, [flash]);
 
@@ -265,10 +265,10 @@ export default function ShotlistPanel() {
         <button
           className={btn}
           disabled={!list}
-          title="Shotlist loeschen"
+          title="Shotlist löschen"
           onClick={() => {
             if (!list) return;
-            if (window.confirm(`Shotlist "${list.name}" mit ${list.shots.length} Shots loeschen?`)) {
+            if (window.confirm(`Shotlist "${list.name}" mit ${list.shots.length} Shots löschen?`)) {
               stopPlayback();
               removeShotlist(list.id);
             }
@@ -294,7 +294,7 @@ export default function ShotlistPanel() {
         <button className={btn} onClick={() => step(-1)} disabled={shots.length === 0} title="Vorheriger Shot (Q)">
           <FiChevronLeft size={13} />
         </button>
-        <button className={btn} onClick={() => step(1)} disabled={shots.length === 0} title="Naechster Shot (E)">
+        <button className={btn} onClick={() => step(1)} disabled={shots.length === 0} title="Nächster Shot (E)">
           <FiChevronRight size={13} />
         </button>
         {playing ? (
@@ -329,8 +329,8 @@ export default function ShotlistPanel() {
           {hint && <div className="text-bc-yellow">{hint}</div>}
           {shotlistStorageFull && (
             <div className="text-bc-red">
-              Speicher voll — die letzte Aenderung wurde nicht dauerhaft gesichert. Aeltere Shots
-              loeschen oder Storyboard exportieren.
+              Speicher voll — die letzte Änderung wurde nicht dauerhaft gesichert. Ältere Shots
+              löschen oder Storyboard exportieren.
             </div>
           )}
         </div>
@@ -473,7 +473,7 @@ export default function ShotlistPanel() {
                       </span>
                     )}
                     {camGone && (
-                      <span className="text-[9px] text-bc-red" title="Die Kamera dieses Shots wurde geloescht">
+                      <span className="text-[9px] text-bc-red" title="Die Kamera dieses Shots wurde gelöscht">
                         Kamera fehlt
                       </span>
                     )}
@@ -483,7 +483,7 @@ export default function ShotlistPanel() {
                         if (list) removeShot(list.id, shot.id);
                       }}
                       className="ml-auto p-0.5 text-gray-500 hover:text-bc-red"
-                      title="Shot loeschen"
+                      title="Shot löschen"
                     >
                       <FiTrash2 size={12} />
                     </button>

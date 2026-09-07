@@ -67,7 +67,7 @@ const voll = {
 
 describe('Bedarf 50 — die Schicht-Übergabe', () => {
   // -- 1 --------------------------------------------------------------------
-  it('sagt auf dem Blatt, dass nichts zurueckgelesen wurde', () => {
+  it('sagt auf dem Blatt, dass nichts zurückgelesen wurde', () => {
     // Der Satz, den der Bedarf woertlich verlangt. Er steht IM Bericht (also
     // im Fingerabdruck und im Druck) und nicht nur im Kommentar.
     const r = buildShiftReport([cam({ paint: voll })]);
@@ -77,7 +77,7 @@ describe('Bedarf 50 — die Schicht-Übergabe', () => {
   });
 
   // -- 2 --------------------------------------------------------------------
-  it('fuehrt die drei Dinge, die heute nirgends stehen', () => {
+  it('führt die drei Dinge, die heute nirgends stehen', () => {
     const r = buildShiftReport([cam({ paint: voll, faults: ['Sucher flackert ab 19:10'] })]);
     const z = r.rows[0];
     expect(z.sceneFile).toBe('CAM1_Tag1.scene');
@@ -102,7 +102,7 @@ describe('Bedarf 50 — die Schicht-Übergabe', () => {
   });
 
   // -- 3 --------------------------------------------------------------------
-  it('fuehrt die Befunde der bestehenden Pruefungen zusammen', () => {
+  it('führt die Befunde der bestehenden Prüfungen zusammen', () => {
     // Das ist der Teil, den der Bedarf als „exists nowhere today" bezeichnet:
     // die Pruefungen gibt es, aber jede sieht man nur an der ausgewaehlten
     // Kamera. Hier stehen sie fuer ALLE Positionen auf einem Blatt.
@@ -148,7 +148,7 @@ describe('Bedarf 50 — die Schicht-Übergabe', () => {
     expect(danach.withFindings).toEqual([]);
   });
 
-  it('die Kreuz-Pruefung zwischen Positionen steht mit auf dem Blatt', () => {
+  it('die Kreuz-Prüfung zwischen Positionen steht mit auf dem Blatt', () => {
     // Zwei Positionen, die dasselbe Beltpack fordern, sind EINZELN beide
     // vollstaendig ausgefuellt. Nur im Vergleich faellt es auf — und ein
     // Uebergabe-Blatt, das nur je Position schaut, uebersaehe es.
@@ -216,7 +216,7 @@ describe('Bedarf 50 — die Schicht-Übergabe', () => {
   });
 
   // -- 7 --------------------------------------------------------------------
-  it('gedruckt wird ueber EINE Stelle', () => {
+  it('gedruckt wird über EINE Stelle', () => {
     // Der unsichtbare Rahmen, das Warten auf die Bilder, das Aufraeumen —
     // eine zweite Kopie liefe bei der naechsten Chrome-Eigenart auseinander.
     expect(storyboardQuelle).toMatch(/export function printHtml\(html: string\): void/);

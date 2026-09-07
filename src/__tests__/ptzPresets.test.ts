@@ -56,7 +56,7 @@ const kamera = (over: Partial<VenueCamera> = {}): VenueCamera =>
 
 const preset = (over: Partial<PtzPreset> = {}): PtzPreset => ({
   number: 1,
-  name: 'Weit Buehne',
+  name: 'Weit Bühne',
   pan: 15,
   tilt: -5,
   focalLength: 20,
@@ -174,7 +174,7 @@ describe('ein Preset entsteht aus der aktuellen Stellung', () => {
     });
   });
 
-  it('bleibt unberuehrt, wenn die Kamera danach schwenkt', () => {
+  it('bleibt unberührt, wenn die Kamera danach schwenkt', () => {
     const cam = kamera({ pan: 42 });
     const p = presetFromCamera(cam, 1, 'Pult', zeit);
     const gedreht = { ...cam, pan: 180 };
@@ -182,13 +182,13 @@ describe('ein Preset entsteht aus der aktuellen Stellung', () => {
     expect(checkPresets({ ...gedreht, presets: [p] }, { lens: objektiv, isPtz: true })).toEqual([]);
   });
 
-  it('laesst das Segment weg, statt es leer zu setzen', () => {
+  it('lässt das Segment weg, statt es leer zu setzen', () => {
     expect('segment' in presetFromCamera(kamera(), 1, 'X', zeit)).toBe(false);
   });
 });
 
 describe('Nummernvergabe', () => {
-  it('nimmt die kleinste freie, nicht die naechsthoehere', () => {
+  it('nimmt die kleinste freie, nicht die nächsthöhere', () => {
     // Nummern am Pult sind eine knappe, GETIPPTE Ressource: eine geloeschte 2
     // bliebe bei `max + 1` fuer immer frei.
     expect(nextPresetNumber([preset({ number: 1 }), preset({ number: 3 })])).toBe(3 - 1);
@@ -198,7 +198,7 @@ describe('Nummernvergabe', () => {
 });
 
 describe('die Tabelle auf der Karte', () => {
-  it('fuehrt Nummer, Shot und Segment -- die drei Spalten des Bedarfs', () => {
+  it('führt Nummer, Shot und Segment -- die drei Spalten des Bedarfs', () => {
     const cam = kamera({ presets: [preset({ number: 2, name: 'Pult', segment: 'Predigt' })] });
     const r = presetRows(cam)[0];
     expect(r.nummer).toBe('2');
@@ -215,7 +215,7 @@ describe('die Tabelle auf der Karte', () => {
     expect(presetRows(cam).map((r) => r.nummer)).toEqual(['2', '4', '7']);
   });
 
-  it('traegt den Stand, damit „ist das noch aktuell?" beantwortbar ist', () => {
+  it('trägt den Stand, damit „ist das noch aktuell?" beantwortbar ist', () => {
     expect(presetRows(kamera({ presets: [preset()] }))[0].stand).toBe('2026-09-06');
   });
 });
@@ -225,7 +225,7 @@ describe('was die Dateien NICHT tun', () => {
     expect(quelle).not.toMatch(/new Date\(\)|Date\.now\(\)/);
   });
 
-  it('behauptet keinen Geraete-Abgleich', () => {
+  it('behauptet keinen Geräte-Abgleich', () => {
     // Der Bedarf nennt „read-back/diff against the device where the protocol
     // allows" -- dieses Repo spricht kein Kamera-Protokoll. Einen Abgleich zu
     // behaupten, der den Plan mit sich selbst vergleicht, waere schlimmer als
@@ -246,7 +246,7 @@ describe('was die Dateien NICHT tun', () => {
 });
 
 describe('Erreichbarkeit', () => {
-  it('hat eine eigene Gruppe im Seitenstreifen, nur fuer PTZ', () => {
+  it('hat eine eigene Gruppe im Seitenstreifen, nur für PTZ', () => {
     expect(sidebarQuelle).toContain('id="presets"');
     expect(sidebarQuelle).toMatch(/\{istPtz && \(/);
     // Die PTZ-Eigenschaft kommt aus dem Katalog-Datensatz und nicht aus dem
@@ -281,7 +281,7 @@ describe('Erreichbarkeit', () => {
     expect(contentQuelle).toMatch(/'preset'/);
   });
 
-  it('laesst den Block weg, wenn es keine Presets gibt', () => {
+  it('lässt den Block weg, wenn es keine Presets gibt', () => {
     // Ein fester Block waere auf jeder Karte ohne PTZ eine leere Flaeche.
     expect(exportQuelle).toMatch(/presetZeilen\.length > 0 \? 40 \+/);
     expect(exportQuelle).toMatch(/if \(presetH > 0\)/);
