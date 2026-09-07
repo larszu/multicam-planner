@@ -1,4 +1,8 @@
 import type { Camera, Lens, SensorSize, FovResult, DofResult } from '../../types';
+import {
+  personHeightInFrame, sensorDiagonalMm,
+  PERSON_HEIGHT_M, OUTPUT_HEIGHT_PX, COC_DIVISOR,
+} from '../../utils/fov';
 
 /**
  * Step-by-step rendering of the optical formulas used by the calculator, with
@@ -47,12 +51,15 @@ export function CalculationBreakdown({
   const N = aperture;
   const c = dof.circleOfConfusion; // mm
   const s = focusDistance; // m
-  const D = Math.sqrt(W * W + H * H); // sensor diagonal in mm
-  const personH = 1.8;
-
-  // Person height in pixels (matches utils/fov.ts:personHeightInFrame)
+  // Nichts hier wird nachgerechnet. Vorher stand an dieser Stelle eine
+  // Handkopie von `sensorDiagonalMm` und eine von `personHeightInFrame`, samt
+  // Kommentar „(matches utils/fov.ts…)" — eine Uebereinstimmung, die jemand
+  // von Hand pflegen muss, ist keine. Und diese Tafel ist genau die Stelle,
+  // an der eine abweichende Zahl am meisten kostet: wer sie aufklappt, tut
+  // das, weil er der Zahl darueber nicht traut.
+  const D = sensorDiagonalMm(W, H); // sensor diagonal in mm
   const imgH = fov.imageHeightAtDistance;
-  const personPx = (personH / imgH) * 1080;
+  const personPx = personHeightInFrame(H, fe, s);
 
   const Row = ({ label, expr, color = 'text-gray-300' }: { label: string; expr: React.ReactNode; color?: string }) => (
     <div className="grid grid-cols-12 gap-1 leading-snug">
@@ -99,7 +106,7 @@ export function CalculationBreakdown({
 
       <Row
         label="CoC"
-        expr={<>D / 1500 = {fmt(D)} / 1500 = <span className="text-bc-yellow">{(c * 1000).toFixed(1)} µm</span></>}
+        expr={<>D / {COC_DIVISOR} = {fmt(D)} / {COC_DIVISOR} = <span className="text-bc-yellow">{(c * 1000).toFixed(1)} µm</span></>}
         color="text-gray-300"
       />
       <Row
@@ -127,7 +134,7 @@ export function CalculationBreakdown({
 
       <Row
         label="Person"
-        expr={<>1.80 / img_h · 1080 = 1.80 / {fmt(imgH)} · 1080 = <span className="text-bc-red">{fmt(personPx, 0)} px</span> ({fmt((personPx / 1080) * 100, 1)}%)</>}
+        expr={<>{PERSON_HEIGHT_M.toFixed(2)} / img_h · {OUTPUT_HEIGHT_PX} = {PERSON_HEIGHT_M.toFixed(2)} / {fmt(imgH)} · {OUTPUT_HEIGHT_PX} = <span className="text-bc-red">{fmt(personPx, 0)} px</span> ({fmt((personPx / OUTPUT_HEIGHT_PX) * 100, 1)}%)</>}
         color="text-gray-300"
       />
     </div>
