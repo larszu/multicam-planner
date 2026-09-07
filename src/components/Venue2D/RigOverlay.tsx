@@ -179,6 +179,7 @@ export default function RigOverlay({
             draggable
             onDragStart={(e) => { e.cancelBubble = true; }}
             onDragMove={(e) => { e.cancelBubble = true; onRotate(cam, e); }}
+            onDragEnd={(e) => { e.cancelBubble = true; }}
             onMouseEnter={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = 'crosshair'; }}
             onMouseLeave={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = 'grab'; }}
           />

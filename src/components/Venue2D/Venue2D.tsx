@@ -6,6 +6,7 @@ import { getLensById } from '../../data/lenses';
 import { computeFov } from '../../utils/fov';
 import type { VenueCamera, Wall } from '../../types';
 import { effectiveCameraPos, rigYaw } from '../../utils/camera';
+import { dragIsOwn, dropToParked } from '../../utils/venueDrag';
 import { stageColor, stageTopZ } from '../../utils/stageBody';
 import { alphaSuffix, shadeHex } from '../../utils/color';
 import RigOverlay, { RIG_HANDLE_RADIUS } from './RigOverlay';
@@ -371,25 +372,27 @@ export default function Venue2D() {
 
   const handleCamDragEnd = useCallback(
     (cam: VenueCamera, e: Konva.KonvaEventObject<DragEvent>) => {
+      // Nutzer-Meldung 2026-09-07: „wenn man im 2D-Plan ne Kamera schwenkt per
+      // Mausbewegung springt die Kamera an ne falsche Stelle." Das Ende des
+      // Schwenk-Griff-Drags STEIGT hierher auf (Konva feuert `dragend` mit
+      // bubble=true), und `e.target` war dann der Griff — dessen Koordinaten
+      // sind gruppen-lokal, also rund dreissig Pixel. Durch `ppm` geteilt
+      // ergab das ein paar Zentimeter, und die Kamera sprang in die Ecke.
+      // Begruendung und Gegenprobe: `utils/venueDrag.ts`.
+      if (!dragIsOwn(e)) return;
       // The drag operates on the *effective* (track-offset-adjusted) marker.
       // Subtract the offset back out so cam.x/cam.y stores the parked position.
-      const dropX = e.target.x() / ppm;
-      const dropY = e.target.y() / ppm;
-      const offset = cam.trackOffset ?? 0;
-      // Der Fahrweg laeuft entlang der Rig-Achse, nicht entlang der
-      // Blickrichtung — sonst springt die Parkposition, sobald das Rig eine
-      // eigene Ausrichtung hat.
-      const yawRad = (rigYaw(cam) * Math.PI) / 180;
-      const parkedX = dropX - Math.cos(yawRad) * offset;
-      const parkedY = dropY - Math.sin(yawRad) * offset;
-      const newX = Math.max(0, Math.min(venue.widthM, parkedX));
-      const newY = Math.max(0, Math.min(venue.heightM, parkedY));
-      // Snap the visual back to the (possibly clamped) effective position.
-      e.target.position({
-        x: (newX + Math.cos(yawRad) * offset) * ppm,
-        y: (newY + Math.sin(yawRad) * offset) * ppm,
+      const drop = dropToParked({
+        dropX: e.target.x() / ppm,
+        dropY: e.target.y() / ppm,
+        rigYawDeg: rigYaw(cam),
+        trackOffset: cam.trackOffset ?? 0,
+        venueWidthM: venue.widthM,
+        venueHeightM: venue.heightM,
       });
-      moveCamera(cam.id, newX, newY);
+      // Snap the visual back to the (possibly clamped) effective position.
+      e.target.position({ x: drop.markerX * ppm, y: drop.markerY * ppm });
+      moveCamera(cam.id, drop.parkedX, drop.parkedY);
     },
     [moveCamera, ppm, venue],
   );
@@ -564,9 +567,11 @@ export default function Venue2D() {
         y={stagePos.y}
         draggable={!calibActive && !drawingWall}
         onDragEnd={(e) => {
-          if (e.target === stageRef.current) {
-            setStagePos({ x: e.target.x(), y: e.target.y() });
-          }
+          // Dieselbe Regel wie bei der Kamera-Marke, nur hier schon immer von
+          // Hand geschrieben: ein Drag-Handler rechnet nur mit seinem eigenen
+          // Knoten. Ueber `dragIsOwn` steht sie jetzt an einer Stelle.
+          if (!dragIsOwn(e)) return;
+          setStagePos({ x: e.target.x(), y: e.target.y() });
         }}
         onWheel={handleWheel}
         onClick={handleStageClick}
@@ -805,6 +810,7 @@ export default function Venue2D() {
                     draggable
                     onDragStart={(e) => { e.cancelBubble = true; }}
                     onDragMove={(e) => { e.cancelBubble = true; handlePanRotate(cam, e); }}
+                    onDragEnd={(e) => { e.cancelBubble = true; }}
                     onMouseEnter={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = 'crosshair'; }}
                     onMouseLeave={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = 'grab'; }}
                   />
