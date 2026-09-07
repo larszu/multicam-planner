@@ -341,3 +341,35 @@ select {
   width: 14px;
   height: 14px;
 }
+
+/* ── ADR-007 Abschnitt 6: der Rahmen ────────────────────────────────────────
+ *
+ * „Kopfzeile 40 px … Kopflinie oben." Die Suite hat dafuer `.av-topbar` und
+ * `.av-panel-head` in `@avplan/ui`; der MultiCam-Planner laeuft auch allein
+ * und kann das Paket nicht laden, deshalb stehen die Klassen hier mit
+ * denselben Zahlen.
+ *
+ * Die Kopfzeile war `h-14` (56 px) — eine Zahl, die niemand entschieden hat,
+ * sondern die aus einer Tailwind-Stufe stammte. 40 px ist die Zahl der Suite.
+ *
+ * Eine Statusleiste gibt es hier (noch) nicht; wo keine ist, wird auch keine
+ * erfunden, nur um eine Regel abzuhaken. */
+
+.bc-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  flex: none;
+  padding: 0 12px;
+  background: var(--color-bc-panel);
+  border-bottom: 1px solid var(--color-bc-border);
+}
+
+.bc-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-bc-accent);
+}

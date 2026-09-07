@@ -69,4 +69,40 @@ for (const alt of ['#0f1117', '#1a1d27', '#2a2d3a', '#3b82f6']) {
   assert.ok(!css.toLowerCase().includes(alt), `alter Near-Black-Wert ${alt} steht noch da`);
 }
 
+// ── 6. Der Rahmen: Kopfzeile 40 px, Kopflinie in der Akzentfarbe ─────────
+//
+// ADR-007 Abschnitt 6 nennt Zahlen, und Zahlen kann man messen. Vorher stand
+// hier `h-14` am Element — 56 px, eine Tailwind-Stufe, die niemand
+// entschieden hat. Als benannte Klasse ist die Zahl eine Zusage; ohne diesen
+// Check waere sie beim naechsten Umbau still wieder ein Zufall.
+const regel = (klasse) => {
+  const m = css.match(new RegExp(`\\.${klasse}\\s*\\{([^}]*)\\}`));
+  assert.ok(m, `Regel .${klasse} fehlt in src/index.css`);
+  return m[1];
+};
+assert.match(regel('bc-topbar'), /height:\s*40px/, 'Kopfzeile ist 40 px');
+assert.match(regel('bc-topbar'), /flex:\s*none/, 'Kopfzeile schrumpft nicht mit');
+assert.match(
+  regel('bc-panel-head'),
+  /border-bottom:\s*1px solid var\(--color-bc-accent\)/,
+  'Kopflinie ist der Akzent',
+);
+
+// Eine Regel, die niemand anwendet, ist Dekoration in einer CSS-Datei.
+const header = readFileSync(resolve(hier, '..', 'src/components/Layout/Header.tsx'), 'utf8');
+assert.ok(header.includes('<header className="bc-topbar'), 'Kopfzeile benutzt .bc-topbar nicht');
+
+// ── 7. Die Kommandopalette liegt auf Strg/Cmd + K ────────────────────────
+//
+// „Derselbe Griff ueberall" ist die halbe Zusage; die andere Haelfte ist,
+// dass die Palette dieselben Ansichten anbietet wie die Reiter. Deshalb
+// prueft der Waechter beides: die Tastenkombination UND dass die Liste aus
+// `tabs.ts` kommt statt ein zweites Mal getippt zu sein.
+const palette = readFileSync(resolve(hier, '..', 'src/components/Layout/CommandPalette.tsx'), 'utf8');
+assert.match(palette, /ctrlKey \|\| e\.metaKey/, 'Palette hoert nicht auf Strg/Cmd');
+assert.match(palette, /e\.key === 'k' \|\| e\.key === 'K'/, 'Palette hoert nicht auf K');
+const app = readFileSync(resolve(hier, '..', 'src/App.tsx'), 'utf8');
+assert.match(app, /\.\.\.TABS\.map/, 'Palette baut die Ansichten nicht aus TABS');
+assert.ok(app.includes('<CommandPalette commands={commands} />'), 'Palette ist nicht gemountet');
+
 console.log('brand:check ok — Oberflaechen-Regeln (ADR-007) eingehalten');

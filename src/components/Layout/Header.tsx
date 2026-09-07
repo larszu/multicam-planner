@@ -1,5 +1,5 @@
 import { useStore, APP_VERSION } from '../../store/useStore';
-import { FiCamera, FiLayout, FiBox, FiMonitor, FiSliders, FiFilm, FiMove, FiSave, FiUpload, FiDownload, FiChevronDown, FiX, FiCheck, FiMapPin, FiRepeat, FiEdit2 } from 'react-icons/fi';
+import { FiCamera, FiBox, FiSliders, FiSave, FiUpload, FiDownload, FiChevronDown, FiX, FiCheck, FiMapPin, FiRepeat, FiEdit2 } from 'react-icons/fi';
 import { toVenueExchange, parseVenueExchange } from '../../utils/venueExchange';
 import { toCameraList } from '../../utils/cameraExport';
 import { getCameraById } from '../../data/cameras';
@@ -9,18 +9,11 @@ import { useRef, useCallback, useState, useEffect } from 'react';
 import type { ExportMode } from '../Export/ExportPanel';
 import type { EditMode } from '../../types';
 import ZoomControl from './ZoomControl';
+import { TABS } from './tabs';
 import { buildShiftReport, printShiftReport } from '../../utils/shiftReport';
 import { shiftReportFingerprint } from '../../utils/documentContent';
 import { buildStamp } from '../../utils/documentStamp';
 
-const tabs: { id: string; label: string; icon: React.ReactNode }[] = [
-  { id: 'tab-2d', label: '2D Plan', icon: <FiLayout size={16} /> },
-  { id: 'tab-3d', label: '3D View', icon: <FiBox size={16} /> },
-  { id: 'tab-preview', label: 'Preview', icon: <FiMonitor size={16} /> },
-  { id: 'tab-calc', label: 'Calculator', icon: <FiSliders size={16} /> },
-  { id: 'tab-shotlist', label: 'Shotlist', icon: <FiFilm size={16} /> },
-  { id: 'tab-rig', label: 'Rig', icon: <FiMove size={16} /> },
-];
 
 // Edit-mode slider options (issue #43). Each mode locks everything except its
 // own category in the 2D plan; "All" honours each object's manual lock flag.
@@ -282,7 +275,7 @@ export default function Header({
   }, []);
 
   return (
-    <header className="h-14 bg-bc-panel border-b border-bc-border flex items-center justify-between px-2 sm:px-4 shrink-0 gap-3">
+    <header className="bc-topbar justify-between">
       <div className="flex items-center gap-2 text-white min-w-0 shrink-0">
         <FiCamera size={20} className="text-bc-accent shrink-0" />
         <span className="font-bold text-sm hidden sm:inline">MultiCam Planner</span>
@@ -299,7 +292,7 @@ export default function Header({
       </div>
 
       <nav className="flex gap-2 min-w-0 flex-1 justify-center items-center">
-        {tabs.map((tab) => (
+        {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onSelectTab(tab.id)}
@@ -312,7 +305,7 @@ export default function Header({
             }`}
             title={layoutMode === 'grid' ? `Drag ${tab.label} into the grid` : `${tab.label} in focus view`}
           >
-            {tab.icon}
+            <tab.Icon size={16} />
             <span className="hidden sm:inline">{tab.label}</span>
           </button>
         ))}
