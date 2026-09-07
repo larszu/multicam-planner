@@ -173,12 +173,13 @@ export default function RigOverlay({
             offsetX={5.5}
             offsetY={5.5}
             rotation={yaw}
-            fill="#0f1117"
+            fill="#132040"
             stroke="#94a3b8"
             strokeWidth={2}
             draggable
             onDragStart={(e) => { e.cancelBubble = true; }}
             onDragMove={(e) => { e.cancelBubble = true; onRotate(cam, e); }}
+            onDragEnd={(e) => { e.cancelBubble = true; }}
             onMouseEnter={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = 'crosshair'; }}
             onMouseLeave={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = 'grab'; }}
           />

@@ -6,6 +6,7 @@ import { getLensById } from '../../data/lenses';
 import { computeFov } from '../../utils/fov';
 import type { VenueCamera, Wall } from '../../types';
 import { effectiveCameraPos, rigYaw } from '../../utils/camera';
+import { dragIsOwn, dropToParked } from '../../utils/venueDrag';
 import { stageColor, stageTopZ } from '../../utils/stageBody';
 import { alphaSuffix, shadeHex } from '../../utils/color';
 import RigOverlay, { RIG_HANDLE_RADIUS } from './RigOverlay';
@@ -371,25 +372,27 @@ export default function Venue2D() {
 
   const handleCamDragEnd = useCallback(
     (cam: VenueCamera, e: Konva.KonvaEventObject<DragEvent>) => {
+      // Nutzer-Meldung 2026-09-07: „wenn man im 2D-Plan ne Kamera schwenkt per
+      // Mausbewegung springt die Kamera an ne falsche Stelle." Das Ende des
+      // Schwenk-Griff-Drags STEIGT hierher auf (Konva feuert `dragend` mit
+      // bubble=true), und `e.target` war dann der Griff — dessen Koordinaten
+      // sind gruppen-lokal, also rund dreissig Pixel. Durch `ppm` geteilt
+      // ergab das ein paar Zentimeter, und die Kamera sprang in die Ecke.
+      // Begruendung und Gegenprobe: `utils/venueDrag.ts`.
+      if (!dragIsOwn(e)) return;
       // The drag operates on the *effective* (track-offset-adjusted) marker.
       // Subtract the offset back out so cam.x/cam.y stores the parked position.
-      const dropX = e.target.x() / ppm;
-      const dropY = e.target.y() / ppm;
-      const offset = cam.trackOffset ?? 0;
-      // Der Fahrweg laeuft entlang der Rig-Achse, nicht entlang der
-      // Blickrichtung — sonst springt die Parkposition, sobald das Rig eine
-      // eigene Ausrichtung hat.
-      const yawRad = (rigYaw(cam) * Math.PI) / 180;
-      const parkedX = dropX - Math.cos(yawRad) * offset;
-      const parkedY = dropY - Math.sin(yawRad) * offset;
-      const newX = Math.max(0, Math.min(venue.widthM, parkedX));
-      const newY = Math.max(0, Math.min(venue.heightM, parkedY));
-      // Snap the visual back to the (possibly clamped) effective position.
-      e.target.position({
-        x: (newX + Math.cos(yawRad) * offset) * ppm,
-        y: (newY + Math.sin(yawRad) * offset) * ppm,
+      const drop = dropToParked({
+        dropX: e.target.x() / ppm,
+        dropY: e.target.y() / ppm,
+        rigYawDeg: rigYaw(cam),
+        trackOffset: cam.trackOffset ?? 0,
+        venueWidthM: venue.widthM,
+        venueHeightM: venue.heightM,
       });
-      moveCamera(cam.id, newX, newY);
+      // Snap the visual back to the (possibly clamped) effective position.
+      e.target.position({ x: drop.markerX * ppm, y: drop.markerY * ppm });
+      moveCamera(cam.id, drop.parkedX, drop.parkedY);
     },
     [moveCamera, ppm, venue],
   );
@@ -564,9 +567,11 @@ export default function Venue2D() {
         y={stagePos.y}
         draggable={!calibActive && !drawingWall}
         onDragEnd={(e) => {
-          if (e.target === stageRef.current) {
-            setStagePos({ x: e.target.x(), y: e.target.y() });
-          }
+          // Dieselbe Regel wie bei der Kamera-Marke, nur hier schon immer von
+          // Hand geschrieben: ein Drag-Handler rechnet nur mit seinem eigenen
+          // Knoten. Ueber `dragIsOwn` steht sie jetzt an einer Stelle.
+          if (!dragIsOwn(e)) return;
+          setStagePos({ x: e.target.x(), y: e.target.y() });
         }}
         onWheel={handleWheel}
         onClick={handleStageClick}
@@ -588,13 +593,13 @@ export default function Venue2D() {
         )}
         {Array.from({ length: Math.floor(venue.widthM) + 1 }).map((_, i) => (
           <Group key={`vg-${i}`}>
-            <Line points={[i * ppm, 0, i * ppm, H]} stroke="#1e2030" strokeWidth={1} />
+            <Line points={[i * ppm, 0, i * ppm, H]} stroke="#1D324F" strokeWidth={1} />
             <Text x={i * ppm + 2} y={2} text={`${i}m`} fontSize={9} fill="#555" />
           </Group>
         ))}
         {Array.from({ length: Math.floor(venue.heightM) + 1 }).map((_, i) => (
           <Group key={`hg-${i}`}>
-            <Line points={[0, i * ppm, W, i * ppm]} stroke="#1e2030" strokeWidth={1} />
+            <Line points={[0, i * ppm, W, i * ppm]} stroke="#1D324F" strokeWidth={1} />
             <Text x={2} y={i * ppm + 2} text={`${i}m`} fontSize={9} fill="#555" />
           </Group>
         ))}
@@ -695,7 +700,7 @@ export default function Venue2D() {
           ignoreStroke
           anchorSize={8}
           anchorStroke="#60a5fa"
-          anchorFill="#0f1117"
+          anchorFill="#132040"
           borderStroke="#60a5fa"
           enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right', 'top-center', 'bottom-center']}
           boundBoxFunc={(oldBox, newBox) => (newBox.width < 8 || newBox.height < 8 ? oldBox : newBox)}
@@ -716,8 +721,8 @@ export default function Venue2D() {
                 updateWall(w.id, { x1: w.x1 + dx, y1: w.y1 + dy, x2: w.x2 + dx, y2: w.y2 + dy });
               }}
             />
-            <Circle x={w.x1 * ppm} y={w.y1 * ppm} radius={5} fill="#0f1117" stroke="#f59e0b" strokeWidth={2} draggable={!drawingWall && !lockWalls} onDragMove={(e) => handleWallEndpointDragMove(w, 'start', e)} />
-            <Circle x={w.x2 * ppm} y={w.y2 * ppm} radius={5} fill="#0f1117" stroke="#f59e0b" strokeWidth={2} draggable={!drawingWall && !lockWalls} onDragMove={(e) => handleWallEndpointDragMove(w, 'end', e)} />
+            <Circle x={w.x1 * ppm} y={w.y1 * ppm} radius={5} fill="#132040" stroke="#f59e0b" strokeWidth={2} draggable={!drawingWall && !lockWalls} onDragMove={(e) => handleWallEndpointDragMove(w, 'start', e)} />
+            <Circle x={w.x2 * ppm} y={w.y2 * ppm} radius={5} fill="#132040" stroke="#f59e0b" strokeWidth={2} draggable={!drawingWall && !lockWalls} onDragMove={(e) => handleWallEndpointDragMove(w, 'end', e)} />
             <Text x={((w.x1 + w.x2) / 2) * ppm - 20} y={((w.y1 + w.y2) / 2) * ppm - 14} text={w.label} fontSize={9} fill="#9ca3af" align="center" width={40} />
           </React.Fragment>
         ))}
@@ -801,10 +806,11 @@ export default function Venue2D() {
                     x={PAN_HANDLE_RADIUS * Math.cos((cam.pan * Math.PI) / 180)}
                     y={PAN_HANDLE_RADIUS * Math.sin((cam.pan * Math.PI) / 180)}
                     radius={6}
-                    fill="#0f1117" stroke="#ffffff" strokeWidth={2}
+                    fill="#132040" stroke="#ffffff" strokeWidth={2}
                     draggable
                     onDragStart={(e) => { e.cancelBubble = true; }}
                     onDragMove={(e) => { e.cancelBubble = true; handlePanRotate(cam, e); }}
+                    onDragEnd={(e) => { e.cancelBubble = true; }}
                     onMouseEnter={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = 'crosshair'; }}
                     onMouseLeave={(e) => { const s = e.target.getStage(); if (s) s.container().style.cursor = 'grab'; }}
                   />
@@ -839,11 +845,11 @@ export default function Venue2D() {
                   offsetX={4} offsetY={4}
                   rotation={45}
                   fill={color}
-                  stroke="#0f1117"
+                  stroke="#132040"
                   strokeWidth={1}
                   opacity={Math.max(0.35, f.dimming ?? 1)}
                 />
-                <Circle radius={1.6} fill="#0f1117" />
+                <Circle radius={1.6} fill="#132040" />
                 {f.name && (
                   <Text x={7} y={-5} text={f.name} fontSize={9} fill={color} listening={false} />
                 )}
