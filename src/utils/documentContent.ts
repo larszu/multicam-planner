@@ -103,6 +103,47 @@ export const cameraSheetFingerprint = (input: {
   );
 
 /**
+ * Fingerabdruck der Schicht-Uebergabe (Bedarf 50).
+ *
+ * Dieselbe Regel wie ueberall hier: was auf dem Blatt zu SEHEN ist, geht ein.
+ * Der Fall, um den es geht, ist der teuerste dieses Dokuments — zwei
+ * Uebergabe-Blaetter derselben Show, gleiche Positionen, und auf einem steht
+ * ein Fehler, der auf dem anderen fehlt. Ohne diese Zeilen truegen beide
+ * denselben Stempel, und die naechste Schicht liest das aeltere.
+ *
+ * Der Herkunfts-Satz geht MIT ein: er ist Teil des Blattes und bestimmt, wie
+ * alles darunter zu lesen ist.
+ */
+export const shiftReportFingerprint = (report: {
+  paintSource: string;
+  rows: Array<{
+    cameraId: string;
+    label: string;
+    sceneFile: string;
+    setAt: string;
+    setBy: string;
+    reference: string;
+    panel: string;
+    faults: string[];
+    findings: Array<{ label: string; text: string }>;
+  }>;
+}): string =>
+  documentFingerprint(
+    ['schicht-uebergabe', report.paintSource],
+    report.rows.map((r) => [
+      r.cameraId,
+      r.label,
+      r.sceneFile,
+      r.setAt,
+      r.setBy,
+      r.reference,
+      r.panel,
+      r.faults.join('|'),
+      r.findings.map((f) => `${f.label}: ${f.text}`).join('|'),
+    ]),
+  );
+
+/**
  * Fingerabdruck des Storyboards (Kontaktbogen wie Druckfassung).
  *
  * Beide Ausgabewege zeigen dieselben Angaben je Kachel, deshalb reicht eine

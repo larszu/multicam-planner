@@ -196,6 +196,15 @@ describe('Bedarf 63 — der Bildzustand der Position', () => {
   // -- 8 --------------------------------------------------------------------
   it('beim Laden faellt raus, was nicht lesbar ist', () => {
     expect(normalisePaint({ paint: voll })).toEqual({ paint: voll });
+    // Bedarf 50 — das Bedienfeld ueberlebt das Laden. Ohne diese Zeile fiel
+    // es still weg, und auf dem Uebergabe-Blatt stuende „nicht angegeben",
+    // obwohl es dranstand. Nachgemessen: die Gegenprobe ueberlebte.
+    expect(
+      normalisePaint({ paint: { sceneFile: 'x.scene', panel: 'RCP 3, Seite 2' } }),
+    ).toEqual({ paint: { sceneFile: 'x.scene', panel: 'RCP 3, Seite 2' } });
+    expect(normalisePaint({ paint: { sceneFile: 'x.scene', panel: '   ' } })).toEqual({
+      paint: { sceneFile: 'x.scene' },
+    });
     expect(normalisePaint({})).toEqual({});
     expect(normalisePaint({ paint: {} })).toEqual({});
     expect(normalisePaint({ paint: { sceneFile: '   ' } })).toEqual({});

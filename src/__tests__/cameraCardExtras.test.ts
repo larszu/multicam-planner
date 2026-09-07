@@ -280,3 +280,15 @@ describe('die Oberfläche', () => {
     );
   });
 });
+
+describe('Bedarf 50 — die Fehlerliste der Schicht', () => {
+  it('überlebt das Laden, leere Zeilen nicht', () => {
+    // Ohne die Normalisierung fiel die Liste still weg, und das
+    // Übergabe-Blatt zeigte „keine gemeldet", obwohl welche gemeldet waren.
+    expect(normaliseCardExtras({ faults: ['Sucher flackert', '  ', ''] })).toEqual({
+      faults: ['Sucher flackert'],
+    });
+    expect(normaliseCardExtras({ faults: [] })).toEqual({});
+    expect(normaliseCardExtras({ faults: 'kaputt' })).toEqual({});
+  });
+});

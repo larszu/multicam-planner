@@ -1411,6 +1411,21 @@ function CameraCard({
                   })
                 }
               />
+              {/* Bedarf 50 — welches Bedienfeld diese Position schattiert.
+                  Klartext, keine Kennung: dieser Planer fuehrt keine
+                  Pult-Belegung, und eine erfundene Nummerierung waere eine
+                  zweite Wahrheit neben der auf dem Pult. */}
+              <input
+                className={feldCls}
+                placeholder="Bedienfeld (RCP 3, Seite 2)"
+                aria-label="Bedienfeld, das diese Position schattiert"
+                value={cam.paint?.panel ?? ''}
+                onChange={(e) =>
+                  updateCamera(cam.id, {
+                    paint: { ...cam.paint, panel: e.target.value || undefined },
+                  })
+                }
+              />
 
               {/* Der Abgleich-Zustand wird NICHT von Hand getippt: er wird beim
                   Eintragen aus der Position genommen. Ein von Hand gesetzter
@@ -1436,6 +1451,25 @@ function CameraCard({
               >
                 Abgleich auf jetzigen Body/Optik festhalten
               </button>
+
+              {/* Bedarf 50 — was waehrend der Show kaputtgegangen ist. Eigene
+                  Liste und nicht `notes`: eine Liste, in der Notiz und Fehler
+                  stehen, wird von niemandem mehr als Fehlerliste gelesen. */}
+              <textarea
+                className={feldCls}
+                rows={2}
+                placeholder="Fehler dieser Schicht (eine Zeile je Fehler)"
+                aria-label="Fehler an dieser Position"
+                value={(cam.faults ?? []).join('\n')}
+                onChange={(e) =>
+                  updateCamera(cam.id, {
+                    faults: e.target.value
+                      .split('\n')
+                      .map((f) => f.trim())
+                      .filter(Boolean),
+                  })
+                }
+              />
 
               {bildBefunde.length > 0 && (
                 <Note tone="warn">

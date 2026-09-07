@@ -475,6 +475,17 @@ export interface VenueCamera {
    */
   coverage?: CoverageAssignment;
   /**
+   * Bedarf 50 — was an dieser Position waehrend der Show kaputtgegangen ist.
+   *
+   *   > Show-time changes are verbal and invisible to every document.
+   *
+   * Freie Zeilen, wie `kit`: die naechste Schicht braucht den Satz, nicht
+   * eine Kennung. Getrennt von `notes`, weil eine Notiz etwas anderes ist
+   * als ein Fehler — eine Liste, in der beides steht, wird von niemandem
+   * mehr als Fehlerliste gelesen.
+   */
+  faults?: string[];
+  /**
    * Bedarf 63 — der Bildzustand dieser Position.
    *
    *   > Shading is done live by the vision engineer with the operator; the
@@ -508,6 +519,15 @@ export interface PaintState {
   setBy?: string;
   /** Referenzbedingungen im Klartext (Graukarte, Farbtemperatur, Licht). */
   reference?: string;
+  /**
+   * Bedarf 50 — welches Bedienfeld diese Position schattiert.
+   *
+   * Der Bedarf nennt die Zuordnung Kamera → Panel als eines der drei Dinge,
+   * die heute nirgends stehen. Klartext („RCP 3, Seite 2"), keine Kennung:
+   * dieser Planer fuehrt keine Pult-Belegung, und eine erfundene Nummerierung
+   * waere eine zweite Wahrheit neben der auf dem Pult.
+   */
+  panel?: string;
   /** Womit sie abgeglichen wurde. Ohne das ist „passt noch" unbeantwortbar. */
   savedWith?: PaintContext;
   notes?: string;

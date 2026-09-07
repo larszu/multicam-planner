@@ -9,6 +9,9 @@ import { useRef, useCallback, useState, useEffect } from 'react';
 import type { ExportMode } from '../Export/ExportPanel';
 import type { EditMode } from '../../types';
 import ZoomControl from './ZoomControl';
+import { buildShiftReport, printShiftReport } from '../../utils/shiftReport';
+import { shiftReportFingerprint } from '../../utils/documentContent';
+import { buildStamp } from '../../utils/documentStamp';
 
 const tabs: { id: string; label: string; icon: React.ReactNode }[] = [
   { id: 'tab-2d', label: '2D Plan', icon: <FiLayout size={16} /> },
@@ -145,6 +148,21 @@ export default function Header({
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, [loadProject]);
+
+  // Bedarf 50 — das Uebergabe-Blatt. Der Stempel kommt aus DERSELBEN
+  // Ableitung wie der Bericht (`shiftReportFingerprint`), sonst stempelt er
+  // etwas anderes, als gedruckt wird — die Regel von ADR-004.
+  const handlePrintShift = useCallback(() => {
+    setExportMenuOpen(false);
+    const s = useStore.getState();
+    const bericht = buildShiftReport(s.cameras);
+    const stamp = buildStamp({
+      project: s.venue.name,
+      current: shiftReportFingerprint(bericht),
+      now: new Date(),
+    });
+    printShiftReport(bericht, s.venue.name, stamp);
+  }, []);
 
   const handleExport = useCallback((mode: ExportMode = 'current') => {
     setExportMenuOpen(false);
@@ -538,6 +556,19 @@ export default function Header({
               >
                 <div className="font-medium">All — wide + tele</div>
                 <div className="text-[10px] text-gray-500">Two PNGs per camera (lens min and max)</div>
+              </button>
+              {/* Bedarf 50 — die Schicht-Uebergabe. Sie steht hier und nicht
+                  bei den Kamerakarten, weil sie kein Bild ist: ein Blatt ueber
+                  ALLE Positionen, das jemand ausdruckt und weiterreicht. */}
+              <button
+                type="button"
+                onClick={handlePrintShift}
+                className="w-full text-left px-3 py-2 text-xs text-gray-200 hover:bg-bc-border hover:text-white transition-colors border-t border-bc-border"
+              >
+                <div className="font-medium">Schicht-Übergabe drucken</div>
+                <div className="text-[10px] text-gray-500">
+                  Bildzustand, Bedienfeld, Fehler und Befunde je Position
+                </div>
               </button>
             </div>
           )}
