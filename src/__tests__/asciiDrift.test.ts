@@ -81,6 +81,21 @@ const KENNUNGEN = new Set(['schicht-uebergabe']);
 /** Hex-Folgen (Farben, Fingerabdruecke) bestehen nur aus a-f und Ziffern. */
 const istHex = (wort: string) => /^[0-9a-f]+$/i.test(wort);
 
+/**
+ * Die Entscheidung, ob ein Wort eine ASCII-Ersatzform ist — als eigene
+ * Funktion, damit sie direkt geprueft werden kann. Die `venue`-Regel greift
+ * upstream heute an keiner Stelle; sie traegt in der Suite-Kopie, deren
+ * i18n-Schluessel `header.venueExport` und `sidebar.venueSettings` heissen.
+ * Ohne den Test hier waere sie eine Regel, die keine Gegensonde je rot
+ * bekaeme — und damit unbelegt.
+ */
+export const istErsatzform = (wort: string): boolean => {
+  if (!/ae|oe|ue|Ae|Oe|Ue|AE|OE|UE/.test(wort)) return false;
+  const klein = wort.toLowerCase();
+  if (klein.startsWith('venue') || HARMLOS.has(klein) || istHex(wort)) return false;
+  return true;
+};
+
 interface Befund {
   datei: string;
   wort: string;
@@ -110,8 +125,7 @@ const scanne = (): { befunde: Befund[]; literale: number } => {
         const ohnePlatzhalter = text.replace(/\{[^}]*\}/g, ' ');
         if (!KENNUNGEN.has(text.trim())) {
           for (const wort of ohnePlatzhalter.match(/[A-Za-zÄÖÜäöüß]+/g) ?? []) {
-            if (!/ae|oe|ue|Ae|Oe|Ue|AE|OE|UE/.test(wort)) continue;
-            if (HARMLOS.has(wort.toLowerCase()) || istHex(wort)) continue;
+            if (!istErsatzform(wort)) continue;
             befunde.push({ datei: kurz, wort, text: text.slice(0, 70) });
           }
         }
@@ -122,6 +136,28 @@ const scanne = (): { befunde: Befund[]; literale: number } => {
   }
   return { befunde, literale };
 };
+
+describe('die Entscheidung selbst', () => {
+  it('nennt eine Ersatzform beim Namen', () => {
+    for (const w of ['Geraet', 'Buehne', 'Hoehe', 'laesst', 'zurueck', 'loeschen']) {
+      expect(istErsatzform(w), w).toBe(true);
+    }
+  });
+
+  it('laesst die venue-Wortfamilie stehen', () => {
+    // Englisch, und in der Suite-Kopie als Schluessel ueber ein Dutzend Mal:
+    // `header.venueExport`, `sidebar.venueSettings`, `header.import.venueFailed`.
+    for (const w of ['venue', 'venueExport', 'venueImport', 'venueSettings', 'venueFailed']) {
+      expect(istErsatzform(w), w).toBe(false);
+    }
+  });
+
+  it('laesst deutsche Woerter mit echter Vokalfolge stehen', () => {
+    for (const w of ['neue', 'Manuell', 'Dauer', 'zuerst', 'Quelle', 'ferngesteuert']) {
+      expect(istErsatzform(w), w).toBe(false);
+    }
+  });
+});
 
 describe('die Texte stehen in richtigem Deutsch, nicht in ASCII-Ersatzformen', () => {
   it('scannt ueberhaupt etwas (sonst prueft dieser Test nichts)', () => {
