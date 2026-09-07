@@ -121,3 +121,93 @@ describe('camera-list Wire-Contract (Drift-Guard)', () => {
     expect(() => parseCameraList('not json')).toThrow();
   });
 });
+
+// ───────────────────────────────────────────────────────────────────────────
+// Der Vertrag kennt nicht nur die Namen der Felder, sondern ihre Bedeutung.
+//
+// BEFUND (Defektformen-Sweep, Form `vertrag-nur-feldnamen`, gemessen
+// 2026-09-07). Alles oberhalb dieser Zeile prueft NAMEN: eingefrorene
+// Envelope-Keys, eingefrorene Entry-Keys, dieselben Keys aus dem
+// Interface-Rumpf, und vier Ablehnungen, die alle am Umschlag haengen
+// (fremdes `kind`, fremde Version, fehlendes Array, kaputtes JSON).
+//
+// Ueber den INHALT des Arrays stand nichts — und `parseCameraList` sah ihn
+// auch nicht an: es gab `data as CameraListExchange` zurueck. Der Cast war
+// die ganze Zusicherung. `cameras: [null, 42, {}, { id: 5, x: "links" }]`
+// kam als wohlgeformte `CameraListExchange` beim Aufrufer an, und der
+// Aufrufer ist der Cable-Planner, der aus jedem Eintrag einen
+// Equipment-Knoten baut: ohne `id` einen ohne Identitaet, mit `x: "links"`
+// einen bei NaN.
+//
+// Die Faelle hier sind deshalb keine Typ-Uebungen. Jeder von ihnen ist eine
+// Datei, die es geben kann — von Hand editiert, aus einem aelteren Stand
+// gerettet, von einem fremden Werkzeug geschrieben.
+// ───────────────────────────────────────────────────────────────────────────
+describe('camera-list Wire-Contract (Bedeutung, nicht nur Namen)', () => {
+  const mitKameras = (cameras: unknown) => JSON.stringify({ ...exchange, cameras });
+
+  it('ein Eintrag muss ein Objekt sein', () => {
+    for (const murks of [null, 42, 'CAM 1', [], true]) {
+      expect(() => parseCameraList(mitKameras([murks])), String(murks)).toThrow(/Kamera #1/);
+    }
+  });
+
+  it('id und label sind Pflicht und nicht leer', () => {
+    expect(() => parseCameraList(mitKameras([{ ...entry, id: undefined }]))).toThrow(/id/);
+    expect(() => parseCameraList(mitKameras([{ ...entry, id: '' }]))).toThrow(/id/);
+    expect(() => parseCameraList(mitKameras([{ ...entry, id: '   ' }]))).toThrow(/id/);
+    expect(() => parseCameraList(mitKameras([{ ...entry, id: 5 }]))).toThrow(/id/);
+    expect(() => parseCameraList(mitKameras([{ ...entry, label: undefined }]))).toThrow(/label/);
+  });
+
+  it('x und y sind Zahlen, wenn sie dastehen', () => {
+    for (const murks of ['links', null, NaN, Infinity, {}]) {
+      expect(() => parseCameraList(mitKameras([{ ...entry, x: murks }])), String(murks)).toThrow(/x/);
+    }
+    // Aber sie DUERFEN fehlen — eine Kamera ohne Position ist erlaubt, sie
+    // steht dann eben noch nirgends. Das ist die Gegenprobe: ohne sie waere
+    // „x ist immer Pflicht" ebenfalls gruen.
+    const ohnePosition = { id: 'vc9', label: 'CAM 9' };
+    expect(parseCameraList(mitKameras([ohnePosition])).cameras[0]).toEqual(ohnePosition);
+    // Und 0 ist eine Position, kein fehlender Wert.
+    expect(parseCameraList(mitKameras([{ ...entry, x: 0, y: 0 }])).cameras[0].x).toBe(0);
+  });
+
+  it('die optionalen Textfelder sind Text, wenn sie dastehen', () => {
+    expect(() => parseCameraList(mitKameras([{ ...entry, manufacturer: 7 }]))).toThrow(/manufacturer/);
+    expect(() => parseCameraList(mitKameras([{ ...entry, deviceTypeId: {} }]))).toThrow(/deviceTypeId/);
+    const ohne = { id: 'vc9', label: 'CAM 9' };
+    expect(() => parseCameraList(mitKameras([ohne]))).not.toThrow();
+  });
+
+  it('der Umschlag traegt seine Herkunft — sonst weiss niemand, wer das geschrieben hat', () => {
+    for (const feld of ['app', 'appVersion', 'exportedAt'] as const) {
+      expect(() => parseCameraList(JSON.stringify({ ...exchange, [feld]: undefined })), feld)
+        .toThrow(new RegExp(feld));
+    }
+  });
+
+  it('die Fehlermeldung sagt, WELCHE Kamera es ist', () => {
+    // Eine Liste mit 40 Kameras und der Meldung „ungueltig" ist keine Hilfe.
+    expect(() => parseCameraList(mitKameras([entry, entry, { ...entry, id: '' }])))
+      .toThrow(/Kamera #3/);
+  });
+
+  it('was der Exporter schreibt, nimmt der Parser an', () => {
+    // Die Rundreise. Ohne sie koennte die neue Pruefung so streng sein, dass
+    // sie die eigene Ausgabe ablehnt — und das faellt sonst erst beim Nutzer
+    // auf, der exportiert und danach importiert.
+    const placed = [
+      { id: 'vc1', cameraId: 'cam-a', label: 'Kamera 1', x: 3.5, y: 7.25 },
+      { id: 'vc2', cameraId: 'unbekannt', label: 'Kamera 2', x: 0, y: 0 },
+    ] as unknown as VenueCamera[];
+    const lib = {
+      'cam-a': { manufacturer: 'Blackmagic Design', model: 'URSA Broadcast G2', deviceTypeId: 'dt-cam-0001' },
+    } as unknown as Record<string, Camera>;
+    const out = toCameraList(placed, (id) => lib[id], {
+      appVersion: '1.2.3', exportedAt: '2026-01-01T00:00:00.000Z',
+    });
+    expect(() => parseCameraList(JSON.stringify(out))).not.toThrow();
+    expect(parseCameraList(JSON.stringify(out)).cameras).toHaveLength(2);
+  });
+});
