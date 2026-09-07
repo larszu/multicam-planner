@@ -32,14 +32,14 @@ const state = (avForeign: { lighting?: unknown; cabling?: unknown }) => ({
 const LIGHTING = { fixtures: [{ id: 'f1', dimming: 0.7, gelFilterIds: ['L201'] }] };
 const CABLING = { equipment: [{ id: 'e1', name: 'Switcher' }] };
 
-describe('ADR-005 — Fremd-Domaenen ueberleben das native Speichern', () => {
+describe('ADR-005 — Fremd-Domänen überleben das native Speichern', () => {
   it('schreibt lighting und cabling in die Projektdatei', () => {
     const file = buildProjectFile(state({ lighting: LIGHTING, cabling: CABLING }));
     expect(file.avForeign?.lighting).toEqual(LIGHTING);
     expect(file.avForeign?.cabling).toEqual(CABLING);
   });
 
-  it('haelt sie ueber einen vollen Datei-Round-Trip', () => {
+  it('hält sie über einen vollen Datei-Round-Trip', () => {
     // Genau der Weg, auf dem sie bisher verschwanden.
     const saved = JSON.parse(
       JSON.stringify(buildProjectFile(state({ lighting: LIGHTING, cabling: CABLING }))),
@@ -50,13 +50,13 @@ describe('ADR-005 — Fremd-Domaenen ueberleben das native Speichern', () => {
     expect(exported.avForeign?.cabling).toEqual(CABLING);
   });
 
-  it('schreibt kein leeres Feld, wenn es keine Fremd-Domaenen gibt', () => {
+  it('schreibt kein leeres Feld, wenn es keine Fremd-Domänen gibt', () => {
     // Ein `avForeign: {}` in jeder Datei waere Ballast — und eine Behauptung,
     // es habe eine Fremd-Domaene gegeben.
     expect('avForeign' in buildProjectFile(state({}))).toBe(false);
   });
 
-  it('traegt eine einzelne Domaene, ohne die fehlende zu erfinden', () => {
+  it('trägt eine einzelne Domäne, ohne die fehlende zu erfinden', () => {
     const file = buildProjectFile(state({ lighting: LIGHTING }));
     expect(file.avForeign?.lighting).toEqual(LIGHTING);
     expect(file.avForeign?.cabling).toBeUndefined();

@@ -75,7 +75,7 @@ describe('avplan-inventory Wire-Contract (Drift-Guard)', () => {
     expect(file.version).toBe(CONTRACT.version);
   });
 
-  it('Feld-Namen jeder Entitaet sind eingefroren', () => {
+  it('Feld-Namen jeder Entität sind eingefroren', () => {
     expect(sortedKeys(item)).toEqual(CONTRACT.itemKeys);
     expect(sortedKeys(node)).toEqual(CONTRACT.nodeKeys);
     expect(sortedKeys(set)).toEqual(CONTRACT.setKeys);
@@ -87,7 +87,7 @@ describe('avplan-inventory Wire-Contract (Drift-Guard)', () => {
     expect(back).toEqual(snapshot);
   });
 
-  it('parse lehnt fremdes Format und hoehere Version ab', () => {
+  it('parse lehnt fremdes Format und höhere Version ab', () => {
     expect(parseInventory(JSON.stringify({ format: 'something-else', version: 1 }))).toBeNull();
     expect(parseInventory(JSON.stringify({ format: CONTRACT.format, version: CONTRACT.version + 1 }))).toBeNull();
     expect(parseInventory('not json')).toBeNull();

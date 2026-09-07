@@ -30,7 +30,7 @@ export interface CaptureShotResult {
 export function captureCurrentShot(): CaptureShotResult {
   const state = useStore.getState();
   const cam = state.cameras.find((c) => c.id === state.selectedCameraId);
-  if (!cam) return { ok: false, hadThumbnail: false, reason: 'Keine Kamera ausgewaehlt.' };
+  if (!cam) return { ok: false, hadThumbnail: false, reason: 'Keine Kamera ausgewählt.' };
 
   const shotlistId = state.activeShotlistId ?? state.addShotlist('Shotlist 1');
 

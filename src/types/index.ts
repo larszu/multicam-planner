@@ -139,7 +139,7 @@ export const MOUNT_TYPE_LABELS: Record<CameraMountType, string> = {
   slider: 'Slider',
   cablecam: 'Cable-Cam / Spidercam',
   drone: 'Drohne',
-  scissorlift: 'Scherenbuehne / Hebebuehne',
+  scissorlift: 'Scherenbühne / Hebebühne',
   remotehead: 'Remote-Head',
   carmount: 'Fahrzeug-Montage',
   rickshaw: 'Rickshaw / Kamerawagen',

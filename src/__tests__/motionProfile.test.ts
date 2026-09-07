@@ -29,11 +29,11 @@ describe('Profil-Zuordnung', () => {
     }
   });
 
-  it('faellt ohne Montage auf Stativ zurueck', () => {
+  it('fällt ohne Montage auf Stativ zurück', () => {
     expect(profileForMount(undefined)).toBe(MOTION_PROFILES.tripod);
   });
 
-  it('fuehrt den Technocrane als eigene Montage mit Teleskopweg', () => {
+  it('führt den Technocrane als eigene Montage mit Teleskopweg', () => {
     expect(MOUNT_TYPE_LABELS.technocrane).toContain('Technocrane');
     // Teleskopierender Arm -> laengerer Weg als ein klassischer Jib.
     expect(MOUNT_HEIGHT_RANGE.technocrane.track!).toBeGreaterThan(MOUNT_HEIGHT_RANGE.jib.track!);
@@ -42,7 +42,7 @@ describe('Profil-Zuordnung', () => {
 });
 
 describe('motionEase', () => {
-  it('startet bei 0 und endet exakt bei 1 — auch bei ueberschwingenden Profilen', () => {
+  it('startet bei 0 und endet exakt bei 1 — auch bei überschwingenden Profilen', () => {
     for (const m of Object.keys(MOTION_PROFILES) as CameraMountType[]) {
       expect(motionEase(MOTION_PROFILES[m], 0)).toBe(0);
       expect(motionEase(MOTION_PROFILES[m], 1)).toBe(1);
@@ -54,7 +54,7 @@ describe('motionEase', () => {
     expect(motionEase(MOTION_PROFILES.dolly, 5)).toBe(1);
   });
 
-  it('laesst den Dolly traeger anlaufen als das Stativ', () => {
+  it('lässt den Dolly träger anlaufen als das Stativ', () => {
     // Kern des Features: schwere Rigs legen im ersten Viertel weniger Weg
     // zurueck (langer Anlauf).
     const early = 0.25;
@@ -66,7 +66,7 @@ describe('motionEase', () => {
     );
   });
 
-  it('laesst die Steadicam ueberschwingen und sich einpendeln', () => {
+  it('lässt die Steadicam überschwingen und sich einpendeln', () => {
     // Schwebendes Rig: kurz vor Schluss schon ueber dem Ziel.
     expect(motionEase(MOTION_PROFILES.steadicam, 0.85)).toBeGreaterThan(1);
   });
@@ -78,7 +78,7 @@ describe('motionJitter', () => {
     expect(motionJitter(MOTION_PROFILES.dolly, 0.5)).toEqual({ pan: 0, tilt: 0 });
   });
 
-  it('zittert bei Handheld, aber nur waehrend der Fahrt', () => {
+  it('zittert bei Handheld, aber nur während der Fahrt', () => {
     // An den Enden 0, damit Start- und Zielbild exakt getroffen werden.
     expect(motionJitter(MOTION_PROFILES.handheld, 0).pan).toBeCloseTo(0, 9);
     expect(motionJitter(MOTION_PROFILES.handheld, 1).pan).toBeCloseTo(0, 9);
@@ -100,7 +100,7 @@ describe('motionJitter', () => {
 });
 
 describe('feasibleDuration', () => {
-  it('braucht fuer 6 m Dollyfahrt deutlich laenger als die Mindestdauer', () => {
+  it('braucht für 6 m Dollyfahrt deutlich länger als die Mindestdauer', () => {
     // maxTravelMps 1.2 => 6 m brauchen 5 s. Genau der Fall "geht in 2 s nicht".
     const d = feasibleDuration(MOTION_PROFILES.dolly, cam(), cam({ x: 6 }));
     expect(d).toBeCloseTo(5, 1);
@@ -112,7 +112,7 @@ describe('feasibleDuration', () => {
     expect(d).toBeCloseTo(3, 1);
   });
 
-  it('beruecksichtigt Schwenk, Hub und Zoom, nicht nur die Fahrt', () => {
+  it('berücksichtigt Schwenk, Hub und Zoom, nicht nur die Fahrt', () => {
     const rot = feasibleDuration(MOTION_PROFILES.jib, cam(), cam({ pan: 105 }));
     expect(rot).toBeCloseTo(3, 1); // 105° / 35°/s
 
@@ -132,7 +132,7 @@ describe('feasibleDuration', () => {
       .toBe(MOTION_PROFILES.technocrane.minDurationS);
   });
 
-  it('braucht auf schweren Rigs laenger als auf leichten', () => {
+  it('braucht auf schweren Rigs länger als auf leichten', () => {
     const move = [cam(), cam({ x: 3, pan: 45 })] as const;
     expect(feasibleDuration(MOTION_PROFILES.technocrane, ...move))
       .toBeGreaterThan(feasibleDuration(MOTION_PROFILES.handheld, ...move));
@@ -143,7 +143,7 @@ describe('feasibleDuration', () => {
     expect(Number.isFinite(d)).toBe(true);
   });
 
-  it('rundet fuer die Anzeige auf eine Nachkommastelle', () => {
+  it('rundet für die Anzeige auf eine Nachkommastelle', () => {
     const d = feasibleDurationRounded(MOTION_PROFILES.dolly, cam(), cam({ x: 6 }));
     expect(d).toBe(5);
     expect(Number.isInteger(d * 10)).toBe(true);

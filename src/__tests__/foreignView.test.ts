@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { foreignFixturesFrom, cctToColor } from '../utils/foreignView';
 
-describe('foreignView (read-only Lampen aus fremder .avplan-Domaene)', () => {
+describe('foreignView (read-only Lampen aus fremder .avplan-Domäne)', () => {
   it('extrahiert platzierte Lampen defensiv', () => {
     const lighting = {
       fixtures: [
@@ -17,7 +17,7 @@ describe('foreignView (read-only Lampen aus fremder .avplan-Domaene)', () => {
     expect(fx[1]).toMatchObject({ id: 'f2', x: 5, y: 6 });
   });
 
-  it('wirft nie bei kaputten/leeren Domaenen', () => {
+  it('wirft nie bei kaputten/leeren Domänen', () => {
     expect(foreignFixturesFrom(undefined)).toEqual([]);
     expect(foreignFixturesFrom(null)).toEqual([]);
     expect(foreignFixturesFrom({})).toEqual([]);
@@ -25,7 +25,7 @@ describe('foreignView (read-only Lampen aus fremder .avplan-Domaene)', () => {
     expect(foreignFixturesFrom(42)).toEqual([]);
   });
 
-  it('cctToColor liefert eine Farbe fuer jede Temperatur', () => {
+  it('cctToColor liefert eine Farbe für jede Temperatur', () => {
     expect(cctToColor(3000)).toMatch(/^#/);
     expect(cctToColor(6500)).toMatch(/^#/);
     expect(cctToColor(undefined)).toMatch(/^#/);

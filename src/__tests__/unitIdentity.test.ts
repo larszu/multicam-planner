@@ -44,7 +44,7 @@ describe('unitLabel — dieser Planer liest als Haus', () => {
     expect(unitLabel(unit({ code: 'QR-9' }))).toBe('QR-9');
   });
 
-  it('sagt „ohne Nummer" statt eine id-Haelfte zu zeigen', () => {
+  it('sagt „ohne Nummer" statt eine id-Hälfte zu zeigen', () => {
     const nackt = unit({ id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' });
     expect(unitLabel(nackt)).toBe('ohne Nummer');
     expect(unitLabel(nackt)).not.toContain('f47ac1');
@@ -68,7 +68,7 @@ describe('die Hausreferenz kommt an und geht nicht verloren', () => {
     });
   });
 
-  it('ueberlebt den Round-Trip durch dieses Format', () => {
+  it('überlebt den Round-Trip durch dieses Format', () => {
     const u = unit({ houseRef: 'AV-0421', serial: 'S0134-77' });
     const back = parseInventory(serializeInventory({ items: [item], nodes: [], sets: [], units: [u] }));
     expect(back?.units[0].houseRef).toBe('AV-0421');

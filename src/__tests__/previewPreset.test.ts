@@ -35,7 +35,7 @@ describe('groupPresets', () => {
     expect(groupPresets(all, 'cam-1', existing).unassigned).toContain(legacy);
   });
 
-  it('behandelt Presets geloeschter Kameras als unzugeordnet', () => {
+  it('behandelt Presets gelöschter Kameras als unzugeordnet', () => {
     // Nach dem Laden eines anderen Projekts haben alle Kameras neue Ids —
     // stilles Loeschen waere Datenverlust.
     expect(groupPresets(all, 'cam-1', existing).unassigned).toContain(orphan);
@@ -45,13 +45,13 @@ describe('groupPresets', () => {
     expect(groupPresets(all, 'cam-2', existing).own).toEqual([foreign]);
   });
 
-  it('kommt ohne ausgewaehlte Kamera klar', () => {
+  it('kommt ohne ausgewählte Kamera klar', () => {
     const g = groupPresets(all, null, existing);
     expect(g.own).toEqual([]);
     expect(g.unassigned).toEqual([legacy, orphan]);
   });
 
-  it('laesst die Reihenfolge unangetastet', () => {
+  it('lässt die Reihenfolge unangetastet', () => {
     const g = groupPresets([preset('x'), preset('y')], 'cam-1', existing);
     expect(g.unassigned.map((p) => p.id)).toEqual(['x', 'y']);
   });
@@ -77,7 +77,7 @@ describe('assignPreset', () => {
 });
 
 describe('copyPresetToCamera', () => {
-  it('legt eine Kopie fuer die andere Kamera an, das Original bleibt', () => {
+  it('legt eine Kopie für die andere Kamera an, das Original bleibt', () => {
     const next = copyPresetToCamera([preset('a', { cameraId: 'cam-1' })], 'a', 'cam-2', 'neu', ' (CAM 2)');
     expect(next).toHaveLength(2);
     expect(next[0].cameraId).toBe('cam-1');

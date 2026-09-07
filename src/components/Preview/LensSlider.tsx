@@ -182,7 +182,7 @@ export default function LensSlider({
                   ? 'border-bc-accent text-white'
                   : 'border-bc-border/60 text-gray-300 hover:border-bc-accent/60 focus:border-bc-accent'
               }`}
-              title={`${label} direkt eingeben — Enter uebernimmt, Pfeil hoch/runter = eine Stufe`}
+              title={`${label} direkt eingeben — Enter übernimmt, Pfeil hoch/runter = eine Stufe`}
               aria-label={`${label} Wert`}
               data-lens-field
             />
@@ -191,7 +191,7 @@ export default function LensSlider({
           {note ? <span className="text-gray-600">· {note}</span> : null}
         </span>
         <div className="flex items-center gap-1">
-          <button className={stepBtn} tabIndex={-1} onClick={() => onStep(-1)} disabled={disabled} title="Eine Stufe zurueck">
+          <button className={stepBtn} tabIndex={-1} onClick={() => onStep(-1)} disabled={disabled} title="Eine Stufe zurück">
             <FiMinus size={10} />
           </button>
           <button className={stepBtn} tabIndex={-1} onClick={() => onStep(1)} disabled={disabled} title="Eine Stufe weiter">

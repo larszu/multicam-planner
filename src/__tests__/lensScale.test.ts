@@ -17,7 +17,7 @@ import {
 // Prozent der Reglerbahn — genau das pruefen die ersten Tests nach.
 
 describe('valueToPos / posToValue (logarithmisch)', () => {
-  it('legt gleiche Verhaeltnisse auf gleiche Wegstrecken', () => {
+  it('legt gleiche Verhältnisse auf gleiche Wegstrecken', () => {
     // 10→20mm und 200→400mm sind beide eine Verdopplung und muessen darum
     // denselben Weg auf dem Regler belegen.
     const min = 10, max = 400;
@@ -26,7 +26,7 @@ describe('valueToPos / posToValue (logarithmisch)', () => {
     expect(d1).toBeCloseTo(d2, 6);
   });
 
-  it('gibt dem nutzbaren Bereich spuerbar mehr Platz als linear', () => {
+  it('gibt dem nutzbaren Bereich spürbar mehr Platz als linear', () => {
     // 8–900mm-Objektiv: wo endet der Bereich bis 100mm?
     const min = 8, max = 900;
     const logShare = valueToPos(100, min, max);
@@ -53,7 +53,7 @@ describe('valueToPos / posToValue (logarithmisch)', () => {
     expect(posToValue(2, 10, 100)).toBeCloseTo(100, 9);
   });
 
-  it('faellt bei nicht-positiven Grenzen auf linear zurueck (kein log(0))', () => {
+  it('fällt bei nicht-positiven Grenzen auf linear zurück (kein log(0))', () => {
     expect(Number.isFinite(valueToPos(5, 0, 10))).toBe(true);
     expect(valueToPos(5, 0, 10)).toBeCloseTo(0.5, 9);
   });
@@ -71,7 +71,7 @@ describe('Blendenstufen', () => {
     expect(FULL_STOPS[idx + 1] / FULL_STOPS[idx]).toBeCloseTo(Math.SQRT2, 1);
   });
 
-  it('gibt nur Stufen im Bereich zurueck', () => {
+  it('gibt nur Stufen im Bereich zurück', () => {
     expect(stopsInRange(1.7, 8)).toEqual([2, 2.8, 4, 5.6, 8]);
   });
 
@@ -80,13 +80,13 @@ describe('Blendenstufen', () => {
     expect(stepStop(2.8, -1, 1.4, 22)).toBe(2);
   });
 
-  it('laeuft von einem krummen Zwischenwert auf die passende Stufe', () => {
+  it('läuft von einem krummen Zwischenwert auf die passende Stufe', () => {
     // Objektiv-Anfangsblende f/1.7 liegt zwischen den Normstufen.
     expect(stepStop(1.7, 1, 1.7, 22)).toBe(2);
     expect(stepStop(3.5, -1, 1.4, 22)).toBe(2.8);
   });
 
-  it('bleibt an den Enden stehen statt darueber hinauszulaufen', () => {
+  it('bleibt an den Enden stehen statt darüber hinauszulaufen', () => {
     expect(stepStop(22, 1, 1.4, 22)).toBe(22);
     expect(stepStop(1.4, -1, 1.4, 22)).toBe(1.4);
   });
@@ -107,7 +107,7 @@ describe('niceTicks', () => {
     expect(t.every((v) => v >= 8 && v <= 900)).toBe(true);
   });
 
-  it('duennt bei sehr grosser Spanne aus, statt die Skala zu ueberfuellen', () => {
+  it('dünnt bei sehr grosser Spanne aus, statt die Skala zu überfüllen', () => {
     expect(niceTicks(1, 100000, 6).length).toBeLessThanOrEqual(8);
   });
 });
@@ -117,12 +117,12 @@ describe('snapToCandidates', () => {
     expect(snapToCandidates(3.95, [2.8, 4, 5.6], 1.4, 22)).toBe(4);
   });
 
-  it('laesst Werte zwischen den Stufen in Ruhe', () => {
+  it('lässt Werte zwischen den Stufen in Ruhe', () => {
     // Bewusst mittig zwischen zwei Stufen -> keine Rastung.
     expect(snapToCandidates(3.3, [2.8, 4, 5.6], 1.4, 22)).toBe(3.3);
   });
 
-  it('misst die Naehe in Reglerposition, nicht im Wert', () => {
+  it('misst die Nähe in Reglerposition, nicht im Wert', () => {
     // Am Tele-Ende sind die Zahlen weit auseinander, der Weg aber kurz —
     // absolute Wert-Toleranz wuerde dort gar nicht mehr rasten.
     expect(snapToCandidates(880, [900], 8, 900, 0.02)).toBe(900);

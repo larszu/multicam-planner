@@ -34,8 +34,8 @@ const exchange = (venue: Partial<VenueExchange['venue']>): VenueExchange => ({
   venue: { name: 'Halle', persons: [], walls: [], stageObjects: [], ...venue },
 });
 
-describe('importVenueExchange — der eigene Raum ueberlebt eine schweigende Datei', () => {
-  it('behaelt 45x30, wenn die Datei keine Masse traegt', async () => {
+describe('importVenueExchange — der eigene Raum überlebt eine schweigende Datei', () => {
+  it('behält 45x30, wenn die Datei keine Masse trägt', async () => {
     const useStore = await freshStore();
     useStore.setState({ venue: { ...useStore.getState().venue, widthM: 45, heightM: 30 } });
 
@@ -46,7 +46,7 @@ describe('importVenueExchange — der eigene Raum ueberlebt eine schweigende Dat
     expect(venue.heightM).toBe(30);
   });
 
-  it('uebernimmt die Masse, wenn die Datei sie traegt', async () => {
+  it('übernimmt die Masse, wenn die Datei sie trägt', async () => {
     // Der Import bleibt ein Import: sagt die Datei etwas, gewinnt sie.
     const useStore = await freshStore();
     useStore.setState({ venue: { ...useStore.getState().venue, widthM: 45, heightM: 30 } });
@@ -57,7 +57,7 @@ describe('importVenueExchange — der eigene Raum ueberlebt eine schweigende Dat
     expect(useStore.getState().venue.heightM).toBe(8);
   });
 
-  it('gilt auch fuer den .avplan-Import — er geht durch denselben Weg', async () => {
+  it('gilt auch für den .avplan-Import — er geht durch denselben Weg', async () => {
     const useStore = await freshStore();
     useStore.setState({ venue: { ...useStore.getState().venue, widthM: 45, heightM: 30 } });
 
@@ -72,7 +72,7 @@ describe('importVenueExchange — der eigene Raum ueberlebt eine schweigende Dat
     expect(useStore.getState().venue.heightM).toBe(30);
   });
 
-  it('der Name kommt weiterhin aus der Datei — nur das Schweigen ueberschreibt nicht', async () => {
+  it('der Name kommt weiterhin aus der Datei — nur das Schweigen überschreibt nicht', async () => {
     const useStore = await freshStore();
     useStore.setState({ venue: { ...useStore.getState().venue, widthM: 45, heightM: 30 } });
 

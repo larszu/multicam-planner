@@ -67,7 +67,7 @@ const cam = (
 const src = (index: number, host?: string, sourceName?: string, extra: Partial<DiscoveredSource> = {}): DiscoveredSource =>
   ({ index, ...(host ? { host } : {}), ...(sourceName ? { sourceName } : {}), ...extra });
 
-describe('Bedarf 130 — Quellen-Identitaet', () => {
+describe('Bedarf 130 — Quellen-Identität', () => {
   it('1. ein Positions-Treffer ist kein Treffer', () => {
     // Die Kamera stand beim letzten Mal an Position 0 — und dort steht jetzt
     // eine Quelle, die sonst nichts mit ihr zu tun hat.
@@ -91,7 +91,7 @@ describe('Bedarf 130 — Quellen-Identitaet', () => {
     expect(FACET_ORDER[0]).toBe('deviceId');
   });
 
-  it('2. stark schlaegt schwach, ueber alle Kameras hinweg', () => {
+  it('2. stark schlägt schwach, über alle Kameras hinweg', () => {
     // CAM 1 steht zuerst und passt SCHWACH auf die Quelle, die CAM 2 STARK
     // gehoert. Wuerde Kamera fuer Kamera abgeglichen, nähme CAM 1 sie weg.
     const r = reconcile(
@@ -110,7 +110,7 @@ describe('Bedarf 130 — Quellen-Identitaet', () => {
     expect(c1.verdict).toBe('missing');
   });
 
-  it('3. eine Quelle gehoert hoechstens einer Kamera', () => {
+  it('3. eine Quelle gehört höchstens einer Kamera', () => {
     // Zwei Kameras mit demselben Quellennamen, eine Quelle im Netz.
     const r = reconcile(
       [cam('c1', 'CAM 1', { sourceName: 'CAM' }), cam('c2', 'CAM 2', { sourceName: 'CAM' })],
@@ -225,7 +225,7 @@ describe('Bedarf 130 — Quellen-Identitaet', () => {
     expect(mitLuecke.warnings).toHaveLength(1);
   });
 
-  it('7b. eine Quelle heisst auf dem Blatt, wie sie im Empfaenger heisst', () => {
+  it('7b. eine Quelle heisst auf dem Blatt, wie sie im Empfänger heisst', () => {
     expect(sourceLabel(src(0, 'REGIE-PC', 'CAM 1'))).toBe('REGIE-PC (CAM 1)');
     expect(sourceLabel(src(0, undefined, 'CAM 1'))).toBe('CAM 1');
     expect(sourceLabel(src(0, 'REGIE-PC'))).toBe('REGIE-PC');

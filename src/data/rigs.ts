@@ -70,7 +70,7 @@ const jimmyJibs: CameraRig[] = JIMMY_JIB_FEET.map((feet) => {
     footprintM: feet >= 24 ? { w: ft(24), d: ft(24) } : { w: ft(12), d: ft(24) },
     payloadKg: feet >= 40 ? 11 : 23,
     notes:
-      `Ausleger aus 3-ft-Sektionen. Objektivhoehe geschaetzt (Drehpunkt 1.5 m, ~55°). ` +
+      `Ausleger aus 3-ft-Sektionen. Objektivhöhe geschätzt (Drehpunkt 1.5 m, ~55°). ` +
       (feet >= 40 ? 'Bei 40 ft nur leichte Kameras (~11 kg).' : 'Bis 30 ft ~23 kg Nutzlast.'),
   };
 });
@@ -88,7 +88,7 @@ const technocranes: CameraRig[] = [
     id: 'techno-15', name: 'Technocrane 15′', manufacturer: 'Technocrane', type: 'technocrane',
     minHeightM: 0.5, maxHeightM: ft(15), armLengthM: ft(16.25), telescopeM: ft(8.17),
     trackLengthM: ft(8.17), footprintM: { w: 0.79, d: 3.0 }, payloadKg: 36,
-    notes: 'Basisbreite 2′7″, Tuerdurchfahrt ab 6′.',
+    notes: 'Basisbreite 2′7″, Türdurchfahrt ab 6′.',
   },
   {
     id: 'techno-22', name: 'Technocrane 22′', manufacturer: 'Technocrane', type: 'technocrane',
@@ -100,7 +100,7 @@ const technocranes: CameraRig[] = [
     id: 'supertechno-15', name: 'SuperTechno 15′', manufacturer: 'SuperTechno', type: 'technocrane',
     minHeightM: 0.5, maxHeightM: ft(17), armLengthM: ft(19.25), telescopeM: ft(9.42),
     trackLengthM: ft(9.42), footprintM: { w: 0.85, d: 3.2 }, payloadKg: 36,
-    notes: '15′ unterschlagen, 17′ ueberschlagen.',
+    notes: '15′ unterschlagen, 17′ überschlagen.',
   },
   {
     id: 'supertechno-30', name: 'SuperTechno 30′', manufacturer: 'SuperTechno', type: 'technocrane',
@@ -111,19 +111,19 @@ const technocranes: CameraRig[] = [
     id: 'supertechno-50', name: 'SuperTechno 50′', manufacturer: 'SuperTechno', type: 'technocrane',
     minHeightM: 0.8, maxHeightM: ft(50), armLengthM: ft(60), telescopeM: ft(40),
     trackLengthM: ft(40), footprintM: { w: 1.3, d: 6.0 }, payloadKg: 36,
-    notes: 'Zwischengroesse der Baureihe — Maße ueberschlaegig.',
+    notes: 'Zwischengröße der Baureihe — Maße überschlägig.',
   },
   {
     id: 'supertechno-75', name: 'SuperTechno 75′', manufacturer: 'SuperTechno', type: 'technocrane',
     minHeightM: 1.0, maxHeightM: ft(80), armLengthM: ft(89.08), telescopeM: ft(62.67),
     trackLengthM: ft(62.67), footprintM: { w: 1.6, d: 8.0 }, payloadKg: 36,
-    notes: '80′ ueberschlagene Objektivhoehe.',
+    notes: '80′ überschlagene Objektivhöhe.',
   },
   {
     id: 'scorpio-45', name: 'Scorpio 45′', manufacturer: 'Scorpio', type: 'technocrane',
     minHeightM: 0.8, maxHeightM: ft(45), armLengthM: ft(52), telescopeM: ft(30),
     trackLengthM: ft(30), footprintM: { w: 1.3, d: 5.5 }, payloadKg: 36,
-    notes: 'Maße ueberschlaegig.',
+    notes: 'Maße überschlägig.',
   },
 ];
 
@@ -154,7 +154,7 @@ const dollies: CameraRig[] = [
     id: 'doorway-dolly', name: 'Doorway Dolly', type: 'dolly',
     minHeightM: 0.45, maxHeightM: 1.60, trackLengthM: ft(12),
     footprintM: { w: 0.71, d: 1.22 }, payloadKg: 70,
-    notes: 'Passt durch Standardtueren.',
+    notes: 'Passt durch Standardtüren.',
   },
   {
     id: 'western-dolly', name: 'Western Dolly', type: 'dolly',
@@ -174,7 +174,7 @@ const sliders: CameraRig[] = [
   { id: 'slider-60', name: 'Slider 60 cm', type: 'slider', minHeightM: 0.2, maxHeightM: 1.8, trackLengthM: 0.6, payloadKg: 10 },
   { id: 'slider-100', name: 'Slider 100 cm', type: 'slider', minHeightM: 0.2, maxHeightM: 1.8, trackLengthM: 1.0, payloadKg: 12 },
   { id: 'slider-150', name: 'Slider 150 cm', type: 'slider', minHeightM: 0.2, maxHeightM: 1.8, trackLengthM: 1.5, payloadKg: 15 },
-  { id: 'dana-dolly', name: 'Dana Dolly (Speedrail)', type: 'slider', minHeightM: 0.3, maxHeightM: 1.8, trackLengthM: 1.8, payloadKg: 20, notes: 'Laenge ueber Speedrail-Rohre frei waehlbar.' },
+  { id: 'dana-dolly', name: 'Dana Dolly (Speedrail)', type: 'slider', minHeightM: 0.3, maxHeightM: 1.8, trackLengthM: 1.8, payloadKg: 20, notes: 'Länge über Speedrail-Rohre frei wählbar.' },
 ];
 
 // ── Stative, Pedestals, Bodennah ───────────────────────────────────────────
@@ -193,14 +193,14 @@ const staticRigs: CameraRig[] = [
 // Mini (kompakteste Variante); der Kopf ist ein gyro-stabilisierter Remote-Head.
 const flyingRigs: CameraRig[] = [
   { id: 'spidercam-mini', name: 'Spidercam Mini', manufacturer: 'Spidercam', type: 'cablecam', minHeightM: 2, maxHeightM: 15, trackLengthM: 40, payloadKg: 12, notes: 'Kompakteste Variante.' },
-  { id: 'spidercam-light', name: 'Spidercam Light', manufacturer: 'Spidercam', type: 'cablecam', minHeightM: 2, maxHeightM: 25, trackLengthM: 80, payloadKg: 15, notes: 'Fuer kleinere Raeume/Hallen.' },
-  { id: 'spidercam-field', name: 'Spidercam Field', manufacturer: 'Spidercam', type: 'cablecam', minHeightM: 3, maxHeightM: 40, trackLengthM: 150, payloadKg: 20, notes: 'Grosse Stadien/Flaechen, 4 Seile.' },
+  { id: 'spidercam-light', name: 'Spidercam Light', manufacturer: 'Spidercam', type: 'cablecam', minHeightM: 2, maxHeightM: 25, trackLengthM: 80, payloadKg: 15, notes: 'Für kleinere Räume/Hallen.' },
+  { id: 'spidercam-field', name: 'Spidercam Field', manufacturer: 'Spidercam', type: 'cablecam', minHeightM: 3, maxHeightM: 40, trackLengthM: 150, payloadKg: 20, notes: 'Grosse Stadien/Flächen, 4 Seile.' },
   { id: 'drone-fpv', name: 'Drohne (FPV / leicht)', type: 'drone', minHeightM: 0.5, maxHeightM: 120, trackLengthM: 200, payloadKg: 1.5 },
   { id: 'drone-heavy', name: 'Drohne (Heavy-Lift)', type: 'drone', minHeightM: 1.0, maxHeightM: 120, trackLengthM: 150, payloadKg: 10 },
-  { id: 'scissorlift-8', name: 'Scherenbuehne 8 m', type: 'scissorlift', minHeightM: 1.2, maxHeightM: 8, footprintM: { w: 1.2, d: 2.5 }, payloadKg: 200 },
-  { id: 'scissorlift-12', name: 'Scherenbuehne 12 m', type: 'scissorlift', minHeightM: 1.2, maxHeightM: 12, footprintM: { w: 1.5, d: 2.9 }, payloadKg: 250 },
+  { id: 'scissorlift-8', name: 'Scherenbühne 8 m', type: 'scissorlift', minHeightM: 1.2, maxHeightM: 8, footprintM: { w: 1.2, d: 2.5 }, payloadKg: 200 },
+  { id: 'scissorlift-12', name: 'Scherenbühne 12 m', type: 'scissorlift', minHeightM: 1.2, maxHeightM: 12, footprintM: { w: 1.5, d: 2.9 }, payloadKg: 250 },
   { id: 'newton-s2', name: 'Newton S2 (Remote-Head)', manufacturer: 'Newton Nordic', type: 'remotehead', minHeightM: 0.3, maxHeightM: 3.0, payloadKg: 12, notes: 'Gyro-stabilisiert, Pan/Tilt/Roll + Zoom/Fokus/Blende.' },
-  { id: 'bullhead-studio', name: 'Bullhead Studio (Remote-Head)', manufacturer: 'Slidekamera', type: 'remotehead', minHeightM: 0.3, maxHeightM: 3.0, payloadKg: 10, notes: '2-Achs-Kopf fuer Kraene und Slider.' },
+  { id: 'bullhead-studio', name: 'Bullhead Studio (Remote-Head)', manufacturer: 'Slidekamera', type: 'remotehead', minHeightM: 0.3, maxHeightM: 3.0, payloadKg: 10, notes: '2-Achs-Kopf für Kräne und Slider.' },
   { id: 'carmount-hood', name: 'Fahrzeug — Hood/Motorhaube', type: 'carmount', minHeightM: 1.0, maxHeightM: 1.6, trackLengthM: 50, payloadKg: 20 },
   { id: 'carmount-tray', name: 'Fahrzeug — Hostess Tray', type: 'carmount', minHeightM: 0.8, maxHeightM: 1.5, trackLengthM: 50, payloadKg: 15 },
   { id: 'rickshaw', name: 'Kamera-Rickshaw', type: 'rickshaw', minHeightM: 0.8, maxHeightM: 2.0, trackLengthM: 30, footprintM: { w: 0.8, d: 1.6 }, payloadKg: 60 },
@@ -209,10 +209,10 @@ const flyingRigs: CameraRig[] = [
 // ── Getragen ───────────────────────────────────────────────────────────────
 const bodyRigs: CameraRig[] = [
   { id: 'steadicam-vest', name: 'Steadicam (Weste)', type: 'steadicam', minHeightM: 0.3, maxHeightM: 2.0, payloadKg: 20 },
-  { id: 'gimbal-handheld', name: 'Gimbal (einhaendig)', type: 'gimbal', minHeightM: 0.3, maxHeightM: 2.1, payloadKg: 4.5 },
+  { id: 'gimbal-handheld', name: 'Gimbal (einhändig)', type: 'gimbal', minHeightM: 0.3, maxHeightM: 2.1, payloadKg: 4.5 },
   { id: 'gimbal-heavy', name: 'Gimbal (Heavy / Ronin)', type: 'gimbal', minHeightM: 0.3, maxHeightM: 2.1, payloadKg: 10 },
   { id: 'handheld-shoulder', name: 'Schulter / Handheld', type: 'handheld', minHeightM: 1.0, maxHeightM: 1.9, payloadKg: 15 },
-  { id: 'easyrig', name: 'Easyrig', type: 'handheld', minHeightM: 1.0, maxHeightM: 2.0, payloadKg: 18, notes: 'Entlastet die Schulter, laesst die Bewegung ruhiger werden.' },
+  { id: 'easyrig', name: 'Easyrig', type: 'handheld', minHeightM: 1.0, maxHeightM: 2.0, payloadKg: 18, notes: 'Entlastet die Schulter, lässt die Bewegung ruhiger werden.' },
 ];
 
 export const RIGS: CameraRig[] = [

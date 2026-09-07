@@ -77,7 +77,7 @@ const motiv = (over: Partial<ReferencePerson> = {}): ReferencePerson =>
 
 describe('Bedarf 58 — Reichweite der Optik', () => {
   // -- 1 --------------------------------------------------------------------
-  it('rechnet exakt rueckwaerts, was fov.ts vorwaerts rechnet', () => {
+  it('rechnet exakt rückwärts, was fov.ts vorwärts rechnet', () => {
     // Die Zusicherung, an der alles haengt: dieselbe Beziehung in zwei
     // Richtungen. Waere hier eine eigene Naeherung eingebaut, zeigte die
     // Vorschau etwas anderes als die Warnung -- und niemand faende es.
@@ -90,7 +90,7 @@ describe('Bedarf 58 — Reichweite der Optik', () => {
   });
 
   // -- 2 --------------------------------------------------------------------
-  it('das Beispiel aus dem Beleg gilt nur fuer EINEN Sensor', () => {
+  it('das Beispiel aus dem Beleg gilt nur für EINEN Sensor', () => {
     // „rund 180-200 mm, um aus 100 ft eine Buehnenbreite von 10 ft zu fuellen"
     // — das setzt einen 18 bis 20 mm breiten Sensor voraus. Genau deshalb ist
     // eine Faustregel aus einem allgemeinen Rechner fuer jeden anderen Body
@@ -153,7 +153,7 @@ describe('Bedarf 58 — Reichweite der Optik', () => {
   });
 
   // -- 6 --------------------------------------------------------------------
-  it('die Luecke zwischen zwei Extender-Stufen heisst nicht „zu kurz"', () => {
+  it('die Lücke zwischen zwei Extender-Stufen heisst nicht „zu kurz"', () => {
     // Festbrennweite 50 mm mit 2×: sie kann 50 und 100, aber nicht 70.
     // „too-long" waere hier eine Fehlauskunft — sie legte laengeres Glas
     // nahe, obwohl das vorhandene lang genug IST.
@@ -166,7 +166,7 @@ describe('Bedarf 58 — Reichweite der Optik', () => {
     }
   });
 
-  it('ein Zoom mit Extender hat keine Luecke', () => {
+  it('ein Zoom mit Extender hat keine Lücke', () => {
     // 8-900 mit 2× ergibt 8-900 und 16-1800: die Bereiche ueberlappen.
     expect(reachRanges({ focalLengthMin: 8, focalLengthMax: 900, extenderFactors: [2] })).toEqual([
       { extender: 1, minMm: 8, maxMm: 900 },
@@ -201,7 +201,7 @@ describe('Bedarf 58 — Reichweite der Optik', () => {
   });
 
   // -- 8 --------------------------------------------------------------------
-  it('die Entfernung folgt der gefahrenen Position und der Hoehe', () => {
+  it('die Entfernung folgt der gefahrenen Position und der Höhe', () => {
     const p = motiv({ x: 20, y: 0, height: 2 });
     // Ohne Fahrweg: 20 m waagerecht, 0,5 m Hoehenunterschied (1,5 → 1,0).
     expect(subjectDistanceM(kamera({ z: 1.5 }), p)).toBeCloseTo(Math.hypot(20, 0.5), 6);
@@ -277,7 +277,7 @@ describe('Bedarf 58 — Reichweite der Optik', () => {
   });
 
   // -- 12 -------------------------------------------------------------------
-  it('ein Auftrag auf ein geloeschtes Motiv verschwindet nicht', () => {
+  it('ein Auftrag auf ein gelöschtes Motiv verschwindet nicht', () => {
     const bericht = reachReport({
       cameras: [kamera({ coverage: { subjectId: 'weg', framing: 'full' } })],
       persons: [motiv()],
@@ -290,7 +290,7 @@ describe('Bedarf 58 — Reichweite der Optik', () => {
   });
 
   // -- 13 -------------------------------------------------------------------
-  it('die Einstellungsgroessen rechnen gegen das Mass des Motivs', () => {
+  it('die Einstellungsgrößen rechnen gegen das Mass des Motivs', () => {
     // `footprint` nimmt die BREITE — der Fall aus dem Beleg. Alle anderen die
     // Hoehe. Wer das vertauscht, meldet an jedem Buehnenmotiv Unsinn.
     expect(FRAMINGS.footprint.axis).toBe('width');
@@ -334,7 +334,7 @@ describe('Bedarf 58 — Reichweite der Optik', () => {
   });
 
   // -- 14 -------------------------------------------------------------------
-  it('das Blatt traegt die Bemessungsgrundlage, nicht nur das Urteil', () => {
+  it('das Blatt trägt die Bemessungsgrundlage, nicht nur das Urteil', () => {
     const bericht = reachReport({
       cameras: [kamera({ coverage: { subjectId: 'p1', framing: 'close' } })],
       persons: [motiv()],
@@ -355,7 +355,7 @@ describe('Bedarf 58 — Reichweite der Optik', () => {
   });
 
   // -- 15 -------------------------------------------------------------------
-  it('beim Laden faellt raus, was nicht lesbar ist — aber nicht der Befund', () => {
+  it('beim Laden fällt raus, was nicht lesbar ist — aber nicht der Befund', () => {
     expect(normaliseCoverage({ coverage: { subjectId: 'p1', framing: 'full' } })).toEqual({
       coverage: { subjectId: 'p1', framing: 'full' },
     });
@@ -375,7 +375,7 @@ describe('Bedarf 58 — Reichweite der Optik', () => {
   });
 
   // -- 16 -------------------------------------------------------------------
-  it('der Weg ist verdrahtet, und zwar ueber die Engstelle', () => {
+  it('der Weg ist verdrahtet, und zwar über die Engstelle', () => {
     // Wer hier eine zweite Rechnung aufmacht, bekommt auf dem Blatt etwas
     // anderes als auf dem Schirm. Beide Aufrufer gehen durch `reachReport`.
     expect(sidebarQuelle).toMatch(/reachReport\(\{/);

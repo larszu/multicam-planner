@@ -19,11 +19,11 @@ const stage = (over: Partial<Stage> = {}): Stage => ({
 });
 
 describe('stageTopZ', () => {
-  it('ist 0 ohne Podesthoehe', () => {
+  it('ist 0 ohne Podesthöhe', () => {
     expect(stageTopZ(stage())).toBe(0);
   });
 
-  it('nimmt die gesetzte Hoehe', () => {
+  it('nimmt die gesetzte Höhe', () => {
     expect(stageTopZ(stage({ elevationM: 0.8 }))).toBe(0.8);
   });
 
@@ -54,15 +54,15 @@ describe('isOnStage', () => {
 });
 
 describe('groundHeightAt', () => {
-  it('ist 0 ohne Buehne unter dem Punkt', () => {
+  it('ist 0 ohne Bühne unter dem Punkt', () => {
     expect(groundHeightAt([stage({ elevationM: 1 })], 10, 10)).toBe(0);
   });
 
-  it('gibt die Oberkante der Buehne zurueck', () => {
+  it('gibt die Oberkante der Bühne zurück', () => {
     expect(groundHeightAt([stage({ elevationM: 0.6 })], 1, 1)).toBeCloseTo(0.6);
   });
 
-  it('nimmt bei uebereinander liegenden Buehnen die hoechste', () => {
+  it('nimmt bei übereinander liegenden Bühnen die höchste', () => {
     const stages = [
       stage({ id: 'a', elevationM: 0.4 }),
       stage({ id: 'b', elevationM: 1.2 }),
@@ -71,13 +71,13 @@ describe('groundHeightAt', () => {
     expect(groundHeightAt(stages, 1, 1)).toBeCloseTo(1.2);
   });
 
-  it('ignoriert flache Buehnen', () => {
+  it('ignoriert flache Bühnen', () => {
     expect(groundHeightAt([stage()], 1, 1)).toBe(0);
   });
 });
 
 describe('stageFaces', () => {
-  it('liefert bei flacher Buehne genau die Bodenflaeche', () => {
+  it('liefert bei flacher Bühne genau die Bodenfläche', () => {
     const faces = stageFaces(stage(), 2, -5, 1.5);
     expect(faces).toHaveLength(1);
     expect(faces[0].kind).toBe('top');
@@ -94,14 +94,14 @@ describe('stageFaces', () => {
     expect(sides.some((f) => f.points.every((p) => p.x === 0))).toBe(true);
   });
 
-  it('laesst die Deckflaeche weg, wenn die Kamera unter der Oberkante steht', () => {
+  it('lässt die Deckfläche weg, wenn die Kamera unter der Oberkante steht', () => {
     const low = stageFaces(stage({ elevationM: 2 }), 2, -5, 1.5);
     expect(low.some((f) => f.kind === 'top')).toBe(false);
     const high = stageFaces(stage({ elevationM: 2 }), 2, -5, 2.5);
     expect(high.some((f) => f.kind === 'top')).toBe(true);
   });
 
-  it('liefert keine Seite, wenn die Kamera ueber der Flaeche steht', () => {
+  it('liefert keine Seite, wenn die Kamera über der Fläche steht', () => {
     const faces = stageFaces(stage({ elevationM: 1 }), 2, 1, 6);
     expect(faces.filter((f) => f.kind === 'side')).toHaveLength(0);
     expect(faces).toHaveLength(1);
@@ -115,7 +115,7 @@ describe('stageFaces', () => {
     expect(faces[faces.length - 1].kind).toBe('side');
   });
 
-  it('setzt die Oberkante der Seitenflaechen auf die Podesthoehe', () => {
+  it('setzt die Oberkante der Seitenflächen auf die Podesthöhe', () => {
     const faces = stageFaces(stage({ elevationM: 0.75 }), 2, -5, 1.6);
     const side = faces.find((f) => f.kind === 'side')!;
     expect(Math.max(...side.points.map((p) => p.z))).toBeCloseTo(0.75);

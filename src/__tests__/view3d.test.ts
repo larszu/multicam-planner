@@ -31,12 +31,12 @@ function widthUsage(widthM: number, distToCentreM: number, fovDeg = VIEW3D_FOV_D
 }
 
 describe('groundPitchRad', () => {
-  it('setzt den Zielpunkt genau auf den gewuenschten Bildanteil', () => {
+  it('setzt den Zielpunkt genau auf den gewünschten Bildanteil', () => {
     const pitch = groundPitchRad(15, 25);
     expect(screenFraction(15, 25, pitch)).toBeCloseTo(HORIZON_TOP_FRACTION, 5);
   });
 
-  it('trifft den Anteil auch bei anderer Hoehe, Entfernung und Bildwinkel', () => {
+  it('trifft den Anteil auch bei anderer Höhe, Entfernung und Bildwinkel', () => {
     for (const [h, d, fov, f] of [
       [8, 40, 50, 0.2],
       [25, 30, 35, 0.1],
@@ -47,7 +47,7 @@ describe('groundPitchRad', () => {
     }
   });
 
-  it('nimmt bei extremer Geometrie die Grenze in Kauf statt zu ueberdrehen', () => {
+  it('nimmt bei extremer Geometrie die Grenze in Kauf statt zu überdrehen', () => {
     const pitch = groundPitchRad(25, 12, 35, 0.1);
     expect(pitch).toBe(-1.35);
     expect(screenFraction(25, 12, pitch, 35)).toBeGreaterThan(0.1);
@@ -58,7 +58,7 @@ describe('groundPitchRad', () => {
     expect(Math.abs(groundPitchRad(15, 60))).toBeLessThan(Math.abs(groundPitchRad(15, 15)));
   });
 
-  it('faengt Null- und Negativwerte ab', () => {
+  it('fängt Null- und Negativwerte ab', () => {
     expect(Number.isFinite(groundPitchRad(0, 0))).toBe(true);
     expect(Number.isFinite(groundPitchRad(-5, -5))).toBe(true);
   });
@@ -74,7 +74,7 @@ describe('fitDistanceM', () => {
     expect(screenFraction(h, dist - depth, pitch)).toBeCloseTo(FRONT_BOTTOM_FRACTION, 4);
   });
 
-  it('funktioniert ueber sehr unterschiedliche Hallentiefen', () => {
+  it('funktioniert über sehr unterschiedliche Hallentiefen', () => {
     for (const depth of [4, 15, 40, 120]) {
       const h = camHeightFor(depth);
       const dist = fitDistanceM(depth, h);
@@ -89,26 +89,26 @@ describe('fitDistanceM', () => {
     }
   });
 
-  it('rueckt bei tieferer Halle weiter weg', () => {
+  it('rückt bei tieferer Halle weiter weg', () => {
     expect(fitDistanceM(40, camHeightFor(40))).toBeGreaterThan(fitDistanceM(15, camHeightFor(15)));
   });
 });
 
 describe('widthFitDistanceM', () => {
-  it('haelt die Halle seitlich im Bild', () => {
+  it('hält die Halle seitlich im Bild', () => {
     for (const [w, d] of [[20, 15], [80, 20], [6, 40]] as const) {
       const dist = widthFitDistanceM(w, d);
       expect(widthUsage(w, dist - d / 2)).toBeLessThan(1);
     }
   });
 
-  it('braucht fuer eine breitere Halle mehr Abstand', () => {
+  it('braucht für eine breitere Halle mehr Abstand', () => {
     expect(widthFitDistanceM(80, 15)).toBeGreaterThan(widthFitDistanceM(20, 15));
   });
 });
 
 describe('defaultView', () => {
-  it('fuellt bei der Standardhalle den grossen Teil der Bildhoehe', () => {
+  it('füllt bei der Standardhalle den grossen Teil der Bildhöhe', () => {
     const { pos, pitch } = defaultView(20, 15);
     const top = screenFraction(pos[1], pos[2], pitch);
     const bottom = screenFraction(pos[1], pos[2] - 15, pitch);
@@ -117,7 +117,7 @@ describe('defaultView', () => {
     expect(bottom - top).toBeGreaterThan(0.6);
   });
 
-  it('steht mittig vor der Halle und ueber dem Boden', () => {
+  it('steht mittig vor der Halle und über dem Boden', () => {
     const { pos } = defaultView(20, 15);
     expect(pos[0]).toBe(10);
     expect(pos[1]).toBeGreaterThan(0);
@@ -129,7 +129,7 @@ describe('defaultView', () => {
     expect(defaultView(20, 4).pos[1]).toBeLessThan(defaultView(20, 40).pos[1]);
   });
 
-  it('zentriert, wenn die Breite die Kamera weiter zurueckzwingt', () => {
+  it('zentriert, wenn die Breite die Kamera weiter zurückzwingt', () => {
     // 20 x 4 m: die Breite bestimmt den Abstand, die Halle bleibt ein schmales
     // Band. Es soll mittig liegen statt oben angeklebt mit leerer Restflaeche.
     const { pos, pitch } = defaultView(20, 4);
@@ -139,7 +139,7 @@ describe('defaultView', () => {
     expect(top).toBeGreaterThan(HORIZON_TOP_FRACTION);
   });
 
-  it('haelt die Halle bei jeder Hallenform vollstaendig im Bild', () => {
+  it('hält die Halle bei jeder Hallenform vollständig im Bild', () => {
     for (const [w, d] of [[20, 15], [80, 60], [10, 40], [60, 8]] as const) {
       const { pos, pitch } = defaultView(w, d);
       const top = screenFraction(pos[1], pos[2], pitch);
@@ -151,13 +151,13 @@ describe('defaultView', () => {
     }
   });
 
-  it('heftet die hintere Kante oben an, wenn die Hoehe bestimmt', () => {
+  it('heftet die hintere Kante oben an, wenn die Höhe bestimmt', () => {
     // Schmale, tiefe Halle: hier gewinnt die Hoehenanpassung eindeutig.
     const { pos, pitch } = defaultView(10, 40);
     expect(screenFraction(pos[1], pos[2], pitch)).toBeCloseTo(HORIZON_TOP_FRACTION, 3);
   });
 
-  it('geht am Umschaltpunkt stetig ueber', () => {
+  it('geht am Umschaltpunkt stetig über', () => {
     // Bei der Standardhalle liegen Hoehen- und Breitenbedarf dicht beieinander.
     // Egal welcher gewinnt, die hintere Kante muss oben bleiben.
     for (const [w, d] of [[19, 15], [20, 15], [21, 15], [24, 15]] as const) {
@@ -173,7 +173,7 @@ describe('defaultView', () => {
     expect(widthUsage(90, breit.pos[2] - 7.5)).toBeLessThan(1);
   });
 
-  it('neigt deutlich staerker als die fruehere feste Vorgabe von -0.3', () => {
+  it('neigt deutlich stärker als die frühere feste Vorgabe von -0.3', () => {
     expect(defaultView(20, 15).pitch).toBeLessThan(-0.3);
   });
 

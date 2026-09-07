@@ -1053,7 +1053,7 @@ function CameraCard({
                         {limits.armLengthM ? ` · Ausleger ${limits.armLengthM.toFixed(1)} m` : ''}
                         {limits.telescopeM ? ` · Teleskop ${limits.telescopeM.toFixed(1)} m` : ''}
                         {limits.payloadKg ? ` · max ${limits.payloadKg} kg` : ''}
-                        {limits.footprintM ? ` · Stellflaeche ${limits.footprintM.w.toFixed(1)}×${limits.footprintM.d.toFixed(1)} m` : ''}
+                        {limits.footprintM ? ` · Stellfläche ${limits.footprintM.w.toFixed(1)}×${limits.footprintM.d.toFixed(1)} m` : ''}
                         {limits.rig.notes ? ` — ${limits.rig.notes}` : ''}
                       </span>
                     )}
@@ -2448,7 +2448,7 @@ export default function Sidebar() {
             {wallDrawMode && (
               <div className="rounded border border-bc-border bg-bc-dark px-2 py-1.5 text-[10px] text-gray-400 leading-relaxed">
                 Einmal klicken setzt den Startpunkt, nochmal klicken beendet die Wand. Shift rastet den Winkel.
-                Rechtsklick auf eine Wand loescht sie.
+                Rechtsklick auf eine Wand löscht sie.
               </div>
             )}
             {/* Endpoint snapping toggle (issue #40) */}

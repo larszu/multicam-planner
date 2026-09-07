@@ -31,7 +31,7 @@ export const interfaceKeys = (src: string, name: string): string[] => {
   const m = head.exec(src);
   if (!m) throw new Error(`Interface ${name} nicht im Quelltext gefunden`);
   if (m[1].includes('extends')) {
-    throw new Error(`${name} benutzt extends — interfaceKeys kann das nicht aufloesen`);
+    throw new Error(`${name} benutzt extends — interfaceKeys kann das nicht auflösen`);
   }
 
   // Rumpf bis zur passenden schliessenden Klammer.
@@ -47,7 +47,7 @@ export const interfaceKeys = (src: string, name: string): string[] => {
 
   const stripped = body.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
   if (/\{/.test(stripped)) {
-    throw new Error(`${name} hat verschachtelte Objekt-Literale — interfaceKeys ist dafuer zu simpel`);
+    throw new Error(`${name} hat verschachtelte Objekt-Literale — interfaceKeys ist dafür zu simpel`);
   }
 
   return [...stripped.matchAll(/^\s*(?:readonly\s+)?([A-Za-z_$][\w$]*)\??\s*:/gm)]

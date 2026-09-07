@@ -80,7 +80,7 @@ describe('camera-list Wire-Contract (Drift-Guard)', () => {
     expect(sortedKeys(entry)).toEqual(CONTRACT.entryKeys);
   });
 
-  it('faengt auch ein neu hinzugefuegtes OPTIONALES Feld', () => {
+  it('fängt auch ein neu hinzugefügtes OPTIONALES Feld', () => {
     // Die Muster-Literale oben wuerden das nicht tun. Hier gegen den
     // Interface-Rumpf im Quelltext — dieselbe Pruefung wie im cable-planner,
     // damit der zweiseitige Vertrag auf beiden Seiten gleich scharf ist.
