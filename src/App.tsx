@@ -1,6 +1,8 @@
 import { useStore } from './store/useStore';
 import Header from './components/Layout/Header';
+import { TABS } from './components/Layout/tabs';
 import StartupAssistant from './components/Layout/StartupAssistant';
+import CommandPalette, { type Command } from './components/Layout/CommandPalette';
 import Sidebar from './components/Sidebar/Sidebar';
 import Venue2D from './components/Venue2D/Venue2D';
 import Venue3D from './components/Venue3D/Venue3D';
@@ -13,7 +15,7 @@ import ExportPanel from './components/Export/ExportPanel';
 import ErrorBoundary from './components/ErrorBoundary';
 import { getExportRegistry } from './store/exportRegistry';
 import { loadJSON, saveJSON } from './utils/storage';
-import { Suspense, useState, useRef, useCallback, useEffect } from 'react';
+import { Suspense, useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { FiChevronLeft, FiChevronRight, FiMaximize2, FiMinimize2, FiMinus, FiX } from 'react-icons/fi';
 import { InventoryDialog } from './inventory/InventoryDialog';
 import { Layout, Model, TabNode, Actions } from 'flexlayout-react';
@@ -26,6 +28,7 @@ const LAYOUT_PRESETS_KEY = 'multicam-layout-presets';
 const CURRENT_LAYOUT_VERSION = 4;
 
 type LayoutMode = 'focus' | 'grid' | 'custom';
+
 type LayoutPresetOption = { id: string; label: string };
 
 function getSelectedIndexForTab(tabId: string) {
@@ -212,6 +215,23 @@ export default function App() {
     setLayoutMode('grid');
     applyLayoutJson(createGridLayoutJson());
   }, [applyLayoutJson, focusTabId]);
+
+  // ADR-007 Abschnitt 6: die Kommandopalette (Strg/Cmd + K). Sie erfindet
+  // nichts — jeder Eintrag ruft denselben Handler wie der Knopf in der
+  // Kopfzeile. Deshalb steht die Liste HIER und nicht in der Palette: die
+  // Handler liegen ohnehin an dieser Stelle, und eine zweite Liste woanders
+  // waere die zweite Bedienoberflaeche, die still auseinanderlaeuft.
+  const commands = useMemo<Command[]>(() => [
+    ...TABS.map((tab) => ({
+      id: `view:${tab.id}`,
+      group: 'View',
+      label: tab.label,
+      run: () => handleSelectTab(tab.id),
+    })),
+    { id: 'layout:focus', group: 'Layout', label: 'Focus layout', run: () => handleSetLayoutMode('focus') },
+    { id: 'layout:grid', group: 'Layout', label: 'Grid layout', run: () => handleSetLayoutMode('grid') },
+    { id: 'tools:inventory', group: 'Tools', label: 'Inventory', run: () => setInventoryOpen(true) },
+  ], [handleSelectTab, handleSetLayoutMode]);
 
   const handleApplyPreset = useCallback((presetId: string) => {
     if (presetId === 'focus') {
@@ -523,6 +543,7 @@ export default function App() {
 
       <ExportPanel />
       <StartupAssistant />
+      <CommandPalette commands={commands} />
 
       {/* Lager / Bestand — projektübergreifend, App-kompatibel via avplan-inventory.
           Geoeffnet ueber den Button in der Kopfzeile (statt frueher schwebend). */}
