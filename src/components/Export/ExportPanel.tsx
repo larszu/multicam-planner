@@ -16,6 +16,7 @@ import {
 } from '../../utils/cameraCardExtras';
 import { stampForStand, stampLine } from '../../utils/documentStamp';
 import { coverageLines, reachReport } from '../../utils/lensReach';
+import { paintLines } from '../../utils/paintState';
 
 export type ExportMode = 'current' | 'all' | 'widetele' | 'all-widetele';
 
@@ -329,6 +330,27 @@ export default function ExportPanel() {
       const erreicht = deckung?.verdict.kind === 'reachable';
       for (const line of deckungZeilen) {
         ctx.fillStyle = line.startsWith('Optik:') && !erreicht ? '#f59e0b' : '#e5e7eb';
+        ctx.fillText(line, cx, cy);
+        cy += lineH;
+      }
+    }
+
+    // ── BEDARF 63 — der Bildzustand dieser Position ──
+    //
+    // Ohne Eintrag steht hier NICHTS: eine Position, fuer die niemand einen
+    // Bildzustand vorgesehen hat, bekommt keine Frage gestellt. MIT Eintrag
+    // stehen alle vier Zeilen da, auch die leeren — eine weggelassene liest
+    // sich als „dazu gibt es nichts zu sagen".
+    const bildZeilen = paintLines(targetCam);
+    if (bildZeilen.length > 0) {
+      cy += 8;
+      ctx.fillStyle = '#3b82f6';
+      ctx.font = 'bold 13px monospace';
+      ctx.fillText('BILDZUSTAND', cx, cy);
+      cy += lineH;
+      ctx.font = '13px monospace';
+      for (const line of bildZeilen) {
+        ctx.fillStyle = line.includes(UNSTATED) ? '#f59e0b' : '#e5e7eb';
         ctx.fillText(line, cx, cy);
         cy += lineH;
       }

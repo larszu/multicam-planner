@@ -10,6 +10,7 @@ import {
   normaliseCardExtras,
   riggingLines,
 } from '../utils/cameraCardExtras';
+import { paintLines } from '../utils/paintState';
 import { cameraSheetFingerprint } from '../utils/documentContent';
 import type { VenueCamera } from '../types';
 import extrasQuelle from '../utils/cameraCardExtras.ts?raw';
@@ -222,12 +223,21 @@ describe('die Karte zeichnet die Blöcke', () => {
     expect(panelQuelle).toMatch(/if \(kit\.length > 0\) \{/);
   });
 
-  it('hebt „nicht angegeben" in BEIDEN Blöcken farblich ab', () => {
+  it('hebt „nicht angegeben" in JEDEM Block farblich ab, der es tragen kann', () => {
     // Erste Fassung prüfte nur, dass die Hervorhebung irgendwo vorkommt — und
     // blieb grün, als sie aus dem Rigging-Block verschwand, weil der
-    // Comms-Block sie noch trug.
+    // Comms-Block sie noch trug. Deshalb wird GEZÄHLT.
+    //
+    // Und die Zahl wird GERECHNET statt eingetragen: sie ist die Anzahl der
+    // Zeilen-Bauer, die „nicht angegeben" liefern können (Rigging, Comms,
+    // Bildzustand). Eine feste 2 hätte beim vierten Block wieder rot gemeldet,
+    // ohne dass etwas kaputt gewesen wäre — und wer sie dann hochzählt, hat
+    // die Prüfung entwertet, statt sie zu erfüllen.
+    const leer = cam({ paint: { sceneFile: 'irgendeine.scene' } });
+    const bauer = [riggingLines, commsLines, paintLines];
+    const traegt = bauer.filter((f) => f(leer).some((l) => l.includes(UNSTATED)));
     const treffer = panelQuelle.match(/line\.includes\(UNSTATED\) \? '#f59e0b'/g) ?? [];
-    expect(treffer).toHaveLength(2);
+    expect(treffer).toHaveLength(traegt.length);
   });
 });
 

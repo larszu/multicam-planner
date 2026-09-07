@@ -474,6 +474,52 @@ export interface VenueCamera {
    * Deshalb optional und ohne Vorgabewert. `utils/lensReach.ts` rechnet.
    */
   coverage?: CoverageAssignment;
+  /**
+   * Bedarf 63 — der Bildzustand dieser Position.
+   *
+   *   > Shading is done live by the vision engineer with the operator; the
+   *   > resulting scene file lives on a card or in device memory with NO
+   *   > RECORD OF WHICH POSITION OR SHOW IT BELONGS TO.
+   *
+   * „Zur Show gehoerig" ist hier keine eigene Zuordnung — die Projektdatei
+   * IST die Show. Was fehlte, ist die Bindung an die POSITION.
+   *
+   * Optional und ohne Vorgabewert: ein erfundener Dateiname stuende auf
+   * einem Blatt, nach dem jemand am zweiten Showtag sucht.
+   */
+  paint?: PaintState;
+}
+
+/**
+ * Der Bildzustand einer Position (Bedarf 63).
+ *
+ * Die vier Felder sind genau die, die der Bedarf nennt: Dateiname, Datum,
+ * Urheber, Referenzbedingungen. `savedWith` kommt dazu, weil sonst niemand
+ * sagen kann, ob die Datei ueberhaupt noch passt — dieselbe Ueberlegung wie
+ * bei `PtzPreset`: ein Verweis auf den AKTUELLEN Zustand koennte den Fall
+ * per Konstruktion nicht bemerken.
+ */
+export interface PaintState {
+  /** Dateiname der Szenendatei auf Karte oder Pult. */
+  sceneFile?: string;
+  /** Wann sie gesetzt wurde. Als Text, wie er im Plan steht — keine Uhr. */
+  setAt?: string;
+  /** Wer sie gesetzt hat. Bei einer Abweichung ist das der Fragbare. */
+  setBy?: string;
+  /** Referenzbedingungen im Klartext (Graukarte, Farbtemperatur, Licht). */
+  reference?: string;
+  /** Womit sie abgeglichen wurde. Ohne das ist „passt noch" unbeantwortbar. */
+  savedWith?: PaintContext;
+  notes?: string;
+}
+
+export interface PaintContext {
+  /** `Camera.id` des Bodys — eine Szenendatei ist Herstellerformat. */
+  cameraId?: string;
+  /** `Lens.id` des Objektivs, mit dem abgeglichen wurde. */
+  lensId?: string;
+  /** Sensor-Modus zum Zeitpunkt des Abgleichs. */
+  sensorModeIndex?: number;
 }
 
 /** Auf welcher Achse gemessen wird. */

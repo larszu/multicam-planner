@@ -41,6 +41,7 @@
 
 import type { RiggingAccess, VenueCamera } from '../types';
 import type { StampCell } from './documentStamp';
+import { PAINT_UNSTATED, paintLines } from './paintState';
 
 export const ACCESS_LABEL: Readonly<Record<RiggingAccess, string>> = {
   ladder: 'Leiter',
@@ -50,8 +51,14 @@ export const ACCESS_LABEL: Readonly<Record<RiggingAccess, string>> = {
   unstated: 'nicht angegeben',
 };
 
-/** Was in einer Zelle steht, fuer die niemand etwas eingetragen hat. */
-export const UNSTATED = 'nicht angegeben';
+/**
+ * Was in einer Zelle steht, fuer die niemand etwas eingetragen hat.
+ *
+ * Der Wert liegt in `paintState.ts` — diese Datei liest jene ohnehin, und
+ * zwei gleichlautende Konstanten waeren zwei Gelegenheiten, den Text an
+ * genau einer Stelle zu aendern. Der Name bleibt, weil er eingefuehrt ist.
+ */
+export const UNSTATED = PAINT_UNSTATED;
 
 const text = (v: string | undefined): string => (v ?? '').trim() || UNSTATED;
 const num = (v: number | undefined, einheit: string): string =>
@@ -124,6 +131,11 @@ export const cardExtraRows = (cam: VenueCamera): StampCell[][] => [
   ['rig', ...riggingLines(cam)],
   ['comms', ...commsLines(cam)],
   ...kitLines(cam).map((k) => ['kit', k] as StampCell[]),
+  // Bedarf 63 — der Bildzustand steht auf dem Blatt, also geht er ein. Der
+  // Fall: zwei Karten derselben Position, gleiche Optik, gleiche Aufstellung
+  // — und eine andere Szenendatei. Ohne diese Zeile truegen beide denselben
+  // Stempel, und am zweiten Showtag laedt jemand die von gestern.
+  ...(paintLines(cam).length > 0 ? [['paint', ...paintLines(cam)] as StampCell[]] : []),
 ];
 
 /**

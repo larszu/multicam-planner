@@ -8,6 +8,7 @@ import { loadJSON, saveJSON, saveJSONSafe } from '../utils/storage';
 import { dedupeIds, maxIdSuffix } from '../utils/idRepair';
 import { normaliseCardExtras } from '../utils/cameraCardExtras';
 import { normaliseCoverage } from '../utils/lensReach';
+import { normalisePaint } from '../utils/paintState';
 import {
   fromVenueExchange,
   mergeOwnVenueDims,
@@ -1042,6 +1043,10 @@ export const useStore = create<AppState>((set, get) => ({
         // raus; eine Motiv-Kennung ohne Motiv BLEIBT, weil sie ein Befund ist
         // und kein Ladefehler.
         ...normaliseCoverage(c),
+        // Bedarf 63 — der Bildzustand. Ein leerer Block faellt weg; ein
+        // `savedWith` ohne brauchbare Werte ebenso, weil eine halbe
+        // Abgleich-Angabe eine Pruefung vortaeuschte, die nicht stattfand.
+        ...normalisePaint(c),
       })),
       () => uid(),
     );
