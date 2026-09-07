@@ -124,11 +124,21 @@ export const shiftReportFingerprint = (report: {
     setBy: string;
     reference: string;
     panel: string;
+    slot: string;
+    bodySerial: string;
+    matchGroup: string;
     faults: string[];
     findings: Array<{ label: string; text: string }>;
   }>;
 }): string =>
   documentFingerprint(
+    // Bedarf 47 — die Abgleich-Gruppen stehen NICHT eigens hier drin, und das
+    // ist kein Vergessen: sie sind aus den Zeilen vollstaendig ableitbar. Wer
+    // in der Gruppe steht, sagt `matchGroup` je Zeile; ob sie abgleichbar
+    // ist, haengt am Fernsteuerweg der Mitglieder — und jeder Unterschied
+    // dort erzeugt einen anderen Befund in genau diesen Zeilen. Eine eigene
+    // Zeile dafuer waere ein Wert, den keine Gegenprobe je rot bekaeme:
+    // gemessen, nicht behauptet.
     ['schicht-uebergabe', report.paintSource],
     report.rows.map((r) => [
       r.cameraId,
@@ -138,6 +148,9 @@ export const shiftReportFingerprint = (report: {
       r.setBy,
       r.reference,
       r.panel,
+      r.slot,
+      r.bodySerial,
+      r.matchGroup,
       r.faults.join('|'),
       r.findings.map((f) => `${f.label}: ${f.text}`).join('|'),
     ]),

@@ -57,6 +57,11 @@ const voll = {
   setBy: 'Vision-Engineer',
   reference: 'Graukarte, 5600 K',
   panel: 'RCP 3, Seite 2',
+  // Bedarf 47: beide Fixture-Positionen tragen dasselbe MODELL (`fx9`), und
+  // ohne Body-Nummer meldete das Register an beiden zu Recht, dass die Datei
+  // auf beiden laedt und auf einem stimmt. Geprueft wird hier die Uebergabe,
+  // nicht sie.
+  bodySerial: 'FX9-0012',
   savedWith: { cameraId: 'fx9', lensId: 'canon-24-105' },
 };
 

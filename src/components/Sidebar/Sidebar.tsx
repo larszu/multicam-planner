@@ -14,6 +14,7 @@ import {
   shadingLines,
 } from '../../utils/shadingCapability';
 import type { ControlPath } from '../../types';
+import { REGISTRY_FINDING_LABEL, registryFindings } from '../../utils/paintRegistry';
 import {
   FACET_LABEL, VERDICT_LABEL, parseSourceList, reconcile, sourceLabel,
 } from '../../utils/sourceIdentity';
@@ -262,9 +263,14 @@ function CameraCard({
   // Gruppen fuer eine Frage findet niemand. Zusammengefuehrt und nicht
   // zweimal gezaehlt -- der Zaehler oben ist die Summe.
   const schattierBefunde = shadingFindings(cam, cameras);
+  // Bedarf 47 -- Wiederauffindbarkeit und Abgleich-Absicht. Dieselbe Leiste
+  // wie Bildzustand und Schattierung: es ist dieselbe Frage in drei Teilen,
+  // und drei zugeklappte Gruppen dafuer findet niemand.
+  const registerBefunde = registryFindings(cam, cameras);
   const bildUndSchattierung = [
     ...bildBefunde.map((f) => ({ label: PAINT_FINDING_LABEL[f.kind], text: f.text })),
     ...schattierBefunde.map((f) => ({ label: SHADING_FINDING_LABEL[f.kind], text: f.text })),
+    ...registerBefunde.map((f) => ({ label: REGISTRY_FINDING_LABEL[f.kind], text: f.text })),
   ];
 
   // BEDARF 130 — der Abgleich Plan gegen das, was im Netz wirklich da ist.
@@ -1473,6 +1479,48 @@ function CameraCard({
                   updateCamera(cam.id, {
                     paint: { ...cam.paint, panel: e.target.value || undefined },
                   })
+                }
+              />
+
+              {/* Bedarf 47 — WO der Zustand liegt und auf welchem Body.
+                  Der Beleg nennt „five unnamed slots on an SD card": ohne
+                  Dateinamen ist ein Zustand nicht zwangsläufig verloren, er
+                  liegt auf Platz 3. Ohne beides sehr wohl. */}
+              <div className="flex gap-1.5">
+                <input
+                  className={feldCls}
+                  placeholder="Platz am Gerät (SD 3, Scene File 05)"
+                  aria-label="Platz, an dem der Bildzustand am Gerät liegt"
+                  value={cam.paint?.slot ?? ''}
+                  onChange={(e) =>
+                    updateCamera(cam.id, {
+                      paint: { ...cam.paint, slot: e.target.value || undefined },
+                    })
+                  }
+                />
+                <input
+                  className={feldCls}
+                  placeholder="Body-Nr."
+                  aria-label="Nummer des Bodys, auf dem der Bildzustand gesetzt wurde"
+                  value={cam.paint?.bodySerial ?? ''}
+                  onChange={(e) =>
+                    updateCamera(cam.id, {
+                      paint: { ...cam.paint, bodySerial: e.target.value || undefined },
+                    })
+                  }
+                />
+              </div>
+
+              {/* Bedarf 47 — welche Positionen gleich aussehen müssen. Freier
+                  Name: eine Gruppe ist eine Absicht des Bildtechnikers und
+                  keine Eigenschaft der Anlage. */}
+              <input
+                className={feldCls}
+                placeholder="Abgleich-Gruppe (Bühne, Publikum)"
+                aria-label="Abgleich-Gruppe dieser Position"
+                value={cam.matchGroup ?? ''}
+                onChange={(e) =>
+                  updateCamera(cam.id, { matchGroup: e.target.value || undefined })
                 }
               />
 
