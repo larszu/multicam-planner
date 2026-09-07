@@ -81,7 +81,7 @@ export default function StartupAssistant() {
           </div>
           <button
             onClick={isLast ? finishWizard : nextStep}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-bc-accent text-white text-xs font-medium hover:bg-bc-accent/80"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-bc-accent text-bc-accent-text text-xs font-medium hover:bg-bc-accent/80"
           >
             {isLast ? <><FiCheck size={13} /> Finish</> : <>Next <FiArrowRight size={13} /></>}
           </button>

@@ -2672,7 +2672,7 @@ export default function Sidebar() {
             <button
               onClick={() => addCamera()}
               style={{ padding: '5px 10px' }}
-              className="flex items-center gap-1 rounded bg-bc-accent text-white text-xs font-semibold hover:bg-bc-accent/80"
+              className="flex items-center gap-1 rounded bg-bc-accent text-bc-accent-text text-xs font-semibold hover:bg-bc-accent/80"
             >
               <FiPlus size={12} /> Neu
             </button>

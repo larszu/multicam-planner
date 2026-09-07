@@ -173,7 +173,7 @@ export default function RigOverlay({
             offsetX={5.5}
             offsetY={5.5}
             rotation={yaw}
-            fill="#0f1117"
+            fill="#132040"
             stroke="#94a3b8"
             strokeWidth={2}
             draggable

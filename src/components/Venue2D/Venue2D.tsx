@@ -593,13 +593,13 @@ export default function Venue2D() {
         )}
         {Array.from({ length: Math.floor(venue.widthM) + 1 }).map((_, i) => (
           <Group key={`vg-${i}`}>
-            <Line points={[i * ppm, 0, i * ppm, H]} stroke="#1e2030" strokeWidth={1} />
+            <Line points={[i * ppm, 0, i * ppm, H]} stroke="#1D324F" strokeWidth={1} />
             <Text x={i * ppm + 2} y={2} text={`${i}m`} fontSize={9} fill="#555" />
           </Group>
         ))}
         {Array.from({ length: Math.floor(venue.heightM) + 1 }).map((_, i) => (
           <Group key={`hg-${i}`}>
-            <Line points={[0, i * ppm, W, i * ppm]} stroke="#1e2030" strokeWidth={1} />
+            <Line points={[0, i * ppm, W, i * ppm]} stroke="#1D324F" strokeWidth={1} />
             <Text x={2} y={i * ppm + 2} text={`${i}m`} fontSize={9} fill="#555" />
           </Group>
         ))}
@@ -700,7 +700,7 @@ export default function Venue2D() {
           ignoreStroke
           anchorSize={8}
           anchorStroke="#60a5fa"
-          anchorFill="#0f1117"
+          anchorFill="#132040"
           borderStroke="#60a5fa"
           enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right', 'top-center', 'bottom-center']}
           boundBoxFunc={(oldBox, newBox) => (newBox.width < 8 || newBox.height < 8 ? oldBox : newBox)}
@@ -721,8 +721,8 @@ export default function Venue2D() {
                 updateWall(w.id, { x1: w.x1 + dx, y1: w.y1 + dy, x2: w.x2 + dx, y2: w.y2 + dy });
               }}
             />
-            <Circle x={w.x1 * ppm} y={w.y1 * ppm} radius={5} fill="#0f1117" stroke="#f59e0b" strokeWidth={2} draggable={!drawingWall && !lockWalls} onDragMove={(e) => handleWallEndpointDragMove(w, 'start', e)} />
-            <Circle x={w.x2 * ppm} y={w.y2 * ppm} radius={5} fill="#0f1117" stroke="#f59e0b" strokeWidth={2} draggable={!drawingWall && !lockWalls} onDragMove={(e) => handleWallEndpointDragMove(w, 'end', e)} />
+            <Circle x={w.x1 * ppm} y={w.y1 * ppm} radius={5} fill="#132040" stroke="#f59e0b" strokeWidth={2} draggable={!drawingWall && !lockWalls} onDragMove={(e) => handleWallEndpointDragMove(w, 'start', e)} />
+            <Circle x={w.x2 * ppm} y={w.y2 * ppm} radius={5} fill="#132040" stroke="#f59e0b" strokeWidth={2} draggable={!drawingWall && !lockWalls} onDragMove={(e) => handleWallEndpointDragMove(w, 'end', e)} />
             <Text x={((w.x1 + w.x2) / 2) * ppm - 20} y={((w.y1 + w.y2) / 2) * ppm - 14} text={w.label} fontSize={9} fill="#9ca3af" align="center" width={40} />
           </React.Fragment>
         ))}
@@ -806,7 +806,7 @@ export default function Venue2D() {
                     x={PAN_HANDLE_RADIUS * Math.cos((cam.pan * Math.PI) / 180)}
                     y={PAN_HANDLE_RADIUS * Math.sin((cam.pan * Math.PI) / 180)}
                     radius={6}
-                    fill="#0f1117" stroke="#ffffff" strokeWidth={2}
+                    fill="#132040" stroke="#ffffff" strokeWidth={2}
                     draggable
                     onDragStart={(e) => { e.cancelBubble = true; }}
                     onDragMove={(e) => { e.cancelBubble = true; handlePanRotate(cam, e); }}
@@ -845,11 +845,11 @@ export default function Venue2D() {
                   offsetX={4} offsetY={4}
                   rotation={45}
                   fill={color}
-                  stroke="#0f1117"
+                  stroke="#132040"
                   strokeWidth={1}
                   opacity={Math.max(0.35, f.dimming ?? 1)}
                 />
-                <Circle radius={1.6} fill="#0f1117" />
+                <Circle radius={1.6} fill="#132040" />
                 {f.name && (
                   <Text x={7} y={-5} text={f.name} fontSize={9} fill={color} listening={false} />
                 )}
