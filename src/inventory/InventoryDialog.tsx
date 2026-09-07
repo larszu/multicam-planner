@@ -74,7 +74,15 @@ export function InventoryDialog({ open, onClose }: Props) {
     }
     const replace = window.confirm('Bestehenden Bestand ERSETZEN? Abbrechen = zusammenführen (merge).');
     const n = importSnapshot(snap, replace ? 'replace' : 'merge');
-    setScanResult(`${n} Objekte importiert.`);
+    // „Importiert" ist erst wahr, wenn es auch geschrieben wurde. Vorher
+    // meldete der Dialog den Erfolg, waehrend der volle localStorage den
+    // Bestand still verwarf — sichtbar wurde das beim naechsten Start.
+    setScanResult(
+      useInventoryStore.getState().storageFull
+        ? `${n} Objekte gelesen, aber NICHT gespeichert: der lokale Speicher ist voll. `
+          + `Der Bestand ist beim nächsten Start wieder weg — erst Platz schaffen, dann erneut importieren.`
+        : `${n} Objekte importiert.`,
+    );
   };
 
   const doScan = () => {

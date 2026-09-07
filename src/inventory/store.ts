@@ -2,7 +2,7 @@
 // `avplan-inventory`-Format mit cable- und light-planner. Persistiert via die
 // vorhandenen storage-Helfer; IDs über crypto.randomUUID (keine neue Dependency).
 import { create } from 'zustand';
-import { loadJSON, saveJSON } from '../utils/storage';
+import { loadJSON, saveJSONSafe } from '../utils/storage';
 import type { InventoryItem, StorageNode, InventorySet, InventoryUnit } from './types';
 import type { InventorySnapshot } from './portable';
 import { mergeById } from './merge';
@@ -31,6 +31,20 @@ const load = (): Persisted => {
 export type InventoryItemInput = Omit<InventoryItem, 'id' | 'createdAt' | 'updatedAt'>;
 
 interface InventoryState extends Persisted {
+  /**
+   * Der letzte Schreibvorgang ist an der Quota gescheitert.
+   *
+   * BEFUND (Defektformen-Sweep, Form `zustand-nach-fehler`): Das Lager lief
+   * ueber `saveJSON`, und dessen `catch` ist leer. Ein voller localStorage
+   * bedeutete: der Import meldet „N Objekte importiert", der Bestand steht in
+   * der Oberflaeche — und ist beim naechsten Start weg. Ein Undo fuer diesen
+   * Store gibt es nicht.
+   *
+   * Das Mittel dagegen liegt im selben Repo und wird fuer Shotlisten und
+   * Rig-Takes benutzt (`saveJSONSafe` + `shotlistStorageFull`). Ausgerechnet
+   * die projektuebergreifenden Stammdaten hatten es nicht.
+   */
+  storageFull: boolean;
   addItem: (input: InventoryItemInput) => string;
   updateItem: (id: string, patch: Partial<InventoryItemInput>) => void;
   removeItem: (id: string) => void;
@@ -40,31 +54,32 @@ interface InventoryState extends Persisted {
 
 const initial = load();
 
-const persist = (s: Persisted) => saveJSON(KEY, s);
+/** Schreibt und MELDET, ob es geklappt hat. Siehe `storageFull`. */
+const persist = (s: Persisted): { storageFull: boolean } => ({
+  storageFull: !saveJSONSafe(KEY, s),
+});
 
 export const useInventoryStore = create<InventoryState>((set, get) => ({
   ...initial,
+  storageFull: false,
   addItem: (input) => {
     const now = new Date().toISOString();
     const item: InventoryItem = { ...input, id: uid(), createdAt: now, updatedAt: now };
     set((st) => {
       const items = [...st.items, item];
-      persist({ ...st, items });
-      return { items };
+      return { items, ...persist({ ...st, items }) };
     });
     return item.id;
   },
   updateItem: (id, patch) =>
     set((st) => {
       const items = st.items.map((it) => (it.id === id ? { ...it, ...patch, updatedAt: new Date().toISOString() } : it));
-      persist({ ...st, items });
-      return { items };
+      return { items, ...persist({ ...st, items }) };
     }),
   removeItem: (id) =>
     set((st) => {
       const items = st.items.filter((it) => it.id !== id);
-      persist({ ...st, items });
-      return { items };
+      return { items, ...persist({ ...st, items }) };
     }),
   exportSnapshot: () => {
     const s = get();
@@ -86,8 +101,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
         sets: mode === 'replace' ? inSets : mergeById(st.sets, inSets),
         units: mode === 'replace' ? inUnits : mergeById(st.units, inUnits),
       };
-      persist(next);
-      return next;
+      return { ...next, ...persist(next) };
     });
     return total;
   },
