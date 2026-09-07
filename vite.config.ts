@@ -15,7 +15,15 @@ const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as { version: string };
 export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss()],
-  server: { port: 5173 },
+  // Suite-Einbettung (Backlog B-17): Die Shell erwartet den MultiCam-Planer
+  // im Entwicklungsbetrieb auf 4182 — so steht es in ihrer `registry.ts` und
+  // in ihrer README. Auf 5173 sucht ihn dort niemand; lief daneben ein
+  // zweiter Planer, rueckte einer von beiden still auf 5174 weiter, und die
+  // Shell zeigte „Kamera-Planer ist gerade nicht erreichbar".
+  //
+  // `strictPort`, damit ein besetzter Port ABBRICHT statt weiterzuruecken.
+  // Genau das stille Weiterruecken ist der Defekt.
+  server: { port: 4182, strictPort: true },
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },

@@ -86,7 +86,7 @@ MultiCam Planner is designed for quick, intuitive camera planning with essential
 ```bash
 npm install
 npm run dev
-# Open http://localhost:5173
+# Open http://localhost:4182
 ```
 
 ### Desktop App
