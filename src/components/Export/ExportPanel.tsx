@@ -17,6 +17,7 @@ import {
 import { stampForStand, stampLine } from '../../utils/documentStamp';
 import { coverageLines, reachReport } from '../../utils/lensReach';
 import { paintLines } from '../../utils/paintState';
+import { shadingLines } from '../../utils/shadingCapability';
 
 export type ExportMode = 'current' | 'all' | 'widetele' | 'all-widetele';
 
@@ -354,6 +355,23 @@ export default function ExportPanel() {
         ctx.fillText(line, cx, cy);
         cy += lineH;
       }
+    }
+
+    // ── BEDARF 48 — der Fernsteuerweg und was er hergibt ──
+    //
+    // Steht IMMER da, wie Rigging und Comms. Der Bedarf will die Luecke zur
+    // Planungszeit sichtbar haben statt in der Probe — eine weggelassene
+    // Zeile waere genau die Probe.
+    cy += 8;
+    ctx.fillStyle = '#3b82f6';
+    ctx.font = 'bold 13px monospace';
+    ctx.fillText('SCHATTIERUNG', cx, cy);
+    cy += lineH;
+    ctx.font = '13px monospace';
+    for (const line of shadingLines(targetCam)) {
+      ctx.fillStyle = line.includes(UNSTATED) ? '#f59e0b' : '#e5e7eb';
+      ctx.fillText(line, cx, cy);
+      cy += lineH;
     }
 
     // ── Notes (only if filled) ──

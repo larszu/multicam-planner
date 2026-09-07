@@ -7,6 +7,14 @@ import { conflictsForCamera, conflictText } from '../../utils/sightline';
 import { FRAMING_LABEL, FRAMINGS, reachReport, verdictShort } from '../../utils/lensReach';
 import { PAINT_FINDING_LABEL, checkPaint } from '../../utils/paintState';
 import {
+  BUS_SCOPE_NOTE,
+  CONTROL_PATH_LABEL,
+  SHADING_FINDING_LABEL,
+  shadingFindings,
+  shadingLines,
+} from '../../utils/shadingCapability';
+import type { ControlPath } from '../../types';
+import {
   FACET_LABEL, VERDICT_LABEL, parseSourceList, reconcile, sourceLabel,
 } from '../../utils/sourceIdentity';
 import {
@@ -249,6 +257,15 @@ function CameraCard({
   // Karten-Befunde: die Luecke entsteht beim Einrichten der Position, und
   // dort steht auch das Feld, das sie schliesst.
   const bildBefunde = checkPaint(cam, cameras);
+  // Bedarf 48 -- die Schattierungs-Befunde stehen in derselben Leiste wie der
+  // Bildzustand: es ist die Arbeit derselben Person, und zwei zugeklappte
+  // Gruppen fuer eine Frage findet niemand. Zusammengefuehrt und nicht
+  // zweimal gezaehlt -- der Zaehler oben ist die Summe.
+  const schattierBefunde = shadingFindings(cam, cameras);
+  const bildUndSchattierung = [
+    ...bildBefunde.map((f) => ({ label: PAINT_FINDING_LABEL[f.kind], text: f.text })),
+    ...schattierBefunde.map((f) => ({ label: SHADING_FINDING_LABEL[f.kind], text: f.text })),
+  ];
 
   // BEDARF 130 — der Abgleich Plan gegen das, was im Netz wirklich da ist.
   //
@@ -1351,12 +1368,44 @@ function CameraCard({
             title="Bildzustand"
             defaultOpen={false}
             summary={
-              bildBefunde.length > 0
-                ? `${bildBefunde.length} offen`
+              bildUndSchattierung.length > 0
+                ? `${bildUndSchattierung.length} offen`
                 : cam.paint?.sceneFile
             }
           >
             <div className="flex flex-col gap-1.5 text-xs">
+              {/* Bedarf 48 — der Fernsteuerweg. Steht VOR der Szenendatei:
+                  wovon abhängt, ob diese Position überhaupt vom Pult aus zu
+                  schattieren ist, ist die erste Frage, nicht die letzte. */}
+              <p className="text-gray-400">
+                Wie wird diese Position ferngesteuert? Der Befehlsvorrat unterscheidet sich je
+                Weg — eine Panasonic-PTZ kann Blende und Farbbalken, eine Blackmagic den ganzen
+                Farbsatz.
+              </p>
+              <select
+                className={feldCls}
+                aria-label="Fernsteuerweg dieser Position"
+                value={cam.controlPath ?? ''}
+                onChange={(e) =>
+                  updateCamera(cam.id, {
+                    controlPath: (e.target.value || undefined) as ControlPath | undefined,
+                  })
+                }
+              >
+                <option value="">nicht angegeben</option>
+                {(Object.keys(CONTROL_PATH_LABEL) as ControlPath[]).map((p) => (
+                  <option key={p} value={p}>
+                    {CONTROL_PATH_LABEL[p]}
+                  </option>
+                ))}
+              </select>
+              {cam.controlPath && (
+                <>
+                  <p className="text-gray-300">{shadingLines(cam)[1]}</p>
+                  <p className="text-gray-500">{BUS_SCOPE_NOTE}</p>
+                </>
+              )}
+
               <p className="text-gray-400">
                 Die Szenendatei gehört zur Position und zur Show, nicht auf eine Karte im
                 Kameraschacht. Der zweite Showtag fängt sonst bei der Erinnerung an.
@@ -1471,12 +1520,12 @@ function CameraCard({
                 }
               />
 
-              {bildBefunde.length > 0 && (
+              {bildUndSchattierung.length > 0 && (
                 <Note tone="warn">
                   <ul className="space-y-0.5">
-                    {bildBefunde.map((f, i) => (
-                      <li key={`${f.kind}-${i}`}>
-                        <span className="font-medium">{PAINT_FINDING_LABEL[f.kind]}</span>
+                    {bildUndSchattierung.map((f, i) => (
+                      <li key={`${f.label}-${i}`}>
+                        <span className="font-medium">{f.label}</span>
                         {': '}
                         {f.text}
                       </li>

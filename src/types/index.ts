@@ -302,6 +302,23 @@ export interface PositionComms {
   batteryPlan?: string;
 }
 
+/**
+ * Bedarf 48 — wie eine Kameraposition ferngesteuert wird.
+ *
+ * Die Kennungen sind 1:1 die `ConnectionMode` aus `sony-camera-bridge`
+ * (`packages/web-rcp/src/types.ts`), plus `none`. Sie hier umzubenennen waere
+ * bequem und der Anfang einer zweiten Wahrheit — der Paritaets-Guard der
+ * Suite haelt beide Listen gegeneinander.
+ *
+ * `none` ist eine ENTSCHEIDUNG („von Hand am Body"), das Fehlen des Feldes
+ * ist keine: eine Position ohne Eintrag ist eine ungestellte Frage, und genau
+ * die wird sonst in der Probe beantwortet.
+ */
+export type ControlPath =
+  | 'tcp' | 'serial' | 'lumix-http' | 'sony-usb' | 'blackmagic' | 'sony-mnc'
+  | 'canon-ccapi' | 'zcam' | 'panasonic-ptz' | 'visca' | 'jvc' | 'birddog'
+  | 'none';
+
 export interface VenueCamera {
   id: string;
   label: string; // CAM 1, CAM 2 …
@@ -499,6 +516,18 @@ export interface VenueCamera {
    * einem Blatt, nach dem jemand am zweiten Showtag sucht.
    */
   paint?: PaintState;
+  /**
+   * Bedarf 48 — der geplante Fernsteuerweg dieser Position.
+   *
+   *   > The exposed paint set differs per protocol ... flag at plan time
+   *   > which positions cannot do remote colour temperature / black balance,
+   *   > instead of discovering it in rehearsal.
+   *
+   * Optional und ohne Vorgabewert. Ein angenommener Weg stuende auf einem
+   * Blatt als Zusicherung, dass diese Position vom Pult aus schattierbar ist
+   * — und das ist der Satz, den der Bedarf abschaffen will.
+   */
+  controlPath?: ControlPath;
 }
 
 /**

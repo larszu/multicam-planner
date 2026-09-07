@@ -42,6 +42,7 @@
 import type { RiggingAccess, VenueCamera } from '../types';
 import type { StampCell } from './documentStamp';
 import { PAINT_UNSTATED, paintLines } from './paintState';
+import { shadingLines } from './shadingCapability';
 
 export const ACCESS_LABEL: Readonly<Record<RiggingAccess, string>> = {
   ladder: 'Leiter',
@@ -136,6 +137,12 @@ export const cardExtraRows = (cam: VenueCamera): StampCell[][] => [
   // — und eine andere Szenendatei. Ohne diese Zeile truegen beide denselben
   // Stempel, und am zweiten Showtag laedt jemand die von gestern.
   ...(paintLines(cam).length > 0 ? [['paint', ...paintLines(cam)] as StampCell[]] : []),
+  // Bedarf 48 — der Fernsteuerweg und was er hergibt. Steht IMMER da, wie
+  // Rigging und Comms: die Karte einer Position, an der die Farbtemperatur
+  // nicht fernstellbar ist, muss das sagen, bevor jemand in der Probe danach
+  // greift. Und zwei Karten derselben Position mit verschiedenen Wegen sind
+  // zwei verschiedene Blaetter, auch wenn sonst alles gleich blieb.
+  ['shading', ...shadingLines(cam)],
 ];
 
 /**
