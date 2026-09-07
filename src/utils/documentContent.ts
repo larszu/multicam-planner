@@ -65,6 +65,19 @@ export const cameraSheetFingerprint = (input: {
    * und der Operator mit dem aelteren Blatt schaltet auf den falschen Kanal.
    */
   extras?: StampCell[][];
+  /**
+   * Bedarf 58 — der Deckungsauftrag und das Urteil ueber die Optik.
+   *
+   * Dieselbe Regel, und hier faellt sie besonders auf: das Urteil wird aus
+   * Standort, Motiv, Sensor und Objektivbereich GERECHNET. Ein verschobenes
+   * Motiv aendert es, ohne dass jemand an der Kamera etwas angefasst haette —
+   * und dann steht auf dem alten Blatt „erreichbar", wo inzwischen „reicht
+   * nicht heran" gilt. Ohne diese Zeilen truege es denselben Stempel.
+   *
+   * Leer, wenn die Position keinen Auftrag hat; dann faellt der Block auf dem
+   * Blatt weg und hier ebenso.
+   */
+  coverage?: StampCell[];
 }): string =>
   documentFingerprint(
     ['kamerakarte'],
@@ -74,6 +87,9 @@ export const cameraSheetFingerprint = (input: {
       ['pos', ...input.position],
       ...(input.presets ?? []).map((zeile) => ['preset', ...zeile] as StampCell[]),
       ...(input.extras ?? []),
+      ...(input.coverage && input.coverage.length > 0
+        ? [['deckung', ...input.coverage] as StampCell[]]
+        : []),
       ['adapter', input.adapter ?? ''],
       ['notiz', input.notes ?? ''],
       // Nach `id` sortiert: die Reihenfolge im Store ist eine

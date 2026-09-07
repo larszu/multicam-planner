@@ -15,6 +15,7 @@ import {
   riggingLines,
 } from '../../utils/cameraCardExtras';
 import { stampForStand, stampLine } from '../../utils/documentStamp';
+import { coverageLines, reachReport } from '../../utils/lensReach';
 
 export type ExportMode = 'current' | 'all' | 'widetele' | 'all-widetele';
 
@@ -35,7 +36,7 @@ interface ExportDetail {
 export default function ExportPanel() {
   const [exporting, setExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
-  const { cameras, venue, projectVersion } = useStore();
+  const { cameras, venue, persons, projectVersion } = useStore();
 
   const capture2DCanvas = useCallback((): HTMLCanvasElement | null => {
     const registry = getExportRegistry();
@@ -305,6 +306,34 @@ export default function ExportPanel() {
       }
     }
 
+    // ── BEDARF 58 — der Deckungsauftrag und ob die Optik ihn schafft ──
+    //
+    // Ueber `reachReport` und nicht mit einer eigenen Rechnung: die Engstelle
+    // entscheidet, sonst stuende auf dem Blatt etwas anderes als in der
+    // Leiste. Ohne Auftrag steht hier NICHTS — anders als bei Rigging und
+    // Comms fehlt hier keine Angabe, sondern eine Anforderung, die niemand
+    // gestellt hat.
+    const deckung = reachReport({
+      cameras: [targetCam],
+      persons,
+      optics: () => ({ sensor, lens: lensDef }),
+    }).rows[0] ?? null;
+    const deckungZeilen = coverageLines(deckung);
+    if (deckungZeilen.length > 0) {
+      cy += 8;
+      ctx.fillStyle = '#3b82f6';
+      ctx.font = 'bold 13px monospace';
+      ctx.fillText('DECKUNGSAUFTRAG', cx, cy);
+      cy += lineH;
+      ctx.font = '13px monospace';
+      const erreicht = deckung?.verdict.kind === 'reachable';
+      for (const line of deckungZeilen) {
+        ctx.fillStyle = line.startsWith('Optik:') && !erreicht ? '#f59e0b' : '#e5e7eb';
+        ctx.fillText(line, cx, cy);
+        cy += lineH;
+      }
+    }
+
     // ── Notes (only if filled) ──
     const notes = (targetCam.notes ?? '').trim();
     if (notes) {
@@ -455,6 +484,11 @@ export default function ExportPanel() {
         // genau dieser Fall ist der, bei dem jemand mit dem alten Zettel auf
         // den falschen Kanal schaltet.
         extras: cardExtraRows(targetCam),
+        // Bedarf 58 — dieselbe Regel wie bei Rigging/Comms: was auf dem Blatt
+        // zu SEHEN ist, geht in den Fingerabdruck. Ein verschobener Standort
+        // oder eine getauschte Optik macht aus „erreichbar" ein „reicht nicht
+        // heran" — und dann ist es ein anderes Blatt.
+        coverage: deckungZeilen,
         alle: cameras.map((c) => {
           const cd = getCameraById(c.cameraId, useStore.getState().customCameras);
           const ld = getLensById(c.lensId, useStore.getState().customLenses);

@@ -4,6 +4,7 @@ import { LENSES, getLensById, getCompatibleLenses, pickInitialMountAndLens } fro
 import { computeFov, computeDof } from '../../utils/fov';
 import { checkPresets, presetRows, type PresetFinding } from '../../utils/ptzPresets';
 import { conflictsForCamera, conflictText } from '../../utils/sightline';
+import { FRAMING_LABEL, FRAMINGS, reachReport, verdictShort } from '../../utils/lensReach';
 import {
   FACET_LABEL, VERDICT_LABEL, parseSourceList, reconcile, sourceLabel,
 } from '../../utils/sourceIdentity';
@@ -327,6 +328,19 @@ function CameraCard({
 
   const fov = effectiveSensor && lensDef ? computeFov(effectiveSensor, cam.focalLength, cam.focusDistance, cam.extenderActive) : null;
   const dof = effectiveSensor && lensDef ? computeDof(effectiveSensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive) : null;
+
+  // Bedarf 58 -- kommt die Optik an den beauftragten Ausschnitt heran?
+  //
+  // Ueber `reachReport` und nicht mit einer eigenen Rechnung: die Engstelle
+  // ist der einzige Ort, der das entscheidet, sonst stuende auf der
+  // Kamerakarte etwas anderes als hier. `optics` liefert genau das, was die
+  // Leiste ohnehin schon aufgeloest hat -- effektiver Sensor (Crop-Modus,
+  // Adapter, Speedbooster) und die eingesetzte Optik.
+  const deckungsZeile = reachReport({
+    cameras: [cam],
+    persons,
+    optics: () => (effectiveSensor && lensDef ? { sensor: effectiveSensor, lens: lensDef } : null),
+  }).rows[0] ?? null;
 
   return (
     <div
@@ -1190,6 +1204,136 @@ function CameraCard({
               </ul>
             </Note>
           )}
+
+          {/* Bedarf 58 — welchen Ausschnitt diese Position liefern muss, und
+              ob die Optik daran herankommt.
+
+              Der Auftrag steht HIER und nicht in einem eigenen Dialog, aus
+              demselben Grund wie die Sichtlinien: er wird beim Setzen der
+              Position gefasst, und die Optik wird zwei Felder darueber
+              gewaehlt. Wer die Antwort erst suchen muss, bekommt sie auf dem
+              Wagen — genau das beklagt der Bedarf.
+
+              Zugeklappt, solange kein Auftrag steht: eine Position ohne
+              geforderten Ausschnitt hat keine Anforderung, und ein offenes
+              Feld dafuer waere eine Frage, die niemand gestellt hat. */}
+          <Group
+            id="coverage"
+            title="Deckungsauftrag"
+            defaultOpen={false}
+            summary={
+              deckungsZeile
+                ? deckungsZeile.verdict.kind === 'reachable'
+                  ? FRAMING_LABEL[deckungsZeile.framing]
+                  : 'reicht nicht'
+                : undefined
+            }
+          >
+            <div className="flex flex-col gap-1.5 text-xs">
+              <p className="text-gray-400">
+                Was diese Position liefern muss. Aus Standort, Motiv, Sensor und
+                Objektivbereich wird die nötige Brennweite gerechnet — und gesagt, wenn die
+                eingesetzte Optik sie nicht hergibt.
+              </p>
+
+              <select
+                className={feldCls}
+                aria-label="Motiv des Deckungsauftrags"
+                value={cam.coverage?.subjectId ?? ''}
+                onChange={(e) =>
+                  updateCamera(cam.id, {
+                    coverage: e.target.value
+                      ? { subjectId: e.target.value, framing: cam.coverage?.framing ?? 'full' }
+                      : undefined,
+                  })
+                }
+              >
+                <option value="">Kein Auftrag</option>
+                {persons.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+
+              {cam.coverage && (
+                <>
+                  <select
+                    className={feldCls}
+                    aria-label="Einstellungsgröße"
+                    value={cam.coverage.framing}
+                    onChange={(e) =>
+                      updateCamera(cam.id, {
+                        coverage: {
+                          ...cam.coverage!,
+                          framing: e.target.value as NonNullable<VenueCamera['coverage']>['framing'],
+                        },
+                      })
+                    }
+                  >
+                    {(Object.keys(FRAMING_LABEL) as (keyof typeof FRAMING_LABEL)[]).map((k) => (
+                      <option key={k} value={k}>
+                        {FRAMING_LABEL[k]}
+                        {k !== 'custom' ? ` (${FRAMINGS[k].axis === 'width' ? 'Breite' : 'Höhe'})` : ''}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Eigenes Mass: die Stufen oben sind eine Konvention, keine
+                      Messung. Wer sie nicht teilt, traegt hier Meter ein. */}
+                  {cam.coverage.framing === 'custom' && (
+                    <div className="flex gap-1.5">
+                      <input
+                        className={feldCls}
+                        type="number"
+                        min={0}
+                        step={0.05}
+                        placeholder="Maß (m)"
+                        aria-label="Gefordertes Maß in Metern"
+                        value={cam.coverage.extentM ?? ''}
+                        onChange={(e) =>
+                          updateCamera(cam.id, {
+                            coverage: { ...cam.coverage!, extentM: zahlOderNichts(e.target.value) },
+                          })
+                        }
+                      />
+                      <select
+                        className={feldCls}
+                        aria-label="Achse des geforderten Maßes"
+                        value={cam.coverage.axis ?? 'height'}
+                        onChange={(e) =>
+                          updateCamera(cam.id, {
+                            coverage: {
+                              ...cam.coverage!,
+                              axis: e.target.value as NonNullable<VenueCamera['coverage']>['axis'],
+                            },
+                          })
+                        }
+                      >
+                        <option value="height">Höhe</option>
+                        <option value="width">Breite</option>
+                      </select>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {deckungsZeile && (
+                <Note tone={deckungsZeile.verdict.kind === 'reachable' ? 'info' : 'warn'}>
+                  <div className="font-medium">{verdictShort(deckungsZeile.verdict)}</div>
+                  {/* Die Bemessungsgrundlage steht IMMER dabei: wer die Zahl
+                      anzweifelt, soll sehen, woraus sie kommt. */}
+                  {deckungsZeile.verdict.kind !== 'not-computable' && (
+                    <div className="mt-0.5 text-gray-400">
+                      {deckungsZeile.extentM.toFixed(2).replace('.', ',')} m{' '}
+                      {deckungsZeile.axis === 'width' ? 'Breite' : 'Höhe'} aus{' '}
+                      {deckungsZeile.distanceM.toFixed(2).replace('.', ',')} m
+                    </div>
+                  )}
+                </Note>
+              )}
+            </div>
+          </Group>
 
           {/* Bedarf 14 — die Presets als Dokumentation. Nur bei PTZ-Kameras:
               eine Handkamera speichert keine, und ein leeres Feld dafuer

@@ -153,6 +153,31 @@ describe('Kamerakarte', () => {
   it('reagiert auf die Notiz — sie wird auf die Karte gedruckt', () => {
     expect(sheet()).not.toBe(sheet({ notes: 'nur bis 85mm, sonst Stativ im Bild' }));
   });
+
+  it('reagiert auf Rigging, Comms und Kit (Bedarfe 59/60/61)', () => {
+    // Der Fall, um den es geht: zwei Karten derselben Kamera, gleiche Optik,
+    // gleiche Position — und ein anderer Comms-Kanal. Ohne diese Zeilen
+    // truegen beide denselben Stempel, und der Operator mit dem aelteren
+    // Blatt schaltet auf den falschen Kanal.
+    const rig = [['rig', 'Podest: 4×4 ft'] as (string | number)[]];
+    expect(sheet()).not.toBe(sheet({ extras: rig }));
+    expect(sheet({ extras: rig })).not.toBe(
+      sheet({ extras: [['rig', 'Podest: 8×4 ft'] as (string | number)[]] }),
+    );
+  });
+
+  it('reagiert auf den Deckungsauftrag (Bedarf 58)', () => {
+    // Das Urteil wird GERECHNET: ein verschobenes Motiv aendert es, ohne dass
+    // jemand an der Kamera etwas angefasst haette. Steht es auf dem Blatt,
+    // muss es eingehen — sonst trueg das alte Blatt „erreichbar", wo
+    // inzwischen „reicht nicht heran" gilt.
+    const erreichbar = ['Auftrag:     Nah auf „Sänger"', 'Optik:       762 mm nötig — erreichbar'];
+    const nicht = ['Auftrag:     Nah auf „Sänger"', 'Optik:       1482 mm nötig — reicht nicht heran'];
+    expect(sheet({ coverage: erreichbar })).not.toBe(sheet({ coverage: nicht }));
+    // Ohne Auftrag faellt der Block auf dem Blatt weg — und hier ebenso: eine
+    // Karte, die nie einen hatte, behaelt den Stempel, den sie vorher trug.
+    expect(sheet()).toBe(sheet({ coverage: [] }));
+  });
 });
 
 const shot = (id: string, over: Partial<Shot> = {}): Shot =>
