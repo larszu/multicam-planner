@@ -226,7 +226,9 @@ export function cardFindings(cam: VenueCamera, alle: readonly VenueCamera[]): Ca
 }
 
 /** Normalisiert die drei Bloecke beim Laden. */
-export function normaliseCardExtras(raw: unknown): Pick<VenueCamera, 'rigging' | 'comms' | 'kit'> {
+export function normaliseCardExtras(
+  raw: unknown,
+): Pick<VenueCamera, 'rigging' | 'comms' | 'kit' | 'faults'> {
   const o = (raw ?? {}) as Record<string, unknown>;
   const str = (v: unknown): string | undefined =>
     typeof v === 'string' && v.trim() ? v.trim() : undefined;
@@ -259,6 +261,12 @@ export function normaliseCardExtras(raw: unknown): Pick<VenueCamera, 'rigging' |
     .map((k) => str(k))
     .filter((k): k is string => !!k);
 
+  // Bedarf 50 — die Fehlerliste der Schicht. Dieselbe Form wie `kit`: freie
+  // Zeilen, leere fliegen raus.
+  const faults = (Array.isArray(o.faults) ? o.faults : [])
+    .map((f) => str(f))
+    .filter((f): f is string => !!f);
+
   // Leere Bloecke werden ganz weggelassen: ein `rigging: {}` an jeder Kamera
   // waere Ballast in jeder Projektdatei, und `cardFindings` liest ein fehlendes
   // Objekt ohnehin als „nichts angegeben".
@@ -266,5 +274,6 @@ export function normaliseCardExtras(raw: unknown): Pick<VenueCamera, 'rigging' |
     ...(Object.keys(rigging).length > 0 ? { rigging } : {}),
     ...(Object.keys(comms).length > 0 ? { comms } : {}),
     ...(kit.length > 0 ? { kit } : {}),
+    ...(faults.length > 0 ? { faults } : {}),
   };
 }

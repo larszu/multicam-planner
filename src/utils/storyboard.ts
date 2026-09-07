@@ -190,7 +190,14 @@ export async function exportStoryboardPng(
   a.remove();
 }
 
-const esc = (s: string) =>
+/**
+ * HTML-Maskierung fuer die Druckansichten.
+ *
+ * Exportiert, weil `shiftReport.ts` dasselbe braucht (Bedarf 50). Eine zweite
+ * Maskierung waere die zweite Wahrheit, an der genau ein Zeichen fehlt — und
+ * das faellt erst auf, wenn ein Kameraname ein `&` traegt.
+ */
+export const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string,
   );
@@ -263,8 +270,17 @@ ${tiles}
  * Oeffnet den nativen Druckdialog mit dem Storyboard ("Als PDF sichern").
  * Laeuft ueber ein verstecktes iframe, damit kein Popup-Blocker zuschlaegt.
  */
-export function printStoryboard(shotlist: Shotlist, venueName?: string, stamp?: DocumentStamp): void {
-  const html = buildStoryboardHtml(shotlist, venueName, stamp);
+/**
+ * Ein HTML-Dokument drucken.
+ *
+ * EINE Stelle, die weiss, wie hier gedruckt wird — der unsichtbare Rahmen,
+ * das Warten auf die eingebetteten Bilder, das Aufraeumen danach. Vorher
+ * stand das nur im Storyboard; `shiftReport.ts` braucht es genauso
+ * (Bedarf 50), und eine zweite Kopie liefe bei der naechsten Chrome-Eigenart
+ * auseinander. Der Kommentar zum Warten stammt aus der Storyboard-Fassung
+ * und gilt unveraendert: ohne ihn druckt Chrome die data-URL-Bilder leer.
+ */
+export function printHtml(html: string): void {
   const frame = document.createElement('iframe');
   frame.style.position = 'fixed';
   frame.style.right = '0';
@@ -297,4 +313,8 @@ export function printStoryboard(shotlist: Shotlist, venueName?: string, stamp?: 
   // Auf die eingebetteten data-URL-Bilder warten, sonst druckt Chrome leer.
   if (frame.contentWindow?.document.readyState === 'complete') fire();
   else frame.onload = fire;
+}
+
+export function printStoryboard(shotlist: Shotlist, venueName?: string, stamp?: DocumentStamp): void {
+  printHtml(buildStoryboardHtml(shotlist, venueName, stamp));
 }
