@@ -5,6 +5,7 @@ import { computeFov, computeDof } from '../../utils/fov';
 import { checkPresets, presetRows, type PresetFinding } from '../../utils/ptzPresets';
 import { conflictsForCamera, conflictText } from '../../utils/sightline';
 import { FRAMING_LABEL, FRAMINGS, reachReport, verdictShort } from '../../utils/lensReach';
+import { PAINT_FINDING_LABEL, checkPaint } from '../../utils/paintState';
 import {
   FACET_LABEL, VERDICT_LABEL, parseSourceList, reconcile, sourceLabel,
 } from '../../utils/sourceIdentity';
@@ -243,6 +244,11 @@ function CameraCard({
   // eigenen Dialog wie die Sichtlinien: die Luecke entsteht beim EINRICHTEN
   // der Position, und dort steht auch das Feld, das sie schliesst.
   const kartenBefunde = cardFindings(cam, cameras);
+
+  // Bedarf 63 -- der Bildzustand. Aus demselben Grund hier wie die uebrigen
+  // Karten-Befunde: die Luecke entsteht beim Einrichten der Position, und
+  // dort steht auch das Feld, das sie schliesst.
+  const bildBefunde = checkPaint(cam, cameras);
 
   // BEDARF 130 — der Abgleich Plan gegen das, was im Netz wirklich da ist.
   //
@@ -1330,6 +1336,118 @@ function CameraCard({
                       {deckungsZeile.distanceM.toFixed(2).replace('.', ',')} m
                     </div>
                   )}
+                </Note>
+              )}
+            </div>
+          </Group>
+
+          {/* Bedarf 63 — der Bildzustand dieser Position.
+
+              Zugeklappt: es sind Angaben, die einmal eingetragen werden und
+              dann stehen. Der Zaehler zeigt die Befunde, damit man nicht
+              aufklappen muss, um zu sehen, dass etwas fehlt. */}
+          <Group
+            id="paint"
+            title="Bildzustand"
+            defaultOpen={false}
+            summary={
+              bildBefunde.length > 0
+                ? `${bildBefunde.length} offen`
+                : cam.paint?.sceneFile
+            }
+          >
+            <div className="flex flex-col gap-1.5 text-xs">
+              <p className="text-gray-400">
+                Die Szenendatei gehört zur Position und zur Show, nicht auf eine Karte im
+                Kameraschacht. Der zweite Showtag fängt sonst bei der Erinnerung an.
+              </p>
+
+              <input
+                className={feldCls}
+                placeholder="Szenendatei (Dateiname auf Karte/Pult)"
+                aria-label="Szenendatei"
+                value={cam.paint?.sceneFile ?? ''}
+                onChange={(e) =>
+                  updateCamera(cam.id, {
+                    paint: { ...cam.paint, sceneFile: e.target.value || undefined },
+                  })
+                }
+              />
+              <div className="flex gap-1.5">
+                <input
+                  className={feldCls}
+                  placeholder="Gesetzt am"
+                  aria-label="Datum, an dem der Bildzustand gesetzt wurde"
+                  value={cam.paint?.setAt ?? ''}
+                  onChange={(e) =>
+                    updateCamera(cam.id, {
+                      paint: { ...cam.paint, setAt: e.target.value || undefined },
+                    })
+                  }
+                />
+                <input
+                  className={feldCls}
+                  placeholder="Gesetzt von"
+                  aria-label="Wer den Bildzustand gesetzt hat"
+                  value={cam.paint?.setBy ?? ''}
+                  onChange={(e) =>
+                    updateCamera(cam.id, {
+                      paint: { ...cam.paint, setBy: e.target.value || undefined },
+                    })
+                  }
+                />
+              </div>
+              {/* Ohne Referenzbedingungen ist der Zustand wiederherstellbar,
+                  aber nicht nachstellbar — und genau das trennt die Datei von
+                  einer Notiz. */}
+              <input
+                className={feldCls}
+                placeholder="Referenz (Graukarte, Farbtemperatur, Licht)"
+                aria-label="Referenzbedingungen"
+                value={cam.paint?.reference ?? ''}
+                onChange={(e) =>
+                  updateCamera(cam.id, {
+                    paint: { ...cam.paint, reference: e.target.value || undefined },
+                  })
+                }
+              />
+
+              {/* Der Abgleich-Zustand wird NICHT von Hand getippt: er wird beim
+                  Eintragen aus der Position genommen. Ein von Hand gesetzter
+                  Body sagte, es sei geprüft worden, wo nichts geprüft wurde. */}
+              <button
+                type="button"
+                className="rounded border border-bc-border px-2 py-1 text-left hover:border-bc-accent"
+                onClick={() =>
+                  updateCamera(cam.id, {
+                    paint: {
+                      ...cam.paint,
+                      savedWith: {
+                        cameraId: cam.cameraId,
+                        lensId: cam.lensId,
+                        ...(cam.sensorModeIndex !== undefined
+                          ? { sensorModeIndex: cam.sensorModeIndex }
+                          : {}),
+                      },
+                    },
+                  })
+                }
+                disabled={!cam.paint?.sceneFile}
+              >
+                Abgleich auf jetzigen Body/Optik festhalten
+              </button>
+
+              {bildBefunde.length > 0 && (
+                <Note tone="warn">
+                  <ul className="space-y-0.5">
+                    {bildBefunde.map((f, i) => (
+                      <li key={`${f.kind}-${i}`}>
+                        <span className="font-medium">{PAINT_FINDING_LABEL[f.kind]}</span>
+                        {': '}
+                        {f.text}
+                      </li>
+                    ))}
+                  </ul>
                 </Note>
               )}
             </div>
