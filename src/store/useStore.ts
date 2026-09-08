@@ -203,6 +203,19 @@ interface AppState {
   currentShotId: string | null;
   /** true, wenn die letzte Persistierung an der localStorage-Quota scheiterte. */
   shotlistStorageFull: boolean;
+  /**
+   * Der letzte Schreibvorgang der HANDGEPFLEGTEN Bibliothek ist an der Quota
+   * gescheitert: eigene Kameras, eigene Optiken, eigene Vorlagen.
+   *
+   * BEFUND (Defektformen-Sweep, Form `zustand-nach-fehler`, Nachlese
+   * 2026-09-08). Fuer Shotlisten und fuer das Lager gab es diese Meldung
+   * schon; die Bibliothek lief weiter ueber `saveJSON`, dessen `catch` leer
+   * ist. Wer eine eigene Kamera anlegt — Sensormasse von Hand aus dem
+   * Datenblatt abgetippt —, sah sie in der Liste stehen und beim naechsten
+   * Start nicht mehr. Ein Undo dafuer gibt es nicht, und es sind genau die
+   * Daten, die niemand ein zweites Mal eintippen will.
+   */
+  libraryStorageFull: boolean;
   addShotlist: (name?: string) => string;
   removeShotlist: (id: string) => void;
   renameShotlist: (id: string, name: string) => void;
@@ -261,8 +274,8 @@ const CUSTOM_TEMPLATES_KEY = 'multicam-custom-templates';
 function loadCustomTemplates(): VenueTemplate[] {
   return loadJSON<VenueTemplate[]>(CUSTOM_TEMPLATES_KEY, []);
 }
-function saveCustomTemplates(templates: VenueTemplate[]) {
-  saveJSON(CUSTOM_TEMPLATES_KEY, templates);
+function saveCustomTemplates(templates: VenueTemplate[]): boolean {
+  return saveJSONSafe(CUSTOM_TEMPLATES_KEY, templates);
 }
 
 const HIDDEN_TEMPLATES_KEY = 'multicam-hidden-templates';
@@ -270,24 +283,24 @@ function loadHiddenTemplateIds(): string[] {
   const parsed = loadJSON<string[]>(HIDDEN_TEMPLATES_KEY, []);
   return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
 }
-function saveHiddenTemplateIds(ids: string[]) {
-  saveJSON(HIDDEN_TEMPLATES_KEY, ids);
+function saveHiddenTemplateIds(ids: string[]): boolean {
+  return saveJSONSafe(HIDDEN_TEMPLATES_KEY, ids);
 }
 
 const CUSTOM_LENSES_KEY = 'multicam-custom-lenses';
 function loadCustomLenses(): Lens[] {
   return loadJSON<Lens[]>(CUSTOM_LENSES_KEY, []);
 }
-function saveCustomLensesStorage(lenses: Lens[]) {
-  saveJSON(CUSTOM_LENSES_KEY, lenses);
+function saveCustomLensesStorage(lenses: Lens[]): boolean {
+  return saveJSONSafe(CUSTOM_LENSES_KEY, lenses);
 }
 
 const CUSTOM_CAMERAS_KEY = 'multicam-custom-cameras';
 function loadCustomCameras(): Camera[] {
   return loadJSON<Camera[]>(CUSTOM_CAMERAS_KEY, []);
 }
-function saveCustomCamerasStorage(cameras: Camera[]) {
-  saveJSON(CUSTOM_CAMERAS_KEY, cameras);
+function saveCustomCamerasStorage(cameras: Camera[]): boolean {
+  return saveJSONSafe(CUSTOM_CAMERAS_KEY, cameras);
 }
 
 // ── Shotlisten (#62 Punkt 5) ──
@@ -496,8 +509,11 @@ export const useStore = create<AppState>((set, get) => ({
     const full: Lens = { ...lens, id, isCustom: true };
     set((s) => {
       const updated = [...s.customLenses, full];
-      saveCustomLensesStorage(updated);
-      return { customLenses: updated, projectVersion: s.projectVersion + 1 };
+      return {
+        customLenses: updated,
+        projectVersion: s.projectVersion + 1,
+        libraryStorageFull: !saveCustomLensesStorage(updated),
+      };
     });
     return id;
   },
@@ -505,8 +521,11 @@ export const useStore = create<AppState>((set, get) => ({
   removeCustomLens: (id) => {
     set((s) => {
       const updated = s.customLenses.filter((l) => l.id !== id);
-      saveCustomLensesStorage(updated);
-      return { customLenses: updated, projectVersion: s.projectVersion + 1 };
+      return {
+        customLenses: updated,
+        projectVersion: s.projectVersion + 1,
+        libraryStorageFull: !saveCustomLensesStorage(updated),
+      };
     });
   },
 
@@ -518,8 +537,11 @@ export const useStore = create<AppState>((set, get) => ({
     const full: Camera = { ...camera, id };
     set((s) => {
       const updated = [...s.customCameras, full];
-      saveCustomCamerasStorage(updated);
-      return { customCameras: updated, projectVersion: s.projectVersion + 1 };
+      return {
+        customCameras: updated,
+        projectVersion: s.projectVersion + 1,
+        libraryStorageFull: !saveCustomCamerasStorage(updated),
+      };
     });
     return id;
   },
@@ -529,8 +551,11 @@ export const useStore = create<AppState>((set, get) => ({
       const exists = s.customCameras.some((c) => c.id === id);
       if (exists) {
         const updated = s.customCameras.map((c) => (c.id === id ? { ...c, ...updates } : c));
-        saveCustomCamerasStorage(updated);
-        return { customCameras: updated, projectVersion: s.projectVersion + 1 };
+        return {
+          customCameras: updated,
+          projectVersion: s.projectVersion + 1,
+          libraryStorageFull: !saveCustomCamerasStorage(updated),
+        };
       }
       // Editing a built-in camera for the first time — create a custom shadow
       // with the same id so getCameraById (which prefers customCameras) returns
@@ -540,16 +565,22 @@ export const useStore = create<AppState>((set, get) => ({
       if (!builtin) return s;
       const shadow: Camera = { ...builtin, ...updates };
       const updated = [...s.customCameras, shadow];
-      saveCustomCamerasStorage(updated);
-      return { customCameras: updated, projectVersion: s.projectVersion + 1 };
+      return {
+        customCameras: updated,
+        projectVersion: s.projectVersion + 1,
+        libraryStorageFull: !saveCustomCamerasStorage(updated),
+      };
     });
   },
 
   removeCustomCamera: (id) => {
     set((s) => {
       const updated = s.customCameras.filter((c) => c.id !== id);
-      saveCustomCamerasStorage(updated);
-      return { customCameras: updated, projectVersion: s.projectVersion + 1 };
+      return {
+        customCameras: updated,
+        projectVersion: s.projectVersion + 1,
+        libraryStorageFull: !saveCustomCamerasStorage(updated),
+      };
     });
   },
 
@@ -739,6 +770,7 @@ export const useStore = create<AppState>((set, get) => ({
   activeShotlistId: INITIAL_SHOTLISTS[0]?.id ?? null,
   currentShotId: null,
   shotlistStorageFull: false,
+  libraryStorageFull: false,
 
   addShotlist: (name) => {
     const id = persistentId('shotlist');
@@ -890,8 +922,7 @@ export const useStore = create<AppState>((set, get) => ({
       cameras: cameras.map(({ id, ...rest }) => rest),
     };
     const updated = [...customTemplates, tmpl];
-    saveCustomTemplates(updated);
-    set({ customTemplates: updated });
+    set({ customTemplates: updated, libraryStorageFull: !saveCustomTemplates(updated) });
   },
 
   // ── Templates: built-in vs custom ──
@@ -904,8 +935,7 @@ export const useStore = create<AppState>((set, get) => ({
     const { customTemplates } = get();
     if (customTemplates.some((t) => t.id === id)) {
       const updated = customTemplates.map((t) => (t.id === id ? { ...t, ...updates } : t));
-      saveCustomTemplates(updated);
-      set({ customTemplates: updated });
+      set({ customTemplates: updated, libraryStorageFull: !saveCustomTemplates(updated) });
       return;
     }
     // Editing a built-in for the first time — create a custom shadow with the
@@ -915,8 +945,7 @@ export const useStore = create<AppState>((set, get) => ({
     if (!original) return;
     const shadow: VenueTemplate = { ...original, ...updates };
     const updated = [...customTemplates, shadow];
-    saveCustomTemplates(updated);
-    set({ customTemplates: updated });
+    set({ customTemplates: updated, libraryStorageFull: !saveCustomTemplates(updated) });
   },
 
   overwriteTemplate: (id) => {
@@ -926,8 +955,7 @@ export const useStore = create<AppState>((set, get) => ({
       const updated = customTemplates.map((t) =>
         t.id === id ? { ...t, venue: { ...venue }, cameras: camerasStripped } : t,
       );
-      saveCustomTemplates(updated);
-      set({ customTemplates: updated });
+      set({ customTemplates: updated, libraryStorageFull: !saveCustomTemplates(updated) });
       return;
     }
     // Overwriting a built-in for the first time — create a custom shadow.
@@ -939,31 +967,33 @@ export const useStore = create<AppState>((set, get) => ({
       cameras: camerasStripped,
     };
     const updated = [...customTemplates, shadow];
-    saveCustomTemplates(updated);
-    set({ customTemplates: updated });
+    set({ customTemplates: updated, libraryStorageFull: !saveCustomTemplates(updated) });
   },
 
   deleteTemplate: (id) => {
     const { customTemplates, hiddenTemplateIds } = get();
     const wasCustom = customTemplates.some((t) => t.id === id);
     const updated = customTemplates.filter((t) => t.id !== id);
-    if (wasCustom) saveCustomTemplates(updated);
+    const voll = wasCustom ? !saveCustomTemplates(updated) : false;
 
     const isStillBuiltIn = TEMPLATES.some((t) => t.id === id);
     // If the underlying id is also a built-in, hide it so it doesn't pop back
     // into the list when the custom shadow is removed.
     if (isStillBuiltIn && !hiddenTemplateIds.includes(id)) {
       const nextHidden = [...hiddenTemplateIds, id];
-      saveHiddenTemplateIds(nextHidden);
-      set({ customTemplates: updated, hiddenTemplateIds: nextHidden });
+      const versteckenVoll = !saveHiddenTemplateIds(nextHidden);
+      set({
+        customTemplates: updated,
+        hiddenTemplateIds: nextHidden,
+        libraryStorageFull: voll || versteckenVoll,
+      });
     } else {
-      set({ customTemplates: updated });
+      set({ customTemplates: updated, libraryStorageFull: voll });
     }
   },
 
   restoreBuiltInTemplates: () => {
-    saveHiddenTemplateIds([]);
-    set({ hiddenTemplateIds: [] });
+    set({ hiddenTemplateIds: [], libraryStorageFull: !saveHiddenTemplateIds([]) });
   },
 
   clearAll: () => {
