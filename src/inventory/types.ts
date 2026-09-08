@@ -34,6 +34,50 @@ export interface PhysicalDimensions {
   weightKg?: number
 }
 
+/**
+ * Ein Geldbetrag — Betrag UND Waehrung, immer zusammen (Bedarf 118).
+ *
+ * OHNE WAEHRUNG KEIN BETRAG. Eine Zahl ohne Kuerzel ist in einer
+ * Versicherungssumme nichts wert, und sie stillschweigend zu „EUR" zu erklaeren
+ * waere eine Annahme ueber einen fremden Vertrag. Summiert wird je Waehrung
+ * getrennt; ein Umrechnungskurs waere ein Wert ohne Fundstelle.
+ *
+ * GANZZAHLIG in der kleinsten Einheit — `0.1 + 0.2` ist in Fliesskomma nicht
+ * `0.3`, und eine Versicherungssumme, die um Cent daneben liegt, ist eine Zahl,
+ * der jemand widerspricht.
+ *
+ * DIE LISTEN DAZU STEHEN IM CABLE-PLANNER (`lager/lib/insuranceSchedule.ts`).
+ * Hier stehen nur die FELDER — damit dieser Planer eine Datei mit
+ * Versicherungswerten lesen und unveraendert zurueckschreiben kann, statt sie
+ * still zu verlieren.
+ */
+export interface Geldbetrag {
+  /** Betrag in der kleinsten Einheit der Waehrung (Cent, Penny, …). */
+  cent: number;
+  /** Waehrungskuerzel nach ISO 4217. ANGEGEBEN, nie geraten. */
+  waehrung: string;
+}
+
+/** Was eine Einheit gekostet hat, und wann (Bedarf 118). */
+export interface Anschaffung {
+  betrag: Geldbetrag;
+  /** Kaufdatum (ISO). */
+  am?: string;
+}
+
+/**
+ * Wofuer eine Einheit versichert ist, und mit welchem Stand (Bedarf 118).
+ *
+ * KEIN ZEITWERT. Anschaffungspreis und Versicherungswert werden nicht
+ * auseinander gerechnet: nach welcher Regel abgeschrieben wird, entscheidet der
+ * Versicherer, und diese Anwendung kennt seinen Vertrag nicht.
+ */
+export interface Versicherungswert {
+  betrag: Geldbetrag;
+  /** Stand des Werts (ISO-Datum). */
+  stand?: string;
+}
+
 export interface InventoryItem {
   id: string
   /** Modell-/Artikelname (Pflicht, Anzeigename). */
@@ -95,6 +139,12 @@ export interface InventoryItem {
   locationId?: string
   /** Physische Artikelmaße (für Case-Packing). */
   dimensions?: PhysicalDimensions
+  /**
+   * Ursprungsland nach ISO 3166-1 alpha-2 („DE", „JP") — Bedarf 118, fuer das
+   * Carnet-Datenblatt im cable-planner. Am ARTIKEL, weil es eine Eigenschaft
+   * des Modells ist.
+   */
+  ursprungsland?: string;
   /** Material-Art(en): Vermiet- und/oder Verbrauchsmaterial. */
   materialKinds?: InventoryMaterialKind[]
   /** Freie Notiz. */
@@ -243,6 +293,10 @@ export interface InventoryUnit {
   locationId?: string
   /** Zustand (Wartung/Reparatur). */
   condition: UnitCondition
+  /** Bedarf 118 — was sie gekostet hat. Siehe `Anschaffung`. */
+  anschaffung?: Anschaffung;
+  /** Bedarf 118 — wofuer sie versichert ist. Siehe `Versicherungswert`. */
+  versicherungswert?: Versicherungswert;
   /** Freie Notiz. */
   notes?: string
   /** Append-only Historie (Bewegungen, Zustandswechsel). */
