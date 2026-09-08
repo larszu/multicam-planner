@@ -6,6 +6,15 @@ import { useMemo, useRef, useState } from 'react';
 import { FiX, FiPlus, FiTrash2, FiDownload, FiUpload, FiSearch } from 'react-icons/fi';
 import { useInventoryStore, type InventoryItemInput } from './store';
 import { serializeInventory, parseInventory, resolveInventoryCode, unitLabel } from './portable';
+import type { InventorySnapshot } from './portable';
+import {
+  VORSCHAU_SORTEN,
+  importVorschau,
+  vorschauIstLeer,
+  vorschauSumme,
+  type ImportMode,
+  type VorschauSorte,
+} from './importPreview';
 import type { InventoryItem } from './types';
 
 interface Props {
@@ -17,9 +26,23 @@ type FormState = InventoryItemInput & { id?: string };
 
 const inputCls = 'w-full rounded border border-bc-border bg-bc-dark p-1.5 text-sm text-white';
 
+/**
+ * Deutsche Beschriftung je Datensatz-Sorte.
+ *
+ * `satisfies Record<VorschauSorte, string>`: kommt eine fuenfte Sorte dazu, ist
+ * das hier ein Typfehler und keine leere Zelle in der Vorschau.
+ */
+const SORTEN_LABEL = {
+  items: 'Artikel',
+  nodes: 'Lagerorte / Cases',
+  sets: 'Sets',
+  units: 'Einheiten',
+} satisfies Record<VorschauSorte, string>;
+
 export function InventoryDialog({ open, onClose }: Props) {
   const items = useInventoryStore((s) => s.items);
   const nodes = useInventoryStore((s) => s.nodes);
+  const sets = useInventoryStore((s) => s.sets);
   const units = useInventoryStore((s) => s.units);
   const addItem = useInventoryStore((s) => s.addItem);
   const updateItem = useInventoryStore((s) => s.updateItem);
@@ -30,7 +53,18 @@ export function InventoryDialog({ open, onClose }: Props) {
   const [form, setForm] = useState<FormState | null>(null);
   const [scan, setScan] = useState('');
   const [scanResult, setScanResult] = useState<string | null>(null);
+  /** Gelesene, noch nicht geschriebene Import-Datei samt gewaehltem Modus. */
+  const [pending, setPending] = useState<{ snap: InventorySnapshot; mode: ImportMode } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Die Vorschau rechnet gegen den JETZIGEN Bestand — nicht gegen den vom
+  // Zeitpunkt des Dateioeffnens. Wer nebenbei einen Artikel anlegt, sieht die
+  // Zahlen mitgehen, statt eine Vorschau zu bestaetigen, die nicht mehr gilt.
+  const vorschau = useMemo(
+    () => (pending ? importVorschau({ items, nodes, sets, units }, pending.snap, pending.mode) : null),
+    [pending, items, nodes, sets, units],
+  );
+  const summe = vorschau ? vorschauSumme(vorschau) : null;
 
   const sorted = useMemo(
     () => [...items].sort((a, b) => a.model.localeCompare(b.model, undefined, { sensitivity: 'base' })),
@@ -66,14 +100,30 @@ export function InventoryDialog({ open, onClose }: Props) {
     URL.revokeObjectURL(url);
   };
 
+  // E-15 (B-22): der Import ging ueber ein `window.confirm`, das „ERSETZEN?
+  // Abbrechen = zusammenfuehren" fragte. Abbrechen fuehrte also ZUSAMMEN — an
+  // dieser Stelle gab es keinen Weg, gar nichts zu tun —, und die Frage stand
+  // ohne eine einzige Zahl daneben. Der Bestand ist projektuebergreifend und
+  // hat kein Undo; „ersetzen" konnte damit hunderte Positionen loeschen, die
+  // der Nutzer nie gesehen hat. Jetzt liegt die Datei zuerst hier und wird
+  // erst mit dem bestaetigten Modus geschrieben.
   const doImport = async (file: File) => {
     const snap = parseInventory(await file.text());
     if (!snap) {
       setScanResult('Keine gültige Lager-Datei (avplan-inventory).');
       return;
     }
-    const replace = window.confirm('Bestehenden Bestand ERSETZEN? Abbrechen = zusammenführen (merge).');
-    const n = importSnapshot(snap, replace ? 'replace' : 'merge');
+    // Vorbelegung ist die harmlose der beiden Antworten: `merge` nimmt nichts
+    // weg. Eine Vorbelegung auf `replace` waere eine Entscheidung, die niemand
+    // getroffen hat.
+    setPending({ snap, mode: 'merge' });
+    setScanResult(null);
+  };
+
+  const doImportConfirm = () => {
+    if (!pending) return;
+    const n = importSnapshot(pending.snap, pending.mode);
+    setPending(null);
     // „Importiert" ist erst wahr, wenn es auch geschrieben wurde. Vorher
     // meldete der Dialog den Erfolg, waehrend der volle localStorage den
     // Bestand still verwarf — sichtbar wurde das beim naechsten Start.
@@ -133,6 +183,89 @@ export function InventoryDialog({ open, onClose }: Props) {
             </button>
           </div>
           {scanResult && <div className="rounded border border-bc-border bg-bc-dark px-2 py-1 text-gray-300">{scanResult}</div>}
+
+          {/* Import-Vorschau (E-15): was jeder der beiden Modi taete, bevor
+              einer davon es tut. */}
+          {pending && vorschau && summe && (
+            <div className="rounded border border-bc-border bg-bc-dark p-3">
+              <div className="mb-2 font-medium">Was dieser Import ändert</div>
+
+              {/* Der Modus steht UEBER der Tabelle: das Umschalten rechnet sie
+                  neu, und genau dieser Vergleich ist die Entscheidung. */}
+              <div role="radiogroup" aria-label="Was dieser Import ändert" className="mb-2 flex flex-wrap items-center gap-2">
+                {(['merge', 'replace'] as ImportMode[]).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    role="radio"
+                    aria-checked={pending.mode === m}
+                    onClick={() => setPending({ ...pending, mode: m })}
+                    className={
+                      pending.mode === m
+                        ? 'rounded bg-bc-accent px-2.5 py-1.5 text-bc-accent-text'
+                        : 'rounded bg-bc-panel px-2.5 py-1.5 hover:bg-black'
+                    }
+                  >
+                    {m === 'merge' ? 'Zusammenführen' : 'Ersetzen'}
+                  </button>
+                ))}
+                <span className="text-xs text-gray-400">
+                  {pending.mode === 'merge'
+                    ? 'Fortschreiben — es fällt nichts weg.'
+                    : 'Der bisherige Bestand wird verworfen.'}
+                </span>
+              </div>
+
+              <div className="overflow-x-auto rounded border border-bc-border">
+                <table className="w-full border-collapse text-left text-xs">
+                  <thead className="bg-bc-panel text-gray-400">
+                    <tr>
+                      <th className="px-2 py-1 font-medium"></th>
+                      <th className="px-2 py-1 text-right font-medium">neu</th>
+                      <th className="px-2 py-1 text-right font-medium">geändert</th>
+                      <th className="px-2 py-1 text-right font-medium">unverändert</th>
+                      <th className="px-2 py-1 text-right font-medium">
+                        {pending.mode === 'replace' ? 'entfällt' : 'bleibt'}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {VORSCHAU_SORTEN.map((sorte) => (
+                      <tr key={sorte} className="border-t border-bc-border/60">
+                        <td className="px-2 py-1">{SORTEN_LABEL[sorte]}</td>
+                        <td className="px-2 py-1 text-right tabular-nums">{vorschau[sorte].neu.length}</td>
+                        <td className="px-2 py-1 text-right tabular-nums">{vorschau[sorte].geaendert.length}</td>
+                        <td className="px-2 py-1 text-right tabular-nums">{vorschau[sorte].gleich.length}</td>
+                        <td
+                          className={`px-2 py-1 text-right tabular-nums ${
+                            pending.mode === 'replace' && vorschau[sorte].entfernt.length > 0 ? 'text-red-300' : ''
+                          }`}
+                        >
+                          {pending.mode === 'replace' ? vorschau[sorte].entfernt.length : vorschau[sorte].unberuehrt.length}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Die eine Zahl, die nicht rueckgaengig zu machen ist, wird
+                  ausgeschrieben statt nur in einer Spalte zu stehen. */}
+              {summe.entfernt > 0 && (
+                <div className="mt-2 text-red-300">
+                  {summe.entfernt} vorhandene Datensätze fallen weg. Das lässt sich nicht rückgängig machen.
+                </div>
+              )}
+              {vorschauIstLeer(vorschau) && (
+                <div className="mt-2 text-gray-400">Diese Datei ändert nichts am Bestand.</div>
+              )}
+
+              <div className="mt-3 flex justify-end gap-2">
+                <button type="button" onClick={() => setPending(null)} className="rounded bg-bc-panel px-3 py-1 hover:bg-black">Abbrechen</button>
+                <button type="button" onClick={doImportConfirm} className="rounded bg-bc-accent px-3 py-1 text-bc-accent-text hover:opacity-90">Importieren</button>
+              </div>
+            </div>
+          )}
 
           {/* Add/Edit */}
           {form && (
