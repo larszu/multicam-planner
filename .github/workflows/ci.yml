@@ -44,6 +44,13 @@ jobs:
       - name: Dokumentation ist auffindbar
         run: npm run docs:reachable
 
+      # Quellsprache (E-17/E-20): dieses Repo ist englisch-quellig. Der Lauf
+      # haelt heute nur die Deklaration zusammen — upstream gibt es noch keine
+      # i18n, an der sich etwas messen liesse (B-25). Er schaltet sich selbst
+      # scharf, sobald der erste Fallback in src/ steht.
+      - name: Quellsprache ist erklaert und stimmt ueberein
+        run: npm run lang:check
+
       # Nutzer-Rueckmeldung 2026-09-07: "die ui ist nicht konsistent. lege
       # globale ui regeln fest die fuer alle repos gelten." Die Regeln stehen
       # in ADR-007 der av-planner-suite; dieser Check haelt sie hier.
