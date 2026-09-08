@@ -251,19 +251,25 @@ describe('Der Weg ist verdrahtet', () => {
   });
 
   it('hat drei Ausgaenge — und der dritte ist der, den es vorher nicht gab', () => {
-    // Nicht bloss „irgendwo steht Abbrechen": dieses Wort steht auch am
-    // Formular-Dialog daneben, und mit dem lockeren Muster kam die
-    // Gegenprobe „kein Abbruch mehr" gruen zurueck. Geprueft wird der
-    // Knopf, der `pending` leert.
-    expect(dialog).toMatch(/setPending\(null\)[^>]*>Abbrechen</);
-    expect(dialog).toMatch(/doImportConfirm\}[^>]*>Importieren</);
+    // Geprueft wird der HANDLER, nicht die Beschriftung.
+    //
+    // Erster Anlauf stand hier als `/setPending\(null\)[^>]*>Abbrechen</` —
+    // das las die deutsche Aufschrift mit. In der vendorten Suite-Kopie steht
+    // dort `{t('inventory.preview.cancel', 'Cancel')}`, und der Waechter wurde
+    // an einer RICHTIGEN Aenderung rot. Ein Waechter, der das tut, wird
+    // geaendert statt gelesen. Der Knopf, der `pending` leert, ist die
+    // Zusicherung; wie er heisst, ist die Uebersetzung.
+    //
+    // Kollisionsfrei bleibt es trotzdem: der Abbruch des FORMULARS heisst
+    // `setForm(null)`.
+    expect(dialog).toMatch(/onClick=\{\(\) => setPending\(null\)\}/);
+    expect(dialog).toMatch(/onClick=\{doImportConfirm\}/);
   });
 
   it('bietet beide Antworten zur Wahl', () => {
-    // Mit dem schliessenden Zeichen: der Erklaertext neben dem Schalter
-    // enthaelt dieselben Woerter, und ohne diese Schaerfe war die
-    // Gegenprobe „nur eine Antwort waehlbar" gruen.
-    expect(dialog).toMatch(/'merge' \? 'Zusammenführen' : 'Ersetzen'/);
+    // Beide Modi werden AUFGEZAEHLT — auch das unabhaengig von der
+    // Beschriftung. Faellt einer weg, ist die Wahl keine mehr.
+    expect(dialog).toMatch(/\(\['merge', 'replace'\] as ImportMode\[\]\)\.map/);
   });
 
   it('importiert den Modus, den die gezeigte Vorschau gerechnet hat', () => {
