@@ -1,6 +1,9 @@
 {
   "name": "multicam-planner",
   "private": true,
+  "avplan": {
+    "sourceLanguage": "en"
+  },
   "version": "4.3.3",
   "description": "Multicam Broadcast Camera & Lens Planner – FOV/DoF calculator, 2D/3D venue planner, dynamic preview",
   "main": "electron/main.cjs",
@@ -16,6 +19,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "docs:reachable": "node scripts/docs-reachable.mjs",
+    "lang:check": "node scripts/quellsprache-check.mjs",
     "actions:check": "node scripts/actions-node-runtime.mjs",
     "brand:check": "node scripts/brand-tokens-check.mjs"
   },
