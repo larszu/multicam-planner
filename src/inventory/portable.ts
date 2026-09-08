@@ -21,7 +21,14 @@ export const INVENTORY_FORMAT = 'avplan-inventory';
 // auch wenn dieser Planer Felder unveraendert durchreicht: sie steht in
 // ALLEN DREI Apps auf demselben Wert, und bliebe sie hier auf 2, wiese dieser
 // Planer jede Datei ab, die der cable-planner ab jetzt schreibt.
-export const INVENTORY_FORMAT_VERSION = 3;
+//
+// Version 4 (Bedarf 118): `InventoryUnit.anschaffung`,
+// `InventoryUnit.versicherungswert` und `InventoryItem.ursprungsland` — die
+// Angaben, aus denen im cable-planner Versicherungsliste und Carnet-Datenblatt
+// entstehen. Dieser Planer wertet sie nicht aus; er FUEHRT sie, damit eine
+// Datei mit Versicherungswerten hier durchlaeuft, ohne sie zu verlieren.
+// Aeltere Dateien (v1-v3) lesen wir unveraendert weiter.
+export const INVENTORY_FORMAT_VERSION = 4;
 
 export interface InventorySnapshot {
   items: InventoryItem[];

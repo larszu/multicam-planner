@@ -13,7 +13,13 @@
 // keine davon darf auf dem Weg durch diesen Planer verloren gehen.
 // ───────────────────────────────────────────────────────────────────────────
 import { describe, it, expect } from 'vitest';
-import { parseInventory, resolveInventoryCode, serializeInventory, unitLabel } from '../inventory/portable';
+import {
+  INVENTORY_FORMAT_VERSION,
+  parseInventory,
+  resolveInventoryCode,
+  serializeInventory,
+  unitLabel,
+} from '../inventory/portable';
 import type { InventoryItem, InventoryUnit } from '../inventory/types';
 
 const unit = (over: Partial<InventoryUnit> = {}): InventoryUnit => ({
@@ -76,10 +82,17 @@ describe('die Hausreferenz kommt an und geht nicht verloren', () => {
   });
 
   it('weist eine Datei ab, die neuer ist als dieser Stand', () => {
-    // Der eigentliche Grund fuer die Versions-Erhoehung: bliebe sie hier auf
-    // 2, wiese dieser Planer JEDE Datei ab, die der cable-planner ab jetzt
-    // schreibt.
-    expect(parseInventory(JSON.stringify({ format: 'avplan-inventory', version: 3 }))).not.toBeNull();
-    expect(parseInventory(JSON.stringify({ format: 'avplan-inventory', version: 4 }))).toBeNull();
+    // Der eigentliche Grund fuer jede Versions-Erhoehung: bliebe sie hier
+    // zurueck, wiese dieser Planer JEDE Datei ab, die der cable-planner ab
+    // dann schreibt.
+    //
+    // RELATIV ZU `INVENTORY_FORMAT_VERSION` und nicht auf feste Zahlen: die
+    // erste Fassung schrieb „3 ja, 4 nein" und wurde bei der naechsten
+    // Erhoehung (Bedarf 118) rot, obwohl die Regel unveraendert galt. Welche
+    // Zahl aktuell ist, friert der Contract-Guard ein — hier steht die REGEL.
+    const eigene = JSON.stringify({ format: 'avplan-inventory', version: INVENTORY_FORMAT_VERSION });
+    const neuer = JSON.stringify({ format: 'avplan-inventory', version: INVENTORY_FORMAT_VERSION + 1 });
+    expect(parseInventory(eigene)).not.toBeNull();
+    expect(parseInventory(neuer)).toBeNull();
   });
 });
