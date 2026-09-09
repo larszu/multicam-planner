@@ -79,4 +79,17 @@ export const preview: Record<string, string> = {
   'preview.export.allCameras': 'ALLE KAMERAS IM PROJEKT',
   'preview.export.noCameras': 'Keine Kameras zum Exportieren. Zuerst eine Kamera hinzufügen.',
   'preview.export.generating': 'Export wird erstellt…',
+  // Die beiden Schrittknöpfe am Objektiv-Regler.
+  'preview.step.back': 'Eine Stufe zurück',
+  'preview.step.forward': 'Eine Stufe weiter',
+  // Regler-Hilfen und Presets in der Vorschau (B-61: waren fest deutsch).
+  'preview.focal.title': 'Brennweite — logarithmisch, rastet auf die Marken. Shift = frei, Mausrad = Stufe.',
+  'preview.aperture.title': 'Blende — Normreihe in vollen Stufen (√2). Shift = stufenlos, Mausrad = eine Stufe.',
+  'preview.aperture.beyond': 'Blende über die echten Objektiv-Grenzen hinaus durchfahren',
+  'preview.focus.title': 'Fokusdistanz — nah fein, fern grob (logarithmisch). Zahl anklicken für direkte Eingabe.',
+  'preview.preset.hasPose': 'enthält Kamera-Position',
+  'preview.preset.none': 'noch keins',
+  'preview.addShot': 'Aktuelle Ansicht als Shot in die Shotlist aufnehmen',
+  'preview.preset.unassigned.title': 'Presets ohne Kamera-Zuordnung',
+  'preview.preset.unassigned': 'ohne Zuordnung',
 };

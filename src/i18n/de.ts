@@ -7,6 +7,8 @@ import { header } from './de/header';
 import { preview } from './de/preview';
 import { venue } from './de/venue';
 import { inventory } from './de/inventory';
+import { rig } from './de/rig';
+import { shotlist } from './de/shotlist';
 import { common } from './de/common';
 
 export const de: Record<string, string> = {
@@ -15,5 +17,7 @@ export const de: Record<string, string> = {
   ...preview,
   ...venue,
   ...inventory,
+  ...rig,
+  ...shotlist,
   ...common,
 };

@@ -399,4 +399,6 @@ export const sidebar: Record<string, string> = {
   'sidebar.cam.presetNameOf': 'Name von Preset {n}',
   'sidebar.cam.presetRemove': 'Preset {n} entfernen',
   'sidebar.cam.source.listPh': 'REGIE-PC (CAM 1)\nREGIE-PC (CAM 2)  10.0.0.42',
+  'sidebar.libraryStorageFull': 'Speicher voll — die letzte Änderung an der Bibliothek wurde nicht dauerhaft gesichert. Nicht mehr gebrauchte eigene Kameras/Optiken löschen oder das Projekt exportieren.',
+  'sidebar.stage.height': 'Höhe',
 };

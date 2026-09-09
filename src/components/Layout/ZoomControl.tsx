@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FiMinus, FiPlus } from 'react-icons/fi';
 import { loadZoom, setZoom, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP, ZOOM_DEFAULT } from '../../utils/uiZoom';
+import { useTranslation } from '../../i18n';
 
 /**
  * Kompakter UI-Zoom-Regler fuer den Header (Issue #61 "alles extrem klein").
@@ -8,6 +9,7 @@ import { loadZoom, setZoom, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP, ZOOM_DEFAULT } from '
  * Tastatur: Ctrl/Cmd + Plus / Minus / 0 (zuruecksetzen).
  */
 export default function ZoomControl() {
+  const { t } = useTranslation();
   const [zoom, setZoomState] = useState<number>(() => loadZoom());
 
   const apply = useCallback((next: number) => {
@@ -35,15 +37,15 @@ export default function ZoomControl() {
   return (
     <div
       className="hidden lg:flex items-center rounded-lg border border-bc-border bg-bc-dark p-0.5"
-      title="UI-Zoom (Strg + / - / 0)"
+      title={t('header.zoom.title', 'UI zoom (Ctrl + / - / 0)')}
     >
       <button
         type="button"
         onClick={dec}
         disabled={zoom <= ZOOM_MIN + 1e-6}
         className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-bc-border disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-        title="Kleiner (Strg -)"
-        aria-label="UI verkleinern"
+        title={t('header.zoom.out.title', 'Smaller (Ctrl -)')}
+        aria-label={t('header.zoom.out', 'Zoom out')}
       >
         <FiMinus size={12} />
       </button>
@@ -51,7 +53,7 @@ export default function ZoomControl() {
         type="button"
         onClick={reset}
         className="px-1.5 min-w-[3rem] text-center text-xs tabular-nums text-gray-300 hover:text-white transition-colors"
-        title="Auf 100 % zurücksetzen (Strg 0)"
+        title={t('header.zoom.reset', 'Reset to 100 % (Ctrl 0)')}
       >
         {pct}%
       </button>
@@ -60,8 +62,8 @@ export default function ZoomControl() {
         onClick={inc}
         disabled={zoom >= ZOOM_MAX - 1e-6}
         className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-bc-border disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-        title="Größer (Strg +)"
-        aria-label="UI vergrößern"
+        title={t('header.zoom.in.title', 'Larger (Ctrl +)')}
+        aria-label={t('header.zoom.in', 'Zoom in')}
       >
         <FiPlus size={12} />
       </button>

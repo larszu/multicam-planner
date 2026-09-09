@@ -84,6 +84,15 @@ export const header: Record<string, string> = {
   // Umgebung vorgelesen und nennt deshalb, um welche Spalte es geht. Die
   // Suite-Kopie hat beide auf denselben Schluessel gelegt — das ist eine
   // Zusammenlegung, keine Uebersetzung.
+  // UI-Zoom im Kopf (Issue #61). „Strg" statt „Ctrl": die deutsche Tastatur
+  // beschriftet die Taste so, und eine Hilfe, die eine andere Taste nennt als
+  // die auf dem Gerät, ist keine.
+  'header.zoom.title': 'UI-Zoom (Strg + / - / 0)',
+  'header.zoom.out.title': 'Kleiner (Strg -)',
+  'header.zoom.out': 'UI verkleinern',
+  'header.zoom.reset': 'Auf 100 % zurücksetzen (Strg 0)',
+  'header.zoom.in.title': 'Größer (Strg +)',
+  'header.zoom.in': 'UI vergrößern',
   'header.sidebar.open': 'Spalte einblenden',
   'header.sidebar.collapse': 'Spalte ausblenden',
   'header.sidebar.open.aria': 'Seitenspalte einblenden',

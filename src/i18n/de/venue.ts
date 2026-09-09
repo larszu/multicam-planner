@@ -37,4 +37,9 @@ export const venue: Record<string, string> = {
   'venue.vertical': 'hoch und runter',
   'venue.dolly': 'vor und zurück',
   'venue.resetView': 'Ansicht zurücksetzen',
+  // Die vier Bearbeiten-Knöpfe an der Kamera im 3D-Raum (XY / Z / Pan / Tilt).
+  'venue.edit.move': 'Standort auf dem Boden',
+  'venue.edit.height': 'Höhe',
+  'venue.edit.pan': 'Schwenk',
+  'venue.edit.tilt': 'Neigung',
 };

@@ -209,13 +209,17 @@ if (abweichend.length) {
 /**
  * Die Obergrenze, nicht das Ziel.
  *
- * GEMESSEN am 2026-09-09, direkt nach dem Abschluss des Rueckwegs (B-25).
+ * Sie stand am 2026-09-09 auf 37 — das war der gemessene Stand direkt nach
+ * dem Abschluss des Rueckwegs (B-25). Am selben Tag sind die 37 gewickelt und
+ * uebersetzt worden; die Grenze ist damit auf NULL gesenkt.
+ *
  * Sie darf SINKEN und nicht steigen: wer eine deutsche Beschriftung
  * hinzufuegt, faellt durch; wer uebersetzt und die Zahl stehen laesst,
  * ebenfalls. Ohne die zweite Haelfte waere sie ab morgen wieder ein Deckel
- * ueber wachsendem Mix.
+ * ueber wachsendem Mix. Auf null bedeutet sie: JEDE neue Zeichenkette in der
+ * anderen Sprache faellt sofort auf.
  */
-const MIX_GRENZE = 37
+const MIX_GRENZE = 0
 
 /** Kommentare raus — sie sind hier deutsch und gehoeren nicht auf den Schirm. */
 const ohneKommentare = (text) =>

@@ -27,6 +27,7 @@ import {
 import { MOUNT_TYPE_LABELS, type CameraMountType } from '../../types';
 import { exportStoryboardPng, printStoryboard, shotOpticsLabel } from '../../utils/storyboard';
 import { storyboardFingerprint } from '../../utils/documentContent';
+import { useTranslation } from '../../i18n';
 import { stampForStand } from '../../utils/documentStamp';
 import type { Shot } from '../../types';
 
@@ -40,6 +41,7 @@ import type { Shot } from '../../types';
  * Storyboard (PNG-Kontaktbogen oder Druck/PDF).
  */
 export default function ShotlistPanel() {
+  const { t } = useTranslation();
   const {
     shotlists,
     activeShotlistId,
@@ -240,23 +242,23 @@ export default function ShotlistPanel() {
           onChange={(e) => setActiveShotlist(e.target.value || null)}
           className="bg-bc-dark border border-bc-border rounded px-1.5 py-1 text-xs text-white max-w-[45%] flex-1 min-w-0"
         >
-          {shotlists.length === 0 && <option value="">— keine Shotlist —</option>}
+          {shotlists.length === 0 && <option value="">{t('shotlist.none', '— no shotlist —')}</option>}
           {shotlists.map((l) => (
             <option key={l.id} value={l.id}>
               {l.name} ({l.shots.length})
             </option>
           ))}
         </select>
-        <button className={btn} onClick={() => addShotlist(`Shotlist ${shotlists.length + 1}`)} title="Neue Shotlist">
+        <button className={btn} onClick={() => addShotlist(`Shotlist ${shotlists.length + 1}`)} title={t('shotlist.new', 'New shotlist')}>
           <FiPlus size={13} />
         </button>
         <button
           className={btn}
           disabled={!list}
-          title="Shotlist umbenennen"
+          title={t('shotlist.rename', 'Rename shotlist')}
           onClick={() => {
             if (!list) return;
-            const name = window.prompt('Name der Shotlist:', list.name);
+            const name = window.prompt(t('shotlist.renamePrompt', 'Name of the shotlist:'), list.name);
             if (name && name.trim()) renameShotlist(list.id, name.trim());
           }}
         >
@@ -265,7 +267,7 @@ export default function ShotlistPanel() {
         <button
           className={btn}
           disabled={!list}
-          title="Shotlist löschen"
+          title={t('shotlist.delete', 'Delete shotlist')}
           onClick={() => {
             if (!list) return;
             if (window.confirm(`Shotlist "${list.name}" mit ${list.shots.length} Shots löschen?`)) {
@@ -284,21 +286,21 @@ export default function ShotlistPanel() {
           className="px-2 py-1 rounded text-[11px] font-medium border border-bc-accent/60 text-bc-accent bg-bc-accent/10 hover:bg-bc-accent/20 disabled:opacity-40 transition-colors flex items-center gap-1"
           onClick={captureShot}
           disabled={!selectedCameraId}
-          title="Aktuelle Preview-Ansicht als Shot speichern"
+          title={t('shotlist.capture', 'Save the current preview view as a shot')}
         >
           <FiCamera size={13} /> Shot aufnehmen
         </button>
 
         <div className="w-px h-4 bg-bc-border" />
 
-        <button className={btn} onClick={() => step(-1)} disabled={shots.length === 0} title="Vorheriger Shot (Q)">
+        <button className={btn} onClick={() => step(-1)} disabled={shots.length === 0} title={t('shotlist.prev', 'Previous shot (Q)')}>
           <FiChevronLeft size={13} />
         </button>
-        <button className={btn} onClick={() => step(1)} disabled={shots.length === 0} title="Nächster Shot (E)">
+        <button className={btn} onClick={() => step(1)} disabled={shots.length === 0} title={t('shotlist.next', 'Next shot (E)')}>
           <FiChevronRight size={13} />
         </button>
         {playing ? (
-          <button className={btn} onClick={stopPlayback} title="Sequenz stoppen">
+          <button className={btn} onClick={stopPlayback} title={t('shotlist.stop', 'Stop the sequence')}>
             <FiSquare size={13} />
           </button>
         ) : (
@@ -329,8 +331,7 @@ export default function ShotlistPanel() {
           {hint && <div className="text-bc-yellow">{hint}</div>}
           {shotlistStorageFull && (
             <div className="text-bc-red">
-              Speicher voll — die letzte Änderung wurde nicht dauerhaft gesichert. Ältere Shots
-              löschen oder Storyboard exportieren.
+              {t('shotlist.storageFull', 'Storage full — the last change was not saved permanently. Delete older shots or export the storyboard.')}
             </div>
           )}
         </div>
@@ -340,10 +341,10 @@ export default function ShotlistPanel() {
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
         {shots.length === 0 && (
           <div className="text-center text-gray-500 text-xs py-8 leading-relaxed">
-            Noch keine Shots.
+            {t('shotlist.empty', 'No shots yet.')}
             <br />
-            Kamera im Preview einrichten und <span className="text-bc-accent">Shot aufnehmen</span>{' '}
-            klicken.
+            {t('shotlist.empty.hint1', 'Set the camera up in the preview and click')}{' '}
+            <span className="text-bc-accent">{t('shotlist.empty.action', 'Capture shot')}</span>.
           </div>
         )}
 
@@ -394,7 +395,7 @@ export default function ShotlistPanel() {
                   {shot.thumbnail ? (
                     <img src={shot.thumbnail} alt="" className="w-full h-full object-contain" />
                   ) : (
-                    <span className="text-[9px] text-gray-600">kein Bild</span>
+                    <span className="text-[9px] text-gray-600">{t('shotlist.noThumb', 'no image')}</span>
                   )}
                   <span className="absolute top-0.5 left-0.5 bg-black/70 text-bc-yellow font-bold text-[9px] px-1 rounded">
                     {String(i + 1).padStart(2, '0')}
@@ -473,7 +474,7 @@ export default function ShotlistPanel() {
                       </span>
                     )}
                     {camGone && (
-                      <span className="text-[9px] text-bc-red" title="Die Kamera dieses Shots wurde gelöscht">
+                      <span className="text-[9px] text-bc-red" title={t('shotlist.cameraGone', 'The camera of this shot has been deleted')}>
                         Kamera fehlt
                       </span>
                     )}
@@ -483,7 +484,7 @@ export default function ShotlistPanel() {
                         if (list) removeShot(list.id, shot.id);
                       }}
                       className="ml-auto p-0.5 text-gray-500 hover:text-bc-red"
-                      title="Shot löschen"
+                      title={t('shotlist.deleteShot', 'Delete shot')}
                     >
                       <FiTrash2 size={12} />
                     </button>
