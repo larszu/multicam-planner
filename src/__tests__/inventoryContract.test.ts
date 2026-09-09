@@ -26,9 +26,9 @@ import type { InventoryItem, StorageNode, InventorySet, InventoryUnit } from '..
 // Eingefrorener Contract — MUSS in allen drei Repos identisch sein.
 const CONTRACT = {
   format: 'avplan-inventory',
-  version: 4,
+  version: 5,
   envelopeKeys: ['app', 'exportedAt', 'format', 'items', 'nodes', 'sets', 'units', 'version'],
-  itemKeys: ['category', 'code', 'codeType', 'createdAt', 'deviceTypeId', 'dimensions', 'id', 'locationId', 'manufacturer', 'materialKinds', 'model', 'notes', 'ownership', 'quantity', 'rentPricePerDay', 'returnDue', 'stockLocation', 'supplier', 'updatedAt', 'ursprungsland'],
+  itemKeys: ['category', 'code', 'codeType', 'createdAt', 'deviceTypeId', 'dimensions', 'id', 'locationId', 'manufacturer', 'materialKinds', 'mindestmenge', 'model', 'notes', 'ownership', 'quantity', 'rentPricePerDay', 'returnDue', 'stockLocation', 'supplier', 'updatedAt', 'ursprungsland'],
   nodeKeys: ['code', 'codeType', 'createdAt', 'dimensions', 'id', 'kind', 'name', 'notes', 'parentId', 'updatedAt'],
   setKeys: ['components', 'createdAt', 'id', 'name', 'notes', 'updatedAt'],
   unitKeys: ['anschaffung', 'code', 'codeType', 'condition', 'createdAt', 'history', 'houseRef', 'id', 'itemId', 'locationId', 'notes', 'serial', 'updatedAt', 'versicherungswert'],
@@ -44,6 +44,10 @@ const item: InventoryItem = {
   dimensions: { widthMm: 50, heightMm: 20, depthMm: 200, weightKg: 0.3 },
   // Bedarf 118 — fuers Carnet-Datenblatt.
   ursprungsland: 'JP',
+  // B-65 — die Mindestmenge des Hauses. Dieser Planer wertet sie nicht aus,
+  // aber sie MUSS den Round-Trip ueberleben: eine Datei, die sie unterwegs
+  // verliert, laesst das Lager wie eines aussehen, in dem alles reicht.
+  mindestmenge: 20,
   materialKinds: ['rental'], notes: 'x', createdAt: 't', updatedAt: 't',
 };
 const node: StorageNode = {

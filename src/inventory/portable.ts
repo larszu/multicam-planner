@@ -28,7 +28,19 @@ export const INVENTORY_FORMAT = 'avplan-inventory';
 // entstehen. Dieser Planer wertet sie nicht aus; er FUEHRT sie, damit eine
 // Datei mit Versicherungswerten hier durchlaeuft, ohne sie zu verlieren.
 // Aeltere Dateien (v1-v3) lesen wir unveraendert weiter.
-export const INVENTORY_FORMAT_VERSION = 4;
+//
+// Version 5 (B-65): `InventoryItem.mindestmenge` -- ab wann das Haus
+// nachbestellt oder sub-hired. Gepflegt wird sie im Lager-Werkzeug
+// (`inventory-planner`), das sie in seiner Kachel „Unter Ziel" auswertet.
+// Dieser Planer wertet sie nicht aus; er FUEHRT sie, damit eine Datei mit
+// Mindestmengen hier durchlaeuft, ohne sie zu verlieren.
+//
+// Die Erhoehung ist auch hier nicht optional, aus demselben Grund wie bei
+// Version 3: die Zahl steht in ALLEN Repos, die ein Lager anfassen, auf
+// demselben Wert. Bliebe sie hier auf 4, wiese dieser Planer jede Datei ab,
+// die das Lager-Werkzeug und der cable-planner ab jetzt schreiben.
+// Aeltere Dateien (v1-v4) lesen wir unveraendert weiter.
+export const INVENTORY_FORMAT_VERSION = 5;
 
 export interface InventorySnapshot {
   items: InventoryItem[];

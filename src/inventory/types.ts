@@ -96,6 +96,18 @@ export interface InventoryItem {
   deviceTypeId?: string
   /** Gesamtmenge im Bestand. */
   quantity: number
+  /**
+   * Mindestmenge -- ab wann das Haus nachbestellt oder sub-hired (B-65).
+   *
+   * Gepflegt wird sie im Lager-Werkzeug (`inventory-planner`); dieser Planer
+   * FUEHRT sie nur, damit eine Datei mit Mindestmengen hier durchlaeuft,
+   * ohne sie zu verlieren -- dieselbe Rolle wie bei `ursprungsland` und den
+   * Versicherungswerten aus Bedarf 118.
+   *
+   * Optional heisst UNBEWERTET und nicht 0: eine 0 waere die Aussage „darf
+   * leer sein", und die trifft jemand ausdruecklich.
+   */
+  mindestmenge?: number
   /** Mietpreis pro Tag (Kalkulation, Phase 5). */
   rentPricePerDay?: number
   /** Lagerort (z. B. "Regal A3"). */
