@@ -83,6 +83,18 @@ export function buildProjectFile(s: {
   };
 }
 
+/** Suite-weite Sprache. Englisch ist bei MultiCam die Quell-Sprache. */
+export type Language = 'de' | 'en';
+
+const LANG_KEY = 'multicam-lang';
+function loadLanguage(): Language {
+  try {
+    return localStorage.getItem(LANG_KEY) === 'de' ? 'de' : 'en';
+  } catch {
+    return 'en';
+  }
+}
+
 interface AppState {
   // Venue
   venue: Venue;
@@ -180,6 +192,10 @@ interface AppState {
   // Layout UI
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (v: boolean) => void;
+
+  // Sprache (suite-weit von der Shell gebrückt, sonst lokal persistiert).
+  language: Language;
+  setLanguage: (lang: Language) => void;
 
   // Scale & grid
   pixelsPerMeter: number;
@@ -883,6 +899,16 @@ export const useStore = create<AppState>((set, get) => ({
 
   sidebarCollapsed: false,
   setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
+
+  language: loadLanguage(),
+  setLanguage: (lang) => {
+    try {
+      localStorage.setItem(LANG_KEY, lang);
+    } catch {
+      /* Storage gesperrt */
+    }
+    set({ language: lang });
+  },
 
   pixelsPerMeter: 30,
   setPixelsPerMeter: (ppm) => set({ pixelsPerMeter: ppm }),

@@ -50,6 +50,18 @@ jobs:
       # scharf, sobald der erste Fallback in src/ steht.
       - name: Quellsprache ist erklaert und stimmt ueberein
         run: npm run lang:check
+      # B-25, Rueckweg: WIE VIEL ist es noch? Der Lauf zaehlt die sichtbaren
+      # Zeichenketten dieses Repos, die in der zweisprachigen Suite-Kopie
+      # keine Entsprechung haben — weder als englischer Quell-String noch als
+      # deutscher Dict-Eintrag. Gemessen sind es 76 von 632; der Rest steht
+      # drueben schon und laesst sich uebernehmen.
+      #
+      # Er MELDET und urteilt nicht: eine Zahl, die heute rot ist und erst
+      # nach Tagen Arbeit gruen wird, waere der Dauer-Rotzustand, gegen den
+      # die anderen Waechter hier geschrieben sind. Ohne die Suite-Kopie
+      # daneben misst er nichts und sagt das.
+      - name: Rueckweg der Uebersetzung — wie viel fehlt noch?
+        run: npm run i18n:check
 
       # Nutzer-Rueckmeldung 2026-09-07: "die ui ist nicht konsistent. lege
       # globale ui regeln fest die fuer alle repos gelten." Die Regeln stehen
