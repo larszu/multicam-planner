@@ -141,7 +141,7 @@ export const klassifiziere = (roh) => {
 
 /** Als Funktion, weil ein `/g`-Ausdruck seinen Suchstand mitschleppt. */
 export const fallbackMuster = () =>
-  /\b(?:t|translate)\(\s*(?:[A-Za-z]+\s*,\s*)?(['"])[^'"]+\1\s*,\s*(['"])((?:[^\\]|\\.)*?)\2/g
+  /\b(?:t|tr|translate)\(\s*(?:[A-Za-z]+\s*,\s*)?(['"])[^'"]+\1\s*,\s*(['"])((?:[^\\]|\\.)*?)\2(?=\s*[,)])/g
 
 const dateien = (dir, out = []) => {
   for (const name of readdirSync(dir)) {
