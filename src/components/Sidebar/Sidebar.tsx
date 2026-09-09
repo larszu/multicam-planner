@@ -508,7 +508,7 @@ function CameraCard({
                     <button
                       type="button"
                       onClick={() => {
-                        if (!confirm(`„${camDef.manufacturer} ${camDef.model}" auf die mitgelieferten Daten zurücksetzen? Deine Änderungen gehen verloren.`)) return;
+                        if (!confirm(format(t('sidebar.cam.resetConfirm', 'Reset "{name}" to its built-in data? Your changes will be lost.'), { name: `${camDef.manufacturer} ${camDef.model}` }))) return;
                         useStore.getState().removeCustomCamera(camDef.id);
                       }}
                       style={{ padding: '5px' }}
@@ -525,10 +525,10 @@ function CameraCard({
                       onClick={() => {
                         const used = useStore.getState().cameras.filter((c) => c.cameraId === camDef.id).length;
                         if (used > 1) {
-                          alert(`„${camDef.manufacturer} ${camDef.model}" lässt sich nicht löschen — ${used} platzierte Kameras nutzen sie noch.`);
+                          alert(format(t('sidebar.cam.deleteInUse', 'Cannot delete "{name}" — {count} placed cameras still use it.'), { name: `${camDef.manufacturer} ${camDef.model}`, count: used }));
                           return;
                         }
-                        if (!confirm(`Eigene Kamera „${camDef.manufacturer} ${camDef.model}" löschen?`)) return;
+                        if (!confirm(format(t('sidebar.cam.deleteConfirm', 'Delete custom camera "{name}"?'), { name: `${camDef.manufacturer} ${camDef.model}` }))) return;
                         // Swap this placement to the first built-in so the card stays valid
                         const fallback = CAMERAS[0];
                         updateCamera(cam.id, {
@@ -2711,7 +2711,7 @@ export default function Sidebar() {
       <div className="p-3 border-t border-bc-border">
         <button
           onClick={() => {
-            if (window.confirm('Are you sure you want to clear everything? This cannot be undone.')) clearAll();
+            if (window.confirm(t('sidebar.clearConfirm', 'Are you sure you want to clear everything? This cannot be undone.'))) clearAll();
           }}
           className="w-full py-1.5 rounded bg-bc-red/20 text-bc-red text-xs font-semibold hover:bg-bc-red/30"
         >
