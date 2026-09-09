@@ -7,6 +7,8 @@ import { FiX, FiPlus, FiTrash2, FiDownload, FiUpload, FiSearch } from 'react-ico
 import { useInventoryStore, type InventoryItemInput } from './store';
 import { serializeInventory, parseInventory, resolveInventoryCode, unitLabel } from './portable';
 import type { InventorySnapshot } from './portable';
+import type { InventoryItem } from './types';
+import { useTranslation, format } from '../i18n';
 import {
   VORSCHAU_SORTEN,
   importVorschau,
@@ -15,7 +17,6 @@ import {
   type ImportMode,
   type VorschauSorte,
 } from './importPreview';
-import type { InventoryItem } from './types';
 
 interface Props {
   open: boolean;
@@ -33,13 +34,14 @@ const inputCls = 'w-full rounded border border-bc-border bg-bc-dark p-1.5 text-s
  * das hier ein Typfehler und keine leere Zelle in der Vorschau.
  */
 const SORTEN_LABEL = {
-  items: 'Artikel',
-  nodes: 'Lagerorte / Cases',
-  sets: 'Sets',
-  units: 'Einheiten',
-} satisfies Record<VorschauSorte, string>;
+  items: ['inventory.preview.items', 'Items'],
+  nodes: ['inventory.preview.nodes', 'Locations / cases'],
+  sets: ['inventory.preview.sets', 'Sets'],
+  units: ['inventory.preview.units', 'Units'],
+} satisfies Record<VorschauSorte, [string, string]>;
 
 export function InventoryDialog({ open, onClose }: Props) {
+  const { t } = useTranslation();
   const items = useInventoryStore((s) => s.items);
   const nodes = useInventoryStore((s) => s.nodes);
   const sets = useInventoryStore((s) => s.sets);
@@ -110,7 +112,7 @@ export function InventoryDialog({ open, onClose }: Props) {
   const doImport = async (file: File) => {
     const snap = parseInventory(await file.text());
     if (!snap) {
-      setScanResult('Keine gültige Lager-Datei (avplan-inventory).');
+      setScanResult(t('inventory.import.invalid', 'Not a valid inventory file (avplan-inventory).'));
       return;
     }
     // Vorbelegung ist die harmlose der beiden Antworten: `merge` nimmt nichts
@@ -129,9 +131,20 @@ export function InventoryDialog({ open, onClose }: Props) {
     // Bestand still verwarf — sichtbar wurde das beim naechsten Start.
     setScanResult(
       useInventoryStore.getState().storageFull
-        ? `${n} Objekte gelesen, aber NICHT gespeichert: der lokale Speicher ist voll. `
-          + `Der Bestand ist beim nächsten Start wieder weg — erst Platz schaffen, dann erneut importieren.`
-        : `${n} Objekte importiert.`,
+        ? format(
+            t(
+              'inventory.import.full',
+              // Der zweite Satz ist der Grund, warum diese Meldung ueberhaupt
+              // gelesen werden muss: der Bestand ist beim naechsten Start
+              // WIEDER WEG. Die Suite-Kopie hatte ihn beim Uebersetzen
+              // verloren — englisch wie deutsch stand dort nur noch „erst
+              // Platz schaffen, dann erneut importieren", also eine
+              // Handlungsanweisung ohne die Folge, die sie noetig macht.
+              '{count} objects read but NOT saved: local storage is full. The stock will be gone at the next start — free some space, then import again.',
+            ),
+            { count: n },
+          )
+        : format(t('inventory.import.done', '{count} objects imported.'), { count: n }),
     );
   };
 
@@ -139,12 +152,12 @@ export function InventoryDialog({ open, onClose }: Props) {
     const code = scan.trim();
     if (!code) return;
     const m = resolveInventoryCode(code, { items, nodes, units });
-    if (!m) setScanResult(`Kein Treffer für „${code}".`);
+    if (!m) setScanResult(format(t('inventory.scan.noMatch', 'No match for "{code}".'), { code }));
     else if (m.kind === 'item') {
-      setScanResult(`Artikel: ${m.item.model}`);
+      setScanResult(format(t('inventory.scan.item', 'Item: {model}'), { model: m.item.model }));
       setForm({ ...m.item });
-    } else if (m.kind === 'node') setScanResult(`Lagerort: ${m.node.name}`);
-    else setScanResult(`Einheit: ${unitLabel(m.unit)}`);
+    } else if (m.kind === 'node') setScanResult(format(t('inventory.scan.node', 'Location: {name}'), { name: m.node.name }));
+    else setScanResult(format(t('inventory.scan.unit', 'Unit: {label}'), { label: unitLabel(m.unit) }));
     setScan('');
   };
 
@@ -152,14 +165,14 @@ export function InventoryDialog({ open, onClose }: Props) {
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4">
       <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-bc-border bg-bc-panel text-white shadow-2xl">
         <header className="flex shrink-0 items-center justify-between border-b border-bc-border px-4 py-2.5">
-          <h2 className="text-base font-semibold">Lager / Bestand</h2>
-          <button type="button" onClick={onClose} className="rounded p-1 text-gray-400 hover:bg-bc-dark hover:text-white" aria-label="Schließen">
+          <h2 className="text-base font-semibold">{t('inventory.title', 'Warehouse / Inventory')}</h2>
+          <button type="button" onClick={onClose} className="rounded p-1 text-gray-400 hover:bg-bc-dark hover:text-white" aria-label={t('inventory.close', 'Close')}>
             <FiX size={18} />
           </button>
         </header>
 
         <div className="space-y-3 overflow-auto p-4 text-sm">
-          {/* Scan + Aktionen */}
+          {/* Scan + actions */}
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative flex-1 min-w-[10rem]">
               <FiSearch className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-gray-500" size={13} />
@@ -167,19 +180,19 @@ export function InventoryDialog({ open, onClose }: Props) {
                 value={scan}
                 onChange={(e) => setScan(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && doScan()}
-                placeholder="Code scannen / eingeben (Artikel, Lagerort, Einheit)…"
+                placeholder={t('inventory.scanPlaceholder', 'Scan / enter a code (item, location, unit)…')}
                 className={`${inputCls} pl-7`}
               />
             </div>
-            <button type="button" onClick={doScan} className="rounded bg-bc-dark px-2.5 py-1.5 hover:bg-black">Auflösen</button>
-            <button type="button" onClick={doExport} className="flex items-center gap-1 rounded bg-bc-dark px-2.5 py-1.5 hover:bg-black" title="Export (App-übergreifend)">
-              <FiDownload size={13} /> Export
+            <button type="button" onClick={doScan} className="rounded bg-bc-dark px-2.5 py-1.5 hover:bg-black">{t('inventory.resolve', 'Resolve')}</button>
+            <button type="button" onClick={doExport} className="flex items-center gap-1 rounded bg-bc-dark px-2.5 py-1.5 hover:bg-black" title={t('inventory.export.title', 'Export (cross-app)')}>
+              <FiDownload size={13} /> {t('inventory.export', 'Export')}
             </button>
-            <button type="button" onClick={() => fileRef.current?.click()} className="flex items-center gap-1 rounded bg-bc-dark px-2.5 py-1.5 hover:bg-black" title="Import">
-              <FiUpload size={13} /> Import
+            <button type="button" onClick={() => fileRef.current?.click()} className="flex items-center gap-1 rounded bg-bc-dark px-2.5 py-1.5 hover:bg-black" title={t('inventory.import.title', 'Import')}>
+              <FiUpload size={13} /> {t('inventory.import', 'Import')}
             </button>
             <button type="button" onClick={() => setForm({ model: '', quantity: 1 })} className="flex items-center gap-1 rounded bg-bc-accent px-2.5 py-1.5 text-bc-accent-text hover:opacity-90">
-              <FiPlus size={13} /> Artikel
+              <FiPlus size={13} /> {t('inventory.addItem', 'Item')}
             </button>
           </div>
           {scanResult && <div className="rounded border border-bc-border bg-bc-dark px-2 py-1 text-gray-300">{scanResult}</div>}
@@ -188,11 +201,11 @@ export function InventoryDialog({ open, onClose }: Props) {
               einer davon es tut. */}
           {pending && vorschau && summe && (
             <div className="rounded border border-bc-border bg-bc-dark p-3">
-              <div className="mb-2 font-medium">Was dieser Import ändert</div>
+              <div className="mb-2 font-medium">{t('inventory.preview.title', 'What this import changes')}</div>
 
               {/* Der Modus steht UEBER der Tabelle: das Umschalten rechnet sie
                   neu, und genau dieser Vergleich ist die Entscheidung. */}
-              <div role="radiogroup" aria-label="Was dieser Import ändert" className="mb-2 flex flex-wrap items-center gap-2">
+              <div role="radiogroup" aria-label={t('inventory.preview.title', 'What this import changes')} className="mb-2 flex flex-wrap items-center gap-2">
                 {(['merge', 'replace'] as ImportMode[]).map((m) => (
                   <button
                     key={m}
@@ -206,13 +219,15 @@ export function InventoryDialog({ open, onClose }: Props) {
                         : 'rounded bg-bc-panel px-2.5 py-1.5 hover:bg-black'
                     }
                   >
-                    {m === 'merge' ? 'Zusammenführen' : 'Ersetzen'}
+                    {m === 'merge'
+                      ? t('inventory.preview.merge', 'Merge')
+                      : t('inventory.preview.replace', 'Replace')}
                   </button>
                 ))}
                 <span className="text-xs text-gray-400">
                   {pending.mode === 'merge'
-                    ? 'Fortschreiben — es fällt nichts weg.'
-                    : 'Der bisherige Bestand wird verworfen.'}
+                    ? t('inventory.preview.mergeHint', 'Carried forward — nothing is dropped.')
+                    : t('inventory.preview.replaceHint', 'The existing inventory is discarded.')}
                 </span>
               </div>
 
@@ -221,18 +236,20 @@ export function InventoryDialog({ open, onClose }: Props) {
                   <thead className="bg-bc-panel text-gray-400">
                     <tr>
                       <th className="px-2 py-1 font-medium"></th>
-                      <th className="px-2 py-1 text-right font-medium">neu</th>
-                      <th className="px-2 py-1 text-right font-medium">geändert</th>
-                      <th className="px-2 py-1 text-right font-medium">unverändert</th>
+                      <th className="px-2 py-1 text-right font-medium">{t('inventory.preview.new', 'new')}</th>
+                      <th className="px-2 py-1 text-right font-medium">{t('inventory.preview.changed', 'changed')}</th>
+                      <th className="px-2 py-1 text-right font-medium">{t('inventory.preview.same', 'unchanged')}</th>
                       <th className="px-2 py-1 text-right font-medium">
-                        {pending.mode === 'replace' ? 'entfällt' : 'bleibt'}
+                        {pending.mode === 'replace'
+                          ? t('inventory.preview.removed', 'dropped')
+                          : t('inventory.preview.untouched', 'kept')}
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {VORSCHAU_SORTEN.map((sorte) => (
                       <tr key={sorte} className="border-t border-bc-border/60">
-                        <td className="px-2 py-1">{SORTEN_LABEL[sorte]}</td>
+                        <td className="px-2 py-1">{t(SORTEN_LABEL[sorte][0], SORTEN_LABEL[sorte][1])}</td>
                         <td className="px-2 py-1 text-right tabular-nums">{vorschau[sorte].neu.length}</td>
                         <td className="px-2 py-1 text-right tabular-nums">{vorschau[sorte].geaendert.length}</td>
                         <td className="px-2 py-1 text-right tabular-nums">{vorschau[sorte].gleich.length}</td>
@@ -253,16 +270,19 @@ export function InventoryDialog({ open, onClose }: Props) {
                   ausgeschrieben statt nur in einer Spalte zu stehen. */}
               {summe.entfernt > 0 && (
                 <div className="mt-2 text-red-300">
-                  {summe.entfernt} vorhandene Datensätze fallen weg. Das lässt sich nicht rückgängig machen.
+                  {format(
+                    t('inventory.preview.removes', '{count} existing records will be dropped. This cannot be undone.'),
+                    { count: summe.entfernt },
+                  )}
                 </div>
               )}
               {vorschauIstLeer(vorschau) && (
-                <div className="mt-2 text-gray-400">Diese Datei ändert nichts am Bestand.</div>
+                <div className="mt-2 text-gray-400">{t('inventory.preview.nothing', 'This file changes nothing in the inventory.')}</div>
               )}
 
               <div className="mt-3 flex justify-end gap-2">
-                <button type="button" onClick={() => setPending(null)} className="rounded bg-bc-panel px-3 py-1 hover:bg-black">Abbrechen</button>
-                <button type="button" onClick={doImportConfirm} className="rounded bg-bc-accent px-3 py-1 text-bc-accent-text hover:opacity-90">Importieren</button>
+                <button type="button" onClick={() => setPending(null)} className="rounded bg-bc-panel px-3 py-1 hover:bg-black">{t('inventory.preview.cancel', 'Cancel')}</button>
+                <button type="button" onClick={doImportConfirm} className="rounded bg-bc-accent px-3 py-1 text-bc-accent-text hover:opacity-90">{t('inventory.preview.apply', 'Import')}</button>
               </div>
             </div>
           )}
@@ -270,43 +290,43 @@ export function InventoryDialog({ open, onClose }: Props) {
           {/* Add/Edit */}
           {form && (
             <div className="rounded border border-bc-accent/40 bg-bc-dark p-3">
-              <div className="mb-2 font-medium">{form.id ? 'Artikel bearbeiten' : 'Neuer Artikel'}</div>
+              <div className="mb-2 font-medium">{form.id ? t('inventory.editItem', 'Edit item') : t('inventory.newItem', 'New item')}</div>
               <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-                <label className="block">Modell *<input autoFocus value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} className={inputCls} /></label>
-                <label className="block">Hersteller<input value={form.manufacturer ?? ''} onChange={(e) => setForm({ ...form, manufacturer: e.target.value })} className={inputCls} /></label>
-                <label className="block">Kategorie<input value={form.category ?? ''} onChange={(e) => setForm({ ...form, category: e.target.value })} className={inputCls} /></label>
-                <label className="block">Menge<input type="number" min={0} value={form.quantity} onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })} className={inputCls} /></label>
-                <label className="block">Code<input value={form.code ?? ''} onChange={(e) => setForm({ ...form, code: e.target.value })} className={inputCls} /></label>
-                <label className="block">Eigentum
+                <label className="block">{t('inventory.field.model', 'Model *')}<input autoFocus value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} className={inputCls} /></label>
+                <label className="block">{t('inventory.field.manufacturer', 'Manufacturer')}<input value={form.manufacturer ?? ''} onChange={(e) => setForm({ ...form, manufacturer: e.target.value })} className={inputCls} /></label>
+                <label className="block">{t('inventory.field.category', 'Category')}<input value={form.category ?? ''} onChange={(e) => setForm({ ...form, category: e.target.value })} className={inputCls} /></label>
+                <label className="block">{t('inventory.field.quantity', 'Quantity')}<input type="number" min={0} value={form.quantity} onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })} className={inputCls} /></label>
+                <label className="block">{t('inventory.field.code', 'Code')}<input value={form.code ?? ''} onChange={(e) => setForm({ ...form, code: e.target.value })} className={inputCls} /></label>
+                <label className="block">{t('inventory.field.ownership', 'Ownership')}
                   <select value={form.ownership ?? ''} onChange={(e) => setForm({ ...form, ownership: (e.target.value || undefined) as InventoryItem['ownership'] })} className={inputCls}>
-                    <option value="">—</option>
-                    <option value="owned">Eigentum</option>
-                    <option value="rented">gemietet</option>
-                    <option value="subhire">Sub-Miete</option>
+                    <option value="">{t('inventory.ownership.none', '—')}</option>
+                    <option value="owned">{t('inventory.ownership.owned', 'Owned')}</option>
+                    <option value="rented">{t('inventory.ownership.rented', 'Rented')}</option>
+                    <option value="subhire">{t('inventory.ownership.subhire', 'Sub-hire')}</option>
                   </select>
                 </label>
               </div>
               <div className="mt-3 flex justify-end gap-2">
-                <button type="button" onClick={() => setForm(null)} className="rounded bg-bc-dark px-3 py-1 hover:bg-black">Abbrechen</button>
-                <button type="button" disabled={form.model.trim() === ''} onClick={save} className="rounded bg-bc-accent px-3 py-1 text-bc-accent-text enabled:hover:opacity-90 disabled:opacity-50">Speichern</button>
+                <button type="button" onClick={() => setForm(null)} className="rounded bg-bc-dark px-3 py-1 hover:bg-black">{t('inventory.cancel', 'Cancel')}</button>
+                <button type="button" disabled={form.model.trim() === ''} onClick={save} className="rounded bg-bc-accent px-3 py-1 text-bc-accent-text enabled:hover:opacity-90 disabled:opacity-50">{t('inventory.save', 'Save')}</button>
               </div>
             </div>
           )}
 
-          {/* Tabelle */}
+          {/* Table */}
           {sorted.length === 0 ? (
             <div className="rounded border border-dashed border-bc-border py-10 text-center text-gray-500">
-              Noch keine Lager-Artikel. Lege welche an oder importiere ein Lager aus Cable/Light Planner.
+              {t('inventory.empty', 'No inventory items yet. Create some or import an inventory from Cable/Light Planner.')}
             </div>
           ) : (
             <div className="overflow-x-auto rounded border border-bc-border">
               <table className="w-full border-collapse text-left">
                 <thead className="bg-bc-dark text-gray-400">
                   <tr>
-                    <th className="px-2 py-1.5 font-medium">Modell</th>
-                    <th className="px-2 py-1.5 text-right font-medium">Menge</th>
-                    <th className="px-2 py-1.5 font-medium">Code</th>
-                    <th className="px-2 py-1.5 font-medium">Eigentum</th>
+                    <th className="px-2 py-1.5 font-medium">{t('inventory.col.model', 'Model')}</th>
+                    <th className="px-2 py-1.5 text-right font-medium">{t('inventory.col.quantity', 'Quantity')}</th>
+                    <th className="px-2 py-1.5 font-medium">{t('inventory.col.code', 'Code')}</th>
+                    <th className="px-2 py-1.5 font-medium">{t('inventory.col.ownership', 'Ownership')}</th>
                     <th className="px-2 py-1.5"></th>
                   </tr>
                 </thead>
@@ -319,8 +339,8 @@ export function InventoryDialog({ open, onClose }: Props) {
                       <td className="px-2 py-1.5 text-gray-300">{it.ownership ?? '—'}</td>
                       <td className="px-2 py-1.5">
                         <div className="flex justify-end gap-1">
-                          <button type="button" onClick={() => setForm({ ...it })} className="rounded px-2 py-0.5 text-xs text-gray-400 hover:bg-bc-border hover:text-white">Edit</button>
-                          <button type="button" onClick={() => removeItem(it.id)} className="rounded p-1 text-gray-400 hover:bg-red-900/50 hover:text-red-300" aria-label="Löschen"><FiTrash2 size={13} /></button>
+                          <button type="button" onClick={() => setForm({ ...it })} className="rounded px-2 py-0.5 text-xs text-gray-400 hover:bg-bc-border hover:text-white">{t('inventory.edit', 'Edit')}</button>
+                          <button type="button" onClick={() => removeItem(it.id)} className="rounded p-1 text-gray-400 hover:bg-red-900/50 hover:text-red-300" aria-label={t('inventory.delete', 'Delete')}><FiTrash2 size={13} /></button>
                         </div>
                       </td>
                     </tr>
@@ -332,7 +352,7 @@ export function InventoryDialog({ open, onClose }: Props) {
 
           {(nodes.length > 0 || units.length > 0) && (
             <div className="text-xs text-gray-500">
-              + {nodes.length} Lagerorte/Cases · {units.length} serialisierte Einheiten (aus Import, verlustfrei erhalten)
+              {format(t('inventory.extras', '+ {nodes} locations/cases · {units} serialized units (from import, preserved losslessly)'), { nodes: nodes.length, units: units.length })}
             </div>
           )}
         </div>

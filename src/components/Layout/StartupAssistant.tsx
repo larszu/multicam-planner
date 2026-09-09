@@ -2,19 +2,24 @@ import { useCallback, useRef, useState } from 'react';
 import { FiUpload, FiPlus, FiX, FiArrowRight, FiCheck } from 'react-icons/fi';
 import { useStore } from '../../store/useStore';
 import type { EditMode } from '../../types';
+import { useTranslation } from '../../i18n';
+
+type TFn = (key: string, en: string) => string;
 
 const SEEN_KEY = 'mcplan-assistant-seen';
 
 // Ordered steps of the "New Plan" wizard (issue #43): draw the floor plan, then
 // the stages, then objects/persons, and finally the cameras.
-const WIZARD_STEPS: { mode: EditMode; title: string; hint: string }[] = [
-  { mode: 'floorplan', title: '1 · Floor Plan', hint: 'Upload a plan image/PDF, set the scale, and draw the walls.' },
-  { mode: 'stage', title: '2 · Stages', hint: 'Add and size the stages. Everything else is locked for now.' },
-  { mode: 'objects', title: '3 · Objects & Persons', hint: 'Place performers, instruments and props on the stage.' },
-  { mode: 'cameras', title: '4 · Cameras', hint: 'Position the cameras and aim them at the action.' },
+const getWizardSteps = (t: TFn): { mode: EditMode; title: string; hint: string }[] => [
+  { mode: 'floorplan', title: t('header.wizard.step1.title', '1 · Floor Plan'), hint: t('header.wizard.step1.hint', 'Upload a plan image/PDF, set the scale, and draw the walls.') },
+  { mode: 'stage', title: t('header.wizard.step2.title', '2 · Stages'), hint: t('header.wizard.step2.hint', 'Add and size the stages. Everything else is locked for now.') },
+  { mode: 'objects', title: t('header.wizard.step3.title', '3 · Objects & Persons'), hint: t('header.wizard.step3.hint', 'Place performers, instruments and props on the stage.') },
+  { mode: 'cameras', title: t('header.wizard.step4.title', '4 · Cameras'), hint: t('header.wizard.step4.hint', 'Position the cameras and aim them at the action.') },
 ];
 
 export default function StartupAssistant() {
+  const { t } = useTranslation();
+  const WIZARD_STEPS = getWizardSteps(t);
   const { loadProject, setEditMode } = useStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const seen = typeof window !== 'undefined' && window.sessionStorage.getItem(SEEN_KEY) === '1';
@@ -32,7 +37,7 @@ export default function StartupAssistant() {
     setStepIndex(0);
     setEditMode(WIZARD_STEPS[0].mode);
     setPhase('wizard');
-  }, [markSeen, setEditMode]);
+  }, [markSeen, setEditMode, WIZARD_STEPS]);
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,7 +58,7 @@ export default function StartupAssistant() {
       setEditMode(WIZARD_STEPS[next].mode);
       return next;
     });
-  }, [setEditMode]);
+  }, [setEditMode, WIZARD_STEPS]);
 
   const finishWizard = useCallback(() => { setEditMode('all'); setPhase('done'); }, [setEditMode]);
 
@@ -69,7 +74,7 @@ export default function StartupAssistant() {
             <div className="text-bc-yellow text-xs font-semibold">{step.title}</div>
             <div className="text-gray-300 text-xs mt-1 leading-relaxed">{step.hint}</div>
           </div>
-          <button onClick={finishWizard} className="p-1 text-gray-500 hover:text-white" title="Exit assistant (unlock everything)">
+          <button onClick={finishWizard} className="p-1 text-gray-500 hover:text-white" title={t('header.wizard.exit', 'Exit assistant (unlock everything)')}>
             <FiX size={14} />
           </button>
         </div>
@@ -83,7 +88,7 @@ export default function StartupAssistant() {
             onClick={isLast ? finishWizard : nextStep}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-bc-accent text-bc-accent-text text-xs font-medium hover:bg-bc-accent/80"
           >
-            {isLast ? <><FiCheck size={13} /> Finish</> : <>Next <FiArrowRight size={13} /></>}
+            {isLast ? <><FiCheck size={13} /> {t('header.wizard.finish', 'Finish')}</> : <>{t('header.wizard.next', 'Next')} <FiArrowRight size={13} /></>}
           </button>
         </div>
       </div>
@@ -94,11 +99,11 @@ export default function StartupAssistant() {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="w-[440px] max-w-[92vw] rounded-2xl border border-bc-border bg-bc-panel shadow-2xl p-6 relative">
-        <button onClick={dismiss} className="absolute top-3 right-3 p-1 text-gray-500 hover:text-white" title="Close">
+        <button onClick={dismiss} className="absolute top-3 right-3 p-1 text-gray-500 hover:text-white" title={t('header.welcome.close', 'Close')}>
           <FiX size={16} />
         </button>
-        <h2 className="text-white font-bold text-lg">Welcome to MultiCam Planner</h2>
-        <p className="text-gray-400 text-sm mt-1">How would you like to start?</p>
+        <h2 className="text-white font-bold text-lg">{t('header.welcome.title', 'Welcome to MultiCam Planner')}</h2>
+        <p className="text-gray-400 text-sm mt-1">{t('header.welcome.intro', 'How would you like to start?')}</p>
         <div className="grid grid-cols-1 gap-3 mt-5">
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -106,8 +111,8 @@ export default function StartupAssistant() {
           >
             <FiUpload size={20} className="text-bc-accent shrink-0" />
             <span>
-              <span className="block text-white text-sm font-medium">Load Plan</span>
-              <span className="block text-gray-500 text-xs">Open an existing .mcplan file and jump to camera editing</span>
+              <span className="block text-white text-sm font-medium">{t('header.welcome.load.title', 'Load Plan')}</span>
+              <span className="block text-gray-500 text-xs">{t('header.welcome.load.desc', 'Open an existing .mcplan file and jump to camera editing')}</span>
             </span>
           </button>
           <button
@@ -116,8 +121,8 @@ export default function StartupAssistant() {
           >
             <FiPlus size={20} className="text-bc-yellow shrink-0" />
             <span>
-              <span className="block text-white text-sm font-medium">New Plan</span>
-              <span className="block text-gray-500 text-xs">Step through floor plan → stages → objects → cameras</span>
+              <span className="block text-white text-sm font-medium">{t('header.welcome.new.title', 'New Plan')}</span>
+              <span className="block text-gray-500 text-xs">{t('header.welcome.new.desc', 'Step through floor plan → stages → objects → cameras')}</span>
             </span>
           </button>
         </div>

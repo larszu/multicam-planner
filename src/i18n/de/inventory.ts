@@ -42,7 +42,7 @@ export const inventory: Record<string, string> = {
   // entscheidet. Genau dafür war es angekündigt: „bleibt, bis die Vorschau es
   // ablöst". Ein Schlüssel ohne Aufrufer ist eine Übersetzung für einen Knopf,
   // den es nicht gibt.
-  'inventory.import.full': '{count} Objekte gelesen, aber NICHT gespeichert: der lokale Speicher ist voll. Erst Platz schaffen, dann erneut importieren.',
+  'inventory.import.full': '{count} Objekte gelesen, aber NICHT gespeichert: der lokale Speicher ist voll. Der Bestand ist beim nächsten Start wieder weg — erst Platz schaffen, dann erneut importieren.',
   'inventory.import.done': '{count} Objekte importiert.',
 
   // ── Import-Vorschau (E-15) ───────────────────────────────────────────────

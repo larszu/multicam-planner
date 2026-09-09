@@ -105,6 +105,7 @@ export const header: Record<string, string> = {
   'header.wizard.next': 'Weiter',
 
   // ── StartupAssistant: Welcome-Dialog ──
+  'header.welcome.close': 'Schließen',
   'header.welcome.title': 'Willkommen beim MultiCam Planner',
   'header.welcome.intro': 'Wie möchten Sie beginnen?',
   'header.welcome.load.title': 'Plan laden',
