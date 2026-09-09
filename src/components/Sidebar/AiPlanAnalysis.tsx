@@ -5,6 +5,7 @@ import { AI_PROVIDERS, AI_PROVIDER_ORDER, splitDataUrl, parseJsonResponse } from
 import type { AiProviderId } from '../../utils/aiProviders';
 import { buildPlanPrompt, wallsFromResult, stagesFromResult } from '../../utils/planAnalysis';
 import type { AnalysisResult, PlanTasks } from '../../utils/planAnalysis';
+import { useTranslation, format } from '../../i18n';
 
 const PROVIDER_STORAGE = 'multicam-ai-provider';
 const modelStorageKey = (id: AiProviderId) => `multicam-ai-model-${id}`;
@@ -12,6 +13,7 @@ const modelStorageKey = (id: AiProviderId) => `multicam-ai-model-${id}`;
 // AI floor-plan analysis (issues #39 / #40): pick a provider, paste a key, and
 // have the model extract walls / stages / scale from the uploaded plan image.
 export default function AiPlanAnalysis() {
+  const { t } = useTranslation();
   const { backgroundPlan, setBackgroundPlan, addWall, addStage } = useStore();
 
   const initialProviderId: AiProviderId = (localStorage.getItem(PROVIDER_STORAGE) as AiProviderId) in AI_PROVIDERS
@@ -50,9 +52,9 @@ export default function AiPlanAnalysis() {
   }, [providerId]);
 
   const analyze = useCallback(async () => {
-    if (!backgroundPlan) { setError('Upload a floor plan image/PDF first.'); return; }
-    if (!apiKey.trim()) { setError(`Enter your ${provider.label} API key.`); return; }
-    if (!tasks.walls && !tasks.stages && !tasks.scale) { setError('Select at least one thing to extract.'); return; }
+    if (!backgroundPlan) { setError(t('sidebar.ai.errUpload', 'Upload a floor plan image/PDF first.')); return; }
+    if (!apiKey.trim()) { setError(format(t('sidebar.ai.errKey', 'Enter your {label} API key.'), { label: provider.label })); return; }
+    if (!tasks.walls && !tasks.stages && !tasks.scale) { setError(t('sidebar.ai.errSelect', 'Select at least one thing to extract.')); return; }
 
     setBusy(true);
     setError(null);
@@ -69,37 +71,37 @@ export default function AiPlanAnalysis() {
       if (tasks.scale && result.scale && typeof result.scale.metersPerPixel === 'number' && result.scale.metersPerPixel > 0) {
         plan = { ...backgroundPlan, scaleX: result.scale.metersPerPixel, scaleY: result.scale.metersPerPixel };
         setBackgroundPlan(plan);
-        scaleNote = `scale ${(result.scale.metersPerPixel * 1000).toFixed(1)} mm/px`;
+        scaleNote = format(t('sidebar.ai.scaleNote', 'scale {v} mm/px'), { v: (result.scale.metersPerPixel * 1000).toFixed(1) });
       }
 
       const parts: string[] = [];
       if (tasks.walls) {
         const walls = wallsFromResult(result, plan);
         walls.forEach((w) => addWall(w));
-        parts.push(`${walls.length} wall${walls.length === 1 ? '' : 's'}`);
+        parts.push(format(t('sidebar.ai.countWalls', '{n} {unit}'), { n: walls.length, unit: walls.length === 1 ? t('sidebar.ai.wall', 'wall') : t('sidebar.ai.walls', 'walls') }));
       }
       if (tasks.stages) {
         const stages = stagesFromResult(result, plan);
         stages.forEach((s) => addStage(s));
-        parts.push(`${stages.length} stage${stages.length === 1 ? '' : 's'}`);
+        parts.push(format(t('sidebar.ai.countStages', '{n} {unit}'), { n: stages.length, unit: stages.length === 1 ? t('sidebar.ai.stage', 'stage') : t('sidebar.ai.stages', 'stages') }));
       }
       if (scaleNote) parts.push(scaleNote);
 
-      setSummary(parts.length ? `Added ${parts.join(', ')}.` : 'Nothing was detected in the plan.');
+      setSummary(parts.length ? format(t('sidebar.ai.summaryAdded', 'Added {parts}.'), { parts: parts.join(', ') }) : t('sidebar.ai.summaryNone', 'Nothing was detected in the plan.'));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
     }
-  }, [apiKey, backgroundPlan, model, provider, setBackgroundPlan, addWall, addStage, tasks]);
+  }, [apiKey, backgroundPlan, model, provider, setBackgroundPlan, addWall, addStage, tasks, t]);
 
   return (
     <div className="p-2 rounded bg-bc-dark border border-bc-border space-y-1.5">
       <div className="flex items-center gap-1 text-gray-300 font-medium">
-        <FiCpu size={11} /> AI Plan Analysis
+        <FiCpu size={11} /> {t('sidebar.ai.title', 'AI Plan Analysis')}
       </div>
       <p className="text-gray-500 text-[10px] leading-tight">
-        Let an AI read the uploaded plan and draw walls / stages and read the scale.
+        {t('sidebar.ai.intro', 'Let an AI read the uploaded plan and draw walls / stages and read the scale.')}
       </p>
 
       {/* Provider + model */}
@@ -110,7 +112,7 @@ export default function AiPlanAnalysis() {
       >
         {AI_PROVIDER_ORDER.map((id) => (
           <option key={id} value={id}>
-            {AI_PROVIDERS[id].label}{AI_PROVIDERS[id].free ? ' — free key' : ''}
+            {AI_PROVIDERS[id].label}{AI_PROVIDERS[id].free ? t('sidebar.ai.freeKey', ' — free key') : ''}
           </option>
         ))}
       </select>
@@ -119,7 +121,7 @@ export default function AiPlanAnalysis() {
         <FiKey size={11} className="text-gray-500 shrink-0" />
         <input
           type="password"
-          placeholder={`${provider.label} API key`}
+          placeholder={format(t('sidebar.ai.apiKeyPlaceholder', '{label} API key'), { label: provider.label })}
           className="flex-1 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[11px]"
           value={apiKey}
           onChange={(e) => persistKey(e.target.value)}
@@ -129,11 +131,11 @@ export default function AiPlanAnalysis() {
 
       <input
         type="text"
-        placeholder="model"
+        placeholder={t('sidebar.ai.modelPlaceholder', 'model')}
         className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[10px]"
         value={model}
         onChange={(e) => persistModel(e.target.value)}
-        title="Model id — defaults to a vision-capable model for the provider"
+        title={t('sidebar.ai.modelTitle', 'Model id — defaults to a vision-capable model for the provider')}
       />
 
       {/* What to extract */}
@@ -146,7 +148,7 @@ export default function AiPlanAnalysis() {
               checked={tasks[k]}
               onChange={(e) => setTasks((t) => ({ ...t, [k]: e.target.checked }))}
             />
-            {k.charAt(0).toUpperCase() + k.slice(1)}
+            {t(`sidebar.ai.task.${k}`, k.charAt(0).toUpperCase() + k.slice(1))}
           </label>
         ))}
       </div>
@@ -156,10 +158,10 @@ export default function AiPlanAnalysis() {
         disabled={busy || !backgroundPlan}
         className="flex items-center justify-center gap-1 px-2 py-1 rounded bg-bc-accent/20 text-bc-accent text-[11px] hover:bg-bc-accent/30 w-full disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {busy ? <><FiLoader size={11} className="animate-spin" /> Analysing…</> : <>Analyse plan with AI</>}
+        {busy ? <><FiLoader size={11} className="animate-spin" /> {t('sidebar.ai.analysing', 'Analysing…')}</> : <>{t('sidebar.ai.analyse', 'Analyse plan with AI')}</>}
       </button>
 
-      {!backgroundPlan && <p className="text-gray-600 text-[9px]">Upload a plan above to enable analysis.</p>}
+      {!backgroundPlan && <p className="text-gray-600 text-[9px]">{t('sidebar.ai.uploadHint', 'Upload a plan above to enable analysis.')}</p>}
       {error && <p className="text-bc-red text-[10px] break-words">{error}</p>}
       {summary && <p className="text-bc-green text-[10px]">{summary}</p>}
     </div>

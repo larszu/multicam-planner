@@ -131,6 +131,45 @@ for (const voll of eigene) {
 
 proDatei.sort((a, b) => b.fehlend.length - a.fehlend.length)
 
+/**
+ * DIE ZWEITE FRAGE, und sie ist beim Bauen die wichtigere geworden: laesst
+ * sich die Suite-Datei ueberhaupt herueberholen?
+ *
+ * Gemessen: von den 14 gewickelten Dateien der Suite-Kopie ziehen ZEHN ein
+ * Paket herein, das es nur im Suite-Baum gibt — `@avplan/ui` (Dialoge),
+ * `@avplan/onboarding-core`, `@avplan/inventory-core`. Fuer die ist ein
+ * Kopieren keine Option, egal wie klein der Text-Unterschied ist; ihre
+ * Wicklung muss von Hand auf die hiesige Datei uebertragen werden.
+ *
+ * Das ist der eigentliche Preis des Rueckwegs, und ohne diese Spalte saehe
+ * er nach „88 Prozent stehen schon drueben" aus.
+ */
+const SUITE_PAKETE = /@avplan\/[a-z-]+/g
+const gewickelt = []
+for (const voll of dateien(join(SUITE, 'src'))) {
+  const text = readFileSync(voll, 'utf8')
+  if (!/\buseTranslation\(/.test(text)) continue
+  const rel = relative(join(SUITE, 'src'), voll).split(sep).join('/')
+  if (rel === 'i18n/index.ts') continue
+  const pakete = [...new Set(text.match(SUITE_PAKETE) ?? [])]
+  const hier = join(HIER, 'src', rel)
+  const schonGewickelt = existsSync(hier) && /\buseTranslation\(/.test(readFileSync(hier, 'utf8'))
+  gewickelt.push({ rel, pakete, schonGewickelt })
+}
+gewickelt.sort((a, b) => Number(a.schonGewickelt) - Number(b.schonGewickelt) || a.rel.localeCompare(b.rel))
+
+const fertig = gewickelt.filter((g) => g.schonGewickelt).length
+const blockiert = gewickelt.filter((g) => !g.schonGewickelt && g.pakete.length).length
+console.log(
+  `\nUebernahme-Stand: ${fertig} von ${gewickelt.length} gewickelten Dateien sind hier ` +
+    `angekommen. ${blockiert} der uebrigen ziehen ein Suite-eigenes Paket herein und ` +
+    'lassen sich nicht kopieren — ihre Wicklung muss von Hand uebertragen werden.',
+)
+for (const g of gewickelt) {
+  const marke = g.schonGewickelt ? 'da   ' : g.pakete.length ? 'HAND ' : 'offen'
+  console.log(`  ${marke} ${g.rel}${g.pakete.length ? '   [' + g.pakete.join(', ') + ']' : ''}`)
+}
+
 console.log(
   `${gesamt} sichtbare Zeichenketten in src/, davon ${ohneEntsprechung} ohne Entsprechung ` +
     'in der Suite-Kopie (weder englischer Quell-String noch deutscher Dict-Eintrag).',
