@@ -60,6 +60,31 @@
 // DIE GRENZE IST IN BEIDE RICHTUNGEN SCHARF: wer uebersetzt und die Grenze
 // nicht heruntersetzt, faellt ebenfalls durch — sonst deckte sie ab morgen
 // wieder Zuwachs.
+//
+// ── UND WAS DIESE MESSUNG NICHT KANN, gemessen statt vermutet ──────────────
+//
+// Das JSX-Muster ist `>text<`. In einer .tsx-Datei trifft das auch CODE: die
+// Vergleichsoperatoren `>` und `<` stehen mitten in Ausdruecken
+// (`if (clipped.length > 2)`, `arr.filter(n => n.id === x)`), und dazwischen
+// steht dann ein Stueck Quelltext.
+//
+// HIER FAELLT DAS NICHT AUF, und der Grund ist eine Asymmetrie, die man
+// kennen muss, bevor man diesen Lauf in ein anderes Repo traegt: gezaehlt
+// wird nur, was als DEUTSCH durchgeht. Ein Code-Schnipsel traegt `if`, `for`,
+// `const`, `return`, `this` — englische Stoppwoerter. Er wird also als
+// englisch klassifiziert und faellt aus der Zaehlung.
+//
+// GEGENPROBE, damit das keine Vermutung bleibt: derselbe Lauf ueber DIESES
+// Repo, aber in die andere Richtung gemessen (Ziel `en`), findet SECHS
+// Treffer — allesamt Code-Schnipsel aus `CameraPreview.tsx`, keine einzige
+// Beschriftung. Ueber `cable-planner` (deutsch-quellig, Ziel `en`) sind es
+// 35, ueber `light-planner` 12 — ebenfalls ausnahmslos Code.
+//
+// DARAUS FOLGT: dieser Lauf laesst sich NICHT als Kopie in die
+// deutsch-quelligen Repos tragen. Dort waere er ein Fehlalarm-Automat, und
+// nach dem dritten Mal schaltet ihn jemand ab. Wer ihn dort haben will,
+// braucht ein JSX-Muster, das Code von Text unterscheidet — kein
+// Nachziehen dieser Datei. Das steht als eigener Punkt im Backlog.
 // ───────────────────────────────────────────────────────────────────────────
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
