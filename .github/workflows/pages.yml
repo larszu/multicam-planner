@@ -1,0 +1,146 @@
+name: Deploy Web (GitHub Pages)
+
+# Veroeffentlicht den gebauten Renderer als statische Web-App:
+# den Kamera-Planer (Positionen, Objektive, Sichtlinien) im Browser.
+#
+# WOZU. Nicht jeder, der den Plan sehen soll, installiert dafuer ein Programm.
+# Die Anwendung ist offline-first und legt ihre Daten im `localStorage` des
+# Browsers ab — sie bleiben also auf dem Rechner des Besuchers und laufen nicht
+# ueber diese Seite. Die Desktop-Fassung aus `release.yml` bleibt davon
+# unberuehrt: sie hat ihren EIGENEN `localStorage` (Electron haelt ihn in
+# `userData`), beide teilen ihren Stand also nicht. Wer zwischen ihnen wechselt,
+# geht ueber den Export.
+#
+# ─── WARUM DIESER LAUF ERST FRAGT UND DANN VEROEFFENTLICHT ─────────────────
+#
+# Eine Pages-Site kann nur ein MENSCH in den Repo-Einstellungen anlegen. Der
+# `GITHUB_TOKEN` darf es nicht ("Resource not accessible by integration"), und
+# `actions/configure-pages` bricht ohne Site mit 404 ab.
+#
+# Im cable-planner stand dieser Workflow deshalb auf `push: [main]` und war
+# ueber Wochen bei JEDEM Push rot — ohne dass sich aus dem Repo heraus etwas
+# daran haette aendern lassen. Ein Lauf, der immer rot ist und immer rot bleiben
+# MUSS, ist schlimmer als keiner: er gewoehnt einem das Hinsehen ab, und der
+# naechste echte Fehler auf master faellt in derselben roten Spalte nicht mehr auf.
+#
+# Die Loesung dort war, den Push-Trigger abzuschalten und ihn erst nach der
+# Freigabe von Hand wieder einzutragen — also ein zweiter Commit, den jemand
+# machen muss und vergisst. Hier fragt der Lauf stattdessen die Pages-API,
+# BEVOR er konfiguriert:
+#
+#   * Site vorhanden  -> es wird gebaut und veroeffentlicht.
+#   * Site fehlt      -> gebaut wird trotzdem (das ist eine echte Pruefung),
+#                        das Veroeffentlichen entfaellt mit einer WARNUNG und
+#                        einer Anleitung in der Lauf-Zusammenfassung.
+#
+# master wird damit nie rot fuer einen Klick, den niemand gemacht hat — und in
+# dem Moment, in dem der Eigentuemer Pages auf "GitHub Actions" stellt,
+# veroeffentlicht der naechste Push von selbst. Kein Nachtrag noetig.
+#
+# Was das NICHT tut: still gruen sein. Ein uebersprungenes Deploy steht als
+# Warnung am Lauf und als Absatz in der Zusammenfassung. Wer die Seite sucht
+# und nicht findet, liest dort, warum.
+
+on:
+  push:
+    # `master`, nicht `main`: das ist in DIESEM Repo der Standard-Branch (die
+    # anderen Planer heissen `main`). Ein Trigger auf `main` waere hier kein
+    # Fehler, den man sieht — der Workflow liefe schlicht nie, und die Seite
+    # bliebe auf dem Stand ihres ersten Laufs von Hand.
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Immer nur ein Deploy gleichzeitig; laufende abbrechen, wenn ein neuer kommt.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      seite-aktiv: ${{ steps.pages-status.outputs.aktiv }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: 'npm'
+      - run: npm ci
+      - name: Build
+        run: npm run build
+
+      - name: Ist Pages in diesem Repo aktiviert?
+        id: pages-status
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -u
+          # 200 = Site existiert. 404 = nicht aktiviert. 000 = die Frage kam
+          # gar nicht durch; das ist KEIN "nicht aktiviert", und die Ausgabe
+          # sagt es getrennt, damit ein Netz-Aussetzer nicht als fehlende
+          # Freigabe missverstanden wird.
+          # Der Fehlschlag wird am EXIT-CODE abgefangen, nicht mit `|| echo`:
+          # curl schreibt bei einem Verbindungsfehler selbst schon "000" nach
+          # stdout, ein angehaengtes zweites machte daraus "000000" — und der
+          # Vergleich unten haette die Netz-Stoerung als fehlende Freigabe
+          # gemeldet.
+          code="$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/pages")" || code=000
+          echo "GET /repos/$GITHUB_REPOSITORY/pages -> HTTP $code"
+          if [ "$code" = "200" ]; then
+            echo "aktiv=true" >> "$GITHUB_OUTPUT"
+            echo "Pages ist aktiviert — es wird veroeffentlicht."
+            exit 0
+          fi
+          echo "aktiv=false" >> "$GITHUB_OUTPUT"
+          if [ "$code" = "000" ]; then
+            grund="Die Pages-API war nicht erreichbar (HTTP 000). Ob die Site existiert, ist damit UNBEKANNT — nicht widerlegt."
+          else
+            grund="Fuer dieses Repo ist keine Pages-Site angelegt (HTTP $code)."
+          fi
+          echo "::warning title=Nicht veroeffentlicht::$grund Der Build ist durchgelaufen, das Deploy wurde uebersprungen."
+          {
+            echo "## Nicht veroeffentlicht"
+            echo
+            echo "$grund"
+            echo
+            echo "Der Build ist durchgelaufen — es fehlt nur die Freigabe, und die kann"
+            echo "kein Workflow erteilen: der \`GITHUB_TOKEN\` darf keine Pages-Site anlegen."
+            echo
+            echo "**So wird die Seite live:** Repo-Einstellungen -> Pages -> *Source* auf"
+            echo "**GitHub Actions** stellen. Danach diesen Workflow einmal von Hand starten"
+            echo "(*Run workflow*) und nachsehen, dass er gruen durchlaeuft. Ab dann"
+            echo "veroeffentlicht jeder Push auf master von selbst — an dieser Datei ist"
+            echo "nichts zu aendern."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Pages konfigurieren
+        if: steps.pages-status.outputs.aktiv == 'true'
+        uses: actions/configure-pages@v6
+
+      - name: Seite hochladen
+        if: steps.pages-status.outputs.aktiv == 'true'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.seite-aktiv == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
