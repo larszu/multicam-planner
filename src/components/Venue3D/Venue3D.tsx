@@ -17,6 +17,7 @@ import { FLAT_STAGE_M, groundHeightAt, stageColor, stageOpacity, stageTopZ } fro
 import { FiLock, FiUnlock } from 'react-icons/fi';
 import { VIEW3D_FOV_DEG, defaultCameraPos, defaultPitchRad } from '../../utils/view3d';
 import robotoFont from '../../assets/fonts/Roboto-Regular.ttf';
+import { useTranslation } from '../../i18n';
 
 // ── Apple-Silicon / Electron 3D-view fix (issue #35) ──
 // drei's <Text> uses troika-three-text, which by default does its font
@@ -525,6 +526,7 @@ function CameraRig({
   venueWidth: number;
   venueHeight: number;
 }) {
+  const { t } = useTranslation();
   const { moveCamera, updateCamera } = useStore();
   const baseRef = useRef<THREE.Group>(null);
   const liftRef = useRef<THREE.Group>(null);
@@ -671,8 +673,12 @@ function CameraRig({
                   onClick={() => onToggleLock(cam.id)}
                   style={{ ...buttonStyle(isUnlocked), display: 'flex', alignItems: 'center', padding: '4px 6px' }}
                   aria-pressed={isUnlocked}
-                  aria-label={isUnlocked ? 'Position sperren' : 'Position entsperren'}
-                  title={isUnlocked ? 'Position sperren' : 'Position entsperren'}
+                  aria-label={isUnlocked
+                    ? t('venue.lockPosition', 'Lock position')
+                    : t('venue.unlockPosition', 'Unlock position')}
+                  title={isUnlocked
+                    ? t('venue.lockPosition', 'Lock position')
+                    : t('venue.unlockPosition', 'Unlock position')}
                 >
                   {isUnlocked ? <FiUnlock size={12} /> : <FiLock size={12} />}
                 </button>
@@ -915,6 +921,7 @@ function PersonMesh({ x, z, height, label, objectType, color }: { x: number; z: 
 }
 
 export default function Venue3D() {
+  const { t } = useTranslation();
   const { venue, cameras, persons, backgroundPlan, walls, updatePerson, selectCamera, selectedCameraId } = useStore();
   const [unlockedCameraId, setUnlockedCameraId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState<CameraEditMode>('move');
@@ -945,13 +952,13 @@ export default function Venue3D() {
         fontSize: 11, color: '#9ca3af', lineHeight: 1.6, backdropFilter: 'blur(4px)',
         pointerEvents: 'none',
       }}>
-        <b style={{ color: '#60a5fa' }}>Kamera wählen</b> → Schloss öffnen zum Bearbeiten<br/>
-        <b style={{ color: '#60a5fa' }}>XY</b> Standort &nbsp;|&nbsp;
-        <b style={{ color: '#60a5fa' }}>Z</b> Höhe &nbsp;|&nbsp;
-        <b style={{ color: '#60a5fa' }}>Pan/Tilt</b> Schwenk und Neigung<br/>
-        <b style={{ color: '#60a5fa' }}>WASD</b> Bewegen &nbsp;|&nbsp;
-        <b style={{ color: '#60a5fa' }}>Space/Shift</b> hoch und runter &nbsp;|&nbsp;
-        <b style={{ color: '#60a5fa' }}>Scroll</b> vor und zurück
+        <b style={{ color: '#60a5fa' }}>{t('venue.selectCamera', 'Select camera')}</b> {t('venue.unlockToEdit', '→ unlock to edit')}<br/>
+        <b style={{ color: '#60a5fa' }}>XY</b> {t('venue.floorMove', 'floor move')} &nbsp;|&nbsp;
+        <b style={{ color: '#60a5fa' }}>Z</b> {t('venue.height', 'height')} &nbsp;|&nbsp;
+        <b style={{ color: '#60a5fa' }}>Pan/Tilt</b> {t('venue.rotateAxes', 'rotate axes')}<br/>
+        <b style={{ color: '#60a5fa' }}>WASD</b> {t('venue.move', 'Move')} &nbsp;|&nbsp;
+        <b style={{ color: '#60a5fa' }}>Space/Shift</b> {t('venue.vertical', 'vertical')} &nbsp;|&nbsp;
+        <b style={{ color: '#60a5fa' }}>Scroll</b> {t('venue.dolly', 'Dolly')}
       </div>
 
       {/* Reset View button */}
@@ -966,7 +973,7 @@ export default function Venue3D() {
         onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#60a5fa'; }}
         onMouseLeave={(e) => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = '#334155'; }}
       >
-        ↻ Ansicht zurücksetzen
+        ↻ {t('venue.resetView', 'Reset View')}
       </button>
 
       <Canvas shadows gl={{ preserveDrawingBuffer: true }}>
