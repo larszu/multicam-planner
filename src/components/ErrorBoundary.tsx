@@ -1,5 +1,7 @@
 import { Component } from 'react';
 import type { ReactNode, ErrorInfo } from 'react';
+import { translate } from '../i18n';
+import { useStore } from '../store/useStore';
 
 interface Props {
   children: ReactNode;
@@ -23,11 +25,22 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      // KEIN Hook: eine Klassen-Komponente hat keinen, und `useTranslation`
+      // hier zu rufen waere ein Fehler. Die Sprache kommt deshalb direkt aus
+      // dem Store — und zwar erst hier, im Fehlerfall. Wer sie im Konstruktor
+      // liest, friert sie beim Erzeugen ein und zeigt nach einem
+      // Sprachwechsel die alte.
+      //
+      // `getState()` statt Abonnement, weil dieser Zweig nur einmal gerendert
+      // wird: danach laedt der Nutzer die Seite neu, das ist der einzige
+      // Knopf darin.
+      const lang = useStore.getState().language;
+      const t = (key: string, en: string) => translate(lang, key, en);
       return (
         <div style={{ padding: 32, color: '#ef4444', background: '#0f1117', minHeight: '100vh' }}>
-          <h1 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 12 }}>Something went wrong</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 12 }}>{t('error.title', 'Something went wrong')}</h1>
           <p style={{ color: '#9ca3af', marginBottom: 16 }}>
-            The application encountered an unexpected error. Try refreshing the page.
+            {t('error.hint', 'The application encountered an unexpected error. Try refreshing the page.')}
           </p>
           <pre style={{ fontSize: 12, color: '#6b7280', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
             {this.state.error?.message}
@@ -39,7 +52,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14,
             }}
           >
-            Reload
+            {t('error.reload', 'Reload')}
           </button>
         </div>
       );

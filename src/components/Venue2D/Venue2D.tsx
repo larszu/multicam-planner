@@ -14,6 +14,7 @@ import { getExportRegistry } from '../../store/exportRegistry';
 import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react';
 import type Konva from 'konva';
 import { FiCopy, FiLock, FiUnlock, FiTrash2 } from 'react-icons/fi';
+import { useTranslation, format } from '../../i18n';
 
 // Shared style for context-menu items (issue #38).
 const ctxItemStyle: React.CSSProperties = {
@@ -32,6 +33,7 @@ const ctxItemStyle: React.CSSProperties = {
 };
 
 export default function Venue2D() {
+  const { t } = useTranslation();
   const { venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, updateCamera, removeCamera, duplicateCamera, showAllFov, pixelsPerMeter, persons, updatePerson, removePerson, duplicatePerson, updateStage, addStage, removeStage, backgroundPlan, setBackgroundPlan, walls, updateWall, addWall, removeWall, wallSnap, editMode, avForeign, showForeign } = useStore();
 
   // Edit-mode locking (issue #43): each mode locks every category except its own.
@@ -910,16 +912,16 @@ export default function Venue2D() {
         {menu.kind !== 'wall' && (
           <>
             <button type="button" onClick={() => handleMenuAction('duplicate')} style={ctxItemStyle}>
-              <FiCopy size={13} /> Duplicate
+              <FiCopy size={13} /> {t('venue.duplicate', 'Duplicate')}
             </button>
             <button type="button" onClick={() => handleMenuAction('lock')} style={ctxItemStyle}>
-              {menu.locked ? <FiUnlock size={13} /> : <FiLock size={13} />} {menu.locked ? 'Unlock position' : 'Lock position'}
+              {menu.locked ? <FiUnlock size={13} /> : <FiLock size={13} />} {menu.locked ? t('venue.unlockPosition', 'Unlock position') : t('venue.lockPosition', 'Lock position')}
             </button>
             <div style={{ height: 1, background: '#334155', margin: '4px 6px' }} />
           </>
         )}
         <button type="button" onClick={() => handleMenuAction('delete')} style={{ ...ctxItemStyle, color: '#f87171' }}>
-          <FiTrash2 size={13} /> Delete {menu.kind}
+          <FiTrash2 size={13} /> {format(t('venue.delete', 'Delete {kind}'), { kind: menu.kind })}
         </button>
       </div>
     )}

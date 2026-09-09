@@ -1,4 +1,5 @@
 import type { Camera, Lens, SensorSize, FovResult, DofResult } from '../../types';
+import { useTranslation } from '../../i18n';
 import {
   personHeightInFrame, sensorDiagonalMm,
   PERSON_HEIGHT_M, OUTPUT_HEIGHT_PX, COC_DIVISOR,
@@ -43,6 +44,7 @@ export function CalculationBreakdown({
   aperture,
   focusDistance,
 }: CalculationBreakdownProps) {
+  const { t } = useTranslation();
   const W = sensor.widthMm;
   const H = sensor.heightMm;
   const f = focalLength;
@@ -70,7 +72,7 @@ export function CalculationBreakdown({
 
   return (
     <div className="bg-bc-dark rounded p-2 border border-bc-border text-[10px] font-mono space-y-1">
-      <div className="text-bc-accent font-bold text-[11px] mb-1">CALCULATION TRACE</div>
+      <div className="text-bc-accent font-bold text-[11px] mb-1">{t('sidebar.calc.trace', 'CALCULATION TRACE')}</div>
 
       <div className="text-gray-500 text-[9px] -mt-0.5 mb-1">
         Sensor {sensor.name} · W={fmt(W)} mm · H={fmt(H)} mm · diag D={fmt(D)} mm
@@ -133,7 +135,7 @@ export function CalculationBreakdown({
       <div className="border-t border-bc-border my-1" />
 
       <Row
-        label="Person"
+        label={t('sidebar.calc.person', 'Person')}
         expr={<>{PERSON_HEIGHT_M.toFixed(2)} / img_h · {OUTPUT_HEIGHT_PX} = {PERSON_HEIGHT_M.toFixed(2)} / {fmt(imgH)} · {OUTPUT_HEIGHT_PX} = <span className="text-bc-red">{fmt(personPx, 0)} px</span> ({fmt((personPx / OUTPUT_HEIGHT_PX) * 100, 1)}%)</>}
         color="text-gray-300"
       />

@@ -21,6 +21,9 @@ import { InventoryDialog } from './inventory/InventoryDialog';
 import { Layout, Model, TabNode, Actions } from 'flexlayout-react';
 import type { IJsonModel, ITabSetRenderValues, TabSetNode, BorderNode, ILayoutApi } from 'flexlayout-react';
 import 'flexlayout-react/style/dark.css';
+import { useTranslation, format } from './i18n';
+
+type TFn = (key: string, en: string) => string;
 
 const LAYOUT_STORAGE_KEY = 'multicam-layout';
 const LAYOUT_VERSION_KEY = 'multicam-layout-version';
@@ -49,7 +52,7 @@ function getSelectedIndexForTab(tabId: string) {
   }
 }
 
-function createFocusLayoutJson(selectedTabId = 'tab-2d'): IJsonModel {
+function createFocusLayoutJson(t: TFn, selectedTabId = 'tab-2d'): IJsonModel {
   return {
     global: {
       tabEnableClose: false,
@@ -66,10 +69,10 @@ function createFocusLayoutJson(selectedTabId = 'tab-2d'): IJsonModel {
           selected: getSelectedIndexForTab(selectedTabId),
           weight: 100,
           children: [
-            { type: 'tab', name: '2D Plan', component: 'venue2d', id: 'tab-2d' },
-            { type: 'tab', name: '3D View', component: 'venue3d', id: 'tab-3d' },
-            { type: 'tab', name: 'Preview', component: 'preview', id: 'tab-preview' },
-            { type: 'tab', name: 'Calculator', component: 'calculator', id: 'tab-calc' },
+            { type: 'tab', name: t('header.tab.2dPlan', '2D Plan'), component: 'venue2d', id: 'tab-2d' },
+            { type: 'tab', name: t('header.tab.3dView', '3D View'), component: 'venue3d', id: 'tab-3d' },
+            { type: 'tab', name: t('header.tab.preview', 'Preview'), component: 'preview', id: 'tab-preview' },
+            { type: 'tab', name: t('header.tab.calculator', 'Calculator'), component: 'calculator', id: 'tab-calc' },
             { type: 'tab', name: 'Shotlist', component: 'shotlist', id: 'tab-shotlist' },
             { type: 'tab', name: 'Rig-Steuerung', component: 'rigcontrol', id: 'tab-rig' },
           ],
@@ -79,7 +82,7 @@ function createFocusLayoutJson(selectedTabId = 'tab-2d'): IJsonModel {
   };
 }
 
-function createGridLayoutJson(): IJsonModel {
+function createGridLayoutJson(t: TFn): IJsonModel {
   return {
     global: {
       tabEnableClose: false,
@@ -100,7 +103,7 @@ function createGridLayoutJson(): IJsonModel {
               id: 'ts-left-2d',
               selected: 0,
               children: [
-                { type: 'tab', name: '2D Plan', component: 'venue2d', id: 'tab-2d' },
+                { type: 'tab', name: t('header.tab.2dPlan', '2D Plan'), component: 'venue2d', id: 'tab-2d' },
               ],
             },
             {
@@ -109,7 +112,7 @@ function createGridLayoutJson(): IJsonModel {
               id: 'ts-left-3d',
               selected: 0,
               children: [
-                { type: 'tab', name: '3D View', component: 'venue3d', id: 'tab-3d' },
+                { type: 'tab', name: t('header.tab.3dView', '3D View'), component: 'venue3d', id: 'tab-3d' },
               ],
             },
           ],
@@ -124,7 +127,7 @@ function createGridLayoutJson(): IJsonModel {
               id: 'ts-right-top',
               selected: 0,
               children: [
-                { type: 'tab', name: 'Preview', component: 'preview', id: 'tab-preview' },
+                { type: 'tab', name: t('header.tab.preview', 'Preview'), component: 'preview', id: 'tab-preview' },
               ],
             },
             {
@@ -133,7 +136,7 @@ function createGridLayoutJson(): IJsonModel {
               id: 'ts-right-bottom',
               selected: 0,
               children: [
-                { type: 'tab', name: 'Calculator', component: 'calculator', id: 'tab-calc' },
+                { type: 'tab', name: t('header.tab.calculator', 'Calculator'), component: 'calculator', id: 'tab-calc' },
               ],
             },
           ],
@@ -148,15 +151,16 @@ function loadUserLayoutPresets(): Record<string, IJsonModel> {
 }
 
 function LoadingFallback() {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center justify-center h-full text-gray-500">
-      <div className="animate-pulse">Loading 3D View...</div>
+      <div className="animate-pulse">{t('header.panel.loading3d', 'Loading 3D View...')}</div>
     </div>
   );
 }
 
 /** Persist layout model across re-renders but not component remounts */
-function useLayoutModel() {
+function useLayoutModel(t: TFn) {
   return useState(() => {
     try {
       const savedVersion = Number(localStorage.getItem(LAYOUT_VERSION_KEY) ?? '0');
@@ -165,17 +169,18 @@ function useLayoutModel() {
         if (saved) return Model.fromJson(saved);
       }
     } catch { /* ignore corrupt data */ }
-    return Model.fromJson(createFocusLayoutJson());
+    return Model.fromJson(createFocusLayoutJson(t));
   });
 }
 
 export default function App() {
+  const { t } = useTranslation();
   const { sidebarCollapsed, setSidebarCollapsed } = useStore();
   const idRepairCount = useStore((state) => state.lastIdRepair);
   const dismissIdRepair = useStore((state) => state.dismissIdRepair);
   const [sidebarTab, setSidebarTab] = useState<'cameras' | 'templates'>('cameras');
   const [inventoryOpen, setInventoryOpen] = useState(false);
-  const [model, setModel] = useLayoutModel();
+  const [model, setModel] = useLayoutModel(t);
   const [layoutEpoch, setLayoutEpoch] = useState(0);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('focus');
   const [focusTabId, setFocusTabId] = useState('tab-2d');
@@ -202,19 +207,19 @@ export default function App() {
   const handleSelectTab = useCallback((tabId: string) => {
     setFocusTabId(tabId);
     setLayoutMode('focus');
-    applyLayoutJson(createFocusLayoutJson(tabId));
-  }, [applyLayoutJson]);
+    applyLayoutJson(createFocusLayoutJson(t, tabId));
+  }, [applyLayoutJson, t]);
 
   const handleSetLayoutMode = useCallback((nextMode: 'focus' | 'grid') => {
     if (nextMode === 'focus') {
       setLayoutMode('focus');
-      applyLayoutJson(createFocusLayoutJson(focusTabId));
+      applyLayoutJson(createFocusLayoutJson(t, focusTabId));
       return;
     }
 
     setLayoutMode('grid');
-    applyLayoutJson(createGridLayoutJson());
-  }, [applyLayoutJson, focusTabId]);
+    applyLayoutJson(createGridLayoutJson(t));
+  }, [applyLayoutJson, focusTabId, t]);
 
   // ADR-007 Abschnitt 6: die Kommandopalette (Strg/Cmd + K). Sie erfindet
   // nichts — jeder Eintrag ruft denselben Handler wie der Knopf in der
@@ -236,12 +241,12 @@ export default function App() {
   const handleApplyPreset = useCallback((presetId: string) => {
     if (presetId === 'focus') {
       setLayoutMode('focus');
-      applyLayoutJson(createFocusLayoutJson(focusTabId));
+      applyLayoutJson(createFocusLayoutJson(t, focusTabId));
       return;
     }
     if (presetId === 'grid') {
       setLayoutMode('grid');
-      applyLayoutJson(createGridLayoutJson());
+      applyLayoutJson(createGridLayoutJson(t));
       return;
     }
     const userPreset = userLayoutPresets[presetId];
@@ -249,7 +254,7 @@ export default function App() {
       setLayoutMode('custom');
       applyLayoutJson(userPreset);
     }
-  }, [applyLayoutJson, focusTabId, userLayoutPresets]);
+  }, [applyLayoutJson, focusTabId, userLayoutPresets, t]);
 
   const handleSaveLayoutPreset = useCallback((name: string) => {
     const trimmedName = name.trim();
@@ -275,14 +280,14 @@ export default function App() {
   const handleMinimizeToFocus = useCallback((tabId: string) => {
     setFocusTabId(tabId);
     setLayoutMode('focus');
-    applyLayoutJson(createFocusLayoutJson(tabId));
-  }, [applyLayoutJson]);
+    applyLayoutJson(createFocusLayoutJson(t, tabId));
+  }, [applyLayoutJson, t]);
 
   const TAB_CONFIGS: Record<string, { component: string; name: string }> = {
-    'tab-2d': { component: 'venue2d', name: '2D Plan' },
-    'tab-3d': { component: 'venue3d', name: '3D View' },
-    'tab-preview': { component: 'preview', name: 'Preview' },
-    'tab-calc': { component: 'calculator', name: 'Calculator' },
+    'tab-2d': { component: 'venue2d', name: t('header.tab.2dPlan', '2D Plan') },
+    'tab-3d': { component: 'venue3d', name: t('header.tab.3dView', '3D View') },
+    'tab-preview': { component: 'preview', name: t('header.tab.preview', 'Preview') },
+    'tab-calc': { component: 'calculator', name: t('header.tab.calculator', 'Calculator') },
     'tab-shotlist': { component: 'shotlist', name: 'Shotlist' },
     'tab-rig': { component: 'rigcontrol', name: 'Rig-Steuerung' },
   };
@@ -325,7 +330,7 @@ export default function App() {
           key={`${tabSetNode.getId()}-minimize`}
           type="button"
           className="panel-toolbar-button"
-          title="Minimize this panel into focus view"
+          title={t('header.panel.minimize', 'Minimize this panel into focus view')}
           onClick={(event) => {
             event.stopPropagation();
             handleMinimizeToFocus(selectedTab.getId());
@@ -341,7 +346,7 @@ export default function App() {
         key={`${tabSetNode.getId()}-maximize`}
         type="button"
         className="panel-toolbar-button"
-        title={isMaximized ? 'Restore panel' : 'Fullscreen panel'}
+        title={isMaximized ? t('header.panel.restore', 'Restore panel') : t('header.panel.fullscreen', 'Fullscreen panel')}
         onClick={(event) => {
           event.stopPropagation();
           model.doAction(Actions.maximizeToggle(tabSetNode.getId()));
@@ -357,7 +362,7 @@ export default function App() {
           key={`${tabSetNode.getId()}-close`}
           type="button"
           className="panel-toolbar-button panel-toolbar-button-danger"
-          title="Close current panel"
+          title={t('header.panel.close', 'Close current panel')}
           onClick={(event) => {
             event.stopPropagation();
             model.doAction(Actions.deleteTab(selectedNode.getId()));
@@ -367,7 +372,7 @@ export default function App() {
         </button>,
       );
     }
-  }, [handleMinimizeToFocus, layoutMode, model]);
+  }, [handleMinimizeToFocus, layoutMode, model, t]);
 
   const layoutPresetOptions: LayoutPresetOption[] = Object.keys(userLayoutPresets)
     .sort((left, right) => left.localeCompare(right))
@@ -399,9 +404,9 @@ export default function App() {
       case 'rigcontrol':
         return <RigControlPanel />;
       default:
-        return <div className="p-4 text-gray-500">Unknown panel: {component}</div>;
+        return <div className="p-4 text-gray-500">{format(t('header.panel.unknown', 'Unknown panel: {component}'), { component: component ?? '' })}</div>;
     }
-  }, []);
+  }, [t]);
 
   // ── Responsive: auto-collapse sidebar on small screens ──
   useEffect(() => {
@@ -419,7 +424,7 @@ export default function App() {
       const previousFocusTab = focusTabId;
       const previousModelJson = model.toJson();
       if (previousMode !== 'grid') {
-        applyLayoutJson(createGridLayoutJson());
+        applyLayoutJson(createGridLayoutJson(t));
         setLayoutMode('grid');
         await new Promise<void>((resolve) => {
           requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -432,7 +437,7 @@ export default function App() {
           if (previousMode === 'focus') {
             setLayoutMode('focus');
             setFocusTabId(previousFocusTab);
-            applyLayoutJson(createFocusLayoutJson(previousFocusTab));
+            applyLayoutJson(createFocusLayoutJson(t, previousFocusTab));
           } else if (previousMode === 'custom') {
             setLayoutMode('custom');
             applyLayoutJson(previousModelJson);
@@ -441,7 +446,7 @@ export default function App() {
       };
     };
     return () => { registry.prepareForExport = null; };
-  }, [applyLayoutJson, focusTabId, layoutMode, model]);
+  }, [applyLayoutJson, focusTabId, layoutMode, model, t]);
 
   return (
     <ErrorBoundary>
@@ -458,18 +463,25 @@ export default function App() {
         >
           <div className="flex-1">
             <strong className="font-semibold">
-              {idRepairCount} doppelte Id(s) in der Projektdatei repariert.
+              {/* Englisch ist hier die QUELLSPRACHE (siehe i18n/index.ts) — der
+                  deutsche Text gehoert ins de-Teildict, nicht hierhin. Stand er
+                  an dieser Stelle, bekam ein englischer Nutzer Deutsch. */}
+              {t('load.idRepair.title', '{count} duplicate id(s) in the project file repaired.').replace(
+                '{count}',
+                String(idRepairCount),
+              )}
             </strong>{' '}
-            Betroffene Objekte haben eine neue Id bekommen. Verweise darauf —
-            Shots, Takes, Presets und Fokus-Sperren — zeigen jetzt auf das
-            jeweils erste Objekt mit der alten Id und sind zu prüfen.
+            {t(
+              'load.idRepair.hint',
+              'The affected objects were given a new id. References to them — shots, takes, presets and focus locks — now point at the first object carrying the old id and need checking.',
+            )}
           </div>
           <button
             type="button"
             onClick={dismissIdRepair}
             className="rounded bg-amber-800/60 px-2 py-0.5 text-xs hover:bg-amber-700/60"
           >
-            OK
+            {t('common.ok', 'OK')}
           </button>
         </div>
       )}
@@ -503,13 +515,13 @@ export default function App() {
               className={`flex-1 py-2 text-xs font-medium ${sidebarTab === 'cameras' ? 'text-bc-accent border-b-2 border-bc-accent' : 'text-gray-500 hover:text-gray-300'}`}
               onClick={() => setSidebarTab('cameras')}
             >
-              Einstellungen
+              {t('header.sidebar.settings', 'Settings')}
             </button>
             <button
               className={`flex-1 py-2 text-xs font-medium ${sidebarTab === 'templates' ? 'text-bc-accent border-b-2 border-bc-accent' : 'text-gray-500 hover:text-gray-300'}`}
               onClick={() => setSidebarTab('templates')}
             >
-              Vorlagen
+              {t('header.sidebar.templates', 'Templates')}
             </button>
           </div>
           <div className="flex-1 overflow-hidden flex flex-col">
@@ -521,8 +533,10 @@ export default function App() {
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           className="shrink-0 w-5 flex items-center justify-center bg-bc-panel border-r border-bc-border hover:bg-bc-border text-gray-500 hover:text-white transition-colors"
-          title={sidebarCollapsed ? 'Spalte einblenden' : 'Spalte ausblenden'}
-          aria-label={sidebarCollapsed ? 'Seitenspalte einblenden' : 'Seitenspalte ausblenden'}
+          title={sidebarCollapsed ? t('header.sidebar.open', 'Open column') : t('header.sidebar.collapse', 'Collapse column')}
+          aria-label={sidebarCollapsed
+            ? t('header.sidebar.open.aria', 'Open the side column')
+            : t('header.sidebar.collapse.aria', 'Collapse the side column')}
         >
           {sidebarCollapsed ? <FiChevronRight size={14} /> : <FiChevronLeft size={14} />}
         </button>

@@ -11,6 +11,7 @@ import { groundHeightAt, stageColor, stageFaces, stageLabelAnchor, stageOpacity 
 import { alphaSuffix, shadeHex } from '../../utils/color';
 import { FiChevronLeft, FiChevronRight, FiUnlock, FiLock, FiPlus, FiX, FiCamera } from 'react-icons/fi';
 import { loadJSON, saveJSON } from '../../utils/storage';
+import { useTranslation, format } from '../../i18n';
 import {
   TRANSITION_CYCLE,
   TRANSITION_LABEL,
@@ -67,6 +68,7 @@ interface PreviewProps {
 
 export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   const { cameras, selectedCameraId, venue, persons, walls, selectNextCamera, selectPrevCamera } = useStore();
+  const { t } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const cam = cameras.find((c) => c.id === selectedCameraId);
@@ -1020,7 +1022,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
 
       // Distance readout under the crosshair: focus distance + nearest in-frame
       // subject. Helps the operator verify pull-focus while panning.
-      const lines: string[] = [`focus ${cam.focusDistance.toFixed(1)}m`];
+      const lines: string[] = [format(t('preview.crosshairFocus', 'focus {d}m'), { d: cam.focusDistance.toFixed(1) })];
       if (nearestCrosshair) {
         const n = nearestCrosshair as { label: string; dist: number };
         lines.push(`${n.label}: ${n.dist.toFixed(1)}m`);
@@ -1046,13 +1048,13 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       let badgeText: string;
       let badgeColor: string;
       if (lockedOff) {
-        badgeText = `⚠ ${lockedTarget!.label} OUT OF FRAME`;
+        badgeText = format(t('preview.badge.outOfFrame', '⚠ {label} OUT OF FRAME'), { label: lockedTarget!.label });
         badgeColor = '#ef4444';
       } else if (offFrame > 0) {
-        badgeText = `${inFramePersons}/${totalInFront} in frame`;
+        badgeText = format(t('preview.badge.inFrameRatio', '{n}/{total} in frame'), { n: inFramePersons, total: totalInFront });
         badgeColor = '#fbbf24';
       } else {
-        badgeText = `${inFramePersons} in frame`;
+        badgeText = format(t('preview.badge.inFrame', '{n} in frame'), { n: inFramePersons });
         badgeColor = '#22c55e';
       }
       ctx.font = '10px sans-serif';
@@ -1087,7 +1089,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     // loesen kein Re-Render aus). Gleicher Wert => React bricht ab, kein Loop.
     if (!target) setProjectedCount(projectedPersons.current.length);
 
-  }, [cam, venue, persons, walls, cameras, showGrid, showSafeAreas, showThirds, showCrosshair, getWallImage, imageTick]);
+  }, [cam, venue, persons, walls, cameras, showGrid, showSafeAreas, showThirds, showCrosshair, getWallImage, imageTick, t]);
 
   // Repaint synchronously after every render so pan/tilt drags update the canvas
   // on the very next browser frame. The earlier `useEffect` variant was being
@@ -1243,7 +1245,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   if (!cam) {
     return (
       <div className="flex items-center justify-center h-full text-gray-500">
-        <p>Select a camera to see its preview</p>
+        <p>{t('preview.emptyState', 'Select a camera to see its preview')}</p>
       </div>
     );
   }
@@ -1279,7 +1281,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   ].sort((a, b) => a - b);
 
   const addPreset = () => {
-    const name = window.prompt('Preset name:', `${cam.focalLength.toFixed(0)}mm f/${cam.aperture.toFixed(1)}`);
+    const name = window.prompt(t('preview.presetNamePrompt', 'Preset name:'), `${cam.focalLength.toFixed(0)}mm f/${cam.aperture.toFixed(1)}`);
     if (!name) return;
     persistPresets([...presets, {
       // Ein Preset gehoert zu genau einer Kamera — sonst faehrt es beim
@@ -1344,9 +1346,9 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       <div className="flex-1 flex flex-col gap-2 min-w-0 overflow-y-auto">
         {/* Camera switcher bar */}
         <div className="flex items-center gap-2 px-2">
-          <button onClick={selectPrevCamera} className="p-1 rounded hover:bg-bc-border text-gray-400 hover:text-white" title="Previous camera"><FiChevronLeft size={16} /></button>
+          <button onClick={selectPrevCamera} className="p-1 rounded hover:bg-bc-border text-gray-400 hover:text-white" title={t('preview.prevCamera', 'Previous camera')}><FiChevronLeft size={16} /></button>
           <span className="text-white font-bold text-sm flex-1 text-center">{cam.label}</span>
-          <button onClick={selectNextCamera} className="p-1 rounded hover:bg-bc-border text-gray-400 hover:text-white" title="Next camera"><FiChevronRight size={16} /></button>
+          <button onClick={selectNextCamera} className="p-1 rounded hover:bg-bc-border text-gray-400 hover:text-white" title={t('preview.nextCamera', 'Next camera')}><FiChevronRight size={16} /></button>
           <span className="text-gray-500 text-[10px]">{camIdx + 1}/{cameras.length}</span>
         </div>
 
@@ -1368,11 +1370,11 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         {/* Overlay toggle bar */}
         <div className="flex items-center gap-2 px-2 flex-wrap">
           {([
-            ['Grid', showGrid, setShowGrid],
-            ['Safe Areas', showSafeAreas, setShowSafeAreas],
-            ['Thirds', showThirds, setShowThirds],
-            ['Crosshair', showCrosshair, setShowCrosshair],
-            ['Data', showData, setShowData],
+            [t('preview.overlay.grid', 'Grid'), showGrid, setShowGrid],
+            [t('preview.overlay.safeAreas', 'Safe Areas'), showSafeAreas, setShowSafeAreas],
+            [t('preview.overlay.thirds', 'Thirds'), showThirds, setShowThirds],
+            [t('preview.overlay.crosshair', 'Crosshair'), showCrosshair, setShowCrosshair],
+            [t('preview.overlay.data', 'Data'), showData, setShowData],
           ] as [string, boolean, (v: boolean) => void][]).map(([label, on, set]) => (
             <button
               key={label}
@@ -1384,32 +1386,32 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           ))}
           <button
             onClick={() => useStore.getState().updateCamera(cam.id, { invertPreviewH: !cam.invertPreviewH })}
-            title="Flip horizontal pan direction"
+            title={t('preview.flipH', 'Flip horizontal pan direction')}
             className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${cam.invertPreviewH ? 'border-bc-accent text-bc-accent bg-bc-accent/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
           >
-            ↔ Invert H
+            ↔ {t('preview.invertH', 'Invert H')}
           </button>
           <button
             onClick={() => useStore.getState().updateCamera(cam.id, { invertPreviewV: !cam.invertPreviewV })}
-            title="Flip vertical tilt direction"
+            title={t('preview.flipV', 'Flip vertical tilt direction')}
             className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${cam.invertPreviewV ? 'border-bc-accent text-bc-accent bg-bc-accent/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
           >
-            ↕ Invert V
+            ↕ {t('preview.invertV', 'Invert V')}
           </button>
           <button
             onClick={() => setFocusPickMode((v) => !v)}
-            title={focusPickMode ? 'Click anywhere to leave focus-pick mode' : 'Pick a person in the preview to set focus distance'}
+            title={focusPickMode ? t('preview.focusPickLeave', 'Click anywhere to leave focus-pick mode') : t('preview.focusPickEnter', 'Pick a person in the preview to set focus distance')}
             className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${focusPickMode ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
           >
-            ◎ Focus pick {focusPickMode ? '· ON' : ''}
+            ◎ {t('preview.focusPick', 'Focus pick')} {focusPickMode ? '· ' + t('preview.on', 'ON') : ''}
           </button>
           {cam.lockedPersonId && (
             <button
               onClick={() => useStore.getState().updateCamera(cam.id, { lockedPersonId: undefined })}
-              title="Release focus lock"
+              title={t('preview.releaseLock', 'Release focus lock')}
               className="px-2 py-0.5 rounded text-[10px] font-medium border border-bc-yellow text-bc-yellow bg-bc-yellow/10 flex items-center gap-1"
             >
-              <FiLock size={10} /> Unlock {persons.find((p) => p.id === cam.lockedPersonId)?.label ?? 'subject'}
+              <FiLock size={10} /> {t('preview.unlock', 'Unlock')} {persons.find((p) => p.id === cam.lockedPersonId)?.label ?? t('preview.subject', 'subject')}
             </button>
           )}
           {!cam.lockedPersonId && projectedCount > 0 && (
@@ -1425,21 +1427,21 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                 }
                 if (best) useStore.getState().updateCamera(cam.id, { lockedPersonId: best.id });
               }}
-              title="Lock focus distance to the subject closest to the crosshair"
+              title={t('preview.lockSubjectTitle', 'Lock focus distance to the subject closest to the crosshair')}
               className="px-2 py-0.5 rounded text-[10px] font-medium border border-bc-border text-gray-500 hover:text-gray-300 flex items-center gap-1"
             >
-              <FiUnlock size={10} /> Lock subject
+              <FiUnlock size={10} /> {t('preview.lockSubject', 'Lock subject')}
             </button>
           )}
           <span className="text-[10px] text-gray-600 ml-auto">
-            {focusPickMode ? 'Click a person to set focus distance' : 'Drag: Pan/Tilt · Scroll: Zoom'}
+            {focusPickMode ? t('preview.hintFocusPick', 'Click a person to set focus distance') : t('preview.hintDrag', 'Drag: Pan/Tilt · Scroll: Zoom')}
           </span>
         </div>
 
         {/* Zoom / Blende / Fokus — logarithmische Bahn + Rastung, siehe LensSlider.
             Manual-Modus (#47/#62) weitet die Grenzen ueber die echte Optik hinaus. */}
         <LensSlider
-          label="Zoom"
+          label={t('preview.zoom', 'Zoom')}
           value={cam.focalLength}
           min={zoomMin}
           max={zoomMax}
@@ -1457,13 +1459,13 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                     type="number" min={1} max={manualMax - 1} value={manualMin}
                     onChange={(e) => setManualMin(Math.max(1, Math.min(manualMax - 1, parseFloat(e.target.value) || 1)))}
                     className="w-12 bg-bc-dark border border-bc-border rounded px-1 text-[9px] text-gray-300 font-mono"
-                    title="Manuelles Minimum (mm)"
+                    title={t('preview.manualMin', 'Manual minimum focal length (mm)')}
                   />
                   <input
                     type="number" min={manualMin + 1} max={2000} value={manualMax}
                     onChange={(e) => setManualMax(Math.max(manualMin + 1, Math.min(2000, parseFloat(e.target.value) || 500)))}
                     className="w-12 bg-bc-dark border border-bc-border rounded px-1 text-[9px] text-gray-300 font-mono"
-                    title="Manuelles Maximum (mm)"
+                    title={t('preview.manualMax', 'Manual maximum focal length (mm)')}
                   />
                 </>
               )}
@@ -1476,10 +1478,10 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                   }
                   return next;
                 })}
-                title="Brennweite über die echten Objektiv-Grenzen hinaus durchfahren"
+                title={t('preview.manualTitle', "Temporarily scrub focal length beyond the lens's real range")}
                 className={`px-1.5 py-0.5 rounded text-[9px] font-medium border transition-colors ${manualZoom ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
               >
-                Manual
+                {t('preview.manual', 'Manual')}
               </button>
             </>
           }
@@ -1528,14 +1530,14 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                 title="Blende über die echten Objektiv-Grenzen hinaus durchfahren"
                 className={`px-1.5 py-0.5 rounded text-[9px] font-medium border transition-colors ${manualAperture ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
               >
-                Manual
+                {t('preview.manual', 'Manual')}
               </button>
             </>
           }
         />
 
         <LensSlider
-          label="Focus"
+          label={t('preview.focus', 'Focus')}
           value={Math.min(cam.focusDistance, focusMax)}
           min={FOCUS_MIN}
           max={focusMax}
@@ -1544,7 +1546,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           unit="m"
           onChange={(v) => useStore.getState().updateCamera(cam.id, { focusDistance: Math.max(0.1, v), lockedPersonId: undefined })}
           onStep={(dir) => useStore.getState().updateCamera(cam.id, { focusDistance: stepAlong(cam.focusDistance, dir, FOCUS_MIN, focusMax, focusTicks), lockedPersonId: undefined })}
-          note={cam.lockedPersonId ? 'locked' : undefined}
+          note={cam.lockedPersonId ? t('preview.locked', 'locked') : undefined}
           title="Fokusdistanz — nah fein, fern grob (logarithmisch). Zahl anklicken für direkte Eingabe."
         />
 
@@ -1554,19 +1556,19 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
             fahren. */}
         <div className="px-2 flex items-center gap-2 flex-wrap">
           <span className="text-[10px] text-gray-500" title={`Presets von ${cam.label}`}>
-            Presets · {cam.label}
+            {t('preview.presets', 'Presets')} · {cam.label}
           </span>
           {presetGroups.own.map((p) => (
             <span key={p.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-gray-300 hover:border-bc-accent">
               <button onClick={() => applyPreset(p)} title={`${p.focalLength.toFixed(0)}mm · f/${p.aperture.toFixed(1)} · ${p.focusDistance.toFixed(1)}m${p.pan !== undefined ? ` · Pos (Pan ${p.pan.toFixed(0)}° Tilt ${p.tilt?.toFixed(0)}° H ${p.z?.toFixed(1)}m)` : ''}`}>{p.name}{hasPose(p) && <span className="ml-0.5 text-bc-accent" title="enthält Kamera-Position">◈</span>}</button>
-              <button onClick={() => deletePreset(p.id)} className="text-gray-600 hover:text-bc-red" title="Preset löschen" aria-label={`Preset ${p.name} löschen`}><FiX size={10} /></button>
+              <button onClick={() => deletePreset(p.id)} className="text-gray-600 hover:text-bc-red" title={t('preview.deletePreset', 'Delete preset')} aria-label={`Preset ${p.name} löschen`}><FiX size={10} /></button>
             </span>
           ))}
           {presetGroups.own.length === 0 && (
             <span className="text-[10px] text-gray-600">noch keins</span>
           )}
-          <button onClick={addPreset} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-gray-500 hover:text-bc-accent hover:border-bc-accent" title={`Aktuelle Optik + Position als Preset von ${cam.label} sichern`}>
-            <FiPlus size={10} /> Neu
+          <button onClick={addPreset} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-gray-500 hover:text-bc-accent hover:border-bc-accent" title={`${t('preview.savePreset', 'Save current focal length / aperture / focus as a preset')} · ${cam.label}`}>
+            <FiPlus size={10} /> {t('preview.add', 'Add')}
           </button>
 
           {/* Shot aufnehmen (#62 Punkt 5): friert die aktuelle Ansicht inkl.
@@ -1611,7 +1613,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                 >
                   <FiPlus size={10} />
                 </button>
-                <button onClick={() => deletePreset(p.id)} className="text-gray-600 hover:text-bc-red" title="Preset löschen" aria-label={`Preset ${p.name} löschen`}><FiX size={10} /></button>
+                <button onClick={() => deletePreset(p.id)} className="text-gray-600 hover:text-bc-red" title={t('preview.deletePreset', 'Delete preset')} aria-label={`Preset ${p.name} löschen`}><FiX size={10} /></button>
               </span>
             ))}
           </div>
@@ -1666,22 +1668,22 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           {/* Notes — only when filled */}
           {cam.notes && cam.notes.trim() && (
             <div className="bg-bc-dark rounded-lg border border-bc-border p-2">
-              <div className="text-[10px] text-gray-500 leading-tight mb-0.5">Notes</div>
+              <div className="text-[10px] text-gray-500 leading-tight mb-0.5">{t('preview.notes', 'Notes')}</div>
               <div className="text-[11px] text-gray-200 whitespace-pre-wrap leading-snug">{cam.notes}</div>
             </div>
           )}
 
           {/* Data cells */}
-          <DataCell label="Focal Length" value={`${cam.focalLength.toFixed(1)}mm`} sub={cam.extenderActive > 1 ? `eff. ${(cam.focalLength * cam.extenderActive).toFixed(0)}mm` : `eq. ${fov.equivalentFocalLength.toFixed(0)}mm`} />
-          <DataCell label="Aperture" value={`f/${cam.aperture.toFixed(1)}`} sub={adapterInfo && adapterInfo.lightLossStops !== 0 ? `eff. T${(cam.aperture * Math.pow(2, adapterInfo.lightLossStops / 2)).toFixed(1)}` : undefined} />
-          <DataCell label="Distance" value={`${cam.focusDistance.toFixed(1)}m`} />
-          <DataCell label="FOV H" value={`${fov.horizontalDeg.toFixed(1)}°`} />
-          <DataCell label="FOV V" value={`${fov.verticalDeg.toFixed(1)}°`} />
-          <DataCell label="Image Width" value={`${fov.imageWidthAtDistance.toFixed(1)}m`} sub={`@ ${cam.focusDistance.toFixed(0)}m`} />
-          <DataCell label="Image Height" value={`${fov.imageHeightAtDistance.toFixed(1)}m`} sub={`@ ${cam.focusDistance.toFixed(0)}m`} />
-          <DataCell label="DoF Near" value={dof.nearLimit < 0.01 ? '0m' : `${dof.nearLimit.toFixed(2)}m`} />
-          <DataCell label="DoF Far" value={dof.farLimit === Infinity ? '∞' : `${dof.farLimit.toFixed(2)}m`} />
-          <DataCell label="DoF Total" value={dof.totalDof === Infinity ? '∞' : `${dof.totalDof.toFixed(2)}m`} />
+          <DataCell label={t('preview.data.focalLength', 'Focal Length')} value={`${cam.focalLength.toFixed(1)}mm`} sub={cam.extenderActive > 1 ? `eff. ${(cam.focalLength * cam.extenderActive).toFixed(0)}mm` : `eq. ${fov.equivalentFocalLength.toFixed(0)}mm`} />
+          <DataCell label={t('preview.data.aperture', 'Aperture')} value={`f/${cam.aperture.toFixed(1)}`} sub={adapterInfo && adapterInfo.lightLossStops !== 0 ? `eff. T${(cam.aperture * Math.pow(2, adapterInfo.lightLossStops / 2)).toFixed(1)}` : undefined} />
+          <DataCell label={t('preview.data.distance', 'Distance')} value={`${cam.focusDistance.toFixed(1)}m`} />
+          <DataCell label={t('preview.data.fovH', 'FOV H')} value={`${fov.horizontalDeg.toFixed(1)}°`} />
+          <DataCell label={t('preview.data.fovV', 'FOV V')} value={`${fov.verticalDeg.toFixed(1)}°`} />
+          <DataCell label={t('preview.data.imageWidth', 'Image Width')} value={`${fov.imageWidthAtDistance.toFixed(1)}m`} sub={`@ ${cam.focusDistance.toFixed(0)}m`} />
+          <DataCell label={t('preview.data.imageHeight', 'Image Height')} value={`${fov.imageHeightAtDistance.toFixed(1)}m`} sub={`@ ${cam.focusDistance.toFixed(0)}m`} />
+          <DataCell label={t('preview.data.dofNear', 'DoF Near')} value={dof.nearLimit < 0.01 ? '0m' : `${dof.nearLimit.toFixed(2)}m`} />
+          <DataCell label={t('preview.data.dofFar', 'DoF Far')} value={dof.farLimit === Infinity ? '∞' : `${dof.farLimit.toFixed(2)}m`} />
+          <DataCell label={t('preview.data.dofTotal', 'DoF Total')} value={dof.totalDof === Infinity ? '∞' : `${dof.totalDof.toFixed(2)}m`} />
         </div>
       )}
     </div>
