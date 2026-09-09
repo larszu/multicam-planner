@@ -79,8 +79,15 @@ export const header: Record<string, string> = {
   'header.panel.close': 'Aktuelles Panel schließen',
   'header.sidebar.settings': 'Einstellungen',
   'header.sidebar.templates': 'Vorlagen',
-  'header.sidebar.open': 'Seitenleiste öffnen',
-  'header.sidebar.collapse': 'Seitenleiste einklappen',
+  // Titel und aria-label tragen hier ABSICHTLICH verschiedenen Text: der
+  // Titel steht neben dem Knopf und darf kurz sein, das aria-label wird ohne
+  // Umgebung vorgelesen und nennt deshalb, um welche Spalte es geht. Die
+  // Suite-Kopie hat beide auf denselben Schluessel gelegt — das ist eine
+  // Zusammenlegung, keine Uebersetzung.
+  'header.sidebar.open': 'Spalte einblenden',
+  'header.sidebar.collapse': 'Spalte ausblenden',
+  'header.sidebar.open.aria': 'Seitenspalte einblenden',
+  'header.sidebar.collapse.aria': 'Seitenspalte ausblenden',
   'header.inventory': 'Lager',
   'header.inventory.title': 'Lager / Bestand',
 
