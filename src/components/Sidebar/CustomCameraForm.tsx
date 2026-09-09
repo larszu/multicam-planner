@@ -3,6 +3,7 @@ import { FiPlus, FiTrash2, FiKey, FiZap, FiX } from 'react-icons/fi';
 import { SENSORS } from '../../data/cameras';
 import type { Camera, SensorSize } from '../../types';
 import { isEstimate } from '../../types';
+import { useTranslation } from '../../i18n';
 
 /**
  * Shared form for both creating and editing a custom camera. Used inline in the
@@ -59,7 +60,10 @@ function detectSensorPreset(sensor?: SensorSize): string {
   return '__custom__';
 }
 
-export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'Create', title = 'New Custom Camera' }: CustomCameraFormProps) {
+export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel, title }: CustomCameraFormProps) {
+  const { t } = useTranslation();
+  const resolvedSubmitLabel = submitLabel ?? t('sidebar.form.create', 'Create');
+  const resolvedTitle = title ?? t('sidebar.form.newCamera', 'New Custom Camera');
   const [manufacturer, setManufacturer] = useState(initial?.manufacturer ?? '');
   const [model, setModel] = useState(initial?.model ?? '');
   // Mount: the initial value might be a known mount or a custom one (e.g. "Z",
@@ -106,7 +110,7 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
     if (sensorKey === '__custom__') {
       const w = parseFloat(sensorW);
       const h = parseFloat(sensorH);
-      if (!w || !h) { alert('Enter sensor width and height in mm.'); return; }
+      if (!w || !h) { alert(t('sidebar.form.alertSensorDims', 'Enter sensor width and height in mm.')); return; }
       sensor = {
         name: sensorName.trim() || `${w}×${h}mm`,
         widthMm: w,
@@ -147,7 +151,7 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
   const runAiAutofill = async () => {
     if (!apiKey) { setShowKeyInput(true); return; }
     if (!manufacturer.trim() && !model.trim()) {
-      setAiError('Enter at least a manufacturer or model first.');
+      setAiError(t('sidebar.form.aiErrNeedName', 'Enter at least a manufacturer or model first.'));
       return;
     }
     setAiLoading(true);
@@ -157,7 +161,7 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
       const data = await callGemini(apiKey, prompt);
       applyAiResult(data);
     } catch (err: unknown) {
-      setAiError(err instanceof Error ? err.message : 'AI request failed');
+      setAiError(err instanceof Error ? err.message : t('sidebar.form.aiErrFailed', 'AI request failed'));
     } finally {
       setAiLoading(false);
     }
@@ -177,7 +181,7 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
       setMount(m);
       setMountIsCustom(!(MOUNTS as readonly string[]).includes(m));
     }
-    if (data.type && TYPES.some((t) => t.value === data.type)) setType(data.type as Camera['type']);
+    if (data.type && TYPES.some((ty) => ty.value === data.type)) setType(data.type as Camera['type']);
     if (Array.isArray(data.adaptedMounts)) {
       setAdaptedMounts(
         data.adaptedMounts
@@ -225,7 +229,7 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
   return (
     <div className="bg-bc-dark rounded p-2 border border-bc-border space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-gray-300 font-medium text-[11px]">{title}</span>
+        <span className="text-gray-300 font-medium text-[11px]">{resolvedTitle}</span>
         <div className="flex items-center gap-1">
           {apiKey && (
             <button
@@ -233,16 +237,16 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
               onClick={runAiAutofill}
               disabled={aiLoading}
               className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30 disabled:opacity-50"
-              title="Auto-fill the form from Gemini AI based on the manufacturer + model"
+              title={t('sidebar.form.aiAutofillTitle', 'Auto-fill the form from Gemini AI based on the manufacturer + model')}
             >
-              <FiZap size={10} /> {aiLoading ? 'Asking AI…' : 'AI auto-fill'}
+              <FiZap size={10} /> {aiLoading ? t('sidebar.form.askingAi', 'Asking AI…') : t('sidebar.form.aiAutofill', 'AI auto-fill')}
             </button>
           )}
           <button
             type="button"
             onClick={() => { setPendingKey(apiKey); setShowKeyInput(!showKeyInput); }}
             className="p-1 rounded text-gray-500 hover:text-bc-accent"
-            title={apiKey ? 'Manage Gemini API key' : 'Set Gemini API key for AI auto-fill'}
+            title={apiKey ? t('sidebar.form.manageKey', 'Manage Gemini API key') : t('sidebar.form.setKey', 'Set Gemini API key for AI auto-fill')}
           >
             <FiKey size={11} />
           </button>
@@ -255,8 +259,8 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
       {showKeyInput && (
         <div className="bg-bc-panel rounded p-1.5 border border-bc-border space-y-1">
           <div className="text-[10px] text-gray-500 leading-tight">
-            Paste a free Gemini API key from <span className="text-bc-accent">aistudio.google.com</span>.
-            Stored locally only.
+            {t('sidebar.form.keyHintPre', 'Paste a free Gemini API key from')} <span className="text-bc-accent">aistudio.google.com</span>.
+            {' '}{t('sidebar.form.keyHintPost', 'Stored locally only.')}
           </div>
           <input
             type="password"
@@ -266,11 +270,11 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
             onChange={(e) => setPendingKey(e.target.value)}
           />
           <div className="flex gap-1">
-            <button onClick={saveKey} className="flex-1 py-0.5 rounded bg-bc-green/20 text-bc-green text-[10px] hover:bg-bc-green/30">Save</button>
+            <button onClick={saveKey} className="flex-1 py-0.5 rounded bg-bc-green/20 text-bc-green text-[10px] hover:bg-bc-green/30">{t('sidebar.form.save', 'Save')}</button>
             {apiKey && (
-              <button onClick={clearKey} className="flex-1 py-0.5 rounded bg-bc-red/20 text-bc-red text-[10px] hover:bg-bc-red/30">Clear</button>
+              <button onClick={clearKey} className="flex-1 py-0.5 rounded bg-bc-red/20 text-bc-red text-[10px] hover:bg-bc-red/30">{t('sidebar.form.clear', 'Clear')}</button>
             )}
-            <button onClick={() => setShowKeyInput(false)} className="flex-1 py-0.5 rounded bg-bc-dark border border-bc-border text-gray-400 text-[10px] hover:text-gray-200">Cancel</button>
+            <button onClick={() => setShowKeyInput(false)} className="flex-1 py-0.5 rounded bg-bc-dark border border-bc-border text-gray-400 text-[10px] hover:text-gray-200">{t('sidebar.form.cancel', 'Cancel')}</button>
           </div>
         </div>
       )}
@@ -288,7 +292,9 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
           sie der Grund sind, warum es die Liste ueberhaupt braucht. */}
       {aiSources && Object.keys(aiSources).length > 0 && (
         <div className="text-[10px] border border-bc-line rounded px-1.5 py-1 space-y-0.5">
-          <div className="opacity-70">Herkunft der Werte — bitte prüfen:</div>
+          <div className="opacity-70">
+            {t('sidebar.form.specSourceHead', 'Where the values come from — please verify:')}
+          </div>
           {Object.entries(aiSources).map(([field, entry]) => (
             <div key={field} className="flex gap-1">
               <span className={isEstimate(entry) ? 'text-bc-amber' : 'opacity-60'}>
@@ -303,13 +309,13 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
 
       <div className="grid grid-cols-2 gap-1">
         <input
-          placeholder="Manufacturer"
+          placeholder={t('sidebar.form.manufacturer', 'Manufacturer')}
           className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
           value={manufacturer}
           onChange={(e) => setManufacturer(e.target.value)}
         />
         <input
-          placeholder="Model"
+          placeholder={t('sidebar.form.model', 'Model')}
           className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
           value={model}
           onChange={(e) => setModel(e.target.value)}
@@ -317,7 +323,7 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
       </div>
 
       <label className="block">
-        <span className="text-gray-500 text-[10px]">Sensor</span>
+        <span className="text-gray-500 text-[10px]">{t('sidebar.form.sensor', 'Sensor')}</span>
         <select
           className="block w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
           value={sensorKey}
@@ -326,13 +332,13 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
           {Object.entries(SENSORS).map(([key, s]) => (
             <option key={key} value={key}>{s.name} ({s.widthMm}×{s.heightMm}mm)</option>
           ))}
-          <option value="__custom__">Custom size…</option>
+          <option value="__custom__">{t('sidebar.form.customSize', 'Custom size…')}</option>
         </select>
       </label>
       {sensorKey === '__custom__' && (
         <div className="grid grid-cols-3 gap-1">
           <input
-            placeholder="Name"
+            placeholder={t('sidebar.form.name', 'Name')}
             className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
             value={sensorName}
             onChange={(e) => setSensorName(e.target.value)}
@@ -340,7 +346,7 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
           <input
             type="number"
             step="0.01"
-            placeholder="Width mm"
+            placeholder={t('sidebar.form.widthMm', 'Width mm')}
             className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
             value={sensorW}
             onChange={(e) => setSensorW(e.target.value)}
@@ -348,7 +354,7 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
           <input
             type="number"
             step="0.01"
-            placeholder="Height mm"
+            placeholder={t('sidebar.form.heightMm', 'Height mm')}
             className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
             value={sensorH}
             onChange={(e) => setSensorH(e.target.value)}
@@ -358,7 +364,7 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
 
       <div className="grid grid-cols-2 gap-1">
         <label>
-          <span className="text-gray-500 text-[10px]">Native Mount</span>
+          <span className="text-gray-500 text-[10px]">{t('sidebar.form.nativeMount', 'Native Mount')}</span>
           <select
             className="block w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
             value={mountIsCustom ? '__custom__' : mount}
@@ -377,25 +383,25 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
             {MOUNTS.map((m) => (
               <option key={m} value={m}>{m}</option>
             ))}
-            <option value="__custom__">Custom…</option>
+            <option value="__custom__">{t('sidebar.form.custom', 'Custom…')}</option>
           </select>
         </label>
         <label>
-          <span className="text-gray-500 text-[10px]">Type</span>
+          <span className="text-gray-500 text-[10px]">{t('sidebar.form.type', 'Type')}</span>
           <select
             className="block w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
             value={type}
             onChange={(e) => setType(e.target.value as Camera['type'])}
           >
-            {TYPES.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
+            {TYPES.map((ty) => (
+              <option key={ty.value} value={ty.value}>{t(`sidebar.form.camType.${ty.value}`, ty.label)}</option>
             ))}
           </select>
         </label>
       </div>
       {mountIsCustom && (
         <input
-          placeholder="Custom mount name (e.g. Z, PV, M4/3 Studio…)"
+          placeholder={t('sidebar.form.customMountPlaceholder', 'Custom mount name (e.g. Z, PV, M4/3 Studio…)')}
           className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
           value={mount}
           onChange={(e) => {
@@ -407,7 +413,7 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
       )}
 
       <div>
-        <span className="text-gray-500 text-[10px]">Available adapters / mount plates</span>
+        <span className="text-gray-500 text-[10px]">{t('sidebar.form.availableAdapters', 'Available adapters / mount plates')}</span>
         <div className="grid grid-cols-4 gap-1 mt-0.5">
           {/* Known mounts (excluding the native one) + any custom adapter mounts
               the user has already added in this session. Custom adapter mounts
@@ -438,7 +444,7 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
         </div>
         <div className="flex items-center gap-1 mt-1">
           <input
-            placeholder="Add custom adapter mount (e.g. Z, PV)"
+            placeholder={t('sidebar.form.addAdapterPlaceholder', 'Add custom adapter mount (e.g. Z, PV)')}
             className="flex-1 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[11px]"
             value={customAdapterDraft}
             onChange={(e) => setCustomAdapterDraft(e.target.value)}
@@ -467,7 +473,7 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
             }}
             disabled={!customAdapterDraft.trim()}
             className="px-2 py-0.5 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30 disabled:opacity-40"
-            title="Add this name as a selectable adapter mount"
+            title={t('sidebar.form.addAdapterTitle', 'Add this name as a selectable adapter mount')}
           >
             <FiPlus size={10} />
           </button>
@@ -476,13 +482,13 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
 
       <div>
         <div className="flex items-center justify-between">
-          <span className="text-gray-500 text-[10px]">Sensor modes (hardware crops, optional)</span>
+          <span className="text-gray-500 text-[10px]">{t('sidebar.form.sensorModes', 'Sensor modes (hardware crops, optional)')}</span>
           <button
             type="button"
             onClick={addMode}
             className="flex items-center gap-1 px-1 py-0.5 rounded bg-bc-accent/20 text-bc-accent text-[10px] hover:bg-bc-accent/30"
           >
-            <FiPlus size={10} /> Add mode
+            <FiPlus size={10} /> {t('sidebar.form.addMode', 'Add mode')}
           </button>
         </div>
         {modes.map((m, i) => {
@@ -492,7 +498,7 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
           return (
             <div key={i} className="grid grid-cols-12 gap-1 mt-0.5 items-center">
               <input
-                placeholder="Name"
+                placeholder={t('sidebar.form.name', 'Name')}
                 className="col-span-5 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[11px]"
                 value={m.name}
                 onChange={(e) => patchMode(i, { name: e.target.value })}
@@ -500,7 +506,7 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
               <input
                 type="number"
                 step="0.01"
-                placeholder="W mm"
+                placeholder={t('sidebar.form.wMm', 'W mm')}
                 className="col-span-3 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[11px]"
                 value={m.widthMm}
                 onChange={(e) => patchMode(i, { widthMm: e.target.value })}
@@ -508,7 +514,7 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
               <input
                 type="number"
                 step="0.01"
-                placeholder="H mm"
+                placeholder={t('sidebar.form.hMm', 'H mm')}
                 className="col-span-3 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[11px]"
                 value={m.heightMm}
                 onChange={(e) => patchMode(i, { heightMm: e.target.value })}
@@ -517,13 +523,13 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
                 type="button"
                 onClick={() => removeMode(i)}
                 className="col-span-1 p-0.5 text-gray-500 hover:text-bc-red"
-                title="Remove mode"
+                title={t('sidebar.form.removeMode', 'Remove mode')}
               >
                 <FiTrash2 size={11} />
               </button>
               {cf > 0 && (
                 <span className="col-span-12 text-[9px] text-gray-500 -mt-0.5">
-                  → crop factor ×{cf.toFixed(2)}
+                  → {t('sidebar.form.cropFactor', 'crop factor')} ×{cf.toFixed(2)}
                 </span>
               )}
             </div>
@@ -536,7 +542,7 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel = 'C
         disabled={!manufacturer.trim() || !model.trim()}
         className="flex items-center gap-1 px-2 py-1 rounded bg-bc-green/20 text-bc-green text-xs hover:bg-bc-green/30 w-full justify-center disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        <FiPlus size={12} /> {submitLabel}
+        <FiPlus size={12} /> {resolvedSubmitLabel}
       </button>
     </div>
   );

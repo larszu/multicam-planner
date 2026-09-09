@@ -3,16 +3,21 @@ import { useStore } from '../../store/useStore';
 import { TEMPLATES } from '../../data/templates';
 import { FiTrash2, FiSave, FiCopy, FiChevronDown, FiRotateCcw } from 'react-icons/fi';
 import type { VenueTemplate } from '../../types';
+import { useTranslation, format } from '../../i18n';
 
-const CATEGORIES: { value: VenueTemplate['category']; label: string }[] = [
-  { value: 'sport', label: 'Sport' },
-  { value: 'concert', label: 'Concert' },
-  { value: 'church', label: 'Church' },
-  { value: 'conference', label: 'Conference' },
-  { value: 'custom', label: 'Custom' },
+type TFn = (key: string, en: string) => string;
+
+const getCategories = (t: TFn): { value: VenueTemplate['category']; label: string }[] => [
+  { value: 'sport', label: t('header.templates.category.sport', 'Sport') },
+  { value: 'concert', label: t('header.templates.category.concert', 'Concert') },
+  { value: 'church', label: t('header.templates.category.church', 'Church') },
+  { value: 'conference', label: t('header.templates.category.conference', 'Conference') },
+  { value: 'custom', label: t('header.templates.category.custom', 'Custom') },
 ];
 
 export default function TemplateSelector() {
+  const { t } = useTranslation();
+  const CATEGORIES = getCategories(t);
   const {
     loadTemplate,
     customTemplates,
@@ -69,7 +74,7 @@ export default function TemplateSelector() {
   };
 
   const handleLoad = (id: string) => {
-    if (confirm('Load this template? Current project will be replaced.')) {
+    if (confirm(t('header.templates.loadConfirm', 'Load this template? Current project will be replaced.'))) {
       loadTemplate(id);
     }
   };
@@ -82,7 +87,7 @@ export default function TemplateSelector() {
         className="w-full mb-3 px-3 py-2 rounded text-sm font-medium bg-bc-accent/20 border border-bc-accent text-bc-accent hover:bg-bc-accent/30 transition-colors flex items-center gap-2 justify-center"
       >
         <FiSave size={14} />
-        Save Current as Template
+        {t('header.templates.saveCurrent', 'Save Current as Template')}
       </button>
 
       {/* Save form */}
@@ -92,7 +97,7 @@ export default function TemplateSelector() {
             type="text"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="Template name…"
+            placeholder={t('header.templates.namePlaceholder', 'Template name…')}
             className="w-full px-2 py-1.5 text-sm rounded bg-bc-panel border border-bc-border text-gray-200 focus:border-bc-accent outline-none"
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
             autoFocus
@@ -112,40 +117,40 @@ export default function TemplateSelector() {
               disabled={!newName.trim()}
               className="px-3 py-1.5 text-sm rounded bg-bc-accent text-bc-accent-text font-medium disabled:opacity-40 hover:bg-bc-accent/80"
             >
-              Save
+              {t('header.templates.save', 'Save')}
             </button>
             <button
               onClick={() => setShowSave(false)}
               className="px-3 py-1.5 text-sm rounded bg-bc-dark border border-bc-border text-gray-400 hover:text-gray-200"
             >
-              Cancel
+              {t('header.templates.cancel', 'Cancel')}
             </button>
           </div>
         </div>
       )}
 
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold text-white">Venue Templates</h3>
+        <h3 className="text-sm font-semibold text-white">{t('header.templates.heading', 'Venue Templates')}</h3>
         {hiddenCount > 0 && (
           <button
             onClick={() => {
-              if (confirm(`Restore ${hiddenCount} hidden built-in template(s)?`)) restoreBuiltInTemplates();
+              if (confirm(format(t('header.templates.restoreConfirm', 'Restore {count} hidden built-in template(s)?'), { count: hiddenCount }))) restoreBuiltInTemplates();
             }}
             className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-gray-400 hover:text-bc-accent hover:bg-bc-accent/10"
-            title="Bring back built-in templates you previously deleted"
+            title={t('header.templates.restore.title', 'Bring back built-in templates you previously deleted')}
           >
-            <FiRotateCcw size={11} /> Restore {hiddenCount} hidden
+            <FiRotateCcw size={11} /> {format(t('header.templates.restore', 'Restore {count} hidden'), { count: hiddenCount })}
           </button>
         )}
       </div>
 
       {categories.map((cat) => (
         <div key={cat} className="mb-3">
-          <h4 className="text-xs text-gray-400 uppercase tracking-wider mb-1">{cat}</h4>
+          <h4 className="text-xs text-gray-400 uppercase tracking-wider mb-1">{CATEGORIES.find((c) => c.value === cat)?.label ?? cat}</h4>
           <div className="space-y-1">
-            {allTemplates.filter((t) => t.category === cat).map((t) => (
-              <div key={t.id}>
-                {editingId === t.id ? (
+            {allTemplates.filter((tpl) => tpl.category === cat).map((tpl) => (
+              <div key={tpl.id}>
+                {editingId === tpl.id ? (
                   /* ── Inline edit form ── */
                   <div className="p-2 rounded bg-bc-dark border border-bc-accent space-y-2">
                     <input
@@ -166,8 +171,8 @@ export default function TemplateSelector() {
                           <option key={c.value} value={c.value}>{c.label}</option>
                         ))}
                       </select>
-                      <button onClick={handleEditSave} className="px-2 py-1 text-xs rounded bg-bc-accent text-bc-accent-text">Save</button>
-                      <button onClick={() => setEditingId(null)} className="px-2 py-1 text-xs rounded text-gray-400 hover:text-gray-200">Cancel</button>
+                      <button onClick={handleEditSave} className="px-2 py-1 text-xs rounded bg-bc-accent text-bc-accent-text">{t('header.templates.save', 'Save')}</button>
+                      <button onClick={() => setEditingId(null)} className="px-2 py-1 text-xs rounded text-gray-400 hover:text-gray-200">{t('header.templates.cancel', 'Cancel')}</button>
                     </div>
                   </div>
                 ) : (
@@ -175,45 +180,45 @@ export default function TemplateSelector() {
                   <div className="group w-full text-left px-3 py-2 rounded text-sm text-gray-200 bg-bc-dark border border-bc-border hover:border-bc-accent/50 transition-colors">
                     <div className="flex items-start justify-between gap-2">
                       <button
-                        onClick={() => handleLoad(t.id)}
+                        onClick={() => handleLoad(tpl.id)}
                         className="flex-1 text-left"
                       >
-                        <div className="font-medium">{t.name}</div>
+                        <div className="font-medium">{tpl.name}</div>
                         <div className="text-xs text-gray-500">
-                          {t.cameras.length} cameras · {t.venue.widthM}×{t.venue.heightM}m
-                          {isPureBuiltIn(t.id) && <span className="ml-1 text-gray-600">(built-in)</span>}
-                          {isBuiltInShadow(t.id) && <span className="ml-1 text-bc-yellow">(modified)</span>}
-                          {isCustomEntry(t.id) && !isBuiltInShadow(t.id) && <span className="ml-1 text-bc-accent">(custom)</span>}
+                          {format(t('header.templates.cameras', '{count} cameras · {w}×{h}m'), { count: tpl.cameras.length, w: tpl.venue.widthM, h: tpl.venue.heightM })}
+                          {isPureBuiltIn(tpl.id) && <span className="ml-1 text-gray-600">{t('header.templates.builtIn', '(built-in)')}</span>}
+                          {isBuiltInShadow(tpl.id) && <span className="ml-1 text-bc-yellow">{t('header.templates.modified', '(modified)')}</span>}
+                          {isCustomEntry(tpl.id) && !isBuiltInShadow(tpl.id) && <span className="ml-1 text-bc-accent">{t('header.templates.customTag', '(custom)')}</span>}
                         </div>
                       </button>
                       {/* Actions for ALL templates — built-ins get shadowed on
                           first edit/overwrite, hidden on delete. */}
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 pt-0.5">
                         <button
-                          onClick={() => overwriteTemplate(t.id)}
-                          title="Overwrite with current project"
+                          onClick={() => overwriteTemplate(tpl.id)}
+                          title={t('header.templates.overwrite', 'Overwrite with current project')}
                           className="p-1 rounded text-gray-500 hover:text-bc-accent hover:bg-bc-accent/10"
                         >
                           <FiCopy size={13} />
                         </button>
                         <button
-                          onClick={() => handleEdit(t)}
-                          title="Edit name / category"
+                          onClick={() => handleEdit(tpl)}
+                          title={t('header.templates.editNameCategory', 'Edit name / category')}
                           className="p-1 rounded text-gray-500 hover:text-yellow-400 hover:bg-yellow-400/10"
                         >
                           <FiChevronDown size={13} />
                         </button>
-                        {confirmDeleteId === t.id ? (
+                        {confirmDeleteId === tpl.id ? (
                           <button
-                            onClick={() => { deleteTemplate(t.id); setConfirmDeleteId(null); }}
+                            onClick={() => { deleteTemplate(tpl.id); setConfirmDeleteId(null); }}
                             className="px-2 py-0.5 text-xs rounded bg-red-600 text-white"
                           >
-                            Confirm
+                            {t('header.templates.confirm', 'Confirm')}
                           </button>
                         ) : (
                           <button
-                            onClick={() => setConfirmDeleteId(t.id)}
-                            title={isPureBuiltIn(t.id) ? 'Hide built-in template (can be restored)' : 'Delete template'}
+                            onClick={() => setConfirmDeleteId(tpl.id)}
+                            title={isPureBuiltIn(tpl.id) ? t('header.templates.hideBuiltIn', 'Hide built-in template (can be restored)') : t('header.templates.delete', 'Delete template')}
                             className="p-1 rounded text-gray-500 hover:text-red-400 hover:bg-red-400/10"
                           >
                             <FiTrash2 size={13} />

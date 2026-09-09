@@ -19,6 +19,7 @@ import { coverageLines, reachReport } from '../../utils/lensReach';
 import { paintLines } from '../../utils/paintState';
 import { shadingLines } from '../../utils/shadingCapability';
 import { registryLines } from '../../utils/paintRegistry';
+import { useTranslation, format } from '../../i18n';
 
 export type ExportMode = 'current' | 'all' | 'widetele' | 'all-widetele';
 
@@ -40,6 +41,7 @@ export default function ExportPanel() {
   const [exporting, setExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
   const { cameras, venue, persons, projectVersion } = useStore();
+  const { t } = useTranslation();
 
   const capture2DCanvas = useCallback((): HTMLCanvasElement | null => {
     const registry = getExportRegistry();
@@ -144,15 +146,15 @@ export default function ExportPanel() {
     ctx.fillText(`${targetCam.label}${variant} — ${camDef.manufacturer} ${camDef.model}`, padding, 36);
     ctx.fillStyle = '#e5e7eb';
     ctx.font = '16px sans-serif';
-    ctx.fillText(`Lens: ${lensDef.manufacturer} ${lensDef.model} @ ${focalLength.toFixed(1)}mm`, padding, 60);
+    ctx.fillText(format(t('preview.export.lensLine', 'Lens: {mfr} {model} @ {fl}mm'), { mfr: lensDef.manufacturer, model: lensDef.model, fl: focalLength.toFixed(1) }), padding, 60);
     ctx.textAlign = 'right';
     ctx.fillStyle = '#9ca3af';
     ctx.font = '14px sans-serif';
-    ctx.fillText(`${venue.name} — Project v${projectVersion} — MultiCam Planner v${APP_VERSION}`, EW - padding, 30);
-    ctx.fillText(`Exported: ${new Date().toLocaleString()}`, EW - padding, 50);
+    ctx.fillText(format(t('preview.export.headerMeta', '{venue} — Project v{pv} — MultiCam Planner v{av}'), { venue: venue.name, pv: projectVersion, av: APP_VERSION }), EW - padding, 30);
+    ctx.fillText(format(t('preview.export.exportedAt', 'Exported: {when}'), { when: new Date().toLocaleString() }), EW - padding, 50);
     if (adapterInfo) {
       ctx.fillStyle = '#f59e0b';
-      ctx.fillText(`Adapter: ${adapterInfo.name}`, EW - padding, 70);
+      ctx.fillText(format(t('preview.export.adapter', 'Adapter: {name}'), { name: adapterInfo.name }), EW - padding, 70);
     }
 
     // ── Tile helper: letterbox to preserve aspect ratio ──
@@ -180,7 +182,7 @@ export default function ExportPanel() {
         ctx.fillStyle = '#6b7280';
         ctx.font = '14px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(`${label} — not available`, x + tileW / 2, y + tileH / 2);
+        ctx.fillText(format(t('preview.export.notAvailable', '{label} — not available'), { label }), x + tileW / 2, y + tileH / 2);
       }
       ctx.strokeStyle = '#2a2d3a';
       ctx.lineWidth = 2;
@@ -197,9 +199,9 @@ export default function ExportPanel() {
     const view3D = capture3DCanvas();
     const previewCanvas = capturePreviewCanvas();
 
-    drawTile(plan2D, padding, headerH + padding, '2D Plan');
-    drawTile(view3D, padding * 2 + tileW, headerH + padding, '3D View');
-    drawTile(previewCanvas, padding, headerH + padding + tileH + padding, 'Camera Preview');
+    drawTile(plan2D, padding, headerH + padding, t('preview.export.tile2d', '2D Plan'));
+    drawTile(view3D, padding * 2 + tileW, headerH + padding, t('preview.export.tile3d', '3D View'));
+    drawTile(previewCanvas, padding, headerH + padding + tileH + padding, t('preview.export.tilePreview', 'Camera Preview'));
 
     // Calculator data tile
     const calcX = padding * 2 + tileW;
@@ -215,7 +217,7 @@ export default function ExportPanel() {
     ctx.fillStyle = '#e5e7eb';
     ctx.font = 'bold 14px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('Calculator / Data', calcX + 8, calcY + 19);
+    ctx.fillText(t('preview.export.calcData', 'Calculator / Data'), calcX + 8, calcY + 19);
 
     const cx = calcX + 20;
     let cy = calcY + 50;
@@ -223,44 +225,42 @@ export default function ExportPanel() {
 
     ctx.font = 'bold 15px monospace';
     ctx.fillStyle = '#3b82f6';
-    ctx.fillText('CAMERA & OPTICS', cx, cy); cy += lineH + 4;
+    ctx.fillText(t('preview.export.cameraOptics', 'CAMERA & OPTICS'), cx, cy); cy += lineH + 4;
 
     ctx.font = '13px monospace';
     ctx.fillStyle = '#e5e7eb';
-    const lines = [
-      `Camera:      ${camDef.manufacturer} ${camDef.model}`,
-      `Sensor:      ${sensor.name} (${sensor.widthMm.toFixed(1)}×${sensor.heightMm.toFixed(1)}mm, ×${sensor.cropFactor.toFixed(2)})`,
-      `Mount:       ${camDef.mount}`,
-      `Lens:        ${lensDef.manufacturer} ${lensDef.model}`,
-      `Focal Length: ${focalLength.toFixed(1)}mm${targetCam.extenderActive > 1 ? ` (×${targetCam.extenderActive} = ${(focalLength * targetCam.extenderActive).toFixed(0)}mm)` : ''}`,
-      `Aperture:    f/${targetCam.aperture}`,
-      `Focus Dist:  ${targetCam.focusDistance.toFixed(1)}m`,
-      `Position:    X=${targetCam.x.toFixed(1)}m Y=${targetCam.y.toFixed(1)}m Z=${targetCam.z.toFixed(1)}m`,
-      `Pan: ${targetCam.pan.toFixed(1)}°  Tilt: ${targetCam.tilt.toFixed(1)}°`,
-      '',
-      `FOV H:       ${fov.horizontalDeg.toFixed(2)}°`,
-      `FOV V:       ${fov.verticalDeg.toFixed(2)}°`,
-      `Image:       ${fov.imageWidthAtDistance.toFixed(2)}m × ${fov.imageHeightAtDistance.toFixed(2)}m`,
-      `35mm eq FL:  ${fov.equivalentFocalLength.toFixed(0)}mm`,
-      `DoF:         ${dof.nearLimit < 0.01 ? '0' : dof.nearLimit.toFixed(2)}m – ${dof.farLimit === Infinity ? '∞' : dof.farLimit.toFixed(2) + 'm'}`,
-      `Hyperfocal:  ${dof.hyperfocal.toFixed(2)}m`,
-      `Person 1.8m: ${personPx.toFixed(0)}px / 1080 (${((personPx / 1080) * 100).toFixed(1)}%)`,
+    // Label column is padded to a fixed width so translated labels stay aligned;
+    // an explicit `color` (not a text-prefix match) drives the accent colouring.
+    const GREEN = '#22c55e';
+    type DataLine = { label?: string; value?: string; raw?: string; color?: string; gap?: boolean };
+    const lines: DataLine[] = [
+      { label: t('preview.export.d.camera', 'Camera:'), value: `${camDef.manufacturer} ${camDef.model}` },
+      { label: t('preview.export.d.sensor', 'Sensor:'), value: `${sensor.name} (${sensor.widthMm.toFixed(1)}×${sensor.heightMm.toFixed(1)}mm, ×${sensor.cropFactor.toFixed(2)})` },
+      { label: t('preview.export.d.mount', 'Mount:'), value: `${camDef.mount}` },
+      { label: t('preview.export.d.lens', 'Lens:'), value: `${lensDef.manufacturer} ${lensDef.model}` },
+      { label: t('preview.export.d.focalLength', 'Focal Length:'), value: `${focalLength.toFixed(1)}mm${targetCam.extenderActive > 1 ? ` (×${targetCam.extenderActive} = ${(focalLength * targetCam.extenderActive).toFixed(0)}mm)` : ''}` },
+      { label: t('preview.export.d.aperture', 'Aperture:'), value: `f/${targetCam.aperture}` },
+      { label: t('preview.export.d.focusDist', 'Focus Dist:'), value: `${targetCam.focusDistance.toFixed(1)}m` },
+      { label: t('preview.export.d.position', 'Position:'), value: `X=${targetCam.x.toFixed(1)}m Y=${targetCam.y.toFixed(1)}m Z=${targetCam.z.toFixed(1)}m` },
+      { raw: `Pan: ${targetCam.pan.toFixed(1)}°  Tilt: ${targetCam.tilt.toFixed(1)}°` },
+      { gap: true },
+      { label: t('preview.export.d.fovH', 'FOV H:'), value: `${fov.horizontalDeg.toFixed(2)}°`, color: GREEN },
+      { label: t('preview.export.d.fovV', 'FOV V:'), value: `${fov.verticalDeg.toFixed(2)}°`, color: GREEN },
+      { label: t('preview.export.d.image', 'Image:'), value: `${fov.imageWidthAtDistance.toFixed(2)}m × ${fov.imageHeightAtDistance.toFixed(2)}m` },
+      { label: t('preview.export.d.eqFl', '35mm eq FL:'), value: `${fov.equivalentFocalLength.toFixed(0)}mm` },
+      { label: t('preview.export.d.dof', 'DoF:'), value: `${dof.nearLimit < 0.01 ? '0' : dof.nearLimit.toFixed(2)}m – ${dof.farLimit === Infinity ? '∞' : dof.farLimit.toFixed(2) + 'm'}`, color: GREEN },
+      { label: t('preview.export.d.hyperfocal', 'Hyperfocal:'), value: `${dof.hyperfocal.toFixed(2)}m` },
+      { label: t('preview.export.d.person', 'Person 1.8m:'), value: `${personPx.toFixed(0)}px / 1080 (${((personPx / 1080) * 100).toFixed(1)}%)`, color: GREEN },
     ];
     if (adapterInfo) {
       const lossStr = adapterInfo.lightLossStops > 0 ? `−${adapterInfo.lightLossStops}T` : adapterInfo.lightLossStops < 0 ? `+${Math.abs(adapterInfo.lightLossStops)}T` : '0T';
-      lines.push(`Adapter:     ${adapterInfo.name} (${lossStr})`);
+      lines.push({ label: t('preview.export.d.adapter', 'Adapter:'), value: `${adapterInfo.name} (${lossStr})`, color: '#f59e0b' });
     }
 
-    lines.forEach((line) => {
-      if (line === '') { cy += 6; return; }
-      if (line.startsWith('FOV') || line.startsWith('DoF') || line.startsWith('Person')) {
-        ctx.fillStyle = '#22c55e';
-      } else if (line.startsWith('Adapter')) {
-        ctx.fillStyle = '#f59e0b';
-      } else {
-        ctx.fillStyle = '#e5e7eb';
-      }
-      ctx.fillText(line, cx, cy);
+    lines.forEach((ln) => {
+      if (ln.gap) { cy += 6; return; }
+      ctx.fillStyle = ln.color ?? '#e5e7eb';
+      ctx.fillText(ln.raw ?? (ln.label!.padEnd(14) + ln.value), cx, cy);
       cy += lineH;
     });
 
@@ -384,7 +384,7 @@ export default function ExportPanel() {
       cy += 8;
       ctx.fillStyle = '#3b82f6';
       ctx.font = 'bold 13px monospace';
-      ctx.fillText('NOTES', cx, cy);
+      ctx.fillText(t('preview.export.notes', 'NOTES'), cx, cy);
       cy += lineH;
 
       ctx.font = '12px monospace';
@@ -436,7 +436,7 @@ export default function ExportPanel() {
 
     ctx.fillStyle = '#3b82f6';
     ctx.font = 'bold 15px monospace';
-    ctx.fillText('ALL CAMERAS IN PROJECT', padding + 16, summaryY + 24);
+    ctx.fillText(t('preview.export.allCameras', 'ALL CAMERAS IN PROJECT'), padding + 16, summaryY + 24);
 
     ctx.font = '12px monospace';
     const colW = (EW - padding * 2 - 32) / 3;
@@ -569,7 +569,7 @@ export default function ExportPanel() {
     // ── Restore overrides ──
     if (needFocalChange) useStore.getState().updateCamera(targetCam.id, { focalLength: originalFocal });
     if (needSelectionChange) useStore.getState().selectCamera(originalSelected);
-  }, [cameras, venue, projectVersion, capture2DCanvas, capture3DCanvas, capturePreviewCanvas, waitForPaint]);
+  }, [cameras, venue, projectVersion, capture2DCanvas, capture3DCanvas, capturePreviewCanvas, waitForPaint, t]);
 
   const generateExport = useCallback(async (mode: ExportMode = 'current') => {
     const state = useStore.getState();
@@ -579,7 +579,7 @@ export default function ExportPanel() {
       : currentCam ? [currentCam] : [];
 
     if (targetCams.length === 0) {
-      alert('No cameras to export. Add a camera first.');
+      alert(t('preview.export.noCameras', 'No cameras to export. Add a camera first.'));
       return;
     }
 
@@ -653,7 +653,7 @@ export default function ExportPanel() {
       setExporting(false);
       setExportProgress({ current: 0, total: 0 });
     }
-  }, [renderOne]);
+  }, [renderOne, t]);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -668,7 +668,7 @@ export default function ExportPanel() {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
         <div className="bg-bc-panel rounded-lg p-6 text-white text-center min-w-[260px]">
-          <div className="animate-pulse mb-2">Generating export…</div>
+          <div className="animate-pulse mb-2">{t('preview.export.generating', 'Generating export…')}</div>
           {exportProgress.total > 1 && (
             <div className="text-xs text-gray-400">
               {exportProgress.current} / {exportProgress.total}
