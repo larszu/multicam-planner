@@ -40,7 +40,19 @@ export const INVENTORY_FORMAT = 'avplan-inventory';
 // demselben Wert. Bliebe sie hier auf 4, wiese dieser Planer jede Datei ab,
 // die das Lager-Werkzeug und der cable-planner ab jetzt schreiben.
 // Aeltere Dateien (v1-v4) lesen wir unveraendert weiter.
-export const INVENTORY_FORMAT_VERSION = 5;
+//
+// Version 6 (B-65): `InventoryUnit.fristen` -- was an einer Einheit
+// turnusmaessig faellig ist (DGUV-V3-Pruefung, Kalibrierung, Wartung,
+// Akku). Ausgewertet wird das im Lager-Werkzeug; dieser Planer FUEHRT es,
+// damit eine Datei mit Pruefterminen hier durchlaeuft, ohne sie zu
+// verlieren.
+//
+// Die Erhoehung ist auch hier nicht optional, aus demselben Grund wie bei
+// Version 3: die Zahl steht in ALLEN Repos, die ein Lager anfassen, auf
+// demselben Wert. Bliebe sie hier auf 5, wiese dieser Planer jede Datei ab,
+// die das Lager-Werkzeug und der cable-planner ab jetzt schreiben.
+// Aeltere Dateien (v1-v5) lesen wir unveraendert weiter.
+export const INVENTORY_FORMAT_VERSION = 6;
 
 export interface InventorySnapshot {
   items: InventoryItem[];
