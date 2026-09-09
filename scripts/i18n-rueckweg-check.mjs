@@ -111,9 +111,47 @@ const imDict = new Set(
   [...dictText.matchAll(/['"]([^'"\\]{3,})['"]\s*,?\s*$/gm)].map((m) => norm(m[1])),
 )
 
+// Das HIESIGE Woerterbuch. Es zu lesen ist der Unterschied zwischen zwei
+// voellig verschiedenen Befunden, die vorher beide als „ohne Entsprechung"
+// gezaehlt wurden:
+//
+//   (a) Der Satz hat hier keinen Schluessel und drueben keine Entsprechung —
+//       niemand hat ihn je uebersetzt. DAS ist Arbeit.
+//   (b) Der Satz ist HIER gewickelt und HIER uebersetzt, nur die Suite-Kopie
+//       kennt ihn noch nicht. Das ist keine Arbeit, das ist ein Vorsprung.
+//
+// Ohne die Trennung STEIGT die Zahl, sobald jemand eine Datei wickelt und
+// uebersetzt — die erledigte Arbeit saehe aus wie neue. Genau daran erkennt
+// man einen Zaehler, dem man nicht mehr glaubt.
+const meinDictText = existsSync(join(HIER, 'src', 'i18n', 'de'))
+  ? readdirSync(join(HIER, 'src', 'i18n', 'de'))
+      .map((f) => readFileSync(join(HIER, 'src', 'i18n', 'de', f), 'utf8'))
+      .join('\n')
+  : ''
+// Welche Schluessel hier eine deutsche Form haben.
+const meineSchluessel = new Set(
+  [...meinDictText.matchAll(/^\s*'([^']+)':\s*'/gm)].map((m) => m[1]),
+)
+/**
+ * Die englischen Quell-Strings, deren Schluessel hier uebersetzt ist.
+ *
+ * NICHT das Woerterbuch selbst abfragen: nach dem Wickeln steht im Quelltext
+ * der ENGLISCHE Fallback, und der steht naturgemaess nicht im deutschen Dict.
+ * Wer hier das Dict abfragt, misst „ist der englische Satz zufaellig auch ein
+ * deutsches Wort" — und bekommt bei 105 uebersetzten Saetzen die Antwort
+ * „vier". Genau so ein Zaehler stand hier einen Versuch lang.
+ */
+const uebersetztHier = (text) =>
+  new Set(
+    [...text.matchAll(/t\('([^']+)',\s*'((?:[^'\\]|\\.)*)'\)/g)]
+      .filter((m) => meineSchluessel.has(m[1]))
+      .map((m) => norm(m[2].replace(/\\'/g, "'"))),
+  )
+
 const eigene = dateien(join(HIER, 'src'))
 let gesamt = 0
 let ohneEntsprechung = 0
+let nurVorsprung = 0
 const proDatei = []
 
 for (const voll of eigene) {
@@ -123,9 +161,12 @@ for (const voll of eigene) {
   const meine = texte(readFileSync(voll, 'utf8'), jsx)
   if (meine.size === 0) continue
   const ihre = existsSync(drueben) ? texte(readFileSync(drueben, 'utf8'), jsx) : new Set()
-  const fehlend = [...meine].filter((s) => !ihre.has(s) && !imDict.has(s))
+  const nichtDrueben = [...meine].filter((s) => !ihre.has(s) && !imDict.has(s))
+  const hierUebersetzt = uebersetztHier(readFileSync(voll, 'utf8'))
+  const fehlend = nichtDrueben.filter((s) => !hierUebersetzt.has(s))
   gesamt += meine.size
   ohneEntsprechung += fehlend.length
+  nurVorsprung += nichtDrueben.length - fehlend.length
   if (fehlend.length) proDatei.push({ rel, meine: meine.size, fehlend })
 }
 
@@ -171,12 +212,17 @@ for (const g of gewickelt) {
 }
 
 console.log(
-  `${gesamt} sichtbare Zeichenketten in src/, davon ${ohneEntsprechung} ohne Entsprechung ` +
-    'in der Suite-Kopie (weder englischer Quell-String noch deutscher Dict-Eintrag).',
+  `${gesamt} sichtbare Zeichenketten in src/, davon ${ohneEntsprechung} ohne deutsche Form ` +
+    '— weder drueben noch hier.',
 )
 console.log(
-  `${proDatei.length} Datei(en) betroffen — das ist die Arbeit, die der Rueckweg neu ` +
-    'uebersetzen muss; alles Uebrige steht drueben schon.\n',
+  `${proDatei.length} Datei(en) betroffen — das ist die Arbeit, die der Rueckweg noch neu ` +
+    'uebersetzen muss.',
+)
+console.log(
+  `Weitere ${nurVorsprung} Zeichenketten kennt die Suite-Kopie nicht, sind hier aber ` +
+    'bereits uebersetzt — das ist kein Rueckstand, sondern ein Vorsprung, den die ' +
+    'Suite beim naechsten Vendoring mitnimmt.\n',
 )
 for (const d of proDatei) {
   console.log(`  ${d.rel} — ${d.fehlend.length} von ${d.meine}`)
