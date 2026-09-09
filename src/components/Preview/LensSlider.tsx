@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FiMinus, FiPlus } from 'react-icons/fi';
 import { posToValue, snapToCandidates, valueToPos } from '../../utils/lensScale';
+import { useTranslation } from '../../i18n';
 
 /**
  * Objektiv-Regler fuer Zoom / Blende / Fokus.
@@ -64,6 +65,7 @@ export default function LensSlider({
   disabled,
   title,
 }: LensSliderProps) {
+  const { t } = useTranslation();
   // `draft === null` heisst: Feld zeigt den echten Wert. Beim Tippen haelt es
   // die RohEingabe, damit Zwischenstaende wie "1." nicht sofort umgerechnet
   // (und dadurch zerstoert) werden. Beim Kamerawechsel greift wieder der Wert.
@@ -191,10 +193,10 @@ export default function LensSlider({
           {note ? <span className="text-gray-600">· {note}</span> : null}
         </span>
         <div className="flex items-center gap-1">
-          <button className={stepBtn} tabIndex={-1} onClick={() => onStep(-1)} disabled={disabled} title="Eine Stufe zurück">
+          <button className={stepBtn} tabIndex={-1} onClick={() => onStep(-1)} disabled={disabled} title={t('preview.step.back', 'One step back')}>
             <FiMinus size={10} />
           </button>
-          <button className={stepBtn} tabIndex={-1} onClick={() => onStep(1)} disabled={disabled} title="Eine Stufe weiter">
+          <button className={stepBtn} tabIndex={-1} onClick={() => onStep(1)} disabled={disabled} title={t('preview.step.forward', 'One step forward')}>
             <FiPlus size={10} />
           </button>
           {headerRight}

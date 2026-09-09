@@ -16,6 +16,7 @@ import { MOUNT_TYPE_LABELS, type RigTake, type TakeSample } from '../../types';
 import { rigYaw } from '../../utils/camera';
 import { rigLimits } from '../../utils/rigLimits';
 import { profileForMount } from '../../utils/motionProfile';
+import { useTranslation, format } from '../../i18n';
 import {
   DEFAULT_SPEED_INDEX,
   DRIVE_KEYS,
@@ -166,6 +167,7 @@ function runTakePlayback(
 }
 
 export default function RigControlPanel() {
+  const { t } = useTranslation();
   const cameras = useStore((s) => s.cameras);
   const selectedCameraId = useStore((s) => s.selectedCameraId);
   const selectCamera = useStore((s) => s.selectCamera);
@@ -391,7 +393,7 @@ export default function RigControlPanel() {
   if (!cam || !limits) {
     return (
       <div className="h-full flex items-center justify-center text-gray-500 text-sm">
-        Keine Kamera vorhanden — links im Panel „Cameras" eine anlegen.
+        {t('rig.noCamera', 'No camera yet — create one in the „Cameras" panel on the left.')}
       </div>
     );
   }
@@ -420,7 +422,7 @@ export default function RigControlPanel() {
           <button
             onClick={() => setArmed((a) => !a)}
             className={`ml-auto px-2 py-1 rounded border ${armed ? 'border-bc-yellow text-bc-yellow' : 'border-bc-border text-gray-400'}`}
-            title="Tastatur-Steuerung scharf schalten. Aus, wenn die Tasten woanders gebraucht werden."
+            title={t('rig.keys.title', 'Arm keyboard control. Off when the keys are needed elsewhere.')}
           >
             {armed ? 'Tasten aktiv' : 'Tasten aus'}
           </button>
@@ -448,7 +450,7 @@ export default function RigControlPanel() {
         <div className="flex gap-3 items-start">
           <Deflector
             label="Pan / Tilt (← → ↑ ↓)"
-            hint="Ziehen schwenkt und neigt — gleichzeitig mit der Fahrt möglich."
+            hint={t('rig.panTilt.hint', 'Dragging pans and tilts — possible at the same time as the move.')}
             axes="xy"
             size={220}
             onChange={(i) => { padRef.current = i; startLoop(); }}
@@ -464,7 +466,7 @@ export default function RigControlPanel() {
             />
             <div className="grid grid-cols-3 gap-1 text-[11px]">
               <Readout label="Fahrweg" value={hasTravel ? `${(cam.trackOffset ?? 0).toFixed(2)} m` : '—'} sub={hasTravel ? `±${limits.travelM.toFixed(2)} m` : ''} />
-              <Readout label="Höhe" value={`${cam.z.toFixed(2)} m`} sub={`${limits.minHeightM.toFixed(2)}–${limits.maxHeightM.toFixed(2)}`} />
+              <Readout label={t('rig.height', 'Height')} value={`${cam.z.toFixed(2)} m`} sub={`${limits.minHeightM.toFixed(2)}–${limits.maxHeightM.toFixed(2)}`} />
               <Readout label="Pan" value={`${cam.pan.toFixed(1)}°`} />
               <Readout label="Tilt" value={`${cam.tilt.toFixed(1)}°`} />
               <Readout label="Ausrichtung" value={`${rigYaw(cam).toFixed(0)}°`} sub={cam.rigRotation === undefined ? 'folgt Kamera' : 'fest'} />
@@ -475,9 +477,9 @@ export default function RigControlPanel() {
 
         {/* Tastenlegende */}
         <div className="rounded border border-bc-border bg-bc-dark px-2 py-1.5 text-[10px] text-gray-400 leading-relaxed">
-          <b className="text-gray-300">Tasten</b> — <b>J/L</b> Fahrweg · <b>← →</b> Pan · <b>↑ ↓</b> Tilt ·
-          {' '}<b>R/F</b> Höhe · <b>[ ]</b> Rig ausrichten · <b>, .</b> Zoom · <b>0</b> parken ·
-          {' '}<b>1/2/3</b> Tempo. Mehrere Tasten gleichzeitig fahren mehrere Achsen zusammen.
+          <b className="text-gray-300">{t('rig.keys', 'Keys')}</b> — <b>J/L</b> {t('rig.key.track', 'track')} · <b>← →</b> {t('rig.key.pan', 'pan')} · <b>↑ ↓</b> {t('rig.key.tilt', 'tilt')} ·
+          {' '}<b>R/F</b> {t('rig.key.height', 'height')} · <b>[ ]</b> {t('rig.key.align', 'align rig')} · <b>, .</b> {t('rig.key.zoom', 'zoom')} · <b>0</b> {t('rig.key.park', 'park')} ·
+          {' '}<b>1/2/3</b> {t('rig.key.speed', 'speed')}. {t('rig.keys.hint', 'Several keys at once move several axes together.')}
         </div>
 
         {/* Aufnahme */}
@@ -503,12 +505,12 @@ export default function RigControlPanel() {
               Wiedergabe stoppen
             </button>
           )}
-          <span className="ml-auto text-gray-600">{takes.length} Fahrt(en) für {cam.label}</span>
+          <span className="ml-auto text-gray-600">{format(t('rig.takesFor', '{count} take(s) for {name}'), { count: takes.length, name: cam.label })}</span>
         </div>
 
         {takeStorageFull && (
           <div className="rounded border border-bc-red/60 bg-bc-red/10 px-2 py-1 text-[11px] text-bc-red">
-            Der Speicher ist voll — die letzte Fahrt konnte nicht gesichert werden. Ältere Fahrten löschen.
+            {t('rig.storageFull', 'Storage is full — the last take could not be saved. Delete older takes.')}
           </div>
         )}
 
@@ -516,27 +518,26 @@ export default function RigControlPanel() {
         <div className="space-y-1">
           {takes.length === 0 && (
             <p className="text-gray-600 text-[11px]">
-              Noch keine Fahrt aufgezeichnet. „Fahrt aufzeichnen" drücken, fahren, „Stop" — die Bewegung
-              lässt sich danach beliebig oft abspielen.
+              {t('rig.noTakes', 'No take recorded yet. Press „Record take", move, then „Stop" — the movement can be replayed as often as you like afterwards.')}
             </p>
           )}
-          {takes.map((t) => (
-            <div key={t.id} className={`flex items-center gap-1 rounded border px-2 py-1 ${playingId === t.id ? 'border-bc-yellow' : 'border-bc-border'}`}>
-              <button onClick={() => (playingId === t.id ? stopPlayback() : playTake(t))} className="text-gray-300 hover:text-white p-0.5" title="Abspielen">
-                {playingId === t.id ? <FiSquare size={12} /> : <FiPlay size={12} />}
+          {takes.map((fahrt) => (
+            <div key={fahrt.id} className={`flex items-center gap-1 rounded border px-2 py-1 ${playingId === fahrt.id ? 'border-bc-yellow' : 'border-bc-border'}`}>
+              <button onClick={() => (playingId === fahrt.id ? stopPlayback() : playTake(fahrt))} className="text-gray-300 hover:text-white p-0.5" title={t('rig.play', 'Play')}>
+                {playingId === fahrt.id ? <FiSquare size={12} /> : <FiPlay size={12} />}
               </button>
               <input
                 className="flex-1 bg-transparent outline-none text-white"
-                value={t.name}
-                title="Fahrt benennen"
-                onChange={(e) => renameRigTake(t.id, e.target.value)}
+                value={fahrt.name}
+                title={t('rig.rename', 'Name the take')}
+                onChange={(e) => renameRigTake(fahrt.id, e.target.value)}
               />
-              <span className="text-gray-500">{formatTakeTime(takeDuration(t))}</span>
-              <span className="text-gray-600 text-[10px]">{t.samples.length} Pkt.</span>
+              <span className="text-gray-500">{formatTakeTime(takeDuration(fahrt))}</span>
+              <span className="text-gray-600 text-[10px]">{fahrt.samples.length} Pkt.</span>
               <button
-                onClick={() => { if (playingId === t.id) stopPlayback(); removeRigTake(t.id); }}
+                onClick={() => { if (playingId === fahrt.id) stopPlayback(); removeRigTake(fahrt.id); }}
                 className="text-gray-500 hover:text-bc-red p-0.5"
-                title="Fahrt löschen"
+                title={t('rig.delete', 'Delete take')}
               >
                 <FiTrash2 size={12} />
               </button>
@@ -546,7 +547,7 @@ export default function RigControlPanel() {
 
         {otherTakes.length > 0 && (
           <div className="text-[10px] text-gray-600 flex items-center gap-1">
-            <FiCrosshair size={10} /> {otherTakes.length} weitere Fahrt(en) gehören zu anderen Kameras.
+            <FiCrosshair size={10} /> {format(t('rig.otherTakes', '{count} further take(s) belong to other cameras.'), { count: otherTakes.length })}
           </div>
         )}
       </div>

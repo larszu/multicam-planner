@@ -1450,7 +1450,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           unit="mm"
           onChange={(v) => useStore.getState().updateCamera(cam.id, { focalLength: v })}
           onStep={(dir) => useStore.getState().updateCamera(cam.id, { focalLength: stepAlong(cam.focalLength, dir, zoomMin, zoomMax, zoomTicks) })}
-          title="Brennweite — logarithmisch, rastet auf die Marken. Shift = frei, Mausrad = Stufe."
+          title={t('preview.focal.title', 'Focal length — logarithmic, snaps to the marks. Shift = free, wheel = one step.')}
           headerRight={
             <>
               {manualZoom && (
@@ -1498,7 +1498,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           formatTick={(v) => (v < 10 ? v.toFixed(1) : v.toFixed(0))}
           onChange={(v) => useStore.getState().updateCamera(cam.id, { aperture: v })}
           onStep={(dir) => useStore.getState().updateCamera(cam.id, { aperture: stepStop(cam.aperture, dir, apMin, apMax) })}
-          title="Blende — Normreihe in vollen Stufen (√2). Shift = stufenlos, Mausrad = eine Stufe."
+          title={t('preview.aperture.title', 'Aperture — standard series in full stops (√2). Shift = stepless, wheel = one stop.')}
           headerRight={
             <>
               {manualAperture && (
@@ -1527,7 +1527,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                   }
                   return next;
                 })}
-                title="Blende über die echten Objektiv-Grenzen hinaus durchfahren"
+                title={t('preview.aperture.beyond', 'Run the aperture beyond the real lens limits')}
                 className={`px-1.5 py-0.5 rounded text-[9px] font-medium border transition-colors ${manualAperture ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
               >
                 {t('preview.manual', 'Manual')}
@@ -1547,7 +1547,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           onChange={(v) => useStore.getState().updateCamera(cam.id, { focusDistance: Math.max(0.1, v), lockedPersonId: undefined })}
           onStep={(dir) => useStore.getState().updateCamera(cam.id, { focusDistance: stepAlong(cam.focusDistance, dir, FOCUS_MIN, focusMax, focusTicks), lockedPersonId: undefined })}
           note={cam.lockedPersonId ? t('preview.locked', 'locked') : undefined}
-          title="Fokusdistanz — nah fein, fern grob (logarithmisch). Zahl anklicken für direkte Eingabe."
+          title={t('preview.focus.title', 'Focus distance — fine up close, coarse far away (logarithmic). Click the number to type it.')}
         />
 
 
@@ -1560,12 +1560,12 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           </span>
           {presetGroups.own.map((p) => (
             <span key={p.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-gray-300 hover:border-bc-accent">
-              <button onClick={() => applyPreset(p)} title={`${p.focalLength.toFixed(0)}mm · f/${p.aperture.toFixed(1)} · ${p.focusDistance.toFixed(1)}m${p.pan !== undefined ? ` · Pos (Pan ${p.pan.toFixed(0)}° Tilt ${p.tilt?.toFixed(0)}° H ${p.z?.toFixed(1)}m)` : ''}`}>{p.name}{hasPose(p) && <span className="ml-0.5 text-bc-accent" title="enthält Kamera-Position">◈</span>}</button>
+              <button onClick={() => applyPreset(p)} title={`${p.focalLength.toFixed(0)}mm · f/${p.aperture.toFixed(1)} · ${p.focusDistance.toFixed(1)}m${p.pan !== undefined ? ` · Pos (Pan ${p.pan.toFixed(0)}° Tilt ${p.tilt?.toFixed(0)}° H ${p.z?.toFixed(1)}m)` : ''}`}>{p.name}{hasPose(p) && <span className="ml-0.5 text-bc-accent" title={t('preview.preset.hasPose', 'contains camera position')}>◈</span>}</button>
               <button onClick={() => deletePreset(p.id)} className="text-gray-600 hover:text-bc-red" title={t('preview.deletePreset', 'Delete preset')} aria-label={`Preset ${p.name} löschen`}><FiX size={10} /></button>
             </span>
           ))}
           {presetGroups.own.length === 0 && (
-            <span className="text-[10px] text-gray-600">noch keins</span>
+            <span className="text-[10px] text-gray-600">{t('preview.preset.none', 'none yet')}</span>
           )}
           <button onClick={addPreset} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-gray-500 hover:text-bc-accent hover:border-bc-accent" title={`${t('preview.savePreset', 'Save current focal length / aperture / focus as a preset')} · ${cam.label}`}>
             <FiPlus size={10} /> {t('preview.add', 'Add')}
@@ -1586,7 +1586,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
               window.setTimeout(() => setShotHint(null), 2500);
             }}
             className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-accent/60 text-bc-accent bg-bc-accent/10 hover:bg-bc-accent/20"
-            title="Aktuelle Ansicht als Shot in die Shotlist aufnehmen"
+            title={t('preview.addShot', 'Add the current view to the shotlist as a shot')}
           >
             <FiCamera size={10} /> Shot aufnehmen
           </button>
@@ -1599,8 +1599,8 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
             Datenverlust. */}
         {presetGroups.unassigned.length > 0 && (
           <div className="px-2 flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] text-gray-600" title="Presets ohne Kamera-Zuordnung">
-              ohne Zuordnung
+            <span className="text-[10px] text-gray-600" title={t('preview.preset.unassigned.title', 'Presets with no camera assigned')}>
+              {t('preview.preset.unassigned', 'unassigned')}
             </span>
             {presetGroups.unassigned.map((p) => (
               <span key={p.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-dashed border-bc-border text-gray-500 hover:border-bc-accent">

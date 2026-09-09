@@ -602,9 +602,7 @@ function CameraCard({
               handgetippten Sensormassen ist der teuerste, den diese App hat. */}
           {libraryStorageFull && (
             <div className="text-[10px] text-bc-red mt-1">
-              Speicher voll — die letzte Änderung an der Bibliothek wurde nicht dauerhaft
-              gesichert. Nicht mehr gebrauchte eigene Kameras/Optiken löschen oder das
-              Projekt exportieren.
+              {t('sidebar.libraryStorageFull', 'Storage full — the last change to the library was not saved permanently. Delete custom cameras/lenses you no longer need, or export the project.')}
             </div>
           )}
 
@@ -1919,7 +1917,7 @@ function CameraCard({
                   HEREINGEHOLT und nicht gesucht: dieser Planer laeuft auf dem
                   Rechner des Planers und nicht auf dem der Regie. */}
               <label className="mt-1 text-[10px] uppercase tracking-wider text-gray-500">
-                Quellenliste aus dem Empfänger (eine je Zeile)
+                {t('sidebar.cam.source.list', 'Source list from the receiver (one per line)')}
               </label>
               <textarea
                 className="block min-h-[3.5rem] w-full resize-y rounded border border-bc-border bg-bc-dark text-xs text-white"
@@ -2388,7 +2386,7 @@ export default function Sidebar() {
                     dieselben Stellschrauben wie bei den Wänden. */}
                 <div className="mt-1 flex items-center gap-1">
                   <label className="flex items-center gap-1 text-gray-500">
-                    Höhe
+                    {t('sidebar.stage.height', 'Height')}
                     <input
                       type="number"
                       className="w-14 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs tabular-nums"

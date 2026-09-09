@@ -684,16 +684,16 @@ function CameraRig({
                 </button>
                 {isUnlocked && (
                   <>
-                    <button type="button" onClick={() => onEditModeChange('move')} style={buttonStyle(editMode === 'move')} title="Standort auf dem Boden">
+                    <button type="button" onClick={() => onEditModeChange('move')} style={buttonStyle(editMode === 'move')} title={t('venue.edit.move', 'Position on the floor')}>
                       XY
                     </button>
-                    <button type="button" onClick={() => onEditModeChange('height')} style={buttonStyle(editMode === 'height')} title="Höhe">
+                    <button type="button" onClick={() => onEditModeChange('height')} style={buttonStyle(editMode === 'height')} title={t('venue.edit.height', 'Height')}>
                       Z
                     </button>
-                    <button type="button" onClick={() => onEditModeChange('pan')} style={buttonStyle(editMode === 'pan')} title="Schwenk">
+                    <button type="button" onClick={() => onEditModeChange('pan')} style={buttonStyle(editMode === 'pan')} title={t('venue.edit.pan', 'Pan')}>
                       Pan
                     </button>
-                    <button type="button" onClick={() => onEditModeChange('tilt')} style={buttonStyle(editMode === 'tilt')} title="Neigung">
+                    <button type="button" onClick={() => onEditModeChange('tilt')} style={buttonStyle(editMode === 'tilt')} title={t('venue.edit.tilt', 'Tilt')}>
                       Tilt
                     </button>
                   </>
