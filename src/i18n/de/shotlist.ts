@@ -33,4 +33,8 @@ export const shotlist: Record<string, string> = {
   'shotlist.noThumb': 'kein Bild',
   'shotlist.cameraGone': 'Die Kamera dieses Shots wurde gelöscht',
   'shotlist.deleteShot': 'Shot löschen',
+  'shotlist.deleteConfirm': 'Shotlist "{name}" mit {count} Shots löschen?',
+  'shotlist.renameShort': 'Umbenennen',
+  'shotlist.exportPng': 'Storyboard als PNG',
+  'shotlist.print': 'Storyboard drucken / als PDF sichern',
 };

@@ -259,7 +259,13 @@ const ohneKommentare = (text) =>
  */
 const SICHTBARE_ATTRIBUTE = /\b(?:title|aria-label|placeholder|label|alt|summary|submitLabel|hint)=(?:"([^"]{4,})"|\{\s*'((?:[^'\\]|\\.){4,}?)'\s*\})/g
 const JSX_TEXT = />([^<>{}]{4,})</g
-const RUFE = /\b(?:alert|confirm|prompt)\(\s*(['"])((?:[^\\]|\\.){4,}?)\1/g
+// Auch das Template-Literal, nicht nur die Anfuehrungszeichen. GEFUNDEN, weil
+// der `dialogs:native`-Waechter der Suite eine Stelle meldete, die dieser
+// Lauf hier gruen durchgelassen hatte: `window.confirm(\`Shotlist "…" mit N
+// Shots loeschen?\`)`. Eine Rueckfrage mit eingesetztem Namen steht praktisch
+// immer im Backtick — ausgerechnet die Form also, die das erste Muster nicht
+// kannte.
+const RUFE = /\b(?:alert|confirm|prompt)\(\s*(?:(['"])((?:[^\\]|\\.){4,}?)\1|`((?:[^`\\]|\\.){4,}?)`)/g
 
 const sichtbareTexte = (quelle, jsx) => {
   const text = ohneKommentare(quelle)
@@ -267,7 +273,7 @@ const sichtbareTexte = (quelle, jsx) => {
   const ohneFallbacks = text.replace(fallbackMuster(), ' ')
   const raus = []
   for (const m of ohneFallbacks.matchAll(SICHTBARE_ATTRIBUTE)) raus.push(m[1] ?? m[2])
-  for (const m of ohneFallbacks.matchAll(RUFE)) raus.push(m[2])
+  for (const m of ohneFallbacks.matchAll(RUFE)) raus.push(m[2] ?? m[3])
   if (jsx) {
     for (const m of ohneFallbacks.matchAll(JSX_TEXT)) {
       const t = m[1].trim()

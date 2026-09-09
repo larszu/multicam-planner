@@ -27,7 +27,7 @@ import {
 import { MOUNT_TYPE_LABELS, type CameraMountType } from '../../types';
 import { exportStoryboardPng, printStoryboard, shotOpticsLabel } from '../../utils/storyboard';
 import { storyboardFingerprint } from '../../utils/documentContent';
-import { useTranslation } from '../../i18n';
+import { useTranslation, format } from '../../i18n';
 import { stampForStand } from '../../utils/documentStamp';
 import type { Shot } from '../../types';
 
@@ -262,7 +262,7 @@ export default function ShotlistPanel() {
             if (name && name.trim()) renameShotlist(list.id, name.trim());
           }}
         >
-          Umbenennen
+          {t('shotlist.renameShort', 'Rename')}
         </button>
         <button
           className={btn}
@@ -270,7 +270,10 @@ export default function ShotlistPanel() {
           title={t('shotlist.delete', 'Delete shotlist')}
           onClick={() => {
             if (!list) return;
-            if (window.confirm(`Shotlist "${list.name}" mit ${list.shots.length} Shots löschen?`)) {
+            if (window.confirm(format(
+              t('shotlist.deleteConfirm', 'Delete shotlist "{name}" with {count} shots?'),
+              { name: list.name, count: list.shots.length },
+            ))) {
               stopPlayback();
               removeShotlist(list.id);
             }
@@ -311,14 +314,14 @@ export default function ShotlistPanel() {
 
         <div className="w-px h-4 bg-bc-border" />
 
-        <button className={btn} onClick={doExportPng} disabled={!list || shots.length === 0 || busy} title="Storyboard als PNG">
+        <button className={btn} onClick={doExportPng} disabled={!list || shots.length === 0 || busy} title={t('shotlist.exportPng', 'Storyboard as PNG')}>
           <FiDownload size={13} />
         </button>
         <button
           className={btn}
           onClick={() => list && printStoryboard(list, venue.name, stempel())}
           disabled={!list || shots.length === 0}
-          title="Storyboard drucken / als PDF sichern"
+          title={t('shotlist.print', 'Print storyboard / save as PDF')}
         >
           <FiPrinter size={13} />
         </button>
