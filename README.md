@@ -8,6 +8,21 @@ A fast, focused broadcast camera & lens planning tool for multicam setups. Calcu
 
 ---
 
+## The web page
+
+Every push to the default branch builds this repo's page from
+`.github/workflows/pages.yml` and publishes it:
+
+**https://larszu.github.io/multicam-planner/**
+
+The workflow **asks the Pages API before it configures anything.** With no
+Pages site it still builds — that is a real check — and skips only the
+publishing step, with a warning and the one missing step in the run summary.
+A run that must stay red for a click nobody made teaches people to ignore red.
+
+Measured 2026-09-09: **published** — the `deploy` job ran and succeeded.
+
+---
 ## ✨ Philosophy
 
 MultiCam Planner is designed for quick, intuitive camera planning with essential features for real-world broadcast productions. Its streamlined workflow and simple interface make it perfect for fast setups and clear projects—without the complexity and feature overload of traditional CAD or architecture applications.
