@@ -23,6 +23,7 @@ import {
   mergeOwnPersonFields,
 } from '../utils/venueExchange';
 import { pickUnknownDomains, type AvPlan } from '../utils/avplan';
+import { translate } from '../i18n';
 
 // Injected by Vite from package.json. In a release build that came through
 // the GitHub Actions workflow this matches the git release tag exactly,
@@ -1059,7 +1060,10 @@ export const useStore = create<AppState>((set, get) => ({
 
   applyProjectFile: (project: ProjectFile) => {
     if (project.formatVersion !== 1) {
-      alert('Unsupported project file format.');
+      // KEIN Hook: der Store ist keine Komponente. Die Sprache steht in ihm
+      // selbst, also wird sie hier gelesen — `translate` ist genau dafuer die
+      // Lookup-Funktion ohne React.
+      alert(translate(get().language, 'store.unsupportedFormat', 'Unsupported project file format.'));
       return;
     }
     // Ids der Datei BEHALTEN (#72). Frueher wurden Kamera-Ids neu vergeben und
