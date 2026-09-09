@@ -258,7 +258,44 @@ const ohneKommentare = (text) =>
  * Shotlist" steht zwischen den Tags, nicht in Anfuehrungszeichen.
  */
 const SICHTBARE_ATTRIBUTE = /\b(?:title|aria-label|placeholder|label|alt|summary|submitLabel|hint)=(?:"([^"]{4,})"|\{\s*'((?:[^'\\]|\\.){4,}?)'\s*\})/g
-const JSX_TEXT = />([^<>{}]{4,})</g
+/**
+ * JSX-Textknoten — und zwar NUR die.
+ *
+ * Die erste Fassung war `/>([^<>{}]{4,})</g`. Sie trifft in einer .tsx-Datei
+ * auch CODE: `>` und `<` sind Vergleichsoperatoren, und dazwischen steht dann
+ * ein Stueck Quelltext (`if (clipped.length > 2)`, `arr.filter(n => n.id)`).
+ *
+ * HIER FIEL DAS NICHT AUF, weil nur gezaehlt wird, was als DEUTSCH durchgeht:
+ * ein Code-Schnipsel traegt `if`, `for`, `const`, `return` — englische
+ * Stoppwoerter, also englisch klassifiziert und aus der Zaehlung heraus. In
+ * einem deutsch-quelligen Repo waere die Zielsprache englisch, und derselbe
+ * Lauf haette dort 35 (cable) bzw. 12 (light) Code-Zeilen als Sprachmisch-
+ * Verstoss gemeldet. Gemessen, nicht vermutet.
+ *
+ * ZWEI BEDINGUNGEN MACHEN AUS DEM MUSTER EIN TAG-MUSTER:
+ *   • Das `>` muss ein Tag-Ende sein: davor steht ein Bezeichner, ein
+ *     Anfuehrungszeichen, eine geschweifte Klammer oder ein Schraegstrich —
+ *     nie ein Leerzeichen, `=`, `<` oder `!`. Damit fallen `a > b`, `=>` und
+ *     `<=` heraus.
+ *   • Das schliessende `<` muss ein Tag beginnen: `</` oder `<Buchstabe`.
+ * Was danach noch durchkommt, sind Generics (`useState<Foo>(null)`); die faengt
+ * `NACH_CODE` unten.
+ *
+ * GEGENGEPROBT gegen den Stand VOR dem Wickeln (multicam @ 49e8ced): das
+ * strenge Muster findet dort 38 Zeichenketten. Das lockere fand 37 — die
+ * Differenz ist NICHT das Muster, sondern der Backtick-Fix aus `#119`: die
+ * Rueckfrage `confirm(\`Shotlist "…" mit N Shots loeschen?\`)` kam mit ihm
+ * dazu. Textknoten verliert das strenge Muster also keinen einzigen, und
+ * ueber cable/light faellt es von 47 Fehltreffern auf null.
+ */
+const JSX_TEXT = /[^\s=<!>]>([^<>{}]{4,})<[/A-Za-z]/g
+
+/**
+ * Was ein JSX-Textknoten NIE enthaelt, ein Code-Schnipsel dagegen fast immer.
+ * Greift ausschliesslich auf JSX-Text, nicht auf Attribute: dort steht
+ * durchaus ein `=` in der Oberflaeche ("Shift = frei, Mausrad = Stufe").
+ */
+const NACH_CODE = /[;=]|\b(?:const|let|var|function|await|async)\b/
 // Auch das Template-Literal, nicht nur die Anfuehrungszeichen. GEFUNDEN, weil
 // der `dialogs:native`-Waechter der Suite eine Stelle meldete, die dieser
 // Lauf hier gruen durchgelassen hatte: `window.confirm(\`Shotlist "…" mit N
@@ -277,7 +314,7 @@ const sichtbareTexte = (quelle, jsx) => {
   if (jsx) {
     for (const m of ohneFallbacks.matchAll(JSX_TEXT)) {
       const t = m[1].trim()
-      if (t && !t.startsWith('{')) raus.push(t)
+      if (t && !t.startsWith('{') && !NACH_CODE.test(t)) raus.push(t)
     }
   }
   return raus
