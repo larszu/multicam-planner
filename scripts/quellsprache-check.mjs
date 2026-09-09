@@ -29,6 +29,37 @@
 // UND ER SCHALTET SICH SELBST SCHARF. Sobald der erste `t('key', 'Fallback')`
 // in `src/` steht — also sobald B-25 anfaengt —, misst er und faellt bei jeder
 // Zeile in der anderen Sprache. Niemand muss daran denken.
+//
+// ── ZWEITE MESSUNG, seit B-61 (2026-09-09): DER SPRACHMIX ───────────────────
+//
+// Der Rueckweg ist durch, und der Lauf oben meldet „0 deutsch". Das ist wahr
+// und trotzdem irrefuehrend: er sieht NUR die Fallbacks in `t()`. Die
+// Beschriftungen, die gar nicht gewickelt sind, sieht er nicht — und davon
+// gibt es hier reichlich Deutsche in einer Oberflaeche mit Quellsprache `en`:
+// die Rig-Steuerung sagt „Tasten aktiv" und „Fahrweg (J / L)", die Shotlist
+// „Neue Shotlist", der Objektiv-Regler „Eine Stufe zurueck". Wer Englisch
+// waehlt, bekommt eine Oberflaeche, in der die Kamera-Karte englisch und die
+// Rig-Steuerung deutsch ist.
+//
+// Das ist derselbe Befund, den E-17 fuer `sony-camera-bridge` als Fehler
+// benannt und `sony#22` dort beseitigt hat — samt der Reihenfolge, die sich
+// dort bewaehrt hat: ERST den Zaehler scharf machen und die heutige Zahl als
+// GRENZE festhalten, DANN uebersetzen und die Grenze mitsenken. Andersherum
+// uebersetzt man einmal und laesst die Luecke ab morgen wieder wachsen.
+//
+// Zwei Fehler des dortigen Laufs sind hier von Anfang an vermieden, weil sie
+// drueben schon Geld gekostet haben:
+//   1. ER SAH KOMMENTARE FUER LITERALE. Die Kommentare dieses Repos sind
+//      deutsch (Konvention), die Oberflaeche englisch. Ein Lauf, der beides in
+//      einen Topf wirft, meldet bei jedem gut kommentierten Commit einen
+//      Verstoss, den es nicht gibt. Kommentare werden vor dem Messen entfernt.
+//   2. ER SAH NUR ATTRIBUTE, NICHT DEN JSX-TEXT. Der groesste Teil der
+//      sichtbaren Texte steht zwischen den Tags, nicht in Anfuehrungszeichen.
+//      Hier wird beides gelesen.
+//
+// DIE GRENZE IST IN BEIDE RICHTUNGEN SCHARF: wer uebersetzt und die Grenze
+// nicht heruntersetzt, faellt ebenfalls durch — sonst deckte sie ab morgen
+// wieder Zuwachs.
 // ───────────────────────────────────────────────────────────────────────────
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
@@ -169,6 +200,87 @@ if (abweichend.length) {
   console.error(
     '\nEntweder die Zeile uebersetzen — oder, wenn die Quellsprache wirklich ' +
       'wechseln soll, die Deklaration in package.json UND README.md aendern.',
+  )
+  process.exit(1)
+}
+
+// ── Zweite Messung: der Sprachmix in UNGEWICKELTEM Text (B-61) ─────────────
+
+/**
+ * Die Obergrenze, nicht das Ziel.
+ *
+ * GEMESSEN am 2026-09-09, direkt nach dem Abschluss des Rueckwegs (B-25).
+ * Sie darf SINKEN und nicht steigen: wer eine deutsche Beschriftung
+ * hinzufuegt, faellt durch; wer uebersetzt und die Zahl stehen laesst,
+ * ebenfalls. Ohne die zweite Haelfte waere sie ab morgen wieder ein Deckel
+ * ueber wachsendem Mix.
+ */
+const MIX_GRENZE = 37
+
+/** Kommentare raus — sie sind hier deutsch und gehoeren nicht auf den Schirm. */
+const ohneKommentare = (text) =>
+  text.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ')
+
+/**
+ * Sichtbarer Text, der NICHT in einem `t()`-Fallback steht.
+ *
+ * Gelesen wird beides — die Attribute UND die JSX-Textknoten. Der zweite Teil
+ * ist der, an dem der Lauf im sony-camera-bridge zuerst vorbeisah: „Neue
+ * Shotlist" steht zwischen den Tags, nicht in Anfuehrungszeichen.
+ */
+const SICHTBARE_ATTRIBUTE = /\b(?:title|aria-label|placeholder|label|alt|summary|submitLabel|hint)=(?:"([^"]{4,})"|\{\s*'((?:[^'\\]|\\.){4,}?)'\s*\})/g
+const JSX_TEXT = />([^<>{}]{4,})</g
+const RUFE = /\b(?:alert|confirm|prompt)\(\s*(['"])((?:[^\\]|\\.){4,}?)\1/g
+
+const sichtbareTexte = (quelle, jsx) => {
+  const text = ohneKommentare(quelle)
+  // Was in einem Fallback steht, ist gewickelt — das misst die erste Haelfte.
+  const ohneFallbacks = text.replace(fallbackMuster(), ' ')
+  const raus = []
+  for (const m of ohneFallbacks.matchAll(SICHTBARE_ATTRIBUTE)) raus.push(m[1] ?? m[2])
+  for (const m of ohneFallbacks.matchAll(RUFE)) raus.push(m[2])
+  if (jsx) {
+    for (const m of ohneFallbacks.matchAll(JSX_TEXT)) {
+      const t = m[1].trim()
+      if (t && !t.startsWith('{')) raus.push(t)
+    }
+  }
+  return raus
+}
+
+const andereSprache = erklaert === 'de' ? 'en' : 'de'
+const mix = []
+for (const datei of dateien(SRC)) {
+  const rel = relative(SRC, datei)
+  // Das Woerterbuch ist per Definition in der anderen Sprache, und Tests sind
+  // keine Oberflaeche. Beides zu zaehlen hiesse, eine Zahl zu fuehren, die
+  // niemand auf null bringen kann — und eine solche Zahl liest niemand.
+  if (rel.startsWith('i18n/') || rel.includes('__tests__')) continue
+  for (const roh of sichtbareTexte(readFileSync(datei, 'utf8'), datei.endsWith('.tsx'))) {
+    if (klassifiziere(roh) === andereSprache) mix.push(`${rel}: ${roh.slice(0, 90)}`)
+  }
+}
+
+console.log(
+  `\nSprachmix: ${mix.length} ungewickelte Zeichenkette(n) in "${andereSprache}" ` +
+    `(Grenze ${MIX_GRENZE}).`,
+)
+if (mix.length > MIX_GRENZE) {
+  console.error(`\n${mix.length - MIX_GRENZE} mehr als erlaubt:`)
+  for (const z of mix.slice(0, 40)) console.error(`  ${z}`)
+  if (mix.length > 40) console.error(`  … und ${mix.length - 40} weitere`)
+  console.error(
+    `\nEntweder wickeln und uebersetzen — oder, wenn es wirklich so bleiben ` +
+      'soll, MIX_GRENZE mit Begruendung anheben. Das Anheben ist die Ausnahme ' +
+      'und gehoert begruendet; das Senken ist der Normalfall.',
+  )
+  process.exit(1)
+}
+if (mix.length < MIX_GRENZE) {
+  console.error(
+    `\nDie Grenze steht auf ${MIX_GRENZE}, gemessen sind ${mix.length}. ` +
+      'MIX_GRENZE auf den neuen Wert setzen — eine Grenze ueber dem Ist deckt ' +
+      'ab morgen wieder Zuwachs, und genau dagegen steht sie hier.',
   )
   process.exit(1)
 }
