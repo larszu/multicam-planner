@@ -74,7 +74,11 @@ function createFocusLayoutJson(t: TFn, selectedTabId = 'tab-2d'): IJsonModel {
             { type: 'tab', name: t('header.tab.preview', 'Preview'), component: 'preview', id: 'tab-preview' },
             { type: 'tab', name: t('header.tab.calculator', 'Calculator'), component: 'calculator', id: 'tab-calc' },
             { type: 'tab', name: 'Shotlist', component: 'shotlist', id: 'tab-shotlist' },
-            { type: 'tab', name: 'Rig-Steuerung', component: 'rigcontrol', id: 'tab-rig' },
+            // Kein eigener Reiter mehr fuer die Rig-Steuerung (Nutzer-Meldung
+            // 2026-09-09). Sie sitzt jetzt UNTER dem Preview, im selben
+            // Bereich: das Pult faehrt die Kamera, das Preview zeigt, was
+            // dabei herauskommt — nebeneinander zu sehen ist der ganze Sinn.
+            // Als Reiter war beides nie gleichzeitig sichtbar.
           ],
         },
       ],
@@ -289,6 +293,11 @@ export default function App() {
     'tab-preview': { component: 'preview', name: t('header.tab.preview', 'Preview') },
     'tab-calc': { component: 'calculator', name: t('header.tab.calculator', 'Calculator') },
     'tab-shotlist': { component: 'shotlist', name: 'Shotlist' },
+    // BLEIBT STEHEN, obwohl kein neues Layout den Reiter mehr anlegt: wer die
+    // App schon benutzt hat, hat `tab-rig` in seinem gespeicherten Layout
+    // liegen. Ohne die Zuordnung kaeme dort „Unknown panel" statt eines
+    // Bedienfelds. Ein alter Reiter, der noch funktioniert, ist harmlos; ein
+    // alter Reiter, der ins Leere zeigt, ist ein Fehlerbericht.
     'tab-rig': { component: 'rigcontrol', name: 'Rig-Steuerung' },
   };
 

@@ -82,21 +82,88 @@ html, body, #root {
 ::-webkit-scrollbar-thumb { background: var(--color-bc-sunken); border-radius: 0; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-bc-accent); }
 
-/* Range slider */
+/* ── Schieberegler ─────────────────────────────────────────────────────────
+ *
+ * Nutzer-Meldung 2026-09-09: „Passe auch die Ui von allen slidern an sodass
+ * man sie gut bedienen kann."
+ *
+ * WAS VORHER DASTAND: eine 4 px hohe Bahn mit einem 14 x 14 px grossen Griff.
+ * Vier Pixel sind die GANZE Trefferflaeche in der Hoehe — das Element ist so
+ * hoch wie seine Bahn, und wer daneben tippt, trifft nichts. WCAG 2.2,
+ * Erfolgskriterium 2.5.8 („Target Size (Minimum)", Stufe AA) nennt 24 px als
+ * Mindestmass; Apples Richtlinie 44 pt. Vier ist keins von beidem.
+ *
+ * WAS SICH AENDERT, und warum in dieser Reihenfolge:
+ *
+ *  1. Das ELEMENT wird 24 px hoch — nicht die Bahn. Die Bahn bleibt schmal
+ *     (6 px) und wird ueber `background` in die Mitte gezeichnet; die
+ *     restlichen 18 px sind unsichtbare Trefferflaeche. Ein dicker Balken
+ *     waere die naheliegende und falsche Loesung: er wuerde jede Zeile
+ *     sprengen, in der ein Regler neben einer Beschriftung sitzt.
+ *  2. Der Griff wird 18 px — und bleibt EckIG. Der erste Anlauf machte ihn
+ *     rund, mit dem Argument, ein Kreis sei an jeder Stelle gleich breit.
+ *     `brand:check` hat ihn zurueckgewiesen, und zu Recht: ADR-007 legt
+ *     dieses Aussehen fest („keine Rundungen, keine Verlaeufe"), und ein
+ *     einzelner runder Griff mitten in einer eckigen Oberflaeche ist kein
+ *     Gewinn an Bedienbarkeit, sondern ein Fremdkoerper. Das
+ *     Kreis-Argument gilt ausserdem gegen KLEINE Quadrate; bei 18 x 18 px
+ *     findet der Daumen auch die Ecken.
+ *  3. `touch-action: manipulation` nimmt die 300-ms-Wartezeit auf
+ *     Doppeltipp weg. Ohne sie fuehlt sich jeder Regler auf dem Tablet
+ *     traege an, und zwar unabhaengig von seiner Groesse.
+ *  4. Ein sichtbarer Fokusring. Der Regler ist mit Pfeiltasten bedienbar —
+ *     das war er vorher auch, nur sah man nicht, wann er dran ist.
+ *
+ * Firefox braucht seine eigenen Pseudo-Elemente; ohne sie bleibt es dort
+ * beim Standardaussehen, und die Messung stimmte nur in einem Browser.
+ */
 input[type="range"] {
   -webkit-appearance: none;
-  height: 4px;
-  background: var(--color-bc-sunken);
-  border-radius: 0;
+  appearance: none;
+  height: 24px;            /* Trefferflaeche, nicht Bahnhoehe */
+  background: transparent; /* die Bahn zeichnen die Pseudo-Elemente */
   outline: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  background: var(--color-bc-sunken);
+  border: 1px solid var(--color-bc-border);
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 0;
+  appearance: none;
+  width: 18px;
+  height: 18px;
   background: var(--color-bc-accent);
+  border: 2px solid var(--color-bc-sunken);
+  /* Der Griff sitzt auf der Bahn, nicht daneben: (6 px Bahn - 18 px Griff)
+     / 2 = -6 px, plus 1 px Rahmen der Bahn. */
+  margin-top: -7px;
   cursor: pointer;
+}
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  background: var(--color-bc-sunken);
+  border: 1px solid var(--color-bc-border);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--color-bc-accent);
+  border: 2px solid var(--color-bc-sunken);
+  cursor: pointer;
+}
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-bc-accent) 45%, transparent);
+}
+input[type="range"]:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-bc-accent) 45%, transparent);
+}
+input[type="range"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 /* Select */

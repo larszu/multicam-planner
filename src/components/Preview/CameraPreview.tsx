@@ -12,6 +12,7 @@ import { alphaSuffix, shadeHex } from '../../utils/color';
 import { FiChevronLeft, FiChevronRight, FiUnlock, FiLock, FiPlus, FiX, FiCamera } from 'react-icons/fi';
 import { loadJSON, saveJSON } from '../../utils/storage';
 import { useTranslation, format } from '../../i18n';
+import RigControlPanel from '../RigControl/RigControlPanel';
 import {
   TRANSITION_CYCLE,
   TRANSITION_LABEL,
@@ -1649,6 +1650,21 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           />
           <span className="text-[10px] text-gray-600">s</span>
         </div>
+
+        {/* ── Rig-Steuerung ──
+            Nutzer-Meldung 2026-09-09: „Die ‚Rig' Einstellungen im Multicam
+            planner muessen unter das Preview. Nicht in extra Tab."
+
+            Sie stand als eigener Reiter neben dem Preview — und damit war
+            beides nie gleichzeitig zu sehen. Genau das braucht man aber: das
+            Pult faehrt die Kamera, das Preview zeigt, was dabei herauskommt.
+            Wer den Reiter wechselt, um zu fahren, sieht das Ergebnis erst,
+            wenn er zurueckwechselt.
+
+            Sie liegt UNTER dem Bild und im selben Scrollbereich: fuer den
+            Blick auf beides zaehlt die Naehe, und der Platz reicht auch auf
+            einem schmalen Fenster, weil der Bereich ohnehin scrollt. */}
+        <RigControlPanel />
       </div>
 
       {/* Right: Data readout panel */}
