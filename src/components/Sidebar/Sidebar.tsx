@@ -26,7 +26,7 @@ import {
 import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2, FiRotateCcw, FiHome, FiImage, FiColumns, FiUsers, FiVideo } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { BackgroundPlan, StageObjectType, Camera, CameraMountType, VenueCamera, WallFit, WallPattern } from '../../types';
-import { MOUNT_TYPE_LABELS } from '../../types';
+
 import { rigsForType, trackSectionPlan } from '../../data/rigs';
 import { clampHeight, clampTrack, rigLimits } from '../../utils/rigLimits';
 import { rigYaw } from '../../utils/camera';
@@ -50,6 +50,8 @@ import { CalculationBreakdown } from './CalculationBreakdown';
 import AiPlanAnalysis from './AiPlanAnalysis';
 import * as pdfjsLib from 'pdfjs-dist';
 import { useTranslation, format } from '../../i18n';
+import { mountTypeLabel } from '../../i18n/mount';
+import { MOUNT_TYPE_LABELS } from '../../types';
 
 /**
  * Einheitlicher Akkordeon-Kopf fuer die linke Sidebar. Icon im getoenten
@@ -431,7 +433,7 @@ function CameraCard({
         {!expanded && (
           <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-[10.5px] text-gray-500" style={{ paddingLeft: '4px' }}>
             <span className="text-gray-400">{camDef?.model ?? '—'}</span>
-            <span>{MOUNT_TYPE_LABELS[cam.mountType ?? 'tripod']}</span>
+            <span>{mountTypeLabel(t, cam.mountType ?? 'tripod')}</span>
             <span className="tabular-nums">{cam.z.toFixed(2)} m</span>
             <span className="tabular-nums">{cam.focalLength.toFixed(0)} mm</span>
             {fov && <span className="tabular-nums">{fov.horizontalDeg.toFixed(0)}°</span>}
@@ -978,7 +980,7 @@ function CameraCard({
             />
           </Group>
 
-          <Group id="place" title={t('sidebar.cam.placement', 'Position & Rig')} summary={`${MOUNT_TYPE_LABELS[cam.mountType ?? 'tripod']} · ${cam.z.toFixed(2)} m`}>
+          <Group id="place" title={t('sidebar.cam.placement', 'Position & Rig')} summary={`${mountTypeLabel(t, cam.mountType ?? 'tripod')} · ${cam.z.toFixed(2)} m`}>
           <FieldRow label={t('sidebar.cam.position', 'Position (m)')}>
             <div className="grid grid-cols-2 gap-2">
               <input
@@ -1032,7 +1034,7 @@ function CameraCard({
                     }}
                   >
                     {(Object.keys(MOUNT_TYPE_LABELS) as CameraMountType[]).map((m) => (
-                      <option key={m} value={m}>{MOUNT_TYPE_LABELS[m]}</option>
+                      <option key={m} value={m}>{mountTypeLabel(t, m)}</option>
                     ))}
                   </select>
                 </FieldRow>
@@ -1055,7 +1057,7 @@ function CameraCard({
                         });
                       }}
                     >
-                      <option value="">— allgemein ({MOUNT_TYPE_LABELS[limits.type]}) —</option>
+                      <option value="">{format(t('sidebar.rig.generic', '- generic ({type}) -'), { type: mountTypeLabel(t, limits.type) })}</option>
                       {catRigs.map((r) => (
                         <option key={r.id} value={r.id}>{r.name}</option>
                       ))}
@@ -1199,7 +1201,10 @@ function CameraCard({
             )}
             {effectiveSensor && effectiveSensor !== camDef?.sensor && (
               <Note tone="info">
-                Wirksamer Sensor: {effectiveSensor.name} (Crop ×{effectiveSensor.cropFactor.toFixed(1)})
+                {format(t('sidebar.cam.effectiveSensor', 'Effective sensor: {name} (crop ×{crop})'), {
+                  name: effectiveSensor.name,
+                  crop: effectiveSensor.cropFactor.toFixed(1),
+                })}
               </Note>
             )}
             {camDef && lensDef && effectiveSensor && fov && dof && (
@@ -1958,14 +1963,19 @@ function CameraCard({
                   zusammen sind sie meist genau die Vertauschung. */}
               {quellenAbgleich.unexpected.length > 0 && (
                 <div className="text-[11px] text-gray-400">
-                  Nicht zugeordnet im Netz:{' '}
+                  {t('sidebar.sources.unmatched', 'Not matched on the network:')}{' '}
                   {quellenAbgleich.unexpected.map(sourceLabel).join(' · ')}
                 </div>
               )}
               {quellenAbgleich.needsLook > 0 && quellenListe.sources.length > 0 && (
                 <div className="text-[11px] text-amber-400">
-                  {quellenAbgleich.needsLook} von {quellenAbgleich.rows.length} Kameras
-                  sind nicht zweifelsfrei wiedererkannt — vor der Sendung nachsehen.
+                  {format(
+                    t(
+                      'sidebar.sources.needsLook',
+                      '{n} of {total} cameras are not recognised beyond doubt - check before the show.',
+                    ),
+                    { n: quellenAbgleich.needsLook, total: quellenAbgleich.rows.length },
+                  )}
                 </div>
               )}
             </div>
@@ -2548,7 +2558,7 @@ export default function Sidebar() {
                     </select>
                     {(w.patternFit ?? 'tile') === 'tile' && (
                       <label className="flex items-center gap-1 text-[10px] text-gray-400">
-                        Reihen
+                        {t('sidebar.patternRows', 'Rows')}
                         <input
                           type="number"
                           className="w-12 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[10px] tabular-nums"
@@ -2649,7 +2659,7 @@ export default function Sidebar() {
                 🎙️ {t('sidebar.objLectern', 'Lectern')}
               </button>
               <button onClick={() => addStageObject('schneetiger')} className="col-span-3 flex items-center justify-center gap-1 px-1 py-1 rounded bg-sky-500/20 text-sky-300 text-[10px] hover:bg-sky-500/30">
-                🐅 Schneetiger
+                🐅 {t('sidebar.objSnowTiger', 'Snow tiger')}
               </button>
             </div>
           </div>

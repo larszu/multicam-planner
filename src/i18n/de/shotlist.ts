@@ -37,4 +37,17 @@ export const shotlist: Record<string, string> = {
   'shotlist.renameShort': 'Umbenennen',
   'shotlist.exportPng': 'Storyboard als PNG',
   'shotlist.print': 'Storyboard drucken / als PDF sichern',
+
+  // 2026-09-10 — vom geschaerften Sprachmix-Zaehler gefunden.
+  'shotlist.cameraMissing': 'Kamera fehlt',
+  'shotlist.captureShot': 'Shot aufnehmen',
+  'shotlist.motionStyle': 'Bewegungsstil — {hint}',
+  'shotlist.notePlaceholder': 'Notiz…',
+  'shotlist.playSequence': 'Sequenz abspielen',
+  'shotlist.renameShot': 'Shot benennen',
+  'shotlist.rigIs': 'Rig: {rig}',
+  'shotlist.tooFast':
+    'Auf einem {rig} braucht diese Fahrt mindestens {need} s — die eingestellten {set} s sind physikalisch nicht zu schaffen.',
+  'shotlist.transitionSeconds': 'Fahrtzeit in Sekunden',
+  'shotlist.transitionToggle': 'Fahrtzeit umschalten (OFF / Schnell / Langsam / Manuell)',
 };

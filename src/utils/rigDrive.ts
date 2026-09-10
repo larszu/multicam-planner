@@ -57,9 +57,9 @@ export const PARK_KEY = '0';
  * vorgewaehlt.
  */
 export const SPEED_STEPS = [
-  { key: '1', label: 'Fein', factor: 0.25, hint: 'Feinkorrektur — viertel Tempo' },
-  { key: '2', label: 'Normal', factor: 1, hint: 'Datenblatt-Tempo des Rigs' },
-  { key: '3', label: 'Schnell', factor: 2.5, hint: 'Umsetzen/Ausrichten — 2.5-faches Tempo' },
+  { key: '1', label: 'Fine', factor: 0.25, hint: 'Fine correction - a quarter of the speed' },
+  { key: '2', label: 'Normal', factor: 1, hint: 'The data-sheet speed of the rig' },
+  { key: '3', label: 'Fast', factor: 2.5, hint: 'Repositioning - 2.5 times the speed' },
 ] as const;
 
 export const DEFAULT_SPEED_INDEX = 1;

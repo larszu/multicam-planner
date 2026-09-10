@@ -12,11 +12,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { FiCircle, FiPlay, FiSquare, FiTrash2, FiRepeat, FiCrosshair } from 'react-icons/fi';
 import { useStore } from '../../store/useStore';
 import { getLensById } from '../../data/lenses';
-import { MOUNT_TYPE_LABELS, type RigTake, type TakeSample } from '../../types';
+import type { RigTake, TakeSample } from '../../types';
 import { rigYaw } from '../../utils/camera';
 import { rigLimits } from '../../utils/rigLimits';
 import { profileForMount } from '../../utils/motionProfile';
 import { useTranslation, format } from '../../i18n';
+import { motionProfileLabel, mountTypeLabel, speedStepHint, speedStepLabel } from '../../i18n/mount';
 import {
   DEFAULT_SPEED_INDEX,
   DRIVE_KEYS,
@@ -417,39 +418,43 @@ export default function RigControlPanel() {
             ))}
           </select>
           <span className="text-gray-400 truncate">
-            {limits.rig?.name ?? MOUNT_TYPE_LABELS[limits.type]} · {profile.label}
+            {limits.rig?.name ?? mountTypeLabel(t, limits.type)} · {motionProfileLabel(t, limits.type)}
           </span>
           <button
             onClick={() => setArmed((a) => !a)}
             className={`ml-auto px-2 py-1 rounded border ${armed ? 'border-bc-yellow text-bc-yellow' : 'border-bc-border text-gray-400'}`}
             title={t('rig.keys.title', 'Arm keyboard control. Off when the keys are needed elsewhere.')}
           >
-            {armed ? 'Tasten aktiv' : 'Tasten aus'}
+            {armed ? t('rig.keysArmed', 'Keys armed') : t('rig.keysOff', 'Keys off')}
           </button>
         </div>
 
         {/* Tempo */}
         <div className="flex items-center gap-1">
-          <span className="text-gray-500">Tempo</span>
+          <span className="text-gray-500">{t('rig.speed', 'Speed')}</span>
           {SPEED_STEPS.map((s, i) => (
             <button
               key={s.key}
               onClick={() => setSpeed(i)}
-              title={`${s.hint} (Taste ${s.key})`}
+              title={format(t('rig.speedStep', '{hint} (key {key})'), { hint: speedStepHint(t, s.key), key: s.key })}
               className={`px-2 py-0.5 rounded border ${i === speedIndex ? 'border-bc-yellow text-bc-yellow' : 'border-bc-border text-gray-400'}`}
             >
-              {s.label}
+              {speedStepLabel(t, s.key)}
             </button>
           ))}
           <span className="ml-auto text-gray-600">
-            max {profile.maxTravelMps.toFixed(2)} m/s · {profile.maxRotDps}°/s · {profile.maxLiftMps.toFixed(2)} m/s Hub
+            {format(t('rig.limits', 'max {travel} m/s · {rot}°/s · {lift} m/s lift'), {
+              travel: profile.maxTravelMps.toFixed(2),
+              rot: profile.maxRotDps,
+              lift: profile.maxLiftMps.toFixed(2),
+            })}
           </span>
         </div>
 
         {/* Pult */}
         <div className="flex gap-3 items-start">
           <Deflector
-            label="Pan / Tilt (← → ↑ ↓)"
+            label={t('rig.panTilt', 'Pan / Tilt (← → ↑ ↓)')}
             hint={t('rig.panTilt.hint', 'Dragging pans and tilts — possible at the same time as the move.')}
             axes="xy"
             size={220}
@@ -457,20 +462,20 @@ export default function RigControlPanel() {
           />
           <div className="flex-1 min-w-0 space-y-2">
             <Deflector
-              label={hasTravel ? 'Fahrweg (J / L)' : 'Fahrweg — dieses Rig fährt nicht'}
-              hint={hasTravel ? 'Ziehen fährt den Wagen; loslassen stoppt.' : 'Stativ, Hi-Hat & Co. haben keinen Fahrweg.'}
+              label={hasTravel ? t('rig.track.keys', 'Track (J / L)') : t('rig.track.none', 'Track - this rig does not travel')}
+              hint={hasTravel ? t('rig.track.hint', 'Dragging moves the dolly; releasing stops it.') : t('rig.track.noneHint', 'Tripods, hi-hats and the like have no track.')}
               axes="x"
               size={40}
               disabled={!hasTravel}
               onChange={(i) => { jogRef.current = i; startLoop(); }}
             />
             <div className="grid grid-cols-3 gap-1 text-[11px]">
-              <Readout label="Fahrweg" value={hasTravel ? `${(cam.trackOffset ?? 0).toFixed(2)} m` : '—'} sub={hasTravel ? `±${limits.travelM.toFixed(2)} m` : ''} />
+              <Readout label={t('rig.track', 'Track')} value={hasTravel ? `${(cam.trackOffset ?? 0).toFixed(2)} m` : '—'} sub={hasTravel ? `±${limits.travelM.toFixed(2)} m` : ''} />
               <Readout label={t('rig.height', 'Height')} value={`${cam.z.toFixed(2)} m`} sub={`${limits.minHeightM.toFixed(2)}–${limits.maxHeightM.toFixed(2)}`} />
               <Readout label="Pan" value={`${cam.pan.toFixed(1)}°`} />
               <Readout label="Tilt" value={`${cam.tilt.toFixed(1)}°`} />
-              <Readout label="Ausrichtung" value={`${rigYaw(cam).toFixed(0)}°`} sub={cam.rigRotation === undefined ? 'folgt Kamera' : 'fest'} />
-              <Readout label="Brennweite" value={`${cam.focalLength.toFixed(0)} mm`} />
+              <Readout label={t('rig.orientation', 'Orientation')} value={`${rigYaw(cam).toFixed(0)}°`} sub={cam.rigRotation === undefined ? t('rig.followsCamera', 'follows camera') : t('rig.fixedYaw', 'fixed')} />
+              <Readout label={t('rig.focalLength', 'Focal length')} value={`${cam.focalLength.toFixed(0)} mm`} />
             </div>
           </div>
         </div>
@@ -490,19 +495,19 @@ export default function RigControlPanel() {
             </button>
           ) : (
             <button onClick={startRecording} className="flex items-center gap-1 px-2 py-1 rounded border border-bc-border text-bc-red hover:border-bc-red">
-              <FiCircle size={11} /> Fahrt aufzeichnen
+              <FiCircle size={11} /> {t('rig.recordTake', 'Record take')}
             </button>
           )}
           <button
             onClick={() => { loopRef.current = !loopRef.current; setLoop(loopRef.current); }}
             className={`flex items-center gap-1 px-2 py-1 rounded border ${loop ? 'border-bc-yellow text-bc-yellow' : 'border-bc-border text-gray-400'}`}
-            title="Aufgezeichnete Fahrt in Schleife abspielen"
+            title={t('rig.loop', 'Replay the recorded take in a loop')}
           >
             <FiRepeat size={11} /> Loop
           </button>
           {playingId && (
             <button onClick={stopPlayback} className="px-2 py-1 rounded border border-bc-border text-gray-300">
-              Wiedergabe stoppen
+              {t('rig.stopPlayback', 'Stop playback')}
             </button>
           )}
           <span className="ml-auto text-gray-600">{format(t('rig.takesFor', '{count} take(s) for {name}'), { count: takes.length, name: cam.label })}</span>
@@ -533,7 +538,7 @@ export default function RigControlPanel() {
                 onChange={(e) => renameRigTake(fahrt.id, e.target.value)}
               />
               <span className="text-gray-500">{formatTakeTime(takeDuration(fahrt))}</span>
-              <span className="text-gray-600 text-[10px]">{fahrt.samples.length} Pkt.</span>
+              <span className="text-gray-600 text-[10px]">{format(t('rig.samples', '{n} pts'), { n: fahrt.samples.length })}</span>
               <button
                 onClick={() => { if (playingId === fahrt.id) stopPlayback(); removeRigTake(fahrt.id); }}
                 className="text-gray-500 hover:text-bc-red p-0.5"

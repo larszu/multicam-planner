@@ -157,4 +157,7 @@ export const header: Record<string, string> = {
   'header.exchange.cableSection': 'Kabel-Planner',
   'header.foreignLamps.hide': 'Fremd-Lampen ausblenden',
   'header.foreignLamps.show': 'Fremd-Lampen einblenden',
+
+  // 2026-09-10 — vom geschaerften Sprachmix-Zaehler gefunden.
+  'header.editMode': 'Bearbeiten-Modus',
 };

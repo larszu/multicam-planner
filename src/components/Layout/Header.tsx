@@ -358,7 +358,7 @@ export default function Header({
           </button>
           {editMenuOpen && (
             <div className="absolute left-0 top-full mt-2 min-w-[190px] rounded-lg border border-bc-border bg-bc-panel shadow-2xl overflow-hidden z-30">
-              <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-500 border-b border-bc-border">Bearbeiten-Modus</div>
+              <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-500 border-b border-bc-border">{t('header.editMode', 'Edit mode')}</div>
               {editModes.map((m) => (
                 <button
                   key={m.id}

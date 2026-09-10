@@ -92,4 +92,14 @@ export const preview: Record<string, string> = {
   'preview.addShot': 'Aktuelle Ansicht als Shot in die Shotlist aufnehmen',
   'preview.preset.unassigned.title': 'Presets ohne Kamera-Zuordnung',
   'preview.preset.unassigned': 'ohne Zuordnung',
+
+  // 2026-09-10 — vom geschaerften Sprachmix-Zaehler gefunden: die Blende, die
+  // Aufnahme-Schaltflaeche und die Transition-Time standen roh auf Deutsch.
+  'preview.aperture': 'Blende',
+  'preview.captureShot': 'Shot aufnehmen',
+  'preview.apertureManualMax': 'Manuelles Maximum (Blende)',
+  'preview.apertureManualMin': 'Manuelles Minimum (Blende)',
+  'preview.transitionSeconds': 'Fahrtzeit in Sekunden (Bearbeiten schaltet auf Manuell)',
+  'preview.transitionTime': 'Transition-Time',
+  'preview.transitionToggle': 'Umschalten: OFF (springt) / Schnell 3 s / Langsam 10 s / Manuell',
 };

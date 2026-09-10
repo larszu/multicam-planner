@@ -10,6 +10,7 @@ import { inventory } from './de/inventory';
 import { rig } from './de/rig';
 import { shotlist } from './de/shotlist';
 import { common } from './de/common';
+import { mount } from './de/mount';
 
 export const de: Record<string, string> = {
   ...sidebar,
@@ -20,4 +21,5 @@ export const de: Record<string, string> = {
   ...rig,
   ...shotlist,
   ...common,
+  ...mount,
 };

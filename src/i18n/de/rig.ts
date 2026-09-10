@@ -33,4 +33,33 @@ export const rig: Record<string, string> = {
   'rig.key.park': 'parken',
   'rig.key.speed': 'Tempo',
   'rig.keys.hint': 'Mehrere Tasten gleichzeitig fahren mehrere Achsen zusammen.',
+
+  // 2026-09-10 — vom geschaerften Sprachmix-Zaehler gefunden. Das Rig-Pult war
+  // mit B-61 nur halb gewickelt worden: die Tastenlegende ja, das Tempo, die
+  // Ablesungen und die Fahrten-Liste nicht.
+  'rig.focalLength': 'Brennweite',
+  'rig.fixedYaw': 'fest',
+  'rig.followsCamera': 'folgt Kamera',
+  'rig.keysArmed': 'Tasten aktiv',
+  'rig.keysOff': 'Tasten aus',
+  'rig.limits': 'max {travel} m/s · {rot}°/s · {lift} m/s Hub',
+  'rig.loop': 'Aufgezeichnete Fahrt in Schleife abspielen',
+  'rig.orientation': 'Ausrichtung',
+  'rig.panTilt': 'Pan / Tilt (← → ↑ ↓)',
+  'rig.recordTake': 'Fahrt aufzeichnen',
+  'rig.samples': '{n} Pkt.',
+  'rig.speed': 'Tempo',
+  'rig.speed.fast': 'Schnell',
+  'rig.speed.fastHint': 'Umsetzen/Ausrichten — 2,5-faches Tempo',
+  'rig.speed.fine': 'Fein',
+  'rig.speed.fineHint': 'Feinkorrektur — viertel Tempo',
+  'rig.speed.normal': 'Normal',
+  'rig.speed.normalHint': 'Datenblatt-Tempo des Rigs',
+  'rig.speedStep': '{hint} (Taste {key})',
+  'rig.stopPlayback': 'Wiedergabe stoppen',
+  'rig.track': 'Fahrweg',
+  'rig.track.hint': 'Ziehen fährt den Wagen; loslassen stoppt.',
+  'rig.track.keys': 'Fahrweg (J / L)',
+  'rig.track.none': 'Fahrweg — dieses Rig fährt nicht',
+  'rig.track.noneHint': 'Stativ, Hi-Hat & Co. haben keinen Fahrweg.',
 };
