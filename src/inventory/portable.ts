@@ -1,6 +1,6 @@
 // Portables Lager-Format — App-übergreifender Austausch (cable/light/multicam).
 // Schema-identisch zu cable-planner src/renderer/lib/inventoryPortable.ts.
-import type { InventoryItem, StorageNode, InventorySet, InventoryUnit } from './types';
+import type { InventoryItem, StorageNode, InventorySet, InventoryUnit, FristArtDef } from './types';
 
 export const INVENTORY_FORMAT = 'avplan-inventory';
 // Version 2 (ADR-002): `InventoryItem.deviceTypeId`.
@@ -52,13 +52,40 @@ export const INVENTORY_FORMAT = 'avplan-inventory';
 // demselben Wert. Bliebe sie hier auf 5, wiese dieser Planer jede Datei ab,
 // die das Lager-Werkzeug und der cable-planner ab jetzt schreiben.
 // Aeltere Dateien (v1-v5) lesen wir unveraendert weiter.
-export const INVENTORY_FORMAT_VERSION = 6;
+// Version 7 (Eigentuemer-Entscheidung 2026-09-10): `fristArten` -- die
+// Fristarten, die das HAUS selbst angelegt hat, und die eingebaute Art
+// `haltbarkeit` fuer Verbrauchsmaterial mit Ablaufdatum.
+//
+// Der Verlust, den diese Version verhindert, ist ein anderer als bei 3 bis 6.
+// Dort ging ein FELD verloren; hier ginge die BEDEUTUNG verloren. `Frist.art`
+// war eine feste Aufzaehlung, und jeder Leser zog eine unbekannte Art auf
+// `sonstige` -- gut gemeint, damit ein Termin nicht verschwindet. Sobald ein
+// Haus eigene Arten fuehrt (Anschlagmittel, Leiterpruefung, Feuerloescher,
+// Nebelfluid-Charge), macht dieselbe Zeile aus jeder davon „Sonstige": der
+// Termin steht noch auf der Liste, aber ohne den Grund, aus dem ihn jemand
+// eingetragen hat. Wer die Liste abarbeitet, weiss nicht mehr, was zu tun ist.
+//
+// Deshalb zwei Dinge zusammen: die Liste reist mit, UND eine unbekannte Art
+// bleibt stehen, wie sie ist. Die Anzeige sagt dann, dass sie die Art nicht
+// kennt -- das ist eine Auskunft, „Sonstige" waere eine Behauptung.
+//
+// Aeltere Dateien (v1-v6) lesen wir unveraendert weiter; ihre Fristen tragen
+// eingebaute Arten, und eine Liste eigener Arten haben sie schlicht nicht.
+export const INVENTORY_FORMAT_VERSION = 7;
 
 export interface InventorySnapshot {
   items: InventoryItem[];
   nodes: StorageNode[];
   sets: InventorySet[];
   units: InventoryUnit[];
+  /**
+   * Die selbst angelegten Fristarten des Hauses (Version 7).
+   *
+   * Optional heisst: die Datei stammt aus einem Haus, das keine eigenen
+   * fuehrt -- nicht, dass es keine gibt. Die eingebauten Arten stehen
+   * hier NIE drin; sie kennt jede App.
+   */
+  fristArten?: FristArtDef[];
 }
 
 interface PortableFile extends InventorySnapshot {
@@ -78,11 +105,42 @@ export function serializeInventory(snap: InventorySnapshot, meta?: { exportedAt?
     nodes: snap.nodes,
     sets: snap.sets,
     units: snap.units,
+    fristArten: snap.fristArten,
   };
   return JSON.stringify(file, null, 2);
 }
 
 const arr = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
+
+/**
+ * Die eigenen Fristarten heilen.
+ *
+ * Eine Art ohne Id oder ohne Namen ist keine: unter ihr stuende in der Liste
+ * nichts, und ein Termin, dessen Art nichts sagt, ist ein Termin ohne Grund.
+ * Doppelte Ids fallen weg -- die erste gilt, wie ueberall in diesem Format.
+ */
+const heileFristArten = (raw: unknown): FristArtDef[] | undefined => {
+  if (!Array.isArray(raw)) return undefined
+  const gesehen = new Set<string>()
+  const aus: FristArtDef[] = []
+  for (const e of raw) {
+    if (!e || typeof e !== 'object') continue
+    const d = e as Partial<FristArtDef>
+    const id = typeof d.id === 'string' ? d.id.trim() : ''
+    const name = typeof d.name === 'string' ? d.name.trim() : ''
+    if (!id || !name || gesehen.has(id)) continue
+    gesehen.add(id)
+    aus.push({
+      id,
+      name,
+      ...(typeof d.standardIntervallMonate === 'number' && d.standardIntervallMonate > 0
+        ? { standardIntervallMonate: Math.round(d.standardIntervallMonate) }
+        : {}),
+      ...(typeof d.grundlage === 'string' && d.grundlage.trim() ? { grundlage: d.grundlage.trim() } : {}),
+    })
+  }
+  return aus.length > 0 ? aus : undefined
+}
 
 export function parseInventory(json: string): InventorySnapshot | null {
   let data: unknown;
@@ -100,6 +158,7 @@ export function parseInventory(json: string): InventorySnapshot | null {
     nodes: arr<StorageNode>(f.nodes),
     sets: arr<InventorySet>(f.sets),
     units: arr<InventoryUnit>(f.units),
+    ...(heileFristArten(f.fristArten) ? { fristArten: heileFristArten(f.fristArten) } : {}),
   };
 }
 
