@@ -24,10 +24,11 @@ import {
   feasibleDurationRounded,
   profileForMount,
 } from '../../utils/motionProfile';
-import { MOUNT_TYPE_LABELS, type CameraMountType } from '../../types';
+import type { CameraMountType } from '../../types';
 import { exportStoryboardPng, printStoryboard, shotOpticsLabel } from '../../utils/storyboard';
 import { storyboardFingerprint } from '../../utils/documentContent';
 import { useTranslation, format } from '../../i18n';
+import { motionProfileHint, motionProfileLabel, mountTypeLabel } from '../../i18n/mount';
 import { stampForStand } from '../../utils/documentStamp';
 import type { Shot } from '../../types';
 
@@ -291,7 +292,7 @@ export default function ShotlistPanel() {
           disabled={!selectedCameraId}
           title={t('shotlist.capture', 'Save the current preview view as a shot')}
         >
-          <FiCamera size={13} /> Shot aufnehmen
+          <FiCamera size={13} /> {t('shotlist.captureShot', 'Capture shot')}
         </button>
 
         <div className="w-px h-4 bg-bc-border" />
@@ -307,7 +308,7 @@ export default function ShotlistPanel() {
             <FiSquare size={13} />
           </button>
         ) : (
-          <button className={btn} onClick={play} disabled={shots.length === 0} title="Sequenz abspielen">
+          <button className={btn} onClick={play} disabled={shots.length === 0} title={t('shotlist.playSequence', 'Play the sequence')}>
             <FiPlay size={13} />
           </button>
         )}
@@ -412,7 +413,7 @@ export default function ShotlistPanel() {
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => list && updateShot(list.id, shot.id, { name: e.target.value })}
                     className="bg-transparent border border-transparent hover:border-bc-border focus:border-bc-accent rounded px-1 py-0.5 text-xs font-medium text-white w-full outline-none"
-                    title="Shot benennen"
+                    title={t('shotlist.renameShot', 'Name the shot')}
                   />
                   <div className="text-[10px] text-gray-400 px-1 truncate">{shotOpticsLabel(shot)}</div>
                   <div className="flex items-center gap-1 px-1">
@@ -422,7 +423,7 @@ export default function ShotlistPanel() {
                         if (list) updateShot(list.id, shot.id, { transition: nextTransitionMode(shot.transition) });
                       }}
                       className="text-[9px] px-1 py-0.5 rounded border border-bc-border text-gray-400 hover:text-white hover:border-bc-accent/60"
-                      title="Fahrtzeit umschalten (OFF / Schnell / Langsam / Manuell)"
+                      title={t('shotlist.transitionToggle', 'Toggle the transition time (OFF / Fast / Slow / Manual)')}
                     >
                       {TRANSITION_LABEL[shot.transition]}
                       {secs > 0 ? ` ${secs}s` : ''}
@@ -444,7 +445,7 @@ export default function ShotlistPanel() {
                           }
                         }}
                         className="w-12 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-[9px] text-white"
-                        title="Fahrtzeit in Sekunden"
+                        title={t('shotlist.transitionSeconds', 'Transition time in seconds')}
                       />
                     )}
                     {/* Bewegungsstil: leer = der der Montage. */}
@@ -459,26 +460,26 @@ export default function ShotlistPanel() {
                         });
                       }}
                       className="bg-bc-panel border border-bc-border rounded px-0.5 py-0.5 text-[9px] text-gray-400 max-w-[86px]"
-                      title={`Bewegungsstil — ${profile.hint}`}
+                      title={format(t('shotlist.motionStyle', 'Movement style - {hint}'), { hint: motionProfileHint(t, effStyle) })}
                     >
                       <option value="">
-                        Rig: {MOUNT_TYPE_LABELS[shotCam?.mountType ?? 'tripod']}
+                        {format(t('shotlist.rigIs', 'Rig: {rig}'), { rig: mountTypeLabel(t, shotCam?.mountType ?? 'tripod') })}
                       </option>
                       {(Object.keys(MOTION_PROFILES) as CameraMountType[]).map((m) => (
-                        <option key={m} value={m}>{MOTION_PROFILES[m].label}</option>
+                        <option key={m} value={m}>{motionProfileLabel(t, m)}</option>
                       ))}
                     </select>
                     {tooFast && (
                       <span
                         className="text-[9px] text-bc-yellow"
-                        title={`Auf einem ${profile.label} braucht diese Fahrt mindestens ${needS}s — die eingestellten ${secs}s sind physikalisch nicht zu schaffen.`}
+                        title={format(t('shotlist.tooFast', 'On a {rig} this move needs at least {need} s - the {set} s set here are physically out of reach.'), { rig: motionProfileLabel(t, effStyle), need: needS, set: secs })}
                       >
                         min {needS}s
                       </span>
                     )}
                     {camGone && (
                       <span className="text-[9px] text-bc-red" title={t('shotlist.cameraGone', 'The camera of this shot has been deleted')}>
-                        Kamera fehlt
+                        {t('shotlist.cameraMissing', 'Camera missing')}
                       </span>
                     )}
                     <button
@@ -494,7 +495,7 @@ export default function ShotlistPanel() {
                   </div>
                   <input
                     value={shot.note ?? ''}
-                    placeholder="Notiz…"
+                    placeholder={t('shotlist.notePlaceholder', 'Note…')}
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => list && updateShot(list.id, shot.id, { note: e.target.value })}
                     className="bg-transparent border border-transparent hover:border-bc-border focus:border-bc-accent rounded px-1 py-0.5 text-[10px] text-gray-300 w-full outline-none"

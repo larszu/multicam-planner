@@ -401,4 +401,13 @@ export const sidebar: Record<string, string> = {
   'sidebar.cam.source.listPh': 'REGIE-PC (CAM 1)\nREGIE-PC (CAM 2)  10.0.0.42',
   'sidebar.libraryStorageFull': 'Speicher voll — die letzte Änderung an der Bibliothek wurde nicht dauerhaft gesichert. Nicht mehr gebrauchte eigene Kameras/Optiken löschen oder das Projekt exportieren.',
   'sidebar.stage.height': 'Höhe',
+
+  // 2026-09-10 — vom geschaerften Sprachmix-Zaehler gefunden.
+  'sidebar.cam.effectiveSensor': 'Wirksamer Sensor: {name} (Crop ×{crop})',
+  'sidebar.objSnowTiger': 'Schneetiger',
+  'sidebar.patternRows': 'Reihen',
+  'sidebar.rig.generic': '— allgemein ({type}) —',
+  'sidebar.sources.needsLook':
+    '{n} von {total} Kameras sind nicht zweifelsfrei wiedererkannt — vor der Sendung nachsehen.',
+  'sidebar.sources.unmatched': 'Nicht zugeordnet im Netz:',
 };

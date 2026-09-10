@@ -1489,7 +1489,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
         />
 
         <LensSlider
-          label="Blende"
+          label={t('preview.aperture', 'Aperture')}
           value={cam.aperture}
           min={apMin}
           max={apMax}
@@ -1508,13 +1508,13 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                     type="number" min={0.1} max={manualApMax - 0.1} step={0.1} value={manualApMin}
                     onChange={(e) => setManualApMin(Math.max(0.1, Math.min(manualApMax - 0.1, parseFloat(e.target.value) || 0.1)))}
                     className="w-12 bg-bc-dark border border-bc-border rounded px-1 text-[9px] text-gray-300 font-mono"
-                    title="Manuelles Minimum (Blende)"
+                    title={t('preview.apertureManualMin', 'Manual minimum (aperture)')}
                   />
                   <input
                     type="number" min={manualApMin + 0.1} max={64} step={0.1} value={manualApMax}
                     onChange={(e) => setManualApMax(Math.max(manualApMin + 0.1, Math.min(64, parseFloat(e.target.value) || 32)))}
                     className="w-12 bg-bc-dark border border-bc-border rounded px-1 text-[9px] text-gray-300 font-mono"
-                    title="Manuelles Maximum (Blende)"
+                    title={t('preview.apertureManualMax', 'Manual maximum (aperture)')}
                   />
                 </>
               )}
@@ -1589,7 +1589,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
             className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-accent/60 text-bc-accent bg-bc-accent/10 hover:bg-bc-accent/20"
             title={t('preview.addShot', 'Add the current view to the shotlist as a shot')}
           >
-            <FiCamera size={10} /> Shot aufnehmen
+            <FiCamera size={10} /> {t('preview.captureShot', 'Capture shot')}
           </button>
           {shotHint && <span className="text-[10px] text-bc-yellow">{shotHint}</span>}
         </div>
@@ -1622,14 +1622,14 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
 
         {/* Transition-Time (#62 Punkt 4): steuert, wie ein Preset angefahren wird. */}
         <div className="px-2 flex items-center gap-2">
-          <span className="text-[10px] text-gray-500">Transition-Time</span>
+          <span className="text-[10px] text-gray-500">{t('preview.transitionTime', 'Transition time')}</span>
           <button
             onClick={() => {
               const next = TRANSITION_CYCLE[(TRANSITION_CYCLE.indexOf(transitionMode) + 1) % TRANSITION_CYCLE.length];
               setTransitionMode(next);
               saveJSON(PREVIEW_TRANSITION_MODE_KEY, next);
             }}
-            title="Umschalten: OFF (springt) / Schnell 3s / Langsam 10s / Manuell"
+            title={t('preview.transitionToggle', 'Toggle: OFF (jumps) / Fast 3 s / Slow 10 s / Manual')}
             className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${transitionMode === 'off' ? 'border-bc-border text-gray-500 hover:text-gray-300' : 'border-bc-accent text-bc-accent bg-bc-accent/10'}`}
           >
             {TRANSITION_LABEL[transitionMode]}
@@ -1646,7 +1646,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
               saveJSON(PREVIEW_TRANSITION_SEC_KEY, v);
             }}
             className="w-14 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-[10px] text-gray-300 font-mono"
-            title="Fahrtzeit in Sekunden (Bearbeiten schaltet auf Manuell)"
+            title={t('preview.transitionSeconds', 'Transition time in seconds (editing switches to Manual)')}
           />
           <span className="text-[10px] text-gray-600">s</span>
         </div>

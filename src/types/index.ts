@@ -129,24 +129,39 @@ export type CameraMountType =
   | 'cablecam' | 'drone' | 'scissorlift' | 'remotehead' | 'carmount' | 'rickshaw'
   | 'gimbal' | 'handheld' | 'steadicam' | 'fixed';
 
+/**
+ * Die Rig-Namen — in der QUELLSPRACHE des Repos, also englisch (E-28).
+ *
+ * Sie standen bis 2026-09-10 auf Deutsch, und kein Sprach-Waechter konnte das
+ * finden: der Sprachmix-Zaehler liest JSX-Text, sichtbare Attribute und
+ * Rueckfragen — nicht die Felder eines Modul-Objekts. Siebzehn Beschriftungen,
+ * die an sechs Stellen der Oberflaeche erscheinen (Kamera-Liste, Rig-Auswahl,
+ * Kopfzeile des Rig-Pults, Shotlist) und in keiner Messung vorkamen.
+ *
+ * Die deutsche Fassung liegt jetzt dort, wo jede andere Uebersetzung liegt:
+ * im Woerterbuch, erreichbar ueber `mountTypeLabel(t, type)` aus
+ * `src/i18n/mount.ts`. Wer hier ein Rig ergaenzt, traegt es dort in den
+ * Schalter ein — TypeScript besteht darauf, weil der Schalter alle Faelle
+ * abdecken muss.
+ */
 export const MOUNT_TYPE_LABELS: Record<CameraMountType, string> = {
-  tripod: 'Stativ',
-  hihat: 'Hi-Hat / Bodenstativ',
-  pedestal: 'Studio Pedestal',
-  jib: 'Jib / Kran',
-  technocrane: 'Technocrane (teleskopierend)',
-  dolly: 'Dolly (Schiene)',
+  tripod: 'Tripod',
+  hihat: 'Hi-hat / floor stand',
+  pedestal: 'Studio pedestal',
+  jib: 'Jib / crane',
+  technocrane: 'Technocrane (telescoping)',
+  dolly: 'Dolly (track)',
   slider: 'Slider',
-  cablecam: 'Cable-Cam / Spidercam',
-  drone: 'Drohne',
-  scissorlift: 'Scherenbühne / Hebebühne',
-  remotehead: 'Remote-Head',
-  carmount: 'Fahrzeug-Montage',
-  rickshaw: 'Rickshaw / Kamerawagen',
+  cablecam: 'Cable-cam / Spidercam',
+  drone: 'Drone',
+  scissorlift: 'Scissor lift',
+  remotehead: 'Remote head',
+  carmount: 'Car mount',
+  rickshaw: 'Rickshaw / camera cart',
   gimbal: 'Gimbal',
   handheld: 'Handheld',
   steadicam: 'Steadicam',
-  fixed: 'Feste Montage',
+  fixed: 'Fixed mount',
 };
 
 /**

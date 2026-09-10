@@ -124,7 +124,23 @@ const scanne = (): { befunde: Befund[]; literale: number } => {
         literale += 1;
         const ohnePlatzhalter = text.replace(/\{[^}]*\}/g, ' ');
         if (!KENNUNGEN.has(text.trim())) {
-          for (const wort of ohnePlatzhalter.match(/[A-Za-zÄÖÜäöüß]+/g) ?? []) {
+          // CamelCase AUSEINANDER, bevor ein Wort geprueft wird.
+          //
+          // Der Scan sucht deutsche Umlaut-Ersatzformen, und die stehen in
+          // WOERTERN. Ein Bezeichner wie `playSequence` ist keines, sondern
+          // zwei — und weil er als Ganzes nicht auf der Ausnahmeliste stand,
+          // meldete der Lauf ein „ue", das aus dem englischen `sequence` kam,
+          // obwohl `sequence` dort ausdruecklich steht. Eine Liste, die
+          // jede Zusammensetzung einzeln fuehren muss, ist immer einen
+          // Eintrag zu kurz — genau die Bauform, die dieser Check im Kopf
+          // ablehnt.
+          //
+          // Geteilt wird nur am Uebergang klein→gross: `Geraeteliste` hat
+          // keinen Grossbuchstaben im Innern und bleibt damit ein Befund.
+          const woerter = (ohnePlatzhalter.match(/[A-Za-zÄÖÜäöüß]+/g) ?? []).flatMap((w) =>
+            w.split(/(?<=[a-zäöüß])(?=[A-ZÄÖÜ])/),
+          );
+          for (const wort of woerter) {
             if (!istErsatzform(wort)) continue;
             befunde.push({ datei: kurz, wort, text: text.slice(0, 70) });
           }

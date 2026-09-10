@@ -101,6 +101,27 @@ const DEUTSCH = [
   'darf', 'soll', 'sollen', 'steht', 'gibt', 'sich', 'dieser', 'diese',
   'dieses', 'nach', 'bei', 'über', 'ueber', 'ohne', 'durch', 'gegen', 'sowie',
   'damit', 'wieder', 'immer', 'jede', 'jeder', 'jedes', 'alle', 'allen',
+  // ── 2026-09-10: Inhaltswoerter dazu, nicht nur Funktionswoerter ─────────
+  //
+  // WARUM. Die Liste bestand aus Bindewoertern, und die kommen in kurzen
+  // Beschriftungen nicht vor. „Kabel bearbeiten", „+ Neuer Stecker-Typ…",
+  // „Verbindung" standen deshalb als ROHER JSX-Text im Haupt-Dialog des
+  // cable-planners — mitten in einem Repo mit Quellsprache `en` — und der
+  // Sprachmix-Zaehler meldete trotzdem 0. Er hat sie gesehen und als
+  // „unklar" abgelegt, weil kein Wort auf der Liste stand.
+  //
+  // Die Liste ist in allen drei Repos dieselbe — `lang:parity` der Suite
+  // vergleicht sie Wort fuer Wort —, deshalb steht die Erweiterung auch hier.
+  // Es ist dieselbe Sorte Woerter wie oben: solche, die es im Englischen
+  // NICHT gibt. Gegengemessen in diesem Repo: kein Fallback wechselt durch
+  // sie die Seite. Das ist die Bedingung, unter der eine Erweiterung hier
+  // hineindarf; eine, die richtige Zeilen rot macht, schaltet den Waechter ab
+  // statt ihn zu schaerfen.
+  'neuer', 'neue', 'neues', 'neuen', 'bearbeiten', 'speichern', 'abbrechen',
+  'verbindung', 'stecker', 'kabel', 'notizen', 'anmerkung', 'anmerkungen',
+  'einstellungen', 'ansicht', 'auswahl', 'vorlage', 'vorlagen', 'datei',
+  'dateien', 'suche', 'suchen', 'farbe', 'nummer', 'zeile', 'spalte',
+  'ordner',
 ]
 
 /**
@@ -264,45 +285,146 @@ const SICHTBARE_ATTRIBUTE = /\b(?:title|aria-label|placeholder|label|alt|summary
  * Die erste Fassung war `/>([^<>{}]{4,})</g`. Sie trifft in einer .tsx-Datei
  * auch CODE: `>` und `<` sind Vergleichsoperatoren, und dazwischen steht dann
  * ein Stueck Quelltext (`if (clipped.length > 2)`, `arr.filter(n => n.id)`).
+ * Gemessen mit dem lockeren Muster: 35 solche Fehltreffer im cable-planner,
+ * 12 im light-planner — ausnahmslos Code, kein einziger echter Fund.
  *
- * HIER FIEL DAS NICHT AUF, weil nur gezaehlt wird, was als DEUTSCH durchgeht:
- * ein Code-Schnipsel traegt `if`, `for`, `const`, `return` — englische
- * Stoppwoerter, also englisch klassifiziert und aus der Zaehlung heraus. In
- * einem deutsch-quelligen Repo waere die Zielsprache englisch, und derselbe
- * Lauf haette dort 35 (cable) bzw. 12 (light) Code-Zeilen als Sprachmisch-
- * Verstoss gemeldet. Gemessen, nicht vermutet.
- *
- * ZWEI BEDINGUNGEN MACHEN AUS DEM MUSTER EIN TAG-MUSTER:
- *   • Das `>` muss ein Tag-Ende sein: davor steht ein Bezeichner, ein
+ * ZWEI BEDINGUNGEN MACHEN DARAUS EIN TAG-MUSTER:
+ *   • Das `>` muss ein Tag-Ende sein: davor ein Bezeichner, ein
  *     Anfuehrungszeichen, eine geschweifte Klammer oder ein Schraegstrich —
  *     nie ein Leerzeichen, `=`, `<` oder `!`. Damit fallen `a > b`, `=>` und
  *     `<=` heraus.
  *   • Das schliessende `<` muss ein Tag beginnen: `</` oder `<Buchstabe`.
- * Was danach noch durchkommt, sind Generics (`useState<Foo>(null)`); die faengt
- * `NACH_CODE` unten.
+ * Was danach noch durchkommt, sind Generics (`useState<Foo>(null)`); die
+ * faengt `NACH_CODE`.
  *
- * GEGENGEPROBT gegen den Stand VOR dem Wickeln (multicam @ 49e8ced): das
- * strenge Muster findet dort 38 Zeichenketten. Das lockere fand 37 — die
- * Differenz ist NICHT das Muster, sondern der Backtick-Fix aus `#119`: die
- * Rueckfrage `confirm(\`Shotlist "…" mit N Shots loeschen?\`)` kam mit ihm
- * dazu. Textknoten verliert das strenge Muster also keinen einzigen, und
- * ueber cable/light faellt es von 47 Fehltreffern auf null.
+ * ─── DIE GESCHWEIFTE KLAMMER DARF NICHT MEHR ABBRECHEN (2026-09-10) ────────
+ *
+ * Bis dahin stand hier `[^<>{}]`: ein Textknoten, in dem IRGENDWO eine
+ * Einsetzung steht, war unsichtbar. Das ist nicht der Randfall, als der es
+ * aussieht — es ist die haeufigste Form, in der eine Beschriftung ueberhaupt
+ * geschrieben wird, sobald eine Zahl darin vorkommt. Gemessen im
+ * cable-planner, alles roher deutscher Text in einem Repo mit Quellsprache
+ * `en`, und der Zaehler meldete trotzdem 0:
+ *
+ *     Vorne ◀ {draft.depthMm ?? 800} mm ▶ Hinten     RackBuilderDialog
+ *     Gefunden ({discovered.length}) — Klick …       VideohubExportDialog
+ *
+ * Der zweite Fall zeigt ausserdem, warum das Muster so und nicht nur
+ * „`{}` erlauben" lautet: mitunter steht gar keine Einsetzung IM Satz, auf
+ * den Satz folgt bloss ein `{cond && (` in der naechsten Zeile — und weil das
+ * `{` den Lauf abbrach, bevor das schliessende `<` erreicht war, fiel der
+ * ganze Satz heraus. Ein Waechter, der an der Klammer HINTER dem Text
+ * scheitert, ist schlimmer als keiner: die Null, die er meldet, liest sich
+ * wie ein Beleg.
+ *
+ * ─── UND DAS FRAGMENT IST AUCH EIN TAG (2026-09-10) ────────────────────
+ *
+ * `[^\s=<!>]` verbot vor dem `>` ausdruecklich ein `<` — damit `<=` und
+ * `<Foo>` nicht als Tag-Ende durchgehen. Es verbot damit aber auch `<>`, und
+ * das ist das JSX-FRAGMENT: ein vollwertiges Element, dessen Kinder auf dem
+ * Bildschirm stehen wie die jedes anderen. Gefunden an einer Stelle, an der
+ * es besonders weh tut — `ErrorBoundary`, der Text, den jemand liest, wenn
+ * die App schon abgestuerzt ist.
+ *
+ * `<>` kommt in TypeScript sonst nicht vor: `=>` faengt das `=`, ein Generic
+ * traegt vor dem `>` einen Bezeichner, und `a < b > c` hat Leerzeichen.
  */
-const JSX_TEXT = /[^\s=<!>]>([^<>{}]{4,})<[/A-Za-z]/g
+const JSX_TEXT = /(?:[^\s=<!>]|<)>([^<>]{4,})<[/A-Za-z]/g
+
+/**
+ * Ein JSX-Ausdruck, der NUR aus einer Zeichenkette besteht: `{'…'}` oder
+ * `` {`…`} `` als Kind eines Elements.
+ *
+ * Das ist kein Textknoten und faellt deshalb durch `JSX_TEXT` — dort wird die
+ * ganze Klammer als Ausdruck entfernt. Sichtbar ist es trotzdem, und im
+ * Template-Literal steht praktisch jede Beschriftung, die eine Zahl einsetzt.
+ *
+ * Nur die REINE Form, nicht `{cond && '…'}` und nicht `{a + '…'}`: was um die
+ * Zeichenkette herum noch gerechnet wird, ist Code, und Code hat dieser
+ * Zaehler teuer gelernt nicht zu lesen.
+ */
+const JSX_LITERAL =
+  /(?:[^\s=<!>]|<)>\s*\{\s*(?:`((?:[^`\\]|\\.){4,}?)`|'((?:[^'\\]|\\.){4,}?)')\s*\}/g
 
 /**
  * Was ein JSX-Textknoten NIE enthaelt, ein Code-Schnipsel dagegen fast immer.
  * Greift ausschliesslich auf JSX-Text, nicht auf Attribute: dort steht
- * durchaus ein `=` in der Oberflaeche ("Shift = frei, Mausrad = Stufe").
+ * durchaus ein `=` in der Oberflaeche („Shift = frei, Mausrad = Stufe").
+ *
+ * Die zweite Haelfte kam mit der geoeffneten Klammer dazu (2026-09-10): seit
+ * ein Lauf ueber ein `{` hinweggeht, endet er oefter mitten im Ausdruck, und
+ * die Bruchstuecke sehen anders aus als vorher (`) : null`, `) return (`,
+ * `(null) if (!hasDesktopBridge)`, `x ?? y.closest`). `if` steht auf der
+ * englischen Wortliste — ein solches Bruchstueck waere in einem
+ * deutsch-quelligen Repo als englische Beschriftung gemeldet worden.
  */
-const NACH_CODE = /[;=]|\b(?:const|let|var|function|await|async)\b/
-// Auch das Template-Literal, nicht nur die Anfuehrungszeichen. GEFUNDEN, weil
-// der `dialogs:native`-Waechter der Suite eine Stelle meldete, die dieser
-// Lauf hier gruen durchgelassen hatte: `window.confirm(\`Shotlist "…" mit N
-// Shots loeschen?\`)`. Eine Rueckfrage mit eingesetztem Namen steht praktisch
-// immer im Backtick — ausgerechnet die Form also, die das erste Muster nicht
-// kannte.
-const RUFE = /\b(?:alert|confirm|prompt)\(\s*(?:(['"])((?:[^\\]|\\.){4,}?)\1|`((?:[^`\\]|\\.){4,}?)`)/g
+const NACH_CODE =
+  /[;=]|\?\?|\b(?:const|let|var|function|await|async|return|typeof|null|undefined)\b|\bif\s*\(/
+/**
+ * Auch das Template-Literal, nicht nur die Anfuehrungszeichen. Eine Rueckfrage
+ * mit eingesetztem Namen steht praktisch immer im Backtick — ausgerechnet die
+ * Form also, die eine erste Fassung nicht kannte (gefunden ueber den
+ * `dialogs:native`-Waechter der Suite, nicht ueber diesen Lauf).
+ *
+ * `infoDialog`, `confirmDialog` und `promptDialog` sind die eigenen Dialoge,
+ * die im cable-planner an die Stelle der drei nativen getreten sind. HIER
+ * GIBT ES SIE HEUTE NICHT — sie stehen trotzdem in der Liste, weil
+ * `lang:parity` der Suite diesen Ausdruck Zeichen fuer Zeichen ueber alle drei
+ * Kopien vergleicht und eine Liste, die je Repo etwas anderes findet, genau
+ * der Defekt ist, gegen den dieser Vergleich gebaut wurde. Wer hier eigene
+ * Dialoge einfuehrt, ist damit vom ersten Tag an gemessen.
+ */
+const RUFE =
+  /\b(?:alert|confirm|prompt|infoDialog|confirmDialog|promptDialog)\(\s*(?:(['"])((?:[^\\]|\\.){4,}?)\1|`((?:[^`\\]|\\.){4,}?)`)/g
+
+/**
+ * Der Fliesstext eines eigenen Dialogs: `{ body: '…' }`.
+ *
+ * Der Titel steht als erstes Argument (oben), der Rumpf in den Optionen — und
+ * der Rumpf ist der laengere und wichtigere Teil. Ohne diese Zeile faende der
+ * Zaehler die Ueberschrift und uebersaehe die Saetze darunter, die erklaeren,
+ * was zu tun ist.
+ */
+const RUMPF =
+  /\bbody:\s*(?:(['"])((?:[^\\]|\\.){4,}?)\1|`((?:[^`\\]|\\.){4,}?)`)/g
+
+/**
+ * Die Einsetzungen und Entitaeten aus einem Textknoten herausnehmen — und zwar
+ * VON INNEN.
+ *
+ * `{sum.counts.walls}` ist ein Feldname und keine Beschriftung; bliebe er
+ * stehen, meldete die Klassifizierung Englisch, wo Deutsch steht. Geschachtelt
+ * wird es bei `` {`${a}`} ``, deshalb wiederholt: jeder Durchgang entfernt die
+ * innerste Ebene, bis nichts mehr faellt.
+ *
+ * Was danach noch eine Klammer traegt, ist ein ANGEFANGENER Ausdruck — der
+ * Fall `Text\n{cond && (` von oben. Ab dort wird abgeschnitten statt verworfen:
+ * der Text davor ist echt, alles danach ist Quelltext.
+ */
+const ohneAusdruecke = (roh) => {
+  // DIE ENTITAET ZUERST, und sie ist der Grund fuer diesen Zusatz.
+  //
+  // `&amp;` traegt ein SEMIKOLON, und `NACH_CODE` haelt ein Semikolon fuer
+  // Quelltext. Ein Textknoten mit einem kaufmaennischen Und darin fiel damit
+  // vollstaendig heraus — nicht das Zeichen, der ganze Satz. Gefunden im
+  // light-planner an der Beschreibung im „Ueber"-Dialog:
+  //
+  //     Planung von Veranstaltungs- und Buehnenbeleuchtung – …, DMX-Patch
+  //     &amp; Export.
+  //
+  // Vier Zeilen deutscher Fliesstext in einem Repo mit Quellsprache `en`, und
+  // der Zaehler meldete daneben eine Null. Es ist dieselbe Bauform wie bei der
+  // geschweiften Klammer: ein Zeichen HINTER dem Text bringt den Lauf zu Fall,
+  // und was er dann nicht sieht, kann er auch nicht falsch nennen.
+  let text = roh.replace(/&(?:[A-Za-z][A-Za-z0-9]{1,9}|#\d{1,6}|#[Xx][0-9A-Fa-f]{1,6});/g, ' ')
+  for (let i = 0; i < 8; i += 1) {
+    const naechste = text.replace(/\{[^{}]*\}/g, ' ')
+    if (naechste === text) break
+    text = naechste
+  }
+  const klammer = text.search(/[{}]/)
+  return (klammer === -1 ? text : text.slice(0, klammer)).replace(/\s+/g, ' ').trim()
+}
 
 /**
  * Sichtbarer Text einer Datei, der NICHT in einem `t()`-Fallback steht.
@@ -321,11 +443,13 @@ const sichtbareTexte = (quelle, jsx) => {
   const raus = []
   for (const m of text.matchAll(SICHTBARE_ATTRIBUTE)) raus.push(m[1] ?? m[2])
   for (const m of text.matchAll(RUFE)) raus.push(m[2] ?? m[3])
+  for (const m of text.matchAll(RUMPF)) raus.push(m[2] ?? m[3])
   if (jsx) {
     for (const m of text.matchAll(JSX_TEXT)) {
-      const t = m[1].trim()
-      if (t && !t.startsWith('{') && !NACH_CODE.test(t)) raus.push(t)
+      const t = ohneAusdruecke(m[1])
+      if (t.length >= 4 && !NACH_CODE.test(t)) raus.push(t)
     }
+    for (const m of text.matchAll(JSX_LITERAL)) raus.push(m[1] ?? m[2])
   }
   return raus
 }
@@ -352,6 +476,11 @@ const PROBE = [
   '<button title="Delete this cable">',
   '<span>Not connected yet</span>',
   'window.confirm(`Delete "${name}" and its ${n} shots?`)',
+  // Die eigenen Dialoge des cable-planners. Sie kommen in diesem Repo nicht
+  // vor — die Probe ist trotzdem in allen drei Kopien dieselbe, sonst
+  // pruefte jede eine andere Zusicherung.
+  "await promptDialog('New connector type, e.g. Speakon NL4:')",
+  "await infoDialog('Beyond the rental plan', { body: 'More cables built than booked.' })",
   // Die beiden Kommentar-Zeilen tragen mit Absicht Muster, die OHNE den
   // Kommentarfilter treffen wuerden — eine ohne waere wirkungslos: was kein
   // `>` und kein `title=` enthaelt, findet der Zaehler ohnehin nicht, und die
@@ -361,6 +490,20 @@ const PROBE = [
   'if (a.length > 2) return b < c',
   'const n = a>b ? 1 : 2; const m = c<d',
   "t('cable.remove', 'Delete this cable')",
+  // ── Die drei Formen mit geschweifter Klammer (2026-09-10) ─────────────
+  //
+  // Sie sind der Grund, warum `JSX_TEXT` keine `{}` mehr ausschliesst, und
+  // ohne sie in der Probe faellt genau diese Haerte beim naechsten
+  // Aufraeumen still wieder heraus.
+  '<span>Front {draft.depthMm} mm rear</span>',
+  '<span>{`with ${n} of them`}</span>',
+  '<div>Sentence before the brace\n{!bridge && (\n<span>x</span>)}</div>',
+  // Das Fragment ist auch ein Tag — `<>` war bis 2026-09-10 ausgeschlossen.
+  '<>Inside a bare fragment<code>x</code></>',
+  // Die HTML-Entitaet. `&amp;` traegt ein SEMIKOLON, und ein Semikolon hielt
+  // `NACH_CODE` fuer Quelltext — der ganze Satz fiel heraus, nicht nur das
+  // Zeichen (2026-09-10, gefunden im light-planner).
+  '<span>Plan &amp; export as PDF</span>',
 ].join('\n')
 
 // Sortiert verglichen: in welcher Reihenfolge Attribute, Rueckfragen und
@@ -372,6 +515,14 @@ const erwartet = [
   'Delete "${name}" and its ${n} shots?',
   'Delete this cable',
   'Not connected yet',
+  'Front mm rear',
+  'with ${n} of them',
+  'Sentence before the brace',
+  'Inside a bare fragment',
+  'Plan export as PDF',
+  'New connector type, e.g. Speakon NL4:',
+  'Beyond the rental plan',
+  'More cables built than booked.',
 ].sort()
 if (gefunden.length !== erwartet.length || erwartet.some((e, i) => gefunden[i] !== e)) {
   console.error(
