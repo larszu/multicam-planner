@@ -155,11 +155,14 @@ page. It can also be triggered manually via the Actions tab for testing.
 
 ## 📚 Documentation
 
-- [`docs/MERGE_INTO_CABLE_PLANNER.md`](docs/MERGE_INTO_CABLE_PLANNER.md) — what
-  would have to change to integrate MulticamPlanner (or part of it) into
-  `cable-planner`.
+- [`docs/MERGE_INTO_CABLE_PLANNER.md`](docs/MERGE_INTO_CABLE_PLANNER.md) —
+  **superseded, kept as analysis.** It describes folding MulticamPlanner into
+  `cable-planner`; the suite went the other way (ADR-006: crowded areas move
+  *out* into their own repos and the shell integrates them). Its list of
+  dependency-free modules and its risk section still hold.
 - [`docs/venue-suite-architecture.md`](docs/venue-suite-architecture.md) —
-  extends that guide with `light-planner` and a shared venue data model.
+  extends that guide with `light-planner` and a shared venue data model. The
+  shared-model part is built (`@avplan/*`); the merge part is superseded too.
 
 `npm run docs:reachable` fails the build if a document under `docs/` is not
 reachable by links from an entry page. Both were orphaned until 2026-09-04.
