@@ -1,5 +1,40 @@
 # Merge-Leitfaden: MultiCam-Planner → Cable-Planner
 
+> **ÜBERHOLT seit 2026-09-07 durch [ADR-006 „Der Schnitt"](https://github.com/larszu/av-planner-suite/blob/main/docs/decisions/ADR-006-werkzeug-schnitt.md).
+> Dieser Plan wird NICHT umgesetzt.** Er steht als Analyse hier, nicht als Vorhaben.
+
+## Warum das Dokument stehenbleibt und trotzdem nicht gilt
+
+Der Plan beschreibt, wie der MultiCam-Planner **in** den Cable-Planner wandert.
+Die Suite ist den umgekehrten Weg gegangen: ADR-006 hält fest, dass verdeckende
+Bereiche in **eigene Repos** ausgelagert und über die Shell integriert werden —
+der Anlass war ein Satz des Eigentümers („Durch extrem viele Funktionen werden
+die Basisfunktionen verdeckt"). MultiCam ist seither ein eigenständiges Repo,
+das in `av-planner-suite` vendoriert wird, und kein Dialog im Cable-Planner.
+
+Bis 2026-09-10 stand dieser Text mit **33 offenen Kästchen** hier. Ein Plan mit
+offenen Kästchen liest sich wie eine Aufgabenliste, an der noch jemand arbeitet;
+jede davon beschrieb Arbeit, die niemand mehr tun wird. Sie sind deshalb zu
+Aufzählungspunkten geworden. Der Inhalt bleibt, weil zwei Teile davon weiterhin
+stimmen und beim Vendorieren nützlich sind:
+
+* **Abschnitt 2** listet die Module ohne Electron-, DOM- oder Store-Abhängigkeit.
+  Genau die sind die Kandidaten für gemeinsame Pakete der Suite.
+* **Abschnitt 7** nennt die Risiken (three.js-Versionen, PDF-Worker unter CSP,
+  drei gleichzeitige Renderer), und die gelten auch für die Einbettung in die
+  Shell.
+
+Was **nicht** mehr stimmt: die Stufen A/B/C, der Phasenplan, die
+Aufwandsschätzung — und die i18n-Zeile weiter unten, die „Quell-Sprache DE"
+sagt. Seit E-28 (2026-09-09) ist Englisch die Quellsprache **aller** Repos der
+Suite.
+
+Die Fortschreibung dieses Texts steht in
+[`venue-suite-architecture.md`](./venue-suite-architecture.md); auch sie ist an
+ADR-006 zu lesen und nicht als Merge-Vorhaben.
+
+---
+
 > Was muss angepasst werden, damit der **MultiCam-Planner** (bzw. ein Teil davon)
 > in [`larszu/cable-planner`](https://github.com/larszu/cable-planner) integriert
 > werden kann.
@@ -79,96 +114,96 @@ und können fast unverändert übernommen werden:
 ## 4. Konkrete Anpassungen (Checkliste)
 
 ### 4.1 Verzeichnisstruktur
-- [ ] Alle MultiCam-Quellen unter `src/renderer/` einsortieren:
+- Alle MultiCam-Quellen unter `src/renderer/` einsortieren:
   - `components/Venue2D`, `components/Venue3D`, `components/Preview`, `components/Export`
     → `src/renderer/components/MultiCam/...`
   - Sidebar-Teile (Kamera-/Venue-spezifisch) → `src/renderer/components/MultiCam/Sidebar/...`
   - `store/useStore.ts` → Slice oder `src/renderer/store/multicamStore.ts` (s. 4.3)
   - `utils`, `data`, `types` → s. §2
-- [ ] Relative Imports anpassen.
+- Relative Imports anpassen.
 
 ### 4.2 Electron Main / Preload / Bridge
-- [ ] `electron/main.cjs` **wird nicht übernommen** — der Cable-Planner-Main
+- `electron/main.cjs` **wird nicht übernommen** — der Cable-Planner-Main
       (`src/main/index.ts`) ist führend.
-- [ ] Die gehärteten Sicherheits-Defaults aus `main.cjs` (CSP-Header-Injection,
+- Die gehärteten Sicherheits-Defaults aus `main.cjs` (CSP-Header-Injection,
       `openExternal`-Allowlist, `will-navigate`-Guard) prüfen und – falls im
       Cable-Planner noch nicht vorhanden – dort einpflegen.
-- [ ] `connect-src` der CSP nur dann um `generativelanguage.googleapis.com`
+- `connect-src` der CSP nur dann um `generativelanguage.googleapis.com`
       erweitern, wenn AI weiterhin **direkt aus dem Renderer** läuft. Empfehlung:
       AI über den Main-Prozess routen (s. 4.5) → CSP bleibt strikt.
 
 ### 4.3 State-Management
-- [ ] MultiCam-State (venue, cameras, customLenses, customCameras, persons, walls,
+- MultiCam-State (venue, cameras, customLenses, customCameras, persons, walls,
       templates, favorites) als **neuen Slice** `store/slices/multicamSlice.ts` in
       `projectStore` einhängen — passt zum bestehenden 11-Slice-Muster.
   - Alternativ eigener `multicamStore.ts` (loser, aber kein gemeinsamer Undo-Scope).
-- [ ] `projectVersion`-Logik des MultiCam-Stores durch Cable-Planner-`projectHistory`
+- `projectVersion`-Logik des MultiCam-Stores durch Cable-Planner-`projectHistory`
       ersetzen → **Undo/Redo gratis**. Alle `set()`-Mutationen müssen
       history-kompatibel sein (Transactions/Coalesce beachten).
-- [ ] `selectedCameraId`, Layout-/Panel-State → in `uiStore` verschieben.
+- `selectedCameraId`, Layout-/Panel-State → in `uiStore` verschieben.
 
 ### 4.4 Persistenz
-- [ ] `saveProject()` (Blob-Download `.mcplan`) **entfernen**. MultiCam-Daten werden
+- `saveProject()` (Blob-Download `.mcplan`) **entfernen**. MultiCam-Daten werden
       Teil des Cable-Planner-Projektfiles (neues Feld `multicam?: MultiCamPlan`) und
       über `bridge.project.saveProject` + `atomicWrite` (`.bak`-Rotation, In-Flight-Lock)
       gespeichert.
-- [ ] `loadProject()`-Migrationslogik (scale → scaleX/scaleY, mountType-Default)
+- `loadProject()`-Migrationslogik (scale → scaleX/scaleY, mountType-Default)
       in einen **Projekt-Migrationsschritt** des Cable-Planners überführen
       (formatVersion-Bump).
-- [ ] Custom-Kameras/-Objektive von `localStorage` → **zentrale Library** (`.cpdevice`-
+- Custom-Kameras/-Objektive von `localStorage` → **zentrale Library** (`.cpdevice`-
       analog, via `libraryIpc`/`librarySync`), damit sie projektübergreifend nutzbar sind.
-- [ ] `utils/storage.ts` (loadJSON/saveJSON) nur noch für rein lokale UI-Prefs
+- `utils/storage.ts` (loadJSON/saveJSON) nur noch für rein lokale UI-Prefs
       verwenden — oder ganz durch `uiStore`-Persist ersetzen.
 
 ### 4.5 AI-Integration
-- [ ] Gemini-`fetch` aus `CustomCameraForm.tsx` entfernen und durch
+- Gemini-`fetch` aus `CustomCameraForm.tsx` entfernen und durch
       `lib/aiSuggestions.ts` (Multi-Provider) ersetzen — neuer Task-Typ
       „camera-spec-lookup“.
-- [ ] API-Key **nicht** in `localStorage`, sondern via `credentialsIpc` im
+- API-Key **nicht** in `localStorage`, sondern via `credentialsIpc` im
       OS-Keychain (wie Rentman-Token).
-- [ ] Den JSON-Prompt aus `buildPrompt()` als Provider-Prompt-Template übernehmen.
+- Den JSON-Prompt aus `buildPrompt()` als Provider-Prompt-Template übernehmen.
 
 ### 4.6 Layout / UI-Einbettung
-- [ ] FlexLayout-Docking nicht 1:1 übernehmen. Stattdessen:
+- FlexLayout-Docking nicht 1:1 übernehmen. Stattdessen:
   - **MVP:** Ein `MultiCamPlannerDialog.tsx` (analog `RackBuilderDialog`), das die
     vier Views (2D/3D/Preview/Calculator) in einem eigenen Tab/Splitter zeigt.
   - **Später:** Eigener View-Mode neben dem Cable-Canvas.
-- [ ] Einstieg über `MenuBar` (View → Camera Planner) + ggf. StatusBar-Eintrag.
+- Einstieg über `MenuBar` (View → Camera Planner) + ggf. StatusBar-Eintrag.
 
 ### 4.7 Entkopplung: window-CustomEvents ersetzen
-- [ ] `multicam-export`, `multicam-calibrate`, `multicam-wall-draw`, `multicam-3d-reset`
+- `multicam-export`, `multicam-calibrate`, `multicam-wall-draw`, `multicam-3d-reset`
       (window-Events) durch **Store-Actions** oder lokale Callbacks ersetzen.
-- [ ] `exportRegistry.ts` ist bereits ein sauberer Schritt weg von `window.*`-Globals
+- `exportRegistry.ts` ist bereits ein sauberer Schritt weg von `window.*`-Globals
       und kann als Modul-internes Pattern bleiben.
 
 ### 4.8 i18n
-- [ ] Alle sichtbaren Strings (Header, Sidebar, Buttons, Tooltips, Alerts) in
+- Alle sichtbaren Strings (Header, Sidebar, Buttons, Tooltips, Alerts) in
       `t(key, 'Deutsche Form')` wrappen.
-- [ ] Neue Keys in de/en-Dicts ergänzen (Quell-Sprache DE, wie Issue #321).
-- [ ] Gerätekategorien (broadcast/cinema/ptz/…) ggf. an bilinguale Kategorien (#309) anbinden.
+- Neue Keys in de/en-Dicts ergänzen (Quell-Sprache DE, wie Issue #321).
+- Gerätekategorien (broadcast/cinema/ptz/…) ggf. an bilinguale Kategorien (#309) anbinden.
 
 ### 4.9 Build / TypeScript
-- [ ] `vite.config.ts`, `tsconfig.json`, `eslint.config` des MultiCam-Planners
+- `vite.config.ts`, `tsconfig.json`, `eslint.config` des MultiCam-Planners
       **verwerfen**; in die Multi-Target-Build-Pipeline des Cable-Planners integrieren.
-- [ ] `__APP_VERSION__`-Define entfällt (Cable-Planner-Versionsquelle nutzen).
-- [ ] Vitest-Setup übernehmen, sofern Cable-Planner noch keins hat — sonst Tests
+- `__APP_VERSION__`-Define entfällt (Cable-Planner-Versionsquelle nutzen).
+- Vitest-Setup übernehmen, sofern Cable-Planner noch keins hat — sonst Tests
       in dessen Test-Runner einhängen.
 
 ### 4.10 Typen & mögliche Verknüpfung (Stufe B)
-- [ ] MultiCam-Typen nach `src/renderer/types/multicam.ts`; ggf. prefixen, um Kollisionen
+- MultiCam-Typen nach `src/renderer/types/multicam.ts`; ggf. prefixen, um Kollisionen
       zu vermeiden (`Camera` → `CameraBody`/`MultiCamCamera`, da „Cable“-Welt eigene
       `EquipmentItem` hat).
-- [ ] Optionales Feld `equipmentId?: string` auf `VenueCamera` einführen → Verknüpfung
+- Optionales Feld `equipmentId?: string` auf `VenueCamera` einführen → Verknüpfung
       einer platzierten Venue-Kamera mit einem Equipment-Node auf dem Cable-Canvas.
-- [ ] Mapping-Helper: Equipment-Kategorie „Camera“ ↔ MultiCam `Camera`-Katalogeintrag.
+- Mapping-Helper: Equipment-Kategorie „Camera“ ↔ MultiCam `Camera`-Katalogeintrag.
 
 ### 4.11 Dependencies abgleichen
-- [ ] `konva` + `react-konva` — neu im Cable-Planner, als isolierte Dep für die 2D-Venue.
-- [ ] `pdfjs-dist` — prüfen, ob schon vorhanden; sonst ergänzen (mit `isEvalSupported:false`).
-- [ ] `three` / `@react-three/fiber` / `@react-three/drei` — **Versionen vereinheitlichen**
+- `konva` + `react-konva` — neu im Cable-Planner, als isolierte Dep für die 2D-Venue.
+- `pdfjs-dist` — prüfen, ob schon vorhanden; sonst ergänzen (mit `isEvalSupported:false`).
+- `three` / `@react-three/fiber` / `@react-three/drei` — **Versionen vereinheitlichen**
       (Cable-Planner Rack3D nutzt dieselbe Familie; Major-Mismatch vermeiden).
-- [ ] `flexlayout-react` — entfällt, wenn als Dialog eingebettet.
-- [ ] `zustand` — Version abgleichen.
+- `flexlayout-react` — entfällt, wenn als Dialog eingebettet.
+- `zustand` — Version abgleichen.
 
 ---
 

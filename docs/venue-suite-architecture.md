@@ -1,5 +1,11 @@
 # Venue-Suite: light + multicam kombinieren, cable-ready
 
+> **ÜBERHOLT seit 2026-09-07 durch [ADR-006 „Der Schnitt"](https://github.com/larszu/av-planner-suite/blob/main/docs/decisions/ADR-006-werkzeug-schnitt.md).**
+> Der Weg der Suite ist nicht „drei Apps in eine", sondern eigene Repos, die
+> die Shell integriert. Was hier über das **gemeinsame Venue-Datenmodell** und
+> die Standalone/Embedded-Grenze steht, gilt weiter und ist in `@avplan/*`
+> gebaut; der Merge-Teil gilt nicht.
+>
 > Erweitert [`MERGE_INTO_CABLE_PLANNER.md`](./MERGE_INTO_CABLE_PLANNER.md) (multicam→cable)
 > um **light-planner** und ein **gemeinsames Venue-Datenmodell**.
 > Leitanforderung: Jedes der drei Tools muss **einzeln sinnvoll nutzbar** sein
