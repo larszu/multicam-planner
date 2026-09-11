@@ -188,6 +188,14 @@ export const CAMERAS: Camera[] = [
     RF: { name: 'RED V-RAPTOR RF Mount', lightLossStops: 0, notes: 'RED-official swappable Canon RF mount. Electronic aperture / IS supported with most RF glass.' },
   } },
 
+  { id: 'red-komodo', manufacturer: 'RED', model: 'KOMODO 6K', sensor: { name: 'RED S35 6K (27.03×14.25)', widthMm: 27.03, heightMm: 14.25, cropFactor: 1.42 }, mount: 'RF', adaptedMounts: ['PL', 'EF'], resolutions: ['6K', '4K', '2K'], type: 'cinema', notes: 'Canon RF native; PL/EF via adapter' },
+  { id: 'red-komodo-x', manufacturer: 'RED', model: 'KOMODO-X 6K', sensor: { name: 'RED S35 6K (27.03×14.25)', widthMm: 27.03, heightMm: 14.25, cropFactor: 1.42 }, mount: 'RF', adaptedMounts: ['PL', 'EF'], resolutions: ['6K', '4K', '2K'], type: 'cinema', notes: 'Canon RF native; PL/EF via adapter' },
+
+  // ── Weitere verbreitete Cinema-Kameras (Sensor-Masse laut Datenblatt, 2026-09) ──
+  { id: 'arri-alexa-mini-lf', manufacturer: 'ARRI', model: 'ALEXA Mini LF', sensor: { name: 'ARRI ALEV 3 LF (36.70×25.54)', widthMm: 36.70, heightMm: 25.54, cropFactor: 0.97 }, mount: 'LPL', adaptedMounts: ['PL', 'EF'], resolutions: ['4.5K', 'UHD', 'HD'], type: 'cinema', notes: 'LPL native; PL via LPL-zu-PL-Adapter, EF via ARRI EF-Mount' },
+  { id: 'sony-burano', manufacturer: 'Sony', model: 'BURANO', sensor: { name: 'FF 8.6K (35.9×24.0)', widthMm: 35.9, heightMm: 24.0, cropFactor: 1.0 }, mount: 'E', adaptedMounts: ['PL', 'EF'], resolutions: ['8.6K', '6K', '4K', 'HD'], type: 'cinema', notes: 'E-Mount nativ mit eingebautem ND; PL via Adapter' },
+  { id: 'panasonic-bs1h', manufacturer: 'Panasonic', model: 'BS1H', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['EF', 'PL'], resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'Vollformat-Box, L-Mount nativ; EF/PL via Adapter' },
+
   // ── Marshall POV ──
   { id: 'marshall-cv568', manufacturer: 'Marshall', model: 'CV568', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'M12', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'POV camera, global shutter' },
 ];
