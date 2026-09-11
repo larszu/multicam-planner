@@ -109,14 +109,41 @@ const ohneKommentare = kopf
   .split('\n')
   .filter((z) => !z.trimStart().startsWith('//'))
   .join('\n');
-assert.ok(ohneKommentare.includes('if (!window.confirm('), '„Neues Projekt" fragt nicht verneint zurueck');
+//
+// ZWEI SCHREIBWEISEN, EINE ZUSAGE. Eigenstaendig fragt die App mit
+// `window.confirm`; in der Suite-Kopie steht dort `confirmDialog` aus
+// `@avplan/ui` (dort misst `scripts/native-dialogs.mjs`, dass kein natives
+// Fenster mitten in der Shell aufgeht). Der Lauf misst deshalb nicht EINE
+// Schreibweise, sondern die Zusage dahinter: die Tat haengt am JA.
+//
+// Ein Lauf, der nur `if (!window.confirm(` sucht, faellt in der vendorten
+// Kopie ueber eine Zeile, die genau richtig ist — und wer ihn dort anpasst,
+// hat den Waechter zweimal, in zwei Fassungen, mit zwei Meinungen.
+const verneintNativ = ohneKommentare.includes('if (!window.confirm(');
+const positivImDialog = /confirmDialog\([\s\S]{0,600}?\.then\(\((\w+)\) => \{\s*if \(\1\)/.test(ohneKommentare);
+assert.ok(
+  verneintNativ || positivImDialog,
+  '„Neues Projekt" haengt nicht am JA — weder `if (!window.confirm(` noch `confirmDialog(…).then((ja) => { if (ja)`',
+);
 assert.ok(
   !/if \(window\.confirm\(/.test(ohneKommentare),
   'die Rueckfrage steht unverneint — Abbrechen wuerde das Projekt loeschen',
 );
-for (const s of ['saveProject()', 'handleSaveAs()', 'window.prompt(', 'saveProject(name)']) {
+assert.ok(
+  !/\.then\(\((\w+)\) => \{\s*if \(!\1\)/.test(ohneKommentare),
+  'die Dialog-Rueckfrage ist verneint — Abbrechen wuerde das Projekt loeschen',
+);
+for (const s of ['saveProject()', 'handleSaveAs()', 'saveProject(name)']) {
   assert.ok(kopf.includes(s), `„Speichern unter" ist nicht eigenstaendig: ${s} fehlt`);
 }
+// Wieder zwei Schreibweisen, eine Zusage: „Speichern unter" HOLT den Namen.
+// Eigenstaendig mit `window.prompt`, in der Suite-Kopie mit `promptDialog`
+// aus `@avplan/ui`. Was beide gemeinsam haben, ist die Frage — und die misst
+// dieser Lauf, statt eine der beiden Fassungen zu bevorzugen.
+assert.ok(
+  /window\.prompt\(|promptDialog\(/.test(kopf),
+  '„Speichern unter" fragt nicht nach dem Dateinamen und ist damit ein zweites „Speichern"',
+);
 
 // ── 5. Reiter und Menueleiste sind zwei Zeilen ───────────────────────────
 assert.ok(css.includes('.bc-tabbar {'), 'keine eigene Reiter-Leiste im Stilblatt');
