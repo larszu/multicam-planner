@@ -135,18 +135,18 @@ export default function LensSlider({
   const pos = Math.round(valueToPos(value, min, max) * POS_STEPS);
   const fmtTick = formatTick ?? format;
   const stepBtn =
-    'px-1 py-0.5 rounded border border-bc-border text-gray-500 hover:text-white hover:border-bc-accent/60 disabled:opacity-30 transition-colors';
+    'px-1 py-0.5 rounded border border-bc-border text-bc-dim hover:text-bc-text-bright hover:border-bc-accent/60 disabled:opacity-30 transition-colors';
 
   return (
     <div className="px-2" title={title}>
       <div className="flex items-center justify-between mb-0.5">
-        <span className="text-[10px] text-gray-500 flex items-center gap-1">
+        <span className="text-[10px] text-bc-dim flex items-center gap-1">
           {label}
           {/* Immer sichtbares Zahlenfeld statt Klick-zum-Bearbeiten: per Tab
               erreichbar, Werte lassen sich so ohne Maus von Kamera zu Kamera
               uebertragen. Slider = grob, Feld = exakt (belegtes Hybrid-Muster). */}
           <span className="inline-flex items-center">
-            {prefix ? <span className="text-gray-500 font-mono">{prefix}</span> : null}
+            {prefix ? <span className="text-bc-dim font-mono">{prefix}</span> : null}
             <input
               ref={inputRef}
               value={fieldText}
@@ -181,16 +181,16 @@ export default function LensSlider({
               }}
               className={`w-11 bg-bc-dark border rounded px-1 text-[10px] font-mono text-right outline-none transition-colors ${
                 draft !== null
-                  ? 'border-bc-accent text-white'
-                  : 'border-bc-border/60 text-gray-300 hover:border-bc-accent/60 focus:border-bc-accent'
+                  ? 'border-bc-accent text-bc-text-bright'
+                  : 'border-bc-border/60 text-bc-text hover:border-bc-accent/60 focus:border-bc-accent'
               }`}
               title={`${label} direkt eingeben — Enter übernimmt, Pfeil hoch/runter = eine Stufe`}
               aria-label={`${label} Wert`}
               data-lens-field
             />
-            {unit ? <span className="text-gray-500 font-mono ml-0.5">{unit}</span> : null}
+            {unit ? <span className="text-bc-dim font-mono ml-0.5">{unit}</span> : null}
           </span>
-          {note ? <span className="text-gray-600">· {note}</span> : null}
+          {note ? <span className="text-bc-faint">· {note}</span> : null}
         </span>
         <div className="flex items-center gap-1">
           <button className={stepBtn} tabIndex={-1} onClick={() => onStep(-1)} disabled={disabled} title={t('preview.step.back', 'One step back')}>
@@ -238,7 +238,7 @@ export default function LensSlider({
                 disabled={disabled}
                 onClick={() => onChange(t)}
                 className={`absolute top-0 ${shift} text-[8px] font-mono leading-none hover:text-bc-accent ${
-                  active ? 'text-bc-accent' : 'text-gray-600'
+                  active ? 'text-bc-accent' : 'text-bc-faint'
                 }`}
                 style={{ left: `${p}%` }}
                 title={`Auf ${fmtTick(t)} setzen`}

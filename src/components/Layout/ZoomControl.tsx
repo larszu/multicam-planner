@@ -43,7 +43,7 @@ export default function ZoomControl() {
         type="button"
         onClick={dec}
         disabled={zoom <= ZOOM_MIN + 1e-6}
-        className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-bc-border disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+        className="p-1.5 rounded-md text-bc-muted hover:text-bc-text-bright hover:bg-bc-border disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
         title={t('header.zoom.out.title', 'Smaller (Ctrl -)')}
         aria-label={t('header.zoom.out', 'Zoom out')}
       >
@@ -52,7 +52,7 @@ export default function ZoomControl() {
       <button
         type="button"
         onClick={reset}
-        className="px-1.5 min-w-[3rem] text-center text-xs tabular-nums text-gray-300 hover:text-white transition-colors"
+        className="px-1.5 min-w-[3rem] text-center text-xs tabular-nums text-bc-text hover:text-bc-text-bright transition-colors"
         title={t('header.zoom.reset', 'Reset to 100 % (Ctrl 0)')}
       >
         {pct}%
@@ -61,7 +61,7 @@ export default function ZoomControl() {
         type="button"
         onClick={inc}
         disabled={zoom >= ZOOM_MAX - 1e-6}
-        className="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-bc-border disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+        className="p-1.5 rounded-md text-bc-muted hover:text-bc-text-bright hover:bg-bc-border disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
         title={t('header.zoom.in.title', 'Larger (Ctrl +)')}
         aria-label={t('header.zoom.in', 'Zoom in')}
       >

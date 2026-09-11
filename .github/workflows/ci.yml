@@ -77,6 +77,14 @@ jobs:
       - name: Kopfzeile im Schnitt der Suite (ADR-007 Abschnitt 6)
         run: npm run kopfzeile:check
 
+      # B-70 — das Hell-Thema haelt nur, solange `src/` keine rohe
+      # Farb-Utility mehr traegt. Bis zum 2026-09-11 waren es 406; solange
+      # die App nur dunkel war, sah man ihnen nichts an, und genau deshalb
+      # konnten es 406 werden. Wer im Dunkel-Thema arbeitet — also fast
+      # jeder, der hier etwas baut — merkt einen Rueckfall nie.
+      - name: Keine rohen Farben (B-70)
+        run: npm run farben:check
+
       # Fragt die action.yml jedes Pins nach ihrer Node-Version, statt sie in
       # einem Kommentar zu behaupten. Am 2026-09-05 liefen in `release.yml`
       # drei Actions auf node20, und der Kommentar daneben begruendete das mit

@@ -98,7 +98,7 @@ export default function TemplateSelector() {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder={t('header.templates.namePlaceholder', 'Template name…')}
-            className="w-full px-2 py-1.5 text-sm rounded bg-bc-panel border border-bc-border text-gray-200 focus:border-bc-accent outline-none"
+            className="w-full px-2 py-1.5 text-sm rounded bg-bc-panel border border-bc-border text-bc-text focus:border-bc-accent outline-none"
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
             autoFocus
           />
@@ -106,7 +106,7 @@ export default function TemplateSelector() {
             <select
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value as VenueTemplate['category'])}
-              className="flex-1 px-2 py-1.5 text-sm rounded bg-bc-panel border border-bc-border text-gray-200 outline-none"
+              className="flex-1 px-2 py-1.5 text-sm rounded bg-bc-panel border border-bc-border text-bc-text outline-none"
             >
               {CATEGORIES.map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
@@ -121,7 +121,7 @@ export default function TemplateSelector() {
             </button>
             <button
               onClick={() => setShowSave(false)}
-              className="px-3 py-1.5 text-sm rounded bg-bc-dark border border-bc-border text-gray-400 hover:text-gray-200"
+              className="px-3 py-1.5 text-sm rounded bg-bc-dark border border-bc-border text-bc-muted hover:text-bc-text"
             >
               {t('header.templates.cancel', 'Cancel')}
             </button>
@@ -130,13 +130,13 @@ export default function TemplateSelector() {
       )}
 
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold text-white">{t('header.templates.heading', 'Venue Templates')}</h3>
+        <h3 className="text-sm font-semibold text-bc-text-bright">{t('header.templates.heading', 'Venue Templates')}</h3>
         {hiddenCount > 0 && (
           <button
             onClick={() => {
               if (confirm(format(t('header.templates.restoreConfirm', 'Restore {count} hidden built-in template(s)?'), { count: hiddenCount }))) restoreBuiltInTemplates();
             }}
-            className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-gray-400 hover:text-bc-accent hover:bg-bc-accent/10"
+            className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-bc-muted hover:text-bc-accent hover:bg-bc-accent/10"
             title={t('header.templates.restore.title', 'Bring back built-in templates you previously deleted')}
           >
             <FiRotateCcw size={11} /> {format(t('header.templates.restore', 'Restore {count} hidden'), { count: hiddenCount })}
@@ -146,7 +146,7 @@ export default function TemplateSelector() {
 
       {categories.map((cat) => (
         <div key={cat} className="mb-3">
-          <h4 className="text-xs text-gray-400 uppercase tracking-wider mb-1">{CATEGORIES.find((c) => c.value === cat)?.label ?? cat}</h4>
+          <h4 className="text-xs text-bc-muted uppercase tracking-wider mb-1">{CATEGORIES.find((c) => c.value === cat)?.label ?? cat}</h4>
           <div className="space-y-1">
             {allTemplates.filter((tpl) => tpl.category === cat).map((tpl) => (
               <div key={tpl.id}>
@@ -157,7 +157,7 @@ export default function TemplateSelector() {
                       type="text"
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
-                      className="w-full px-2 py-1 text-sm rounded bg-bc-panel border border-bc-border text-gray-200 focus:border-bc-accent outline-none"
+                      className="w-full px-2 py-1 text-sm rounded bg-bc-panel border border-bc-border text-bc-text focus:border-bc-accent outline-none"
                       onKeyDown={(e) => e.key === 'Enter' && handleEditSave()}
                       autoFocus
                     />
@@ -165,28 +165,28 @@ export default function TemplateSelector() {
                       <select
                         value={editCategory}
                         onChange={(e) => setEditCategory(e.target.value as VenueTemplate['category'])}
-                        className="flex-1 px-2 py-1 text-xs rounded bg-bc-panel border border-bc-border text-gray-200 outline-none"
+                        className="flex-1 px-2 py-1 text-xs rounded bg-bc-panel border border-bc-border text-bc-text outline-none"
                       >
                         {CATEGORIES.map((c) => (
                           <option key={c.value} value={c.value}>{c.label}</option>
                         ))}
                       </select>
                       <button onClick={handleEditSave} className="px-2 py-1 text-xs rounded bg-bc-accent text-bc-accent-text">{t('header.templates.save', 'Save')}</button>
-                      <button onClick={() => setEditingId(null)} className="px-2 py-1 text-xs rounded text-gray-400 hover:text-gray-200">{t('header.templates.cancel', 'Cancel')}</button>
+                      <button onClick={() => setEditingId(null)} className="px-2 py-1 text-xs rounded text-bc-muted hover:text-bc-text">{t('header.templates.cancel', 'Cancel')}</button>
                     </div>
                   </div>
                 ) : (
                   /* ── Template card ── */
-                  <div className="group w-full text-left px-3 py-2 rounded text-sm text-gray-200 bg-bc-dark border border-bc-border hover:border-bc-accent/50 transition-colors">
+                  <div className="group w-full text-left px-3 py-2 rounded text-sm text-bc-text bg-bc-dark border border-bc-border hover:border-bc-accent/50 transition-colors">
                     <div className="flex items-start justify-between gap-2">
                       <button
                         onClick={() => handleLoad(tpl.id)}
                         className="flex-1 text-left"
                       >
                         <div className="font-medium">{tpl.name}</div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-bc-dim">
                           {format(t('header.templates.cameras', '{count} cameras · {w}×{h}m'), { count: tpl.cameras.length, w: tpl.venue.widthM, h: tpl.venue.heightM })}
-                          {isPureBuiltIn(tpl.id) && <span className="ml-1 text-gray-600">{t('header.templates.builtIn', '(built-in)')}</span>}
+                          {isPureBuiltIn(tpl.id) && <span className="ml-1 text-bc-faint">{t('header.templates.builtIn', '(built-in)')}</span>}
                           {isBuiltInShadow(tpl.id) && <span className="ml-1 text-bc-yellow">{t('header.templates.modified', '(modified)')}</span>}
                           {isCustomEntry(tpl.id) && !isBuiltInShadow(tpl.id) && <span className="ml-1 text-bc-accent">{t('header.templates.customTag', '(custom)')}</span>}
                         </div>
@@ -197,21 +197,21 @@ export default function TemplateSelector() {
                         <button
                           onClick={() => overwriteTemplate(tpl.id)}
                           title={t('header.templates.overwrite', 'Overwrite with current project')}
-                          className="p-1 rounded text-gray-500 hover:text-bc-accent hover:bg-bc-accent/10"
+                          className="p-1 rounded text-bc-dim hover:text-bc-accent hover:bg-bc-accent/10"
                         >
                           <FiCopy size={13} />
                         </button>
                         <button
                           onClick={() => handleEdit(tpl)}
                           title={t('header.templates.editNameCategory', 'Edit name / category')}
-                          className="p-1 rounded text-gray-500 hover:text-yellow-400 hover:bg-yellow-400/10"
+                          className="p-1 rounded text-bc-dim hover:text-yellow-400 hover:bg-yellow-400/10"
                         >
                           <FiChevronDown size={13} />
                         </button>
                         {confirmDeleteId === tpl.id ? (
                           <button
                             onClick={() => { deleteTemplate(tpl.id); setConfirmDeleteId(null); }}
-                            className="px-2 py-0.5 text-xs rounded bg-red-600 text-white"
+                            className="px-2 py-0.5 text-xs rounded bg-red-600 text-bc-text-bright"
                           >
                             {t('header.templates.confirm', 'Confirm')}
                           </button>
@@ -219,7 +219,7 @@ export default function TemplateSelector() {
                           <button
                             onClick={() => setConfirmDeleteId(tpl.id)}
                             title={isPureBuiltIn(tpl.id) ? t('header.templates.hideBuiltIn', 'Hide built-in template (can be restored)') : t('header.templates.delete', 'Delete template')}
-                            className="p-1 rounded text-gray-500 hover:text-red-400 hover:bg-red-400/10"
+                            className="p-1 rounded text-bc-dim hover:text-red-400 hover:bg-red-400/10"
                           >
                             <FiTrash2 size={13} />
                           </button>

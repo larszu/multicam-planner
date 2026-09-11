@@ -97,16 +97,16 @@ export default function AiPlanAnalysis() {
 
   return (
     <div className="p-2 rounded bg-bc-dark border border-bc-border space-y-1.5">
-      <div className="flex items-center gap-1 text-gray-300 font-medium">
+      <div className="flex items-center gap-1 text-bc-text font-medium">
         <FiCpu size={11} /> {t('sidebar.ai.title', 'AI Plan Analysis')}
       </div>
-      <p className="text-gray-500 text-[10px] leading-tight">
+      <p className="text-bc-dim text-[10px] leading-tight">
         {t('sidebar.ai.intro', 'Let an AI read the uploaded plan and draw walls / stages and read the scale.')}
       </p>
 
       {/* Provider + model */}
       <select
-        className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[11px]"
+        className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-[11px]"
         value={providerId}
         onChange={(e) => selectProvider(e.target.value as AiProviderId)}
       >
@@ -118,28 +118,28 @@ export default function AiPlanAnalysis() {
       </select>
 
       <div className="flex items-center gap-1">
-        <FiKey size={11} className="text-gray-500 shrink-0" />
+        <FiKey size={11} className="text-bc-dim shrink-0" />
         <input
           type="password"
           placeholder={format(t('sidebar.ai.apiKeyPlaceholder', '{label} API key'), { label: provider.label })}
-          className="flex-1 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[11px]"
+          className="flex-1 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-[11px]"
           value={apiKey}
           onChange={(e) => persistKey(e.target.value)}
         />
       </div>
-      <p className="text-gray-600 text-[9px]">{provider.keyHint}</p>
+      <p className="text-bc-faint text-[9px]">{provider.keyHint}</p>
 
       <input
         type="text"
         placeholder={t('sidebar.ai.modelPlaceholder', 'model')}
-        className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[10px]"
+        className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-[10px]"
         value={model}
         onChange={(e) => persistModel(e.target.value)}
         title={t('sidebar.ai.modelTitle', 'Model id — defaults to a vision-capable model for the provider')}
       />
 
       {/* What to extract */}
-      <div className="flex flex-wrap gap-2 text-[10px] text-gray-300">
+      <div className="flex flex-wrap gap-2 text-[10px] text-bc-text">
         {(['walls', 'stages', 'scale'] as const).map((k) => (
           <label key={k} className="flex items-center gap-1 cursor-pointer">
             <input
@@ -161,7 +161,7 @@ export default function AiPlanAnalysis() {
         {busy ? <><FiLoader size={11} className="animate-spin" /> {t('sidebar.ai.analysing', 'Analysing…')}</> : <>{t('sidebar.ai.analyse', 'Analyse plan with AI')}</>}
       </button>
 
-      {!backgroundPlan && <p className="text-gray-600 text-[9px]">{t('sidebar.ai.uploadHint', 'Upload a plan above to enable analysis.')}</p>}
+      {!backgroundPlan && <p className="text-bc-faint text-[9px]">{t('sidebar.ai.uploadHint', 'Upload a plan above to enable analysis.')}</p>}
       {error && <p className="text-bc-red text-[10px] break-words">{error}</p>}
       {summary && <p className="text-bc-green text-[10px]">{summary}</p>}
     </div>

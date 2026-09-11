@@ -63,10 +63,10 @@ export function CalculationBreakdown({
   const imgH = fov.imageHeightAtDistance;
   const personPx = personHeightInFrame(H, fe, s);
 
-  const Row = ({ label, expr, color = 'text-gray-300' }: { label: string; expr: React.ReactNode; color?: string }) => (
+  const Row = ({ label, expr, color = 'text-bc-text' }: { label: string; expr: React.ReactNode; color?: string }) => (
     <div className="grid grid-cols-12 gap-1 leading-snug">
       <div className={`col-span-3 ${color} font-semibold`}>{label}</div>
-      <div className="col-span-9 text-gray-400 break-words">{expr}</div>
+      <div className="col-span-9 text-bc-muted break-words">{expr}</div>
     </div>
   );
 
@@ -74,7 +74,7 @@ export function CalculationBreakdown({
     <div className="bg-bc-dark rounded p-2 border border-bc-border text-[10px] font-mono space-y-1">
       <div className="text-bc-accent font-bold text-[11px] mb-1">{t('sidebar.calc.trace', 'CALCULATION TRACE')}</div>
 
-      <div className="text-gray-500 text-[9px] -mt-0.5 mb-1">
+      <div className="text-bc-dim text-[9px] -mt-0.5 mb-1">
         Sensor {sensor.name} · W={fmt(W)} mm · H={fmt(H)} mm · diag D={fmt(D)} mm
         {ext !== 1 && <> · f_eff = {fmt(f)} × {ext} = {fmt(fe)} mm</>}
       </div>
@@ -109,27 +109,27 @@ export function CalculationBreakdown({
       <Row
         label="CoC"
         expr={<>D / {COC_DIVISOR} = {fmt(D)} / {COC_DIVISOR} = <span className="text-bc-yellow">{(c * 1000).toFixed(1)} µm</span></>}
-        color="text-gray-300"
+        color="text-bc-text"
       />
       <Row
         label="Hyperf."
         expr={<>f_eff² / (N·c)/1000 + f_eff/1000 = {fmt(fe)}² / ({fmt(N)}·{fmt(c, 4)})/1000 + {fmt(fe)}/1000 = <span className="text-bc-yellow">{fmt(dof.hyperfocal)} m</span></>}
-        color="text-gray-300"
+        color="text-bc-text"
       />
       <Row
         label="DoF near"
         expr={<>(H·s) / (H + s − f_eff/1000) = ({fmt(dof.hyperfocal)}·{fmt(s)}) / ({fmt(dof.hyperfocal)} + {fmt(s)} − {fmt(fe / 1000, 3)}) = <span className="text-bc-yellow">{fmt(dof.nearLimit)} m</span></>}
-        color="text-gray-300"
+        color="text-bc-text"
       />
       <Row
         label="DoF far"
         expr={<>(H·s) / (H − s + f_eff/1000) = ({fmt(dof.hyperfocal)}·{fmt(s)}) / ({fmt(dof.hyperfocal)} − {fmt(s)} + {fmt(fe / 1000, 3)}) = <span className="text-bc-yellow">{fmt(dof.farLimit)} m</span></>}
-        color="text-gray-300"
+        color="text-bc-text"
       />
       <Row
         label="DoF total"
         expr={<>far − near = {fmt(dof.farLimit)} − {fmt(dof.nearLimit)} = <span className="text-bc-yellow">{fmt(dof.totalDof)} m</span></>}
-        color="text-gray-300"
+        color="text-bc-text"
       />
 
       <div className="border-t border-bc-border my-1" />
@@ -137,7 +137,7 @@ export function CalculationBreakdown({
       <Row
         label={t('sidebar.calc.person', 'Person')}
         expr={<>{PERSON_HEIGHT_M.toFixed(2)} / img_h · {OUTPUT_HEIGHT_PX} = {PERSON_HEIGHT_M.toFixed(2)} / {fmt(imgH)} · {OUTPUT_HEIGHT_PX} = <span className="text-bc-red">{fmt(personPx, 0)} px</span> ({fmt((personPx / OUTPUT_HEIGHT_PX) * 100, 1)}%)</>}
-        color="text-gray-300"
+        color="text-bc-text"
       />
     </div>
   );

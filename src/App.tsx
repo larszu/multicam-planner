@@ -157,7 +157,7 @@ function loadUserLayoutPresets(): Record<string, IJsonModel> {
 function LoadingFallback() {
   const { t } = useTranslation();
   return (
-    <div className="flex items-center justify-center h-full text-gray-500">
+    <div className="flex items-center justify-center h-full text-bc-dim">
       <div className="animate-pulse">{t('header.panel.loading3d', 'Loading 3D View...')}</div>
     </div>
   );
@@ -413,7 +413,7 @@ export default function App() {
       case 'rigcontrol':
         return <RigControlPanel />;
       default:
-        return <div className="p-4 text-gray-500">{format(t('header.panel.unknown', 'Unknown panel: {component}'), { component: component ?? '' })}</div>;
+        return <div className="p-4 text-bc-dim">{format(t('header.panel.unknown', 'Unknown panel: {component}'), { component: component ?? '' })}</div>;
     }
   }, [t]);
 
@@ -459,7 +459,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-    <div className="h-screen flex flex-col bg-bc-dark text-gray-200">
+    <div className="h-screen flex flex-col bg-bc-dark text-bc-text">
       {/* ADR-005, Regel 3 — beim Laden reparierte doppelte Ids werden gesagt.
           `dedupeIds` zaehlte sie schon, nur las es niemand: Shots, Takes und
           Presets haengen an der Kamera-Id, der Fokus-Lock an der Personen-Id.
@@ -521,13 +521,13 @@ export default function App() {
           {/* Sidebar tabs */}
           <div className="flex border-b border-bc-border">
             <button
-              className={`flex-1 py-2 text-xs font-medium ${sidebarTab === 'cameras' ? 'text-bc-accent border-b-2 border-bc-accent' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`flex-1 py-2 text-xs font-medium ${sidebarTab === 'cameras' ? 'text-bc-accent border-b-2 border-bc-accent' : 'text-bc-dim hover:text-bc-text'}`}
               onClick={() => setSidebarTab('cameras')}
             >
               {t('header.sidebar.settings', 'Settings')}
             </button>
             <button
-              className={`flex-1 py-2 text-xs font-medium ${sidebarTab === 'templates' ? 'text-bc-accent border-b-2 border-bc-accent' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`flex-1 py-2 text-xs font-medium ${sidebarTab === 'templates' ? 'text-bc-accent border-b-2 border-bc-accent' : 'text-bc-dim hover:text-bc-text'}`}
               onClick={() => setSidebarTab('templates')}
             >
               {t('header.sidebar.templates', 'Templates')}
@@ -541,7 +541,7 @@ export default function App() {
         {/* Sidebar collapse toggle */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="shrink-0 w-5 flex items-center justify-center bg-bc-panel border-r border-bc-border hover:bg-bc-border text-gray-500 hover:text-white transition-colors"
+          className="shrink-0 w-5 flex items-center justify-center bg-bc-panel border-r border-bc-border hover:bg-bc-border text-bc-dim hover:text-bc-text-bright transition-colors"
           title={sidebarCollapsed ? t('header.sidebar.open', 'Open column') : t('header.sidebar.collapse', 'Collapse column')}
           aria-label={sidebarCollapsed
             ? t('header.sidebar.open.aria', 'Open the side column')

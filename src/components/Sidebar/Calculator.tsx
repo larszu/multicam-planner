@@ -19,14 +19,14 @@ export default function Calculator() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
-      <h2 className="text-lg font-bold text-white mb-4">{t('sidebar.calc.title', 'FOV & DoF Calculator')}</h2>
+      <h2 className="text-lg font-bold text-bc-text-bright mb-4">{t('sidebar.calc.title', 'FOV & DoF Calculator')}</h2>
 
       <div className="grid grid-cols-2 gap-4 mb-6">
         {/* Sensor */}
         <label className="block text-xs">
-          <span className="text-gray-400">{t('sidebar.calc.sensorSize', 'Sensor Size')}</span>
+          <span className="text-bc-muted">{t('sidebar.calc.sensorSize', 'Sensor Size')}</span>
           <select
-            className="block w-full mt-1 bg-bc-dark border border-bc-border rounded px-2 py-1.5 text-white text-sm"
+            className="block w-full mt-1 bg-bc-dark border border-bc-border rounded px-2 py-1.5 text-bc-text-bright text-sm"
             value={sensorKey}
             onChange={(e) => setSensorKey(e.target.value)}
           >
@@ -38,7 +38,7 @@ export default function Calculator() {
 
         {/* Focal length */}
         <label className="block text-xs">
-          <span className="text-gray-400">{format(t('sidebar.calc.focalLength', 'Focal Length: {v}mm'), { v: focalLength })}</span>
+          <span className="text-bc-muted">{format(t('sidebar.calc.focalLength', 'Focal Length: {v}mm'), { v: focalLength })}</span>
           <input
             type="range"
             className="w-full mt-1 accent-bc-accent"
@@ -52,7 +52,7 @@ export default function Calculator() {
 
         {/* Aperture */}
         <label className="block text-xs">
-          <span className="text-gray-400">{format(t('sidebar.calc.aperture', 'Aperture: f/{v}'), { v: aperture })}</span>
+          <span className="text-bc-muted">{format(t('sidebar.calc.aperture', 'Aperture: f/{v}'), { v: aperture })}</span>
           <input
             type="range"
             className="w-full mt-1 accent-bc-accent"
@@ -66,7 +66,7 @@ export default function Calculator() {
 
         {/* Distance */}
         <label className="block text-xs">
-          <span className="text-gray-400">{format(t('sidebar.calc.distance', 'Distance: {v}m'), { v: distance })}</span>
+          <span className="text-bc-muted">{format(t('sidebar.calc.distance', 'Distance: {v}m'), { v: distance })}</span>
           <input
             type="range"
             className="w-full mt-1 accent-bc-accent"
@@ -80,9 +80,9 @@ export default function Calculator() {
 
         {/* Extender */}
         <label className="block text-xs">
-          <span className="text-gray-400">{t('sidebar.calc.extender', 'Extender')}</span>
+          <span className="text-bc-muted">{t('sidebar.calc.extender', 'Extender')}</span>
           <select
-            className="block w-full mt-1 bg-bc-dark border border-bc-border rounded px-2 py-1.5 text-white text-sm"
+            className="block w-full mt-1 bg-bc-dark border border-bc-border rounded px-2 py-1.5 text-bc-text-bright text-sm"
             value={extender}
             onChange={(e) => setExtender(parseFloat(e.target.value))}
           >
@@ -97,7 +97,7 @@ export default function Calculator() {
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-bc-dark rounded-lg border border-bc-border p-4">
           <h3 className="text-sm font-bold text-bc-accent mb-2">{t('sidebar.calc.fieldOfView', 'Field of View')}</h3>
-          <div className="space-y-1 text-sm text-gray-200">
+          <div className="space-y-1 text-sm text-bc-text">
             <div>{t('sidebar.calc.horizontal', 'Horizontal:')} <strong>{fov.horizontalDeg.toFixed(2)}°</strong></div>
             <div>{t('sidebar.calc.vertical', 'Vertical:')} <strong>{fov.verticalDeg.toFixed(2)}°</strong></div>
             <div>{t('sidebar.calc.diagonal', 'Diagonal:')} <strong>{fov.diagonalDeg.toFixed(2)}°</strong></div>
@@ -109,7 +109,7 @@ export default function Calculator() {
 
         <div className="bg-bc-dark rounded-lg border border-bc-border p-4">
           <h3 className="text-sm font-bold text-bc-green mb-2">{t('sidebar.calc.depthOfField', 'Depth of Field')}</h3>
-          <div className="space-y-1 text-sm text-gray-200">
+          <div className="space-y-1 text-sm text-bc-text">
             <div>{t('sidebar.calc.near', 'Near:')} <strong>{dof.nearLimit < 0.01 ? '0' : dof.nearLimit.toFixed(2)}m</strong></div>
             <div>{t('sidebar.calc.far', 'Far:')} <strong>{dof.farLimit === Infinity ? '∞' : dof.farLimit.toFixed(2) + 'm'}</strong></div>
             <div>{t('sidebar.calc.totalDof', 'Total DoF:')} <strong>{dof.totalDof === Infinity ? '∞' : dof.totalDof.toFixed(2) + 'm'}</strong></div>
@@ -120,7 +120,7 @@ export default function Calculator() {
 
         <div className="bg-bc-dark rounded-lg border border-bc-border p-4 col-span-2">
           <h3 className="text-sm font-bold text-bc-yellow mb-2">{t('sidebar.calc.personInFrame', 'Person in Frame (1.80m)')}</h3>
-          <div className="text-sm text-gray-200">
+          <div className="text-sm text-bc-text">
             {t('sidebar.calc.heightIn1080p', 'Height in 1080p:')} <strong>{personPx.toFixed(0)}px</strong> ({((personPx / 1080) * 100).toFixed(1)}% {t('sidebar.calc.ofFrame', 'of frame')})
           </div>
           <div className="mt-2 h-4 bg-bc-panel rounded-full overflow-hidden">

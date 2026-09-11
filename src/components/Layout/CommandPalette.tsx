@@ -71,7 +71,7 @@ export default function CommandPalette({ commands }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[300] flex items-start justify-center bg-black/60 pt-[12vh]"
+      className="fixed inset-0 z-[300] flex items-start justify-center bg-bc-scrim pt-[12vh]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) setOpen(false);
       }}

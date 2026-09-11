@@ -232,16 +232,16 @@ export default function ShotlistPanel() {
   }, [flash, list, stempel, venue.name]);
 
   const btn =
-    'px-2 py-1 rounded text-[11px] border border-bc-border text-gray-300 hover:text-white hover:border-bc-accent/60 disabled:opacity-40 disabled:hover:text-gray-300 disabled:hover:border-bc-border transition-colors';
+    'px-2 py-1 rounded text-[11px] border border-bc-border text-bc-text hover:text-bc-text-bright hover:border-bc-accent/60 disabled:opacity-40 disabled:hover:text-bc-text disabled:hover:border-bc-border transition-colors';
 
   return (
-    <div data-shotlist-panel className="w-full h-full flex flex-col bg-bc-panel text-white overflow-hidden">
+    <div data-shotlist-panel className="w-full h-full flex flex-col bg-bc-panel text-bc-text-bright overflow-hidden">
       {/* ── Kopfzeile: Liste waehlen / anlegen ── */}
       <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-bc-border shrink-0">
         <select
           value={activeShotlistId ?? ''}
           onChange={(e) => setActiveShotlist(e.target.value || null)}
-          className="bg-bc-dark border border-bc-border rounded px-1.5 py-1 text-xs text-white max-w-[45%] flex-1 min-w-0"
+          className="bg-bc-dark border border-bc-border rounded px-1.5 py-1 text-xs text-bc-text-bright max-w-[45%] flex-1 min-w-0"
         >
           {shotlists.length === 0 && <option value="">{t('shotlist.none', '— no shotlist —')}</option>}
           {shotlists.map((l) => (
@@ -327,7 +327,7 @@ export default function ShotlistPanel() {
           <FiPrinter size={13} />
         </button>
 
-        <span className="ml-auto text-[10px] text-gray-500">Q / E</span>
+        <span className="ml-auto text-[10px] text-bc-dim">Q / E</span>
       </div>
 
       {(hint || shotlistStorageFull) && (
@@ -344,7 +344,7 @@ export default function ShotlistPanel() {
       {/* ── Shot-Streifen ── */}
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
         {shots.length === 0 && (
-          <div className="text-center text-gray-500 text-xs py-8 leading-relaxed">
+          <div className="text-center text-bc-dim text-xs py-8 leading-relaxed">
             {t('shotlist.empty', 'No shots yet.')}
             <br />
             {t('shotlist.empty.hint1', 'Set the camera up in the preview and click')}{' '}
@@ -395,13 +395,17 @@ export default function ShotlistPanel() {
             >
               <div className="flex gap-2 p-1.5">
                 {/* Framegrab */}
-                <div className="relative w-28 shrink-0 aspect-video bg-black rounded overflow-hidden flex items-center justify-center">
+                {/* SCHWARZ BLEIBT SCHWARZ, auch im Hell-Thema: das ist der
+                    Letterbox-Grund hinter einem Framegrab und keine
+                    Oberflaechenfarbe. Ein Bild im 16:9-Kasten, das auf Weiss
+                    ausgeblendet wird, sieht aus, als fehlte ein Stueck. */}
+                <div className="relative w-28 shrink-0 aspect-video bg-bc-media rounded overflow-hidden flex items-center justify-center">
                   {shot.thumbnail ? (
                     <img src={shot.thumbnail} alt="" className="w-full h-full object-contain" />
                   ) : (
-                    <span className="text-[9px] text-gray-600">{t('shotlist.noThumb', 'no image')}</span>
+                    <span className="text-[9px] text-bc-faint">{t('shotlist.noThumb', 'no image')}</span>
                   )}
-                  <span className="absolute top-0.5 left-0.5 bg-black/70 text-bc-yellow font-bold text-[9px] px-1 rounded">
+                  <span className="absolute top-0.5 left-0.5 bg-bc-scrim text-bc-yellow font-bold text-[9px] px-1 rounded">
                     {String(i + 1).padStart(2, '0')}
                   </span>
                 </div>
@@ -412,17 +416,17 @@ export default function ShotlistPanel() {
                     value={shot.name}
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => list && updateShot(list.id, shot.id, { name: e.target.value })}
-                    className="bg-transparent border border-transparent hover:border-bc-border focus:border-bc-accent rounded px-1 py-0.5 text-xs font-medium text-white w-full outline-none"
+                    className="bg-transparent border border-transparent hover:border-bc-border focus:border-bc-accent rounded px-1 py-0.5 text-xs font-medium text-bc-text-bright w-full outline-none"
                     title={t('shotlist.renameShot', 'Name the shot')}
                   />
-                  <div className="text-[10px] text-gray-400 px-1 truncate">{shotOpticsLabel(shot)}</div>
+                  <div className="text-[10px] text-bc-muted px-1 truncate">{shotOpticsLabel(shot)}</div>
                   <div className="flex items-center gap-1 px-1">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         if (list) updateShot(list.id, shot.id, { transition: nextTransitionMode(shot.transition) });
                       }}
-                      className="text-[9px] px-1 py-0.5 rounded border border-bc-border text-gray-400 hover:text-white hover:border-bc-accent/60"
+                      className="text-[9px] px-1 py-0.5 rounded border border-bc-border text-bc-muted hover:text-bc-text-bright hover:border-bc-accent/60"
                       title={t('shotlist.transitionToggle', 'Toggle the transition time (OFF / Fast / Slow / Manual)')}
                     >
                       {TRANSITION_LABEL[shot.transition]}
@@ -444,7 +448,7 @@ export default function ShotlistPanel() {
                             });
                           }
                         }}
-                        className="w-12 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-[9px] text-white"
+                        className="w-12 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-[9px] text-bc-text-bright"
                         title={t('shotlist.transitionSeconds', 'Transition time in seconds')}
                       />
                     )}
@@ -459,7 +463,7 @@ export default function ShotlistPanel() {
                           motionStyle: v ? (v as CameraMountType) : undefined,
                         });
                       }}
-                      className="bg-bc-panel border border-bc-border rounded px-0.5 py-0.5 text-[9px] text-gray-400 max-w-[86px]"
+                      className="bg-bc-panel border border-bc-border rounded px-0.5 py-0.5 text-[9px] text-bc-muted max-w-[86px]"
                       title={format(t('shotlist.motionStyle', 'Movement style - {hint}'), { hint: motionProfileHint(t, effStyle) })}
                     >
                       <option value="">
@@ -487,7 +491,7 @@ export default function ShotlistPanel() {
                         e.stopPropagation();
                         if (list) removeShot(list.id, shot.id);
                       }}
-                      className="ml-auto p-0.5 text-gray-500 hover:text-bc-red"
+                      className="ml-auto p-0.5 text-bc-dim hover:text-bc-red"
                       title={t('shotlist.deleteShot', 'Delete shot')}
                     >
                       <FiTrash2 size={12} />
@@ -498,7 +502,7 @@ export default function ShotlistPanel() {
                     placeholder={t('shotlist.notePlaceholder', 'Note…')}
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => list && updateShot(list.id, shot.id, { note: e.target.value })}
-                    className="bg-transparent border border-transparent hover:border-bc-border focus:border-bc-accent rounded px-1 py-0.5 text-[10px] text-gray-300 w-full outline-none"
+                    className="bg-transparent border border-transparent hover:border-bc-border focus:border-bc-accent rounded px-1 py-0.5 text-[10px] text-bc-text w-full outline-none"
                   />
                 </div>
               </div>

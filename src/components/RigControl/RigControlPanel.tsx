@@ -85,7 +85,7 @@ function Deflector({
 
   return (
     <div className={axes === 'xy' ? 'shrink-0' : 'w-full'} style={axes === 'xy' ? { width: size } : undefined}>
-      <div className="text-[10px] text-gray-500 mb-1">{label}</div>
+      <div className="text-[10px] text-bc-dim mb-1">{label}</div>
       <div
         ref={ref}
         title={hint}
@@ -393,7 +393,7 @@ export default function RigControlPanel() {
 
   if (!cam || !limits) {
     return (
-      <div className="h-full flex items-center justify-center text-gray-500 text-sm">
+      <div className="h-full flex items-center justify-center text-bc-dim text-sm">
         {t('rig.noCamera', 'No camera yet — create one in the „Cameras" panel on the left.')}
       </div>
     );
@@ -404,12 +404,12 @@ export default function RigControlPanel() {
   const hasTravel = limits.travelM > 0;
 
   return (
-    <div className="h-full overflow-auto bg-bc-panel text-xs text-white" data-rig-control>
+    <div className="h-full overflow-auto bg-bc-panel text-xs text-bc-text-bright" data-rig-control>
       <div className="p-3 space-y-3 max-w-[860px]">
         {/* Kopf: welche Kamera, welches Rig */}
         <div className="flex items-center gap-2">
           <select
-            className="bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
+            className="bg-bc-dark border border-bc-border rounded px-2 py-1 text-bc-text-bright"
             value={cam.id}
             onChange={(e) => selectCamera(e.target.value)}
           >
@@ -417,12 +417,12 @@ export default function RigControlPanel() {
               <option key={c.id} value={c.id}>{c.label}</option>
             ))}
           </select>
-          <span className="text-gray-400 truncate">
+          <span className="text-bc-muted truncate">
             {limits.rig?.name ?? mountTypeLabel(t, limits.type)} · {motionProfileLabel(t, limits.type)}
           </span>
           <button
             onClick={() => setArmed((a) => !a)}
-            className={`ml-auto px-2 py-1 rounded border ${armed ? 'border-bc-yellow text-bc-yellow' : 'border-bc-border text-gray-400'}`}
+            className={`ml-auto px-2 py-1 rounded border ${armed ? 'border-bc-yellow text-bc-yellow' : 'border-bc-border text-bc-muted'}`}
             title={t('rig.keys.title', 'Arm keyboard control. Off when the keys are needed elsewhere.')}
           >
             {armed ? t('rig.keysArmed', 'Keys armed') : t('rig.keysOff', 'Keys off')}
@@ -431,18 +431,18 @@ export default function RigControlPanel() {
 
         {/* Tempo */}
         <div className="flex items-center gap-1">
-          <span className="text-gray-500">{t('rig.speed', 'Speed')}</span>
+          <span className="text-bc-dim">{t('rig.speed', 'Speed')}</span>
           {SPEED_STEPS.map((s, i) => (
             <button
               key={s.key}
               onClick={() => setSpeed(i)}
               title={format(t('rig.speedStep', '{hint} (key {key})'), { hint: speedStepHint(t, s.key), key: s.key })}
-              className={`px-2 py-0.5 rounded border ${i === speedIndex ? 'border-bc-yellow text-bc-yellow' : 'border-bc-border text-gray-400'}`}
+              className={`px-2 py-0.5 rounded border ${i === speedIndex ? 'border-bc-yellow text-bc-yellow' : 'border-bc-border text-bc-muted'}`}
             >
               {speedStepLabel(t, s.key)}
             </button>
           ))}
-          <span className="ml-auto text-gray-600">
+          <span className="ml-auto text-bc-faint">
             {format(t('rig.limits', 'max {travel} m/s · {rot}°/s · {lift} m/s lift'), {
               travel: profile.maxTravelMps.toFixed(2),
               rot: profile.maxRotDps,
@@ -481,8 +481,8 @@ export default function RigControlPanel() {
         </div>
 
         {/* Tastenlegende */}
-        <div className="rounded border border-bc-border bg-bc-dark px-2 py-1.5 text-[10px] text-gray-400 leading-relaxed">
-          <b className="text-gray-300">{t('rig.keys', 'Keys')}</b> — <b>J/L</b> {t('rig.key.track', 'track')} · <b>← →</b> {t('rig.key.pan', 'pan')} · <b>↑ ↓</b> {t('rig.key.tilt', 'tilt')} ·
+        <div className="rounded border border-bc-border bg-bc-dark px-2 py-1.5 text-[10px] text-bc-muted leading-relaxed">
+          <b className="text-bc-text">{t('rig.keys', 'Keys')}</b> — <b>J/L</b> {t('rig.key.track', 'track')} · <b>← →</b> {t('rig.key.pan', 'pan')} · <b>↑ ↓</b> {t('rig.key.tilt', 'tilt')} ·
           {' '}<b>R/F</b> {t('rig.key.height', 'height')} · <b>[ ]</b> {t('rig.key.align', 'align rig')} · <b>, .</b> {t('rig.key.zoom', 'zoom')} · <b>0</b> {t('rig.key.park', 'park')} ·
           {' '}<b>1/2/3</b> {t('rig.key.speed', 'speed')}. {t('rig.keys.hint', 'Several keys at once move several axes together.')}
         </div>
@@ -490,7 +490,7 @@ export default function RigControlPanel() {
         {/* Aufnahme */}
         <div className="flex items-center gap-2">
           {recording ? (
-            <button onClick={stopRecording} className="flex items-center gap-1 px-2 py-1 rounded bg-bc-red text-white">
+            <button onClick={stopRecording} className="flex items-center gap-1 px-2 py-1 rounded bg-bc-red text-bc-text-bright">
               <FiSquare size={11} /> Stop {formatTakeTime(recSeconds)}
             </button>
           ) : (
@@ -500,17 +500,17 @@ export default function RigControlPanel() {
           )}
           <button
             onClick={() => { loopRef.current = !loopRef.current; setLoop(loopRef.current); }}
-            className={`flex items-center gap-1 px-2 py-1 rounded border ${loop ? 'border-bc-yellow text-bc-yellow' : 'border-bc-border text-gray-400'}`}
+            className={`flex items-center gap-1 px-2 py-1 rounded border ${loop ? 'border-bc-yellow text-bc-yellow' : 'border-bc-border text-bc-muted'}`}
             title={t('rig.loop', 'Replay the recorded take in a loop')}
           >
             <FiRepeat size={11} /> Loop
           </button>
           {playingId && (
-            <button onClick={stopPlayback} className="px-2 py-1 rounded border border-bc-border text-gray-300">
+            <button onClick={stopPlayback} className="px-2 py-1 rounded border border-bc-border text-bc-text">
               {t('rig.stopPlayback', 'Stop playback')}
             </button>
           )}
-          <span className="ml-auto text-gray-600">{format(t('rig.takesFor', '{count} take(s) for {name}'), { count: takes.length, name: cam.label })}</span>
+          <span className="ml-auto text-bc-faint">{format(t('rig.takesFor', '{count} take(s) for {name}'), { count: takes.length, name: cam.label })}</span>
         </div>
 
         {takeStorageFull && (
@@ -522,26 +522,26 @@ export default function RigControlPanel() {
         {/* Takes */}
         <div className="space-y-1">
           {takes.length === 0 && (
-            <p className="text-gray-600 text-[11px]">
+            <p className="text-bc-faint text-[11px]">
               {t('rig.noTakes', 'No take recorded yet. Press „Record take", move, then „Stop" — the movement can be replayed as often as you like afterwards.')}
             </p>
           )}
           {takes.map((fahrt) => (
             <div key={fahrt.id} className={`flex items-center gap-1 rounded border px-2 py-1 ${playingId === fahrt.id ? 'border-bc-yellow' : 'border-bc-border'}`}>
-              <button onClick={() => (playingId === fahrt.id ? stopPlayback() : playTake(fahrt))} className="text-gray-300 hover:text-white p-0.5" title={t('rig.play', 'Play')}>
+              <button onClick={() => (playingId === fahrt.id ? stopPlayback() : playTake(fahrt))} className="text-bc-text hover:text-bc-text-bright p-0.5" title={t('rig.play', 'Play')}>
                 {playingId === fahrt.id ? <FiSquare size={12} /> : <FiPlay size={12} />}
               </button>
               <input
-                className="flex-1 bg-transparent outline-none text-white"
+                className="flex-1 bg-transparent outline-none text-bc-text-bright"
                 value={fahrt.name}
                 title={t('rig.rename', 'Name the take')}
                 onChange={(e) => renameRigTake(fahrt.id, e.target.value)}
               />
-              <span className="text-gray-500">{formatTakeTime(takeDuration(fahrt))}</span>
-              <span className="text-gray-600 text-[10px]">{format(t('rig.samples', '{n} pts'), { n: fahrt.samples.length })}</span>
+              <span className="text-bc-dim">{formatTakeTime(takeDuration(fahrt))}</span>
+              <span className="text-bc-faint text-[10px]">{format(t('rig.samples', '{n} pts'), { n: fahrt.samples.length })}</span>
               <button
                 onClick={() => { if (playingId === fahrt.id) stopPlayback(); removeRigTake(fahrt.id); }}
-                className="text-gray-500 hover:text-bc-red p-0.5"
+                className="text-bc-dim hover:text-bc-red p-0.5"
                 title={t('rig.delete', 'Delete take')}
               >
                 <FiTrash2 size={12} />
@@ -551,7 +551,7 @@ export default function RigControlPanel() {
         </div>
 
         {otherTakes.length > 0 && (
-          <div className="text-[10px] text-gray-600 flex items-center gap-1">
+          <div className="text-[10px] text-bc-faint flex items-center gap-1">
             <FiCrosshair size={10} /> {format(t('rig.otherTakes', '{count} further take(s) belong to other cameras.'), { count: otherTakes.length })}
           </div>
         )}
@@ -563,9 +563,9 @@ export default function RigControlPanel() {
 function Readout({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="rounded border border-bc-border bg-bc-dark px-2 py-1">
-      <div className="text-gray-500 text-[10px]">{label}</div>
-      <div className="text-white tabular-nums">{value}</div>
-      {sub && <div className="text-gray-600 text-[10px]">{sub}</div>}
+      <div className="text-bc-dim text-[10px]">{label}</div>
+      <div className="text-bc-text-bright tabular-nums">{value}</div>
+      {sub && <div className="text-bc-faint text-[10px]">{sub}</div>}
     </div>
   );
 }
