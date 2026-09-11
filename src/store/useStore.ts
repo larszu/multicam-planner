@@ -39,6 +39,12 @@ export const APP_VERSION = __APP_VERSION__;
  * Fremd-Domaenen zwischen Speichern und Laden verliert. Was zugesichert wird,
  * muss aufrufbar sein, ohne einen Download auszuloesen.
  */
+/** Der Vorgabename einer Projektdatei - einmal formuliert, damit Speichern
+ *  und der Vorschlag in Speichern-unter nicht auseinanderlaufen. */
+export function defaultProjectFileName(project: { venue: { name: string }; projectVersion: number }): string {
+  return `${project.venue.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_v${project.projectVersion}.mcplan`;
+}
+
 export function buildProjectFile(s: {
   projectVersion: number;
   venue: Venue;
@@ -258,10 +264,15 @@ interface AppState {
   lastSavedVersion: number;
   hasUnsavedChanges: () => boolean;
   bumpVersion: () => void;
-  saveProject: () => void;
+  /** Ohne Namen: der Vorgabename aus Venue und Projektstand. Mit Namen:
+   *  Speichern unter. */
+  saveProject: (fileName?: string) => void;
   loadProject: (file: File) => Promise<void>;
   /** Wendet ein bereits geparstes ProjectFile auf den Store an (Kern von loadProject). */
   applyProjectFile: (project: ProjectFile) => void;
+  /** Leeres Projekt — „Datei > Neues Projekt". Setzt GENAU das zurueck, was
+   *  auch das Oeffnen einer Datei ersetzt, weil es denselben Weg geht. */
+  newProject: () => void;
   /** Importiert ein neutrales Venue-Austauschdokument (ersetzt den geteilten
    *  Venue-Teil: Masse/Waende/Stage/Personen/Floor-Plan). Kameras bleiben. */
   importVenueExchange: (ex: VenueExchange) => void;
@@ -1039,14 +1050,18 @@ export const useStore = create<AppState>((set, get) => ({
   },
   bumpVersion: () => set((s) => ({ projectVersion: s.projectVersion + 1 })),
 
-  saveProject: () => {
+  saveProject: (fileName?: string) => {
     const project = buildProjectFile(get());
     const json = JSON.stringify(project, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${project.venue.name.replace(/[^a-zA-Z0-9_-]/g, '_')}_v${project.projectVersion}.mcplan`;
+    // Speichern unter reicht einen Namen herein; ohne ihn bleibt es beim
+    // Vorgabenamen. Den Ablage-ORT kann der Browser nicht anbieten - danach
+    // fragt der Download-Dialog. Ohne diesen Unterschied waeren die beiden
+    // Menuepunkte zwei Wege zu derselben Sache.
+    a.download = fileName || defaultProjectFileName(project);
     a.click();
     URL.revokeObjectURL(url);
     set({ lastSavedVersion: project.projectVersion });
@@ -1056,6 +1071,33 @@ export const useStore = create<AppState>((set, get) => ({
     const text = await file.text();
     const project: ProjectFile = JSON.parse(text);
     get().applyProjectFile(project);
+  },
+
+  // ── Neues Projekt (Datei-Menue, 2026-09-11) ──────────────────────────
+  //
+  // ES GEHT DURCH `applyProjectFile` UND NICHT AN IHM VORBEI. Eine eigene
+  // Liste zurueckzusetzender Felder waere die zweite Rechnung: wer spaeter
+  // ein Feld ins Projekt aufnimmt, traegt es in den Lade-Pfad ein und
+  // vergisst den Neu-Pfad — und „Neues Projekt" liesse still einen Rest des
+  // alten stehen. Ein leeres ProjectFile durch denselben Trichter hat dieses
+  // Problem nicht.
+  //
+  // WAS ES NICHT ANFASST: Shotlists, Templates und Sprache. Die haengen an
+  // eigenen localStorage-Schluesseln und ueberleben auch das OEFFNEN eines
+  // Projekts — ein „Neu", das mehr wegraeumt als ein „Oeffnen", waere ein
+  // zweiter Begriff von Projekt.
+  newProject: () => {
+    get().applyProjectFile({
+      formatVersion: 1,
+      appVersion: APP_VERSION,
+      projectVersion: 0,
+      savedAt: new Date().toISOString(),
+      venue: defaultVenue,
+      cameras: [],
+      persons: [],
+      walls: [],
+      backgroundPlan: null,
+    });
   },
 
   applyProjectFile: (project: ProjectFile) => {

@@ -433,6 +433,23 @@ select {
   border-bottom: 1px solid var(--color-bc-border);
 }
 
+/* Die Modul-Reiter - eine EIGENE Zeile unter der Kopfzeile, seit 2026-09-11.
+ * Vorher standen sie mitten in der 40-px-Kopfzeile zwischen App-Name und
+ * Werkzeug-Knoepfen; damit sah Modul-Navigation aus wie eine Menueleiste, und
+ * auf schmalen Fenstern schoben die Reiter den Einstellungen-Knopf aus dem
+ * Bild. Dieselbe Aufteilung wie im inventory- und facility-planner (dort
+ * `.reiter-leiste`); in der Suite-Shell ist es die Rail links. */
+.bc-tabbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  padding: 4px 12px;
+  background: var(--color-bc-dark);
+  border-bottom: 1px solid var(--color-bc-border);
+  overflow-x: auto;
+}
+
 .bc-panel-head {
   display: flex;
   align-items: center;

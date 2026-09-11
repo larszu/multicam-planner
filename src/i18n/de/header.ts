@@ -1,5 +1,11 @@
 /** DE-Overrides: Header, App-Tabs, StartupAssistant, TemplateSelector.
  *  Keys: header.* */
+// ACHT EINTRAEGE SIND NACH `de/chrome.ts` GEWANDERT (2026-09-11):
+// header.open/save/inventory/avplanImport/avplanExport/venueImport/
+// venueExport/camerasExport. Sie beschriften jetzt Menuepunkte statt loser
+// Knoepfe und heissen darum anders (Oeffnen… statt Oeffnen). Hier stehen zu
+// bleiben haette geheissen: zwei deutsche Woerter fuer einen Schluessel, und
+// welches gewinnt, entschiede die Reihenfolge der Spreads in `de.ts`.
 export const header: Record<string, string> = {
   // ── Header: Tabs ──
   'header.tab.2dPlan': '2D-Plan',
@@ -46,16 +52,9 @@ export const header: Record<string, string> = {
   'header.presets.cancel': 'Abbrechen',
 
   // ── Header: Aktions-Buttons ──
-  'header.save': 'Speichern',
   'header.save.title': 'Projekt speichern (.mcplan)',
-  'header.open': 'Öffnen',
   'header.open.title': 'Projektdatei öffnen',
   // Gebündelte Import-/Export-Menüs
-  'header.avplanExport': 'Gesamtprojekt',
-  'header.avplanImport': 'Kombiniertes Projekt',
-  'header.venueExport': 'Venue',
-  'header.venueImport': 'Venue',
-  'header.camerasExport': 'Kameras → Cable-Planner',
   'header.export': 'Export',
   'header.export.title': 'Ansichten als PNG exportieren',
   'header.export.current': 'Aktuelle Kamera',
@@ -97,7 +96,6 @@ export const header: Record<string, string> = {
   'header.sidebar.collapse': 'Spalte ausblenden',
   'header.sidebar.open.aria': 'Seitenspalte einblenden',
   'header.sidebar.collapse.aria': 'Seitenspalte ausblenden',
-  'header.inventory': 'Lager',
   'header.inventory.title': 'Lager / Bestand',
 
   // ── StartupAssistant: Wizard ──
