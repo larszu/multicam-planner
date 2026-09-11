@@ -96,6 +96,7 @@ export const header: Record<string, string> = {
   'header.sidebar.collapse': 'Spalte ausblenden',
   'header.sidebar.open.aria': 'Seitenspalte einblenden',
   'header.sidebar.collapse.aria': 'Seitenspalte ausblenden',
+  'header.sidebar.title': 'Kamera-Aufbau',
   'header.inventory.title': 'Lager / Bestand',
 
   // ── StartupAssistant: Wizard ──

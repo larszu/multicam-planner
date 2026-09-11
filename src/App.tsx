@@ -551,8 +551,28 @@ export default function App() {
             style={{ width: 'clamp(264px, 22vw, 420px)' }}
             className="border-r border-bc-border flex flex-col bg-bc-panel shrink-0"
           >
-            {/* Register UND Griff in einer Zeile: der Griff gehoert zum
-                Rahmen der Spalte, nicht zu ihrem Inhalt. */}
+            {/* DIE KOPFZEILE DER SPALTE (2026-09-11).
+                ADR-007 Abschnitt 6 verlangt fuer jede Spalte eine Kopfzeile
+                mit ihrem Namen und dem Griff darin, und Abschnitt 3 gibt ihr
+                die Kopflinie im Akzent. Diese Spalte hatte beides nicht: der
+                Name stand nur senkrecht im eingeklappten Streifen, offen
+                begann sie unvermittelt mit zwei Registern. Wer die App
+                oeffnet, sieht jetzt, WAS links steht, bevor er waehlt,
+                welche Sicht darauf. */}
+            <div className="spaltenkopf flex items-center gap-2 border-b border-bc-accent px-3 py-2">
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold text-bc-text">
+                {t('header.sidebar.title', 'Camera setup')}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSidebarCollapsed(true)}
+                title={t('header.sidebar.collapse', 'Collapse column')}
+                aria-label={t('header.sidebar.collapse.aria', 'Collapse the side column')}
+                className="flex h-7 w-7 shrink-0 items-center justify-center text-bc-dim transition-colors hover:bg-bc-hover hover:text-bc-text-bright"
+              >
+                <FiChevronLeft size={14} />
+              </button>
+            </div>
             <div className="flex items-stretch border-b border-bc-border">
               <button
                 className={`flex-1 py-2 text-xs font-medium ${sidebarTab === 'cameras' ? 'text-bc-accent border-b-2 border-bc-accent' : 'text-bc-dim hover:text-bc-text'}`}
@@ -565,15 +585,6 @@ export default function App() {
                 onClick={() => setSidebarTab('templates')}
               >
                 {t('header.sidebar.templates', 'Templates')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setSidebarCollapsed(true)}
-                title={t('header.sidebar.collapse', 'Collapse column')}
-                aria-label={t('header.sidebar.collapse.aria', 'Collapse the side column')}
-                className="flex w-8 shrink-0 items-center justify-center text-bc-dim transition-colors hover:bg-bc-hover hover:text-bc-text-bright"
-              >
-                <FiChevronLeft size={14} />
               </button>
             </div>
             <div className="flex-1 overflow-hidden flex flex-col">
