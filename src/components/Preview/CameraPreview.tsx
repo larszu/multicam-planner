@@ -1347,9 +1347,9 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       <div className="flex-1 flex flex-col gap-2 min-w-0 overflow-y-auto">
         {/* Camera switcher bar */}
         <div className="flex items-center gap-2 px-2">
-          <button onClick={selectPrevCamera} className="p-1 rounded hover:bg-bc-border text-bc-muted hover:text-bc-text-bright" title={t('preview.prevCamera', 'Previous camera')}><FiChevronLeft size={16} /></button>
+          <button onClick={selectPrevCamera} className="p-1 hover:bg-bc-border text-bc-muted hover:text-bc-text-bright" title={t('preview.prevCamera', 'Previous camera')}><FiChevronLeft size={16} /></button>
           <span className="text-bc-text-bright font-bold text-sm flex-1 text-center">{cam.label}</span>
-          <button onClick={selectNextCamera} className="p-1 rounded hover:bg-bc-border text-bc-muted hover:text-bc-text-bright" title={t('preview.nextCamera', 'Next camera')}><FiChevronRight size={16} /></button>
+          <button onClick={selectNextCamera} className="p-1 hover:bg-bc-border text-bc-muted hover:text-bc-text-bright" title={t('preview.nextCamera', 'Next camera')}><FiChevronRight size={16} /></button>
           <span className="text-bc-dim text-[10px]">{camIdx + 1}/{cameras.length}</span>
         </div>
 
@@ -1358,7 +1358,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           <canvas
             ref={canvasRef}
             data-preview-canvas
-            className="w-full rounded-lg"
+            className="w-full"
             style={{ cursor: focusPickMode ? 'crosshair' : 'grab', display: 'block' }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
@@ -1380,7 +1380,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
             <button
               key={label}
               onClick={() => set(!on)}
-              className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${on ? 'border-bc-accent text-bc-accent bg-bc-accent/10' : 'border-bc-border text-bc-dim hover:text-bc-text'}`}
+              className={`px-2 py-0.5 text-[10px] font-medium border transition-colors ${on ? 'border-bc-accent text-bc-accent bg-bc-accent/10' : 'border-bc-border text-bc-dim hover:text-bc-text'}`}
             >
               {label}
             </button>
@@ -1388,21 +1388,21 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           <button
             onClick={() => useStore.getState().updateCamera(cam.id, { invertPreviewH: !cam.invertPreviewH })}
             title={t('preview.flipH', 'Flip horizontal pan direction')}
-            className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${cam.invertPreviewH ? 'border-bc-accent text-bc-accent bg-bc-accent/10' : 'border-bc-border text-bc-dim hover:text-bc-text'}`}
+            className={`px-2 py-0.5 text-[10px] font-medium border transition-colors ${cam.invertPreviewH ? 'border-bc-accent text-bc-accent bg-bc-accent/10' : 'border-bc-border text-bc-dim hover:text-bc-text'}`}
           >
             ↔ {t('preview.invertH', 'Invert H')}
           </button>
           <button
             onClick={() => useStore.getState().updateCamera(cam.id, { invertPreviewV: !cam.invertPreviewV })}
             title={t('preview.flipV', 'Flip vertical tilt direction')}
-            className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${cam.invertPreviewV ? 'border-bc-accent text-bc-accent bg-bc-accent/10' : 'border-bc-border text-bc-dim hover:text-bc-text'}`}
+            className={`px-2 py-0.5 text-[10px] font-medium border transition-colors ${cam.invertPreviewV ? 'border-bc-accent text-bc-accent bg-bc-accent/10' : 'border-bc-border text-bc-dim hover:text-bc-text'}`}
           >
             ↕ {t('preview.invertV', 'Invert V')}
           </button>
           <button
             onClick={() => setFocusPickMode((v) => !v)}
             title={focusPickMode ? t('preview.focusPickLeave', 'Click anywhere to leave focus-pick mode') : t('preview.focusPickEnter', 'Pick a person in the preview to set focus distance')}
-            className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${focusPickMode ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-bc-dim hover:text-bc-text'}`}
+            className={`px-2 py-0.5 text-[10px] font-medium border transition-colors ${focusPickMode ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-bc-dim hover:text-bc-text'}`}
           >
             ◎ {t('preview.focusPick', 'Focus pick')} {focusPickMode ? '· ' + t('preview.on', 'ON') : ''}
           </button>
@@ -1410,7 +1410,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
             <button
               onClick={() => useStore.getState().updateCamera(cam.id, { lockedPersonId: undefined })}
               title={t('preview.releaseLock', 'Release focus lock')}
-              className="px-2 py-0.5 rounded text-[10px] font-medium border border-bc-yellow text-bc-yellow bg-bc-yellow/10 flex items-center gap-1"
+              className="px-2 py-0.5 text-[10px] font-medium border border-bc-yellow text-bc-yellow bg-bc-yellow/10 flex items-center gap-1"
             >
               <FiLock size={10} /> {t('preview.unlock', 'Unlock')} {persons.find((p) => p.id === cam.lockedPersonId)?.label ?? t('preview.subject', 'subject')}
             </button>
@@ -1429,7 +1429,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                 if (best) useStore.getState().updateCamera(cam.id, { lockedPersonId: best.id });
               }}
               title={t('preview.lockSubjectTitle', 'Lock focus distance to the subject closest to the crosshair')}
-              className="px-2 py-0.5 rounded text-[10px] font-medium border border-bc-border text-bc-dim hover:text-bc-text flex items-center gap-1"
+              className="px-2 py-0.5 text-[10px] font-medium border border-bc-border text-bc-dim hover:text-bc-text flex items-center gap-1"
             >
               <FiUnlock size={10} /> {t('preview.lockSubject', 'Lock subject')}
             </button>
@@ -1459,13 +1459,13 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                   <input
                     type="number" min={1} max={manualMax - 1} value={manualMin}
                     onChange={(e) => setManualMin(Math.max(1, Math.min(manualMax - 1, parseFloat(e.target.value) || 1)))}
-                    className="w-12 bg-bc-dark border border-bc-border rounded px-1 text-[9px] text-bc-text font-mono"
+                    className="w-12 bg-bc-dark border border-bc-border px-1 text-[9px] text-bc-text font-mono"
                     title={t('preview.manualMin', 'Manual minimum focal length (mm)')}
                   />
                   <input
                     type="number" min={manualMin + 1} max={2000} value={manualMax}
                     onChange={(e) => setManualMax(Math.max(manualMin + 1, Math.min(2000, parseFloat(e.target.value) || 500)))}
-                    className="w-12 bg-bc-dark border border-bc-border rounded px-1 text-[9px] text-bc-text font-mono"
+                    className="w-12 bg-bc-dark border border-bc-border px-1 text-[9px] text-bc-text font-mono"
                     title={t('preview.manualMax', 'Manual maximum focal length (mm)')}
                   />
                 </>
@@ -1480,7 +1480,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                   return next;
                 })}
                 title={t('preview.manualTitle', "Temporarily scrub focal length beyond the lens's real range")}
-                className={`px-1.5 py-0.5 rounded text-[9px] font-medium border transition-colors ${manualZoom ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-bc-dim hover:text-bc-text'}`}
+                className={`px-1.5 py-0.5 text-[9px] font-medium border transition-colors ${manualZoom ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-bc-dim hover:text-bc-text'}`}
               >
                 {t('preview.manual', 'Manual')}
               </button>
@@ -1507,13 +1507,13 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                   <input
                     type="number" min={0.1} max={manualApMax - 0.1} step={0.1} value={manualApMin}
                     onChange={(e) => setManualApMin(Math.max(0.1, Math.min(manualApMax - 0.1, parseFloat(e.target.value) || 0.1)))}
-                    className="w-12 bg-bc-dark border border-bc-border rounded px-1 text-[9px] text-bc-text font-mono"
+                    className="w-12 bg-bc-dark border border-bc-border px-1 text-[9px] text-bc-text font-mono"
                     title={t('preview.apertureManualMin', 'Manual minimum (aperture)')}
                   />
                   <input
                     type="number" min={manualApMin + 0.1} max={64} step={0.1} value={manualApMax}
                     onChange={(e) => setManualApMax(Math.max(manualApMin + 0.1, Math.min(64, parseFloat(e.target.value) || 32)))}
-                    className="w-12 bg-bc-dark border border-bc-border rounded px-1 text-[9px] text-bc-text font-mono"
+                    className="w-12 bg-bc-dark border border-bc-border px-1 text-[9px] text-bc-text font-mono"
                     title={t('preview.apertureManualMax', 'Manual maximum (aperture)')}
                   />
                 </>
@@ -1529,7 +1529,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                   return next;
                 })}
                 title={t('preview.aperture.beyond', 'Run the aperture beyond the real lens limits')}
-                className={`px-1.5 py-0.5 rounded text-[9px] font-medium border transition-colors ${manualAperture ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-bc-dim hover:text-bc-text'}`}
+                className={`px-1.5 py-0.5 text-[9px] font-medium border transition-colors ${manualAperture ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-bc-dim hover:text-bc-text'}`}
               >
                 {t('preview.manual', 'Manual')}
               </button>
@@ -1560,7 +1560,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
             {t('preview.presets', 'Presets')} · {cam.label}
           </span>
           {presetGroups.own.map((p) => (
-            <span key={p.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-bc-text hover:border-bc-accent">
+            <span key={p.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] border border-bc-border text-bc-text hover:border-bc-accent">
               <button onClick={() => applyPreset(p)} title={`${p.focalLength.toFixed(0)}mm · f/${p.aperture.toFixed(1)} · ${p.focusDistance.toFixed(1)}m${p.pan !== undefined ? ` · Pos (Pan ${p.pan.toFixed(0)}° Tilt ${p.tilt?.toFixed(0)}° H ${p.z?.toFixed(1)}m)` : ''}`}>{p.name}{hasPose(p) && <span className="ml-0.5 text-bc-accent" title={t('preview.preset.hasPose', 'contains camera position')}>◈</span>}</button>
               <button onClick={() => deletePreset(p.id)} className="text-bc-faint hover:text-bc-red" title={t('preview.deletePreset', 'Delete preset')} aria-label={`Preset ${p.name} löschen`}><FiX size={10} /></button>
             </span>
@@ -1568,7 +1568,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
           {presetGroups.own.length === 0 && (
             <span className="text-[10px] text-bc-faint">{t('preview.preset.none', 'none yet')}</span>
           )}
-          <button onClick={addPreset} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-border text-bc-dim hover:text-bc-accent hover:border-bc-accent" title={`${t('preview.savePreset', 'Save current focal length / aperture / focus as a preset')} · ${cam.label}`}>
+          <button onClick={addPreset} className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] border border-bc-border text-bc-dim hover:text-bc-accent hover:border-bc-accent" title={`${t('preview.savePreset', 'Save current focal length / aperture / focus as a preset')} · ${cam.label}`}>
             <FiPlus size={10} /> {t('preview.add', 'Add')}
           </button>
 
@@ -1586,7 +1586,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
               );
               window.setTimeout(() => setShotHint(null), 2500);
             }}
-            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-bc-accent/60 text-bc-accent bg-bc-accent/10 hover:bg-bc-accent/20"
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] border border-bc-accent/60 text-bc-accent bg-bc-accent/10 hover:bg-bc-accent/20"
             title={t('preview.addShot', 'Add the current view to the shotlist as a shot')}
           >
             <FiCamera size={10} /> {t('preview.captureShot', 'Capture shot')}
@@ -1604,7 +1604,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
               {t('preview.preset.unassigned', 'unassigned')}
             </span>
             {presetGroups.unassigned.map((p) => (
-              <span key={p.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border border-dashed border-bc-border text-bc-dim hover:border-bc-accent">
+              <span key={p.id} className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] border border-dashed border-bc-border text-bc-dim hover:border-bc-accent">
                 <button onClick={() => applyPreset(p)} title={`Auf ${cam.label} anwenden — ${p.focalLength.toFixed(0)}mm · f/${p.aperture.toFixed(1)}`}>{p.name}{hasPose(p) && <span className="ml-0.5 text-bc-accent">◈</span>}</button>
                 <button
                   onClick={() => takeOverPreset(p.id)}
@@ -1630,7 +1630,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
               saveJSON(PREVIEW_TRANSITION_MODE_KEY, next);
             }}
             title={t('preview.transitionToggle', 'Toggle: OFF (jumps) / Fast 3 s / Slow 10 s / Manual')}
-            className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${transitionMode === 'off' ? 'border-bc-border text-bc-dim hover:text-bc-text' : 'border-bc-accent text-bc-accent bg-bc-accent/10'}`}
+            className={`px-2 py-0.5 text-[10px] font-medium border transition-colors ${transitionMode === 'off' ? 'border-bc-border text-bc-dim hover:text-bc-text' : 'border-bc-accent text-bc-accent bg-bc-accent/10'}`}
           >
             {TRANSITION_LABEL[transitionMode]}
           </button>
@@ -1645,7 +1645,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
               saveJSON(PREVIEW_TRANSITION_MODE_KEY, 'manual');
               saveJSON(PREVIEW_TRANSITION_SEC_KEY, v);
             }}
-            className="w-14 bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-[10px] text-bc-text font-mono"
+            className="w-14 bg-bc-dark border border-bc-border px-1 py-0.5 text-[10px] text-bc-text font-mono"
             title={t('preview.transitionSeconds', 'Transition time in seconds (editing switches to Manual)')}
           />
           <span className="text-[10px] text-bc-faint">s</span>
@@ -1671,7 +1671,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
       {camDef && lensDef && fov && dof && showData && (
         <div className="w-56 shrink-0 overflow-y-auto space-y-1.5 pr-1">
           {/* Camera + Lens header */}
-          <div className="bg-bc-dark rounded-lg border border-bc-border p-2">
+          <div className="bg-bc-dark border border-bc-border p-2">
             <span className="text-bc-text-bright font-semibold text-xs">{cam.label}</span>
             <div className="text-bc-dim text-[10px]">{camDef.sensor.name} · {camDef.mount}</div>
             <div className="text-bc-muted text-[10px] mt-0.5">{camDef.manufacturer} {camDef.model}</div>
@@ -1683,7 +1683,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
 
           {/* Notes — only when filled */}
           {cam.notes && cam.notes.trim() && (
-            <div className="bg-bc-dark rounded-lg border border-bc-border p-2">
+            <div className="bg-bc-dark border border-bc-border p-2">
               <div className="text-[10px] text-bc-dim leading-tight mb-0.5">{t('preview.notes', 'Notes')}</div>
               <div className="text-[11px] text-bc-text whitespace-pre-wrap leading-snug">{cam.notes}</div>
             </div>
@@ -1708,7 +1708,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
 
 function DataCell({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="bg-bc-dark rounded border border-bc-border px-2 py-1.5">
+    <div className="bg-bc-dark border border-bc-border px-2 py-1.5">
       <div className="text-[10px] text-bc-dim leading-tight">{label}</div>
       <div className="text-bc-text-bright text-sm font-mono font-semibold leading-tight">{value}</div>
       {sub && <div className="text-[10px] text-bc-dim leading-tight">{sub}</div>}

@@ -278,7 +278,7 @@ export default function Header({
           {/* Minimal unsaved-changes indicator (no project-version counter). */}
           {unsaved && (
             <span
-              className="ml-2 shrink-0 rounded bg-bc-yellow/20 px-1.5 py-0.5 text-xs text-bc-yellow"
+              className="ml-2 shrink-0 bg-bc-yellow/20 px-1.5 py-0.5 text-xs text-bc-yellow"
               title={t('header.unsaved.title', 'There are unsaved changes — use Save to write a .mcplan file')}
             >
               {t('header.unsaved', '● unsaved')}
@@ -551,7 +551,7 @@ export default function Header({
             type="button"
             onClick={() => setSettingsOpen(true)}
             style={{ padding: '4px 8px' }}
-            className="flex items-center gap-1 rounded text-xs text-bc-text transition-colors hover:bg-bc-panel-raised hover:text-bc-text-bright"
+            className="flex items-center gap-1 text-xs text-bc-text transition-colors hover:bg-bc-panel-raised hover:text-bc-text-bright"
             title={t('settings.title', 'Settings')}
           >
             <FiSettings size={14} />
@@ -576,7 +576,7 @@ export default function Header({
             onDragStart={(e) => {
               onDragNewPanel(tab.id, e.nativeEvent);
             }}
-            className={`flex items-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-xs font-medium text-bc-text transition-colors hover:border-bc-border hover:bg-bc-panel-raised hover:text-bc-text-bright sm:px-3 ${
+            className={`flex items-center gap-1.5 border border-transparent px-2 py-1 text-xs font-medium text-bc-text transition-colors hover:border-bc-border hover:bg-bc-panel-raised hover:text-bc-text-bright sm:px-3 ${
               layoutMode === 'grid' ? 'cursor-grab active:cursor-grabbing' : ''
             }`}
             title={layoutMode === 'grid' ? format(t('header.tab.dragTitle', 'Drag {label} into the grid'), { label: beschriftung(tab) }) : format(t('header.tab.focusTitle', '{label} in focus view'), { label: beschriftung(tab) })}

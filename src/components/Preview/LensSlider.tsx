@@ -179,7 +179,7 @@ export default function LensSlider({
                   onStep(e.key === 'ArrowUp' ? -1 : 1);
                 }
               }}
-              className={`w-11 bg-bc-dark border rounded px-1 text-[10px] font-mono text-right outline-none transition-colors ${
+              className={`w-11 bg-bc-dark border px-1 text-[10px] font-mono text-right outline-none transition-colors ${
                 draft !== null
                   ? 'border-bc-accent text-bc-text-bright'
                   : 'border-bc-border/60 text-bc-text hover:border-bc-accent/60 focus:border-bc-accent'

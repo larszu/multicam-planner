@@ -96,7 +96,7 @@ export default function AiPlanAnalysis() {
   }, [apiKey, backgroundPlan, model, provider, setBackgroundPlan, addWall, addStage, tasks, t]);
 
   return (
-    <div className="p-2 rounded bg-bc-dark border border-bc-border space-y-1.5">
+    <div className="p-2 bg-bc-dark border border-bc-border space-y-1.5">
       <div className="flex items-center gap-1 text-bc-text font-medium">
         <FiCpu size={11} /> {t('sidebar.ai.title', 'AI Plan Analysis')}
       </div>
@@ -106,7 +106,7 @@ export default function AiPlanAnalysis() {
 
       {/* Provider + model */}
       <select
-        className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-[11px]"
+        className="w-full bg-bc-panel border border-bc-border px-1 py-0.5 text-bc-text-bright text-[11px]"
         value={providerId}
         onChange={(e) => selectProvider(e.target.value as AiProviderId)}
       >
@@ -122,7 +122,7 @@ export default function AiPlanAnalysis() {
         <input
           type="password"
           placeholder={format(t('sidebar.ai.apiKeyPlaceholder', '{label} API key'), { label: provider.label })}
-          className="flex-1 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-[11px]"
+          className="flex-1 bg-bc-panel border border-bc-border px-1 py-0.5 text-bc-text-bright text-[11px]"
           value={apiKey}
           onChange={(e) => persistKey(e.target.value)}
         />
@@ -132,7 +132,7 @@ export default function AiPlanAnalysis() {
       <input
         type="text"
         placeholder={t('sidebar.ai.modelPlaceholder', 'model')}
-        className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-[10px]"
+        className="w-full bg-bc-panel border border-bc-border px-1 py-0.5 text-bc-text-bright text-[10px]"
         value={model}
         onChange={(e) => persistModel(e.target.value)}
         title={t('sidebar.ai.modelTitle', 'Model id — defaults to a vision-capable model for the provider')}
@@ -156,7 +156,7 @@ export default function AiPlanAnalysis() {
       <button
         onClick={analyze}
         disabled={busy || !backgroundPlan}
-        className="flex items-center justify-center gap-1 px-2 py-1 rounded bg-bc-accent/20 text-bc-accent text-[11px] hover:bg-bc-accent/30 w-full disabled:opacity-40 disabled:cursor-not-allowed"
+        className="flex items-center justify-center gap-1 px-2 py-1 bg-bc-accent/20 text-bc-accent text-[11px] hover:bg-bc-accent/30 w-full disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {busy ? <><FiLoader size={11} className="animate-spin" /> {t('sidebar.ai.analysing', 'Analysing…')}</> : <>{t('sidebar.ai.analyse', 'Analyse plan with AI')}</>}
       </button>

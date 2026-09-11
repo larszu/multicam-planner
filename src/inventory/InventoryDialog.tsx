@@ -163,10 +163,10 @@ export function InventoryDialog({ open, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-bc-scrim p-4">
-      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-bc-border bg-bc-panel text-bc-text-bright shadow-2xl">
+      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden border border-bc-border bg-bc-panel text-bc-text-bright">
         <header className="flex shrink-0 items-center justify-between border-b border-bc-border px-4 py-2.5">
           <h2 className="text-base font-semibold">{t('inventory.title', 'Warehouse / Inventory')}</h2>
-          <button type="button" onClick={onClose} className="rounded p-1 text-bc-muted hover:bg-bc-dark hover:text-bc-text-bright" aria-label={t('inventory.close', 'Close')}>
+          <button type="button" onClick={onClose} className="p-1 text-bc-muted hover:bg-bc-dark hover:text-bc-text-bright" aria-label={t('inventory.close', 'Close')}>
             <FiX size={18} />
           </button>
         </header>
@@ -184,23 +184,23 @@ export function InventoryDialog({ open, onClose }: Props) {
                 className={`${inputCls} pl-7`}
               />
             </div>
-            <button type="button" onClick={doScan} className="rounded bg-bc-dark px-2.5 py-1.5 hover:bg-bc-sunken">{t('inventory.resolve', 'Resolve')}</button>
-            <button type="button" onClick={doExport} className="flex items-center gap-1 rounded bg-bc-dark px-2.5 py-1.5 hover:bg-bc-sunken" title={t('inventory.export.title', 'Export (cross-app)')}>
+            <button type="button" onClick={doScan} className="bg-bc-dark px-2.5 py-1.5 hover:bg-bc-sunken">{t('inventory.resolve', 'Resolve')}</button>
+            <button type="button" onClick={doExport} className="flex items-center gap-1 bg-bc-dark px-2.5 py-1.5 hover:bg-bc-sunken" title={t('inventory.export.title', 'Export (cross-app)')}>
               <FiDownload size={13} /> {t('inventory.export', 'Export')}
             </button>
-            <button type="button" onClick={() => fileRef.current?.click()} className="flex items-center gap-1 rounded bg-bc-dark px-2.5 py-1.5 hover:bg-bc-sunken" title={t('inventory.import.title', 'Import')}>
+            <button type="button" onClick={() => fileRef.current?.click()} className="flex items-center gap-1 bg-bc-dark px-2.5 py-1.5 hover:bg-bc-sunken" title={t('inventory.import.title', 'Import')}>
               <FiUpload size={13} /> {t('inventory.import', 'Import')}
             </button>
-            <button type="button" onClick={() => setForm({ model: '', quantity: 1 })} className="flex items-center gap-1 rounded bg-bc-accent px-2.5 py-1.5 text-bc-accent-text hover:opacity-90">
+            <button type="button" onClick={() => setForm({ model: '', quantity: 1 })} className="flex items-center gap-1 bg-bc-accent px-2.5 py-1.5 text-bc-accent-text hover:opacity-90">
               <FiPlus size={13} /> {t('inventory.addItem', 'Item')}
             </button>
           </div>
-          {scanResult && <div className="rounded border border-bc-border bg-bc-dark px-2 py-1 text-bc-text">{scanResult}</div>}
+          {scanResult && <div className="border border-bc-border bg-bc-dark px-2 py-1 text-bc-text">{scanResult}</div>}
 
           {/* Import-Vorschau (E-15): was jeder der beiden Modi taete, bevor
               einer davon es tut. */}
           {pending && vorschau && summe && (
-            <div className="rounded border border-bc-border bg-bc-dark p-3">
+            <div className="border border-bc-border bg-bc-dark p-3">
               <div className="mb-2 font-medium">{t('inventory.preview.title', 'What this import changes')}</div>
 
               {/* Der Modus steht UEBER der Tabelle: das Umschalten rechnet sie
@@ -215,9 +215,9 @@ export function InventoryDialog({ open, onClose }: Props) {
                     onClick={() => setPending({ ...pending, mode: m })}
                     className={
                       pending.mode === m
-                        ? 'rounded bg-bc-accent px-2.5 py-1.5 text-bc-accent-text'
-                        : 'rounded bg-bc-panel px-2.5 py-1.5 hover:bg-bc-sunken'
-                    }
+                        ? ' bg-bc-accent px-2.5 py-1.5 text-bc-accent-text'
+                        : ' bg-bc-panel px-2.5 py-1.5 hover:bg-bc-sunken'
+}
                   >
                     {m === 'merge'
                       ? t('inventory.preview.merge', 'Merge')
@@ -231,7 +231,7 @@ export function InventoryDialog({ open, onClose }: Props) {
                 </span>
               </div>
 
-              <div className="overflow-x-auto rounded border border-bc-border">
+              <div className="overflow-x-auto border border-bc-border">
                 <table className="w-full border-collapse text-left text-xs">
                   <thead className="bg-bc-panel text-bc-muted">
                     <tr>
@@ -281,15 +281,15 @@ export function InventoryDialog({ open, onClose }: Props) {
               )}
 
               <div className="mt-3 flex justify-end gap-2">
-                <button type="button" onClick={() => setPending(null)} className="rounded bg-bc-panel px-3 py-1 hover:bg-bc-sunken">{t('inventory.preview.cancel', 'Cancel')}</button>
-                <button type="button" onClick={doImportConfirm} className="rounded bg-bc-accent px-3 py-1 text-bc-accent-text hover:opacity-90">{t('inventory.preview.apply', 'Import')}</button>
+                <button type="button" onClick={() => setPending(null)} className="bg-bc-panel px-3 py-1 hover:bg-bc-sunken">{t('inventory.preview.cancel', 'Cancel')}</button>
+                <button type="button" onClick={doImportConfirm} className="bg-bc-accent px-3 py-1 text-bc-accent-text hover:opacity-90">{t('inventory.preview.apply', 'Import')}</button>
               </div>
             </div>
           )}
 
           {/* Add/Edit */}
           {form && (
-            <div className="rounded border border-bc-accent/40 bg-bc-dark p-3">
+            <div className="border border-bc-accent/40 bg-bc-dark p-3">
               <div className="mb-2 font-medium">{form.id ? t('inventory.editItem', 'Edit item') : t('inventory.newItem', 'New item')}</div>
               <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
                 <label className="block">{t('inventory.field.model', 'Model *')}<input autoFocus value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} className={inputCls} /></label>
@@ -307,19 +307,19 @@ export function InventoryDialog({ open, onClose }: Props) {
                 </label>
               </div>
               <div className="mt-3 flex justify-end gap-2">
-                <button type="button" onClick={() => setForm(null)} className="rounded bg-bc-dark px-3 py-1 hover:bg-bc-sunken">{t('inventory.cancel', 'Cancel')}</button>
-                <button type="button" disabled={form.model.trim() === ''} onClick={save} className="rounded bg-bc-accent px-3 py-1 text-bc-accent-text enabled:hover:opacity-90 disabled:opacity-50">{t('inventory.save', 'Save')}</button>
+                <button type="button" onClick={() => setForm(null)} className="bg-bc-dark px-3 py-1 hover:bg-bc-sunken">{t('inventory.cancel', 'Cancel')}</button>
+                <button type="button" disabled={form.model.trim() === ''} onClick={save} className="bg-bc-accent px-3 py-1 text-bc-accent-text enabled:hover:opacity-90 disabled:opacity-50">{t('inventory.save', 'Save')}</button>
               </div>
             </div>
           )}
 
           {/* Table */}
           {sorted.length === 0 ? (
-            <div className="rounded border border-dashed border-bc-border py-10 text-center text-bc-dim">
+            <div className="border border-dashed border-bc-border py-10 text-center text-bc-dim">
               {t('inventory.empty', 'No inventory items yet. Create some or import an inventory from Cable/Light Planner.')}
             </div>
           ) : (
-            <div className="overflow-x-auto rounded border border-bc-border">
+            <div className="overflow-x-auto border border-bc-border">
               <table className="w-full border-collapse text-left">
                 <thead className="bg-bc-dark text-bc-muted">
                   <tr>
@@ -339,8 +339,8 @@ export function InventoryDialog({ open, onClose }: Props) {
                       <td className="px-2 py-1.5 text-bc-text">{it.ownership ?? '—'}</td>
                       <td className="px-2 py-1.5">
                         <div className="flex justify-end gap-1">
-                          <button type="button" onClick={() => setForm({ ...it })} className="rounded px-2 py-0.5 text-xs text-bc-muted hover:bg-bc-border hover:text-bc-text-bright">{t('inventory.edit', 'Edit')}</button>
-                          <button type="button" onClick={() => removeItem(it.id)} className="rounded p-1 text-bc-muted hover:bg-red-900/50 hover:text-red-300" aria-label={t('inventory.delete', 'Delete')}><FiTrash2 size={13} /></button>
+                          <button type="button" onClick={() => setForm({ ...it })} className="px-2 py-0.5 text-xs text-bc-muted hover:bg-bc-border hover:text-bc-text-bright">{t('inventory.edit', 'Edit')}</button>
+                          <button type="button" onClick={() => removeItem(it.id)} className="p-1 text-bc-muted hover:bg-red-900/50 hover:text-red-300" aria-label={t('inventory.delete', 'Delete')}><FiTrash2 size={13} /></button>
                         </div>
                       </td>
                     </tr>

@@ -474,12 +474,18 @@ select {
   border-radius: 0;
 }
 
-/* Popup menu (for overflow tabs) */
+/* Popup menu (for overflow tabs)
+ *
+ * KEIN SCHLAGSCHATTEN (ADR-007 Abschnitt 3). Hier standen `0 12px 40px
+ * rgba(0,0,0,0.5)` — die letzte Stelle im Stilblatt, an der eine Flaeche
+ * ueber einer anderen zu schweben behauptete. Abgehoben ist das Menue auch
+ * ohne: es traegt eine Linie in `--color-bc-sunken` und eine eigene
+ * Flaechenfarbe. Struktur entsteht durch Linie und Weissraum. */
 .flexlayout__popup_menu {
   background: var(--color-bc-panel) !important;
   border: 1px solid var(--color-bc-sunken) !important;
   border-radius: 0;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.5) !important;
+  box-shadow: none !important;
   padding: 4px !important;
 }
 .flexlayout__popup_menu_item {
