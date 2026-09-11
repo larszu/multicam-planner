@@ -64,13 +64,13 @@ export function Group({
   }, [id]);
 
   return (
-    <section className="rounded-md border border-bc-border/70 bg-bc-dark/30">
+    <section className="border border-bc-border/70 bg-bc-dark/30">
       <button
         type="button"
         onClick={toggle}
         aria-expanded={open}
         style={{ padding: '7px 8px', minHeight: '32px' }}
-        className="flex w-full items-center gap-2 text-left hover:bg-bc-hover rounded-md"
+        className="flex w-full items-center gap-2 text-left hover:bg-bc-hover"
       >
         <span className="text-[11px] font-semibold uppercase tracking-wide text-bc-text">{title}</span>
         {summary && <span className="truncate text-[10px] text-bc-dim">{summary}</span>}
@@ -201,7 +201,7 @@ export function ValueSlider({
           ref={inputRef}
           type="number"
           inputMode="decimal"
-          className="w-[4.5rem] shrink-0 rounded border border-bc-border bg-bc-dark text-right text-[11px] tabular-nums text-bc-text-bright disabled:text-bc-dim"
+          className="w-[4.5rem] shrink-0 border border-bc-border bg-bc-dark text-right text-[11px] tabular-nums text-bc-text-bright disabled:text-bc-dim"
           style={{ padding: '2px 5px' }}
           value={draft ?? Number(value.toFixed(decimals))}
           step={step}
@@ -269,7 +269,7 @@ export function Note({ tone, children }: { tone: 'info' | 'warn'; children: Reac
       ? 'border-bc-red/60 bg-bc-red/10 text-bc-red'
       : 'border-bc-border bg-bc-dark text-bc-muted';
   return (
-    <p style={{ padding: '3px 6px' }} className={`rounded border text-[10px] leading-snug ${style}`}>
+    <p style={{ padding: '3px 6px' }} className={` border text-[10px] leading-snug ${style}`}>
       {children}
     </p>
   );

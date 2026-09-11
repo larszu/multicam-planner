@@ -64,7 +64,7 @@ export function Menu({ label, children }: MenuProps) {
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
         style={{ padding: '4px 6px' }}
-        className={`flex items-center gap-0.5 rounded text-xs text-bc-text-bright transition-colors hover:bg-bc-panel-raised ${open ? 'bg-bc-panel-raised' : ''}`}
+        className={`flex items-center gap-0.5 text-xs text-bc-text-bright transition-colors hover:bg-bc-panel-raised ${open ? 'bg-bc-panel-raised' : ''}`}
       >
         {label}
         <FiChevronDown size={11} className="text-bc-muted" />
@@ -75,7 +75,7 @@ export function Menu({ label, children }: MenuProps) {
           /* GEDECKELT wie im Cable Planner: die Klappe darf nicht laenger
              werden als das Fenster hoch ist, sonst stehen ihre letzten Punkte
              unter dem Fensterrand und existieren fuer den Nutzer nicht. */
-          className="absolute left-0 top-full z-[100] mt-1 max-h-[calc(100vh-3.5rem)] min-w-[16rem] overflow-y-auto rounded-lg border border-bc-border bg-bc-panel py-1 shadow-2xl"
+          className="absolute left-0 top-full z-[100] mt-1 max-h-[calc(100vh-3.5rem)] min-w-[16rem] overflow-y-auto border border-bc-border bg-bc-panel py-1"
         >
           {children(() => setOpen(false))}
         </div>

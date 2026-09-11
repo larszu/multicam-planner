@@ -241,7 +241,7 @@ export default function ShotlistPanel() {
         <select
           value={activeShotlistId ?? ''}
           onChange={(e) => setActiveShotlist(e.target.value || null)}
-          className="bg-bc-dark border border-bc-border rounded px-1.5 py-1 text-xs text-bc-text-bright max-w-[45%] flex-1 min-w-0"
+          className="bg-bc-dark border border-bc-border px-1.5 py-1 text-xs text-bc-text-bright max-w-[45%] flex-1 min-w-0"
         >
           {shotlists.length === 0 && <option value="">{t('shotlist.none', '— no shotlist —')}</option>}
           {shotlists.map((l) => (
@@ -287,7 +287,7 @@ export default function ShotlistPanel() {
       {/* ── Aktionsleiste ── */}
       <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-bc-border shrink-0 flex-wrap">
         <button
-          className="px-2 py-1 rounded text-[11px] font-medium border border-bc-accent/60 text-bc-accent bg-bc-accent/10 hover:bg-bc-accent/20 disabled:opacity-40 transition-colors flex items-center gap-1"
+          className="px-2 py-1 text-[11px] font-medium border border-bc-accent/60 text-bc-accent bg-bc-accent/10 hover:bg-bc-accent/20 disabled:opacity-40 transition-colors flex items-center gap-1"
           onClick={captureShot}
           disabled={!selectedCameraId}
           title={t('shotlist.capture', 'Save the current preview view as a shot')}
@@ -383,7 +383,7 @@ export default function ShotlistPanel() {
                 setDragIndex(null);
                 setDropIndex(null);
               }}
-              className={`rounded border overflow-hidden cursor-pointer transition-colors ${
+              className={` border overflow-hidden cursor-pointer transition-colors ${
                 isCurrent ? 'border-bc-accent bg-bc-accent/10' : 'border-bc-border bg-bc-dark hover:border-bc-accent/50'
               } ${dropIndex === i && dragIndex !== null && dragIndex !== i ? 'ring-1 ring-bc-accent' : ''} ${
                 dragIndex === i ? 'opacity-50' : ''
@@ -399,13 +399,13 @@ export default function ShotlistPanel() {
                     Letterbox-Grund hinter einem Framegrab und keine
                     Oberflaechenfarbe. Ein Bild im 16:9-Kasten, das auf Weiss
                     ausgeblendet wird, sieht aus, als fehlte ein Stueck. */}
-                <div className="relative w-28 shrink-0 aspect-video bg-bc-media rounded overflow-hidden flex items-center justify-center">
+                <div className="relative w-28 shrink-0 aspect-video bg-bc-media overflow-hidden flex items-center justify-center">
                   {shot.thumbnail ? (
                     <img src={shot.thumbnail} alt="" className="w-full h-full object-contain" />
                   ) : (
                     <span className="text-[9px] text-bc-faint">{t('shotlist.noThumb', 'no image')}</span>
                   )}
-                  <span className="absolute top-0.5 left-0.5 bg-bc-scrim text-bc-yellow font-bold text-[9px] px-1 rounded">
+                  <span className="absolute top-0.5 left-0.5 bg-bc-scrim text-bc-yellow font-bold text-[9px] px-1">
                     {String(i + 1).padStart(2, '0')}
                   </span>
                 </div>
@@ -416,7 +416,7 @@ export default function ShotlistPanel() {
                     value={shot.name}
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => list && updateShot(list.id, shot.id, { name: e.target.value })}
-                    className="bg-transparent border border-transparent hover:border-bc-border focus:border-bc-accent rounded px-1 py-0.5 text-xs font-medium text-bc-text-bright w-full outline-none"
+                    className="bg-transparent border border-transparent hover:border-bc-border focus:border-bc-accent px-1 py-0.5 text-xs font-medium text-bc-text-bright w-full outline-none"
                     title={t('shotlist.renameShot', 'Name the shot')}
                   />
                   <div className="text-[10px] text-bc-muted px-1 truncate">{shotOpticsLabel(shot)}</div>
@@ -426,7 +426,7 @@ export default function ShotlistPanel() {
                         e.stopPropagation();
                         if (list) updateShot(list.id, shot.id, { transition: nextTransitionMode(shot.transition) });
                       }}
-                      className="text-[9px] px-1 py-0.5 rounded border border-bc-border text-bc-muted hover:text-bc-text-bright hover:border-bc-accent/60"
+                      className="text-[9px] px-1 py-0.5 border border-bc-border text-bc-muted hover:text-bc-text-bright hover:border-bc-accent/60"
                       title={t('shotlist.transitionToggle', 'Toggle the transition time (OFF / Fast / Slow / Manual)')}
                     >
                       {TRANSITION_LABEL[shot.transition]}
@@ -448,7 +448,7 @@ export default function ShotlistPanel() {
                             });
                           }
                         }}
-                        className="w-12 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-[9px] text-bc-text-bright"
+                        className="w-12 bg-bc-panel border border-bc-border px-1 py-0.5 text-[9px] text-bc-text-bright"
                         title={t('shotlist.transitionSeconds', 'Transition time in seconds')}
                       />
                     )}
@@ -463,7 +463,7 @@ export default function ShotlistPanel() {
                           motionStyle: v ? (v as CameraMountType) : undefined,
                         });
                       }}
-                      className="bg-bc-panel border border-bc-border rounded px-0.5 py-0.5 text-[9px] text-bc-muted max-w-[86px]"
+                      className="bg-bc-panel border border-bc-border px-0.5 py-0.5 text-[9px] text-bc-muted max-w-[86px]"
                       title={format(t('shotlist.motionStyle', 'Movement style - {hint}'), { hint: motionProfileHint(t, effStyle) })}
                     >
                       <option value="">
@@ -502,7 +502,7 @@ export default function ShotlistPanel() {
                     placeholder={t('shotlist.notePlaceholder', 'Note…')}
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => list && updateShot(list.id, shot.id, { note: e.target.value })}
-                    className="bg-transparent border border-transparent hover:border-bc-border focus:border-bc-accent rounded px-1 py-0.5 text-[10px] text-bc-text w-full outline-none"
+                    className="bg-transparent border border-transparent hover:border-bc-border focus:border-bc-accent px-1 py-0.5 text-[10px] text-bc-text w-full outline-none"
                   />
                 </div>
               </div>

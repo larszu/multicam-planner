@@ -488,7 +488,7 @@ export default function App() {
           <button
             type="button"
             onClick={dismissIdRepair}
-            className="rounded bg-amber-800/60 px-2 py-0.5 text-xs hover:bg-amber-700/60"
+            className="bg-amber-800/60 px-2 py-0.5 text-xs hover:bg-amber-700/60"
           >
             {t('common.ok', 'OK')}
           </button>
@@ -507,48 +507,80 @@ export default function App() {
       />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* ── Left sidebar ──
+        {/* ── Linke Seitenleiste ──
             Breite skaliert mit dem Fenster statt fest 320 px: auf grossen
             Schirmen darf die Spalte mitwachsen (die Kamera-Karte nutzt das per
             Container-Query fuer zweispaltige Zeilen), auf kleinen schrumpft sie
             bis 264 px, bevor der Auto-Collapse aus dem Media-Query greift.
             `min-w` an den Kindern muss dafuer weg — sonst kann sie nicht kleiner
-            werden und die Spalte ueberlaeuft. */}
-        <div
-          style={sidebarCollapsed ? undefined : { width: 'clamp(264px, 22vw, 420px)' }}
-          className={`border-r border-bc-border flex flex-col bg-bc-panel shrink-0 transition-[width] duration-200 ${sidebarCollapsed ? 'w-0 overflow-hidden' : ''}`}
-        >
-          {/* Sidebar tabs */}
-          <div className="flex border-b border-bc-border">
-            <button
-              className={`flex-1 py-2 text-xs font-medium ${sidebarTab === 'cameras' ? 'text-bc-accent border-b-2 border-bc-accent' : 'text-bc-dim hover:text-bc-text'}`}
-              onClick={() => setSidebarTab('cameras')}
-            >
-              {t('header.sidebar.settings', 'Settings')}
-            </button>
-            <button
-              className={`flex-1 py-2 text-xs font-medium ${sidebarTab === 'templates' ? 'text-bc-accent border-b-2 border-bc-accent' : 'text-bc-dim hover:text-bc-text'}`}
-              onClick={() => setSidebarTab('templates')}
-            >
-              {t('header.sidebar.templates', 'Templates')}
-            </button>
-          </div>
-          <div className="flex-1 overflow-hidden flex flex-col">
-            {sidebarTab === 'cameras' ? <Sidebar /> : <TemplateSelector />}
-          </div>
-        </div>
+            werden und die Spalte ueberlaeuft.
 
-        {/* Sidebar collapse toggle */}
-        <button
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="shrink-0 w-5 flex items-center justify-center bg-bc-panel border-r border-bc-border hover:bg-bc-border text-bc-dim hover:text-bc-text-bright transition-colors"
-          title={sidebarCollapsed ? t('header.sidebar.open', 'Open column') : t('header.sidebar.collapse', 'Collapse column')}
-          aria-label={sidebarCollapsed
-            ? t('header.sidebar.open.aria', 'Open the side column')
-            : t('header.sidebar.collapse.aria', 'Collapse the side column')}
-        >
-          {sidebarCollapsed ? <FiChevronRight size={14} /> : <FiChevronLeft size={14} />}
-        </button>
+            EINGEKLAPPT BLEIBT EINE 32-PX-LEISTE STEHEN, mit dem Namen der
+            Spalte senkrecht darin. Sie war vorher `w-0` mit einem eigenen
+            20-px-Streifen DANEBEN, der den Schalter trug — drei Unterschiede
+            zum `cable-planner` auf einmal: der Griff stand ausserhalb der
+            Leiste statt darin, die eingeklappte Breite war eine andere, und
+            im eingeklappten Zustand sagte nichts mehr, WAS dort zugeklappt
+            ist. Wer zwischen den Apps wechselt, muss den Griff neu suchen.
+            ADR-007 Abschnitt 6 legt den Rahmen fest; der Griff gehoert dazu. */}
+        {sidebarCollapsed ? (
+          <aside className="flex h-full w-8 shrink-0 flex-col items-center border-r border-bc-border bg-bc-panel transition-colors hover:bg-bc-panel-raised">
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed(false)}
+              title={t('header.sidebar.open', 'Open column')}
+              aria-label={t('header.sidebar.open.aria', 'Open the side column')}
+              className="mt-2 flex h-7 w-7 items-center justify-center border border-bc-border bg-bc-panel-raised text-bc-text transition-colors hover:border-bc-accent hover:text-bc-text-bright"
+            >
+              <FiChevronRight size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed(false)}
+              aria-label={t('header.sidebar.open.aria', 'Open the side column')}
+              className="mt-3 flex-1 self-stretch text-[10px] font-semibold uppercase tracking-[0.18em] text-bc-muted transition-colors hover:text-bc-text"
+              style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+            >
+              {sidebarTab === 'cameras'
+                ? t('header.sidebar.settings', 'Settings')
+                : t('header.sidebar.templates', 'Templates')}
+            </button>
+          </aside>
+        ) : (
+          <div
+            style={{ width: 'clamp(264px, 22vw, 420px)' }}
+            className="border-r border-bc-border flex flex-col bg-bc-panel shrink-0"
+          >
+            {/* Register UND Griff in einer Zeile: der Griff gehoert zum
+                Rahmen der Spalte, nicht zu ihrem Inhalt. */}
+            <div className="flex items-stretch border-b border-bc-border">
+              <button
+                className={`flex-1 py-2 text-xs font-medium ${sidebarTab === 'cameras' ? 'text-bc-accent border-b-2 border-bc-accent' : 'text-bc-dim hover:text-bc-text'}`}
+                onClick={() => setSidebarTab('cameras')}
+              >
+                {t('header.sidebar.settings', 'Settings')}
+              </button>
+              <button
+                className={`flex-1 py-2 text-xs font-medium ${sidebarTab === 'templates' ? 'text-bc-accent border-b-2 border-bc-accent' : 'text-bc-dim hover:text-bc-text'}`}
+                onClick={() => setSidebarTab('templates')}
+              >
+                {t('header.sidebar.templates', 'Templates')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSidebarCollapsed(true)}
+                title={t('header.sidebar.collapse', 'Collapse column')}
+                aria-label={t('header.sidebar.collapse.aria', 'Collapse the side column')}
+                className="flex w-8 shrink-0 items-center justify-center text-bc-dim transition-colors hover:bg-bc-hover hover:text-bc-text-bright"
+              >
+                <FiChevronLeft size={14} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden flex flex-col">
+              {sidebarTab === 'cameras' ? <Sidebar /> : <TemplateSelector />}
+            </div>
+          </div>
+        )}
 
         {/* ── Main docking area (FlexLayout) ── */}
         <div className={`flex-1 overflow-hidden relative flexlayout-custom-theme layout-mode-${layoutMode}`}>

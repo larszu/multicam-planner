@@ -71,7 +71,7 @@ export function CalculationBreakdown({
   );
 
   return (
-    <div className="bg-bc-dark rounded p-2 border border-bc-border text-[10px] font-mono space-y-1">
+    <div className="bg-bc-dark p-2 border border-bc-border text-[10px] font-mono space-y-1">
       <div className="text-bc-accent font-bold text-[11px] mb-1">{t('sidebar.calc.trace', 'CALCULATION TRACE')}</div>
 
       <div className="text-bc-dim text-[9px] -mt-0.5 mb-1">

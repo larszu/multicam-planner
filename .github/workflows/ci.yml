@@ -85,6 +85,14 @@ jobs:
       - name: Keine rohen Farben (B-70)
         run: npm run farben:check
 
+      # Die FORM (ADR-007 Abschnitt 3): keine Rundungen, keine Schatten.
+      # `brand:check` gab es laengst — er las aber nur `src/index.css`, und
+      # die 237 Rundungen standen als Tailwind-Utilities im JSX. Ein
+      # Waechter, der die eine Haelfte prueft und die andere nicht erwaehnt,
+      # liest sich wie eine Zusage fuer beide.
+      - name: Keine Rundungen/Schatten (ADR-007)
+        run: npm run form:check
+
       # Fragt die action.yml jedes Pins nach ihrer Node-Version, statt sie in
       # einem Kommentar zu behaupten. Am 2026-09-05 liefen in `release.yml`
       # drei Actions auf node20, und der Kommentar daneben begruendete das mit

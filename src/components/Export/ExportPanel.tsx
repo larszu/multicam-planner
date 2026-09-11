@@ -667,7 +667,7 @@ export default function ExportPanel() {
   if (exporting) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-bc-scrim">
-        <div className="bg-bc-panel rounded-lg p-6 text-bc-text-bright text-center min-w-[260px]">
+        <div className="bg-bc-panel p-6 text-bc-text-bright text-center min-w-[260px]">
           <div className="animate-pulse mb-2">{t('preview.export.generating', 'Generating export…')}</div>
           {exportProgress.total > 1 && (
             <div className="text-xs text-bc-muted">
