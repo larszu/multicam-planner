@@ -196,6 +196,26 @@ export const CAMERAS: Camera[] = [
   { id: 'sony-burano', manufacturer: 'Sony', model: 'BURANO', sensor: { name: 'FF 8.6K (35.9×24.0)', widthMm: 35.9, heightMm: 24.0, cropFactor: 1.0 }, mount: 'E', adaptedMounts: ['PL', 'EF'], resolutions: ['8.6K', '6K', '4K', 'HD'], type: 'cinema', notes: 'E-Mount nativ mit eingebautem ND; PL via Adapter' },
   { id: 'panasonic-bs1h', manufacturer: 'Panasonic', model: 'BS1H', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['EF', 'PL'], resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'Vollformat-Box, L-Mount nativ; EF/PL via Adapter' },
 
+  // ── Z CAM (Cine) ──
+  { id: 'z-cam-e2', manufacturer: 'Z CAM', model: 'E2', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'cinema', notes: 'MFT nativ' },
+  { id: 'z-cam-e2c', manufacturer: 'Z CAM', model: 'E2C', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'cinema' },
+  { id: 'z-cam-e2-m4', manufacturer: 'Z CAM', model: 'E2-M4', sensor: { name: '4/3" WDR (19.0x13.0)', widthMm: 19.0, heightMm: 13.0, cropFactor: 1.88 }, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'cinema' },
+  { id: 'z-cam-e2-s6', manufacturer: 'Z CAM', model: 'E2-S6', sensor: SENSORS.S35, mount: 'EF', adaptedMounts: ['PL', 'MFT'], resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'EF nativ; PL/MFT via Wechselmount' },
+  { id: 'z-cam-e2-f6', manufacturer: 'Z CAM', model: 'E2-F6', sensor: SENSORS.FF, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['6K', '4K', 'HD'], type: 'cinema' },
+  { id: 'z-cam-e2-f8', manufacturer: 'Z CAM', model: 'E2-F8', sensor: SENSORS.FF, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['8K', '6K', '4K'], type: 'cinema' },
+  { id: 'z-cam-e2-s6-mk2', manufacturer: 'Z CAM', model: 'E2-S6 Mark II', sensor: SENSORS.S35, mount: 'EF', adaptedMounts: ['PL', 'MFT'], resolutions: ['6K', '4K', 'HD'], type: 'cinema' },
+  { id: 'z-cam-e2-f8-mk2', manufacturer: 'Z CAM', model: 'E2-F8 Mark II', sensor: SENSORS.FF, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['8K', '6K', '4K'], type: 'cinema' },
+
+  // ── Ikegami (Broadcast, 2/3" B4) ──
+  { id: 'ikegami-uhk-430', manufacturer: 'Ikegami', model: 'UHK-430', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'Native-4K-Systemkamera' },
+  { id: 'ikegami-uhk-x700', manufacturer: 'Ikegami', model: 'UHK-X700', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
+  { id: 'ikegami-uhk-x600', manufacturer: 'Ikegami', model: 'UHK-X600', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
+  { id: 'ikegami-uhl-43', manufacturer: 'Ikegami', model: 'UHL-43', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'Kompakt/POV 4K' },
+  { id: 'ikegami-hdk-99', manufacturer: 'Ikegami', model: 'HDK-99', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'ikegami-hdk-73', manufacturer: 'Ikegami', model: 'HDK-73', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'ikegami-hdk-55', manufacturer: 'Ikegami', model: 'HDK-55', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'ikegami-hdk-97arri', manufacturer: 'Ikegami', model: 'HDK-97ARRI', sensor: SENSORS.S35, mount: 'PL', resolutions: ['HD'], type: 'broadcast', notes: 'Super-35 mit ARRI-ALEV-Sensor, PL-Mount' },
+
   // ── Marshall POV ──
   { id: 'marshall-cv568', manufacturer: 'Marshall', model: 'CV568', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'M12', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'POV camera, global shutter' },
 ];
