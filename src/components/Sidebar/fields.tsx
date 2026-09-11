@@ -70,13 +70,13 @@ export function Group({
         onClick={toggle}
         aria-expanded={open}
         style={{ padding: '7px 8px', minHeight: '32px' }}
-        className="flex w-full items-center gap-2 text-left hover:bg-white/[0.04] rounded-md"
+        className="flex w-full items-center gap-2 text-left hover:bg-bc-hover rounded-md"
       >
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-300">{title}</span>
-        {summary && <span className="truncate text-[10px] text-gray-500">{summary}</span>}
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-bc-text">{title}</span>
+        {summary && <span className="truncate text-[10px] text-bc-dim">{summary}</span>}
         <FiChevronDown
           size={14}
-          className={`ml-auto shrink-0 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`}
+          className={`ml-auto shrink-0 text-bc-dim transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
       {open && (
@@ -105,9 +105,9 @@ export function FieldRow({
 }) {
   return (
     <div className="@min-[21rem]:grid @min-[21rem]:grid-cols-[7rem_minmax(0,1fr)] @min-[21rem]:items-center @min-[21rem]:gap-2">
-      <label htmlFor={htmlFor} className="mb-0.5 block text-[11px] text-gray-400 @min-[21rem]:mb-0">
+      <label htmlFor={htmlFor} className="mb-0.5 block text-[11px] text-bc-muted @min-[21rem]:mb-0">
         {label}
-        {hint && <span className="block text-[10px] text-gray-600 leading-tight">{hint}</span>}
+        {hint && <span className="block text-[10px] text-bc-faint leading-tight">{hint}</span>}
       </label>
       <div className="min-w-0">{children}</div>
     </div>
@@ -118,8 +118,8 @@ export function FieldRow({
 export function Readout({ label, value, tone = 'normal' }: { label: string; value: React.ReactNode; tone?: 'normal' | 'muted' }) {
   return (
     <div className="flex items-baseline justify-between gap-2">
-      <span className="text-[11px] text-gray-400">{label}</span>
-      <span className={`text-[11px] tabular-nums ${tone === 'muted' ? 'text-gray-500' : 'text-white'}`}>{value}</span>
+      <span className="text-[11px] text-bc-muted">{label}</span>
+      <span className={`text-[11px] tabular-nums ${tone === 'muted' ? 'text-bc-dim' : 'text-bc-text-bright'}`}>{value}</span>
     </div>
   );
 }
@@ -194,14 +194,14 @@ export function ValueSlider({
   return (
     <div className={disabled ? 'opacity-50' : undefined}>
       <div className="flex items-center gap-2">
-        <span className="min-w-0 flex-1 truncate text-[11px] text-gray-400" title={title}>
+        <span className="min-w-0 flex-1 truncate text-[11px] text-bc-muted" title={title}>
           {label}
         </span>
         <input
           ref={inputRef}
           type="number"
           inputMode="decimal"
-          className="w-[4.5rem] shrink-0 rounded border border-bc-border bg-bc-dark text-right text-[11px] tabular-nums text-white disabled:text-gray-500"
+          className="w-[4.5rem] shrink-0 rounded border border-bc-border bg-bc-dark text-right text-[11px] tabular-nums text-bc-text-bright disabled:text-bc-dim"
           style={{ padding: '2px 5px' }}
           value={draft ?? Number(value.toFixed(decimals))}
           step={step}
@@ -220,7 +220,7 @@ export function ValueSlider({
             if (e.key === 'Escape') setDraft(null);
           }}
         />
-        {unit && <span className="w-6 shrink-0 text-[10px] text-gray-500">{unit}</span>}
+        {unit && <span className="w-6 shrink-0 text-[10px] text-bc-dim">{unit}</span>}
         {right}
       </div>
       <input
@@ -241,7 +241,7 @@ export function ValueSlider({
           return (
             <span
               key={`${m.value}-${m.label}`}
-              className="absolute top-0 text-[9px] tabular-nums text-gray-600"
+              className="absolute top-0 text-[9px] tabular-nums text-bc-faint"
               style={{
                 left: `${pct}%`,
                 transform: pct <= 0 ? 'none' : pct >= 100 ? 'translateX(-100%)' : 'translateX(-50%)',
@@ -252,7 +252,7 @@ export function ValueSlider({
           );
         })}
       </div>
-      {hint && <p className="text-[10px] leading-tight text-gray-600">{hint}</p>}
+      {hint && <p className="text-[10px] leading-tight text-bc-faint">{hint}</p>}
     </div>
   );
 }
@@ -267,7 +267,7 @@ export function Note({ tone, children }: { tone: 'info' | 'warn'; children: Reac
   const style =
     tone === 'warn'
       ? 'border-bc-red/60 bg-bc-red/10 text-bc-red'
-      : 'border-bc-border bg-bc-dark text-gray-400';
+      : 'border-bc-border bg-bc-dark text-bc-muted';
   return (
     <p style={{ padding: '3px 6px' }} className={`rounded border text-[10px] leading-snug ${style}`}>
       {children}

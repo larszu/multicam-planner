@@ -81,18 +81,18 @@ function AccordionHeader({
         onClick={onToggle}
         aria-expanded={open}
         style={{ minHeight: '44px', padding: '10px 14px' }}
-        className="group flex flex-1 items-center gap-2.5 text-left transition-colors hover:bg-white/[0.06]"
+        className="group flex flex-1 items-center gap-2.5 text-left transition-colors hover:bg-bc-hover"
       >
         <span
           className={`grid h-7 w-7 shrink-0 place-items-center rounded-md transition-colors ${
-            open ? 'bg-bc-accent/20 text-bc-accent' : 'bg-bc-dark text-gray-400 group-hover:text-gray-200'
+            open ? 'bg-bc-accent/20 text-bc-accent' : 'bg-bc-dark text-bc-muted group-hover:text-bc-text'
           }`}
         >
           {icon}
         </span>
         <span
           className={`text-[13.5px] font-semibold transition-colors ${
-            open ? 'text-white' : 'text-gray-100 group-hover:text-white'
+            open ? 'text-bc-text-bright' : 'text-bc-text group-hover:text-bc-text-bright'
           }`}
         >
           {title}
@@ -100,14 +100,14 @@ function AccordionHeader({
         {count !== undefined && (
           <span
             style={{ padding: '2px 7px' }}
-            className="rounded-full bg-bc-dark text-[10.5px] font-semibold tabular-nums text-gray-300"
+            className="rounded-full bg-bc-dark text-[10.5px] font-semibold tabular-nums text-bc-text"
           >
             {count}
           </span>
         )}
         <FiChevronDown
           size={17}
-          className={`ml-auto shrink-0 transition-transform duration-200 ${open ? 'rotate-180 text-gray-200' : 'text-gray-400'}`}
+          className={`ml-auto shrink-0 transition-transform duration-200 ${open ? 'rotate-180 text-bc-text' : 'text-bc-muted'}`}
         />
       </button>
       {right && <div className="flex items-center gap-1 pr-2">{right}</div>}
@@ -295,7 +295,7 @@ function CameraCard({
   );
   const meineZeile = quellenAbgleich.rows.find((r) => r.cameraId === cam.id);
   const feldCls =
-    'block w-full rounded border border-bc-border bg-bc-dark px-1.5 py-1 text-xs text-white';
+    'block w-full rounded border border-bc-border bg-bc-dark px-1.5 py-1 text-xs text-bc-text-bright';
   /** Leeres Feld heisst „nicht angegeben", nicht null. */
   const zahlOderNichts = (v: string): number | undefined => {
     const n = Number(v.replace(',', '.'));
@@ -394,18 +394,18 @@ function CameraCard({
             onClick={() => toggleOpen(cam.id)}
             aria-expanded={expanded}
             style={{ padding: '4px', minWidth: '28px', minHeight: '28px' }}
-            className="flex min-w-0 flex-1 items-center gap-2 rounded text-left hover:bg-white/[0.05]"
+            className="flex min-w-0 flex-1 items-center gap-2 rounded text-left hover:bg-bc-hover"
             title={expanded ? t('sidebar.cam.collapse', 'Collapse details') : t('sidebar.cam.expand', 'Expand details')}
           >
             <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: cam.color }} />
-            <span className="truncate text-sm font-bold text-white">{cam.label}</span>
-            <FiChevronDown size={14} className={`ml-auto shrink-0 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+            <span className="truncate text-sm font-bold text-bc-text-bright">{cam.label}</span>
+            <FiChevronDown size={14} className={`ml-auto shrink-0 text-bc-muted transition-transform ${expanded ? 'rotate-180' : ''}`} />
           </button>
           <div className="flex shrink-0 items-center gap-0.5">
             <button
               onClick={() => duplicateCamera(cam.id)}
               style={{ padding: '6px' }}
-              className="rounded text-gray-400 hover:bg-white/[0.06] hover:text-bc-accent"
+              className="rounded text-bc-muted hover:bg-bc-hover hover:text-bc-accent"
               title={t('sidebar.cam.duplicate', 'Duplicate camera')}
               aria-label={format(t('sidebar.cam.duplicate.aria', 'Duplicate {name}'), { name: cam.label })}
             >
@@ -417,7 +417,7 @@ function CameraCard({
               onClick={() => (confirmDelete ? removeCamera(cam.id) : setConfirmDelete(true))}
               onBlur={() => setConfirmDelete(false)}
               style={{ padding: '6px' }}
-              className={`rounded hover:bg-white/[0.06] ${confirmDelete ? 'text-bc-red' : 'text-gray-400 hover:text-bc-red'}`}
+              className={`rounded hover:bg-bc-hover ${confirmDelete ? 'text-bc-red' : 'text-bc-muted hover:text-bc-red'}`}
               title={confirmDelete ? t('sidebar.cam.removeAgain', 'Really delete? Click again.') : t('sidebar.cam.remove', 'Delete camera')}
               aria-label={confirmDelete
                 ? format(t('sidebar.cam.removeAgain.aria', 'Really delete {name}'), { name: cam.label })
@@ -431,8 +431,8 @@ function CameraCard({
         {/* Kernwerte — im zugeklappten Zustand die Vergleichszeile ueber alle
             Kameras, im aufgeklappten waeren sie doppelt und entfallen. */}
         {!expanded && (
-          <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-[10.5px] text-gray-500" style={{ paddingLeft: '4px' }}>
-            <span className="text-gray-400">{camDef?.model ?? '—'}</span>
+          <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-[10.5px] text-bc-dim" style={{ paddingLeft: '4px' }}>
+            <span className="text-bc-muted">{camDef?.model ?? '—'}</span>
             <span>{mountTypeLabel(t, cam.mountType ?? 'tripod')}</span>
             <span className="tabular-nums">{cam.z.toFixed(2)} m</span>
             <span className="tabular-nums">{cam.focalLength.toFixed(0)} mm</span>
@@ -447,7 +447,7 @@ function CameraCard({
           <FieldRow label={t('sidebar.cam.nameLabel', 'Name')} htmlFor={`name-${cam.id}`}>
             <input
               id={`name-${cam.id}`}
-              className="w-full rounded border border-bc-border bg-bc-dark text-white"
+              className="w-full rounded border border-bc-border bg-bc-dark text-bc-text-bright"
               style={{ padding: '3px 6px' }}
               value={cam.label}
               onChange={(e) => updateCamera(cam.id, { label: e.target.value })}
@@ -471,7 +471,7 @@ function CameraCard({
             </Note>
           )}
           {speedBooster && (
-            <label className="flex cursor-pointer items-center gap-1.5 text-[11px] text-gray-300">
+            <label className="flex cursor-pointer items-center gap-1.5 text-[11px] text-bc-text">
               <input
                 type="checkbox"
                 checked={cam.useSpeedbooster}
@@ -485,7 +485,7 @@ function CameraCard({
           <Group id="optics" title={t('sidebar.cam.optics', 'Camera & Lens')} summary={`${camDef?.model ?? ''} · ${cam.focalLength.toFixed(0)} mm`}>
           {/* Camera selector grouped by type */}
           <label className="block">
-            <span className="flex items-center justify-between gap-2 text-gray-400">
+            <span className="flex items-center justify-between gap-2 text-bc-muted">
               <span>{format(t('sidebar.cam.cameraLabel', 'Camera · {mount} mount · {sensor}'), { mount: String(camDef?.mount), sensor: String(camDef?.sensor.name) })}</span>
               {camDef && (
                 <span className="flex items-center gap-0.5">
@@ -496,7 +496,7 @@ function CameraCard({
                     type="button"
                     onClick={() => setEditingCustomCam(camDef.id)}
                     style={{ padding: '5px' }}
-                    className="rounded text-gray-500 hover:text-bc-accent"
+                    className="rounded text-bc-dim hover:text-bc-accent"
                     aria-label={t('sidebar.cam.editAria', 'Edit camera data')}
                     title={isPureCustom(camDef.id)
                       ? t('sidebar.cam.editCustom', 'Edit this custom camera')
@@ -514,7 +514,7 @@ function CameraCard({
                         useStore.getState().removeCustomCamera(camDef.id);
                       }}
                       style={{ padding: '5px' }}
-                      className="rounded text-gray-500 hover:text-bc-yellow"
+                      className="rounded text-bc-dim hover:text-bc-yellow"
                       aria-label={t('sidebar.cam.resetAria', 'Reset to built-in data')}
                       title={t('sidebar.cam.resetTitle', 'Reset to the original built-in spec (discards your edits)')}
                     >
@@ -541,7 +541,7 @@ function CameraCard({
                         useStore.getState().removeCustomCamera(camDef.id);
                       }}
                       style={{ padding: '5px' }}
-                      className="rounded text-gray-500 hover:text-bc-red"
+                      className="rounded text-bc-dim hover:text-bc-red"
                       aria-label={t('sidebar.cam.deleteAria', 'Delete custom camera')}
                       title={t('sidebar.cam.deleteTitle', 'Delete this custom camera')}
                     >
@@ -552,7 +552,7 @@ function CameraCard({
                     type="button"
                     onClick={() => toggleFavoriteCameraId(camDef.id)}
                     style={{ padding: '5px' }}
-                    className={`rounded ${favoriteCameraIds.includes(camDef.id) ? 'text-bc-yellow' : 'text-gray-500 hover:text-bc-yellow'}`}
+                    className={`rounded ${favoriteCameraIds.includes(camDef.id) ? 'text-bc-yellow' : 'text-bc-dim hover:text-bc-yellow'}`}
                     aria-label={favoriteCameraIds.includes(camDef.id) ? t('sidebar.cam.unfavCamera', 'Remove camera favorite') : t('sidebar.cam.favCamera', 'Favorite camera')}
                     title={favoriteCameraIds.includes(camDef.id) ? t('sidebar.cam.unfavCamera', 'Remove camera favorite') : t('sidebar.cam.favCamera', 'Favorite camera')}
                   >
@@ -562,7 +562,7 @@ function CameraCard({
               )}
             </span>
             <select
-              className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
+              className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-bc-text-bright"
               value={cam.cameraId}
               onChange={(e) => {
                 if (e.target.value === '__new_custom__') { setShowNewCustomCam(true); return; }
@@ -667,7 +667,7 @@ function CameraCard({
             <FieldRow label={t('sidebar.cam.mount', 'Mount')} htmlFor={`mountplate-${cam.id}`}>
               <select
                 id={`mountplate-${cam.id}`}
-                className="block w-full bg-bc-dark border border-bc-border rounded text-white"
+                className="block w-full bg-bc-dark border border-bc-border rounded text-bc-text-bright"
                 style={{ padding: '3px 6px' }}
                 value={activeMount}
                 onChange={(e) => {
@@ -712,14 +712,14 @@ function CameraCard({
                     <div className="flex items-center gap-1 text-bc-yellow font-semibold">
                       ⚡ {ma.name}
                     </div>
-                    <div className="text-gray-400 mt-0.5">
+                    <div className="text-bc-muted mt-0.5">
                       {ma.lightLossStops > 0 && <span>{format(t('sidebar.cam.lightLoss', 'Light loss: −{x} T · '), { x: ma.lightLossStops })}</span>}
                       {ma.lightLossStops < 0 && <span>{format(t('sidebar.cam.lightGain', 'Light gain: +{x} T · '), { x: Math.abs(ma.lightLossStops) })}</span>}
                       {ma.lightLossStops === 0 && <span>{t('sidebar.cam.noLightLoss', 'No light loss · ')}</span>}
                       {ma.cropSensor ? <span>{format(t('sidebar.cam.forces', 'forces {name}'), { name: ma.cropSensor.name })}</span> : <span>{t('sidebar.cam.noSensorCrop', 'No sensor crop')}</span>}
                     </div>
                     {ma.notes && (
-                      <div className="text-gray-500 mt-1 italic">{ma.notes}</div>
+                      <div className="text-bc-dim mt-1 italic">{ma.notes}</div>
                     )}
                   </div>
                 );
@@ -745,7 +745,7 @@ function CameraCard({
             >
               <select
                 id={`sensormode-${cam.id}`}
-                className="block w-full bg-bc-dark border border-bc-border rounded text-white disabled:text-gray-500"
+                className="block w-full bg-bc-dark border border-bc-border rounded text-bc-text-bright disabled:text-bc-dim"
                 style={{ padding: '3px 6px' }}
                 value={cam.sensorModeIndex ?? 0}
                 onChange={(e) => updateCamera(cam.id, { sensorModeIndex: parseInt(e.target.value) })}
@@ -761,13 +761,13 @@ function CameraCard({
 
           {/* Lens selector grouped by mount */}
           <label className="block">
-            <span className="flex items-center justify-between gap-2 text-gray-400">
+            <span className="flex items-center justify-between gap-2 text-bc-muted">
               <span>{t('sidebar.cam.lens', 'Lens')}</span>
               {lensDef && (
                 <button
                   type="button"
                   onClick={() => toggleFavoriteLensId(lensDef.id)}
-                  className={`p-1 rounded ${favoriteLensIds.includes(lensDef.id) ? 'text-bc-yellow' : 'text-gray-500 hover:text-bc-yellow'}`}
+                  className={`p-1 rounded ${favoriteLensIds.includes(lensDef.id) ? 'text-bc-yellow' : 'text-bc-dim hover:text-bc-yellow'}`}
                   title={favoriteLensIds.includes(lensDef.id) ? t('sidebar.cam.unfavLens', 'Remove lens favorite') : t('sidebar.cam.favLens', 'Favorite lens')}
                 >
                   <FiStar size={12} fill={favoriteLensIds.includes(lensDef.id) ? 'currentColor' : 'none'} />
@@ -775,7 +775,7 @@ function CameraCard({
               )}
             </span>
             <select
-              className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
+              className="block w-full mt-0.5 bg-bc-dark border border-bc-border rounded px-2 py-1 text-bc-text-bright"
               value={cam.lensId}
               onChange={(e) => {
                 if (e.target.value === '__new__') { setShowNewLens(true); return; }
@@ -830,34 +830,34 @@ function CameraCard({
           {showNewLens && (
             <div className="bg-bc-dark rounded p-2 border border-bc-border space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-gray-300 font-medium text-[11px]">{t('sidebar.cam.newCustomLens', 'New Custom Lens')}</span>
-                <button onClick={() => setShowNewLens(false)} className="text-gray-500 hover:text-white text-xs">✕</button>
+                <span className="text-bc-text font-medium text-[11px]">{t('sidebar.cam.newCustomLens', 'New Custom Lens')}</span>
+                <button onClick={() => setShowNewLens(false)} className="text-bc-dim hover:text-bc-text-bright text-xs">✕</button>
               </div>
               <div className="grid grid-cols-2 gap-1">
-                <input placeholder={t('sidebar.form.manufacturer', 'Manufacturer')} className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                <input placeholder={t('sidebar.form.manufacturer', 'Manufacturer')} className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-xs"
                   value={newLens.manufacturer} onChange={(e) => setNewLens({ ...newLens, manufacturer: e.target.value })} />
-                <input placeholder={t('sidebar.form.model', 'Model')} className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                <input placeholder={t('sidebar.form.model', 'Model')} className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-xs"
                   value={newLens.model} onChange={(e) => setNewLens({ ...newLens, model: e.target.value })} />
               </div>
               <div className="grid grid-cols-3 gap-1">
-                <label><span className="text-gray-500 text-[10px]">{t('sidebar.cam.minMm', 'Min mm')}</span>
-                  <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                <label><span className="text-bc-dim text-[10px]">{t('sidebar.cam.minMm', 'Min mm')}</span>
+                  <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-xs"
                     value={newLens.focalMin} onChange={(e) => setNewLens({ ...newLens, focalMin: e.target.value })} /></label>
-                <label><span className="text-gray-500 text-[10px]">{t('sidebar.cam.maxMm', 'Max mm')}</span>
-                  <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                <label><span className="text-bc-dim text-[10px]">{t('sidebar.cam.maxMm', 'Max mm')}</span>
+                  <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-xs"
                     value={newLens.focalMax} onChange={(e) => setNewLens({ ...newLens, focalMax: e.target.value })} /></label>
-                <label><span className="text-gray-500 text-[10px]">f/</span>
-                  <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                <label><span className="text-bc-dim text-[10px]">f/</span>
+                  <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-xs"
                     value={newLens.aperture} onChange={(e) => setNewLens({ ...newLens, aperture: e.target.value })} /></label>
               </div>
               <div className="grid grid-cols-2 gap-1">
-                <select className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                <select className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-xs"
                   value={newLens.mount} onChange={(e) => setNewLens({ ...newLens, mount: e.target.value })}>
                   {['B4', 'EF', 'PL', 'E', 'MFT', 'RF', 'L', 'FZ', 'universal'].map((m) => (
                     <option key={m} value={m}>{m}</option>
                   ))}
                 </select>
-                <select className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs"
+                <select className="bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-xs"
                   value={newLens.type} onChange={(e) => setNewLens({ ...newLens, type: e.target.value as 'zoom' | 'prime' })}>
                   <option value="zoom">{t('sidebar.cam.zoom', 'Zoom')}</option>
                   <option value="prime">{t('sidebar.cam.prime', 'Prime')}</option>
@@ -941,7 +941,7 @@ function CameraCard({
             <FieldRow label={t('sidebar.cam.extender', 'Extender')} htmlFor={`ext-${cam.id}`}>
               <select
                 id={`ext-${cam.id}`}
-                className="block w-full bg-bc-dark border border-bc-border rounded text-white"
+                className="block w-full bg-bc-dark border border-bc-border rounded text-bc-text-bright"
                 style={{ padding: '3px 6px' }}
                 value={cam.extenderActive}
                 onChange={(e) => updateCamera(cam.id, { extenderActive: parseFloat(e.target.value) })}
@@ -985,7 +985,7 @@ function CameraCard({
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="number"
-                className="w-full bg-bc-dark border border-bc-border rounded text-white tabular-nums"
+                className="w-full bg-bc-dark border border-bc-border rounded text-bc-text-bright tabular-nums"
                 style={{ padding: '3px 6px' }}
                 value={cam.x}
                 step={0.5}
@@ -995,7 +995,7 @@ function CameraCard({
               />
               <input
                 type="number"
-                className="w-full bg-bc-dark border border-bc-border rounded text-white tabular-nums"
+                className="w-full bg-bc-dark border border-bc-border rounded text-bc-text-bright tabular-nums"
                 style={{ padding: '3px 6px' }}
                 value={cam.y}
                 step={0.5}
@@ -1016,7 +1016,7 @@ function CameraCard({
                 <FieldRow label={t('sidebar.cam.mount.label', 'Mounting')} htmlFor={`mount-${cam.id}`}>
                   <select
                     id={`mount-${cam.id}`}
-                    className="block w-full bg-bc-dark border border-bc-border rounded text-white"
+                    className="block w-full bg-bc-dark border border-bc-border rounded text-bc-text-bright"
                     style={{ padding: '3px 6px' }}
                     value={cam.mountType ?? 'tripod'}
                     onChange={(e) => {
@@ -1043,7 +1043,7 @@ function CameraCard({
                   <FieldRow label={t('sidebar.cam.rigModel', 'Rig model')} htmlFor={`rig-${cam.id}`}>
                     <select
                       id={`rig-${cam.id}`}
-                      className="block w-full bg-bc-dark border border-bc-border rounded text-white"
+                      className="block w-full bg-bc-dark border border-bc-border rounded text-bc-text-bright"
                       style={{ padding: '3px 6px' }}
                       value={cam.rigId ?? ''}
                       onChange={(e) => {
@@ -1063,7 +1063,7 @@ function CameraCard({
                       ))}
                     </select>
                     {limits.rig && (
-                      <span className="block mt-0.5 text-[10px] text-gray-500 leading-snug">
+                      <span className="block mt-0.5 text-[10px] text-bc-dim leading-snug">
                         {limits.minHeightM.toFixed(2)}–{limits.maxHeightM.toFixed(2)} m
                         {limits.armLengthM ? ` · Ausleger ${limits.armLengthM.toFixed(1)} m` : ''}
                         {limits.telescopeM ? ` · Teleskop ${limits.telescopeM.toFixed(1)} m` : ''}
@@ -1095,7 +1095,7 @@ function CameraCard({
                       <button
                         onClick={() => updateCamera(cam.id, { rigRotation: undefined })}
                         style={{ padding: '2px 5px' }}
-                        className="shrink-0 rounded border border-bc-border text-[10px] text-gray-500 hover:text-white"
+                        className="shrink-0 rounded border border-bc-border text-[10px] text-bc-dim hover:text-bc-text-bright"
                         title={t('sidebar.cam.recouple.title', 'Re-couple the rig to the aim')}
                       >{t('sidebar.cam.recouple', 'couple')}</button>
                     ) : undefined
@@ -1142,7 +1142,7 @@ function CameraCard({
                         <button
                           onClick={() => updateCamera(cam.id, { trackLengthM: undefined })}
                           style={{ padding: '2px 5px' }}
-                          className="shrink-0 rounded border border-bc-border text-[10px] text-gray-500 hover:text-white"
+                          className="shrink-0 rounded border border-bc-border text-[10px] text-bc-dim hover:text-bc-text-bright"
                           title={t('sidebar.cam.railReset.title', 'Back to the rig default')}
                         >{t('sidebar.cam.railReset', 'reset')}</button>
                       ) : undefined
@@ -1165,7 +1165,7 @@ function CameraCard({
                       <button
                         onClick={() => updateCamera(cam.id, { trackOffset: 0 })}
                         style={{ padding: '2px 5px' }}
-                        className="shrink-0 rounded border border-bc-border text-[10px] text-gray-500 hover:text-white"
+                        className="shrink-0 rounded border border-bc-border text-[10px] text-bc-dim hover:text-bc-text-bright"
                         title={t('sidebar.cam.parkTitle', 'Park rig at zero')}
                       >{t('sidebar.cam.park', 'park')}</button>
                     }
@@ -1212,7 +1212,7 @@ function CameraCard({
                 <button
                   onClick={() => setShowCalc(!showCalc)}
                   style={{ padding: '3px 0' }}
-                  className="flex w-full items-center gap-1 text-[10px] text-gray-400 hover:text-bc-accent"
+                  className="flex w-full items-center gap-1 text-[10px] text-bc-muted hover:text-bc-accent"
                   aria-expanded={showCalc}
                 >
                   {showCalc ? <FiChevronUp size={11} /> : <FiChevronDown size={11} />}
@@ -1277,7 +1277,7 @@ function CameraCard({
             }
           >
             <div className="flex flex-col gap-1.5 text-xs">
-              <p className="text-gray-400">
+              <p className="text-bc-muted">
                 {t('sidebar.coverage.intro', 'What this position has to deliver. The focal length needed is computed from position, subject, sensor and lens range — and it says so when the lens in use cannot reach it.')}
               </p>
 
@@ -1369,7 +1369,7 @@ function CameraCard({
                   {/* Die Bemessungsgrundlage steht IMMER dabei: wer die Zahl
                       anzweifelt, soll sehen, woraus sie kommt. */}
                   {deckungsZeile.verdict.kind !== 'not-computable' && (
-                    <div className="mt-0.5 text-gray-400">
+                    <div className="mt-0.5 text-bc-muted">
                       {deckungsZeile.extentM.toFixed(2).replace('.', ',')} m{' '}
                       {deckungsZeile.axis === 'width' ? t('sidebar.coverage.width', 'width') : t('sidebar.coverage.height', 'height')} {t('sidebar.coverage.from', 'from')}{' '}
                       {deckungsZeile.distanceM.toFixed(2).replace('.', ',')} m
@@ -1399,7 +1399,7 @@ function CameraCard({
               {/* Bedarf 48 — der Fernsteuerweg. Steht VOR der Szenendatei:
                   wovon abhängt, ob diese Position überhaupt vom Pult aus zu
                   schattieren ist, ist die erste Frage, nicht die letzte. */}
-              <p className="text-gray-400">
+              <p className="text-bc-muted">
                 {t('sidebar.paint.controlPathIntro', 'How is this position controlled remotely? The command set differs per path — a Panasonic PTZ can do iris and colour bars, a Blackmagic the whole colour set.')}
               </p>
               <select
@@ -1421,12 +1421,12 @@ function CameraCard({
               </select>
               {cam.controlPath && (
                 <>
-                  <p className="text-gray-300">{shadingLines(cam)[1]}</p>
-                  <p className="text-gray-500">{BUS_SCOPE_NOTE}</p>
+                  <p className="text-bc-text">{shadingLines(cam)[1]}</p>
+                  <p className="text-bc-dim">{BUS_SCOPE_NOTE}</p>
                 </>
               )}
 
-              <p className="text-gray-400">
+              <p className="text-bc-muted">
                 {t('sidebar.paint.sceneFileIntro', 'The scene file belongs to the position and to the show, not on a card in the camera slot. Otherwise the second show day starts from memory.')}
               </p>
 
@@ -1608,20 +1608,20 @@ function CameraCard({
               summary={(cam.presets?.length ?? 0) > 0 ? `${cam.presets!.length}` : undefined}
             >
               <div className="space-y-1.5 text-xs">
-                <p className="text-gray-400">
+                <p className="text-bc-muted">
                   {t('sidebar.cam.presetsIntro', 'A number becomes an answer. What is stored is the attitude of NOW — if the camera is moved later, the list says so.')}
                 </p>
 
                 <div className="flex gap-1">
                   <input
-                    className="min-w-0 flex-1 rounded border border-bc-border bg-bc-dark px-1.5 py-1 text-white"
+                    className="min-w-0 flex-1 rounded border border-bc-border bg-bc-dark px-1.5 py-1 text-bc-text-bright"
                     placeholder={t('sidebar.cam.presetNamePlaceholder', 'Name the shot (e.g. Wide stage)')}
                     aria-label={t('sidebar.cam.presetName', 'Preset name')}
                     value={presetName}
                     onChange={(e) => setPresetName(e.target.value)}
                   />
                   <input
-                    className="w-24 rounded border border-bc-border bg-bc-dark px-1.5 py-1 text-white"
+                    className="w-24 rounded border border-bc-border bg-bc-dark px-1.5 py-1 text-bc-text-bright"
                     placeholder={t('sidebar.cam.presetSegment', 'Segment')}
                     aria-label={t('sidebar.cam.presetSegment.aria', 'Segment of the preset')}
                     value={presetSegment}
@@ -1629,7 +1629,7 @@ function CameraCard({
                   />
                   <button
                     type="button"
-                    className="rounded border border-bc-border px-2 py-1 text-gray-300 hover:text-white disabled:opacity-40"
+                    className="rounded border border-bc-border px-2 py-1 text-bc-text hover:text-bc-text-bright disabled:opacity-40"
                     disabled={!presetName.trim()}
                     onClick={() => {
                       savePresetFromCamera(cam.id, presetName.trim(), presetSegment.trim() || undefined);
@@ -1642,7 +1642,7 @@ function CameraCard({
                 </div>
 
                 {presetRows(cam).length === 0 ? (
-                  <div className="text-gray-500">{t('sidebar.cam.presetsEmpty', 'No preset documented yet.')}</div>
+                  <div className="text-bc-dim">{t('sidebar.cam.presetsEmpty', 'No preset documented yet.')}</div>
                 ) : (
                   <table className="w-full text-left">
                     <tbody>
@@ -1651,20 +1651,20 @@ function CameraCard({
                           <td className="py-1 pr-1 font-mono text-blue-400">{r.nummer}</td>
                           <td className="py-1 pr-1">
                             <input
-                              className="w-full rounded border border-transparent bg-transparent px-0.5 text-white hover:border-bc-border"
+                              className="w-full rounded border border-transparent bg-transparent px-0.5 text-bc-text-bright hover:border-bc-border"
                               aria-label={format(t('sidebar.cam.presetNameOf', 'Name of preset {n}'), { n: r.nummer })}
                               value={cam.presets?.find((p) => String(p.number) === r.nummer)?.name ?? ''}
                               onChange={(e) => updatePreset(cam.id, Number(r.nummer), { name: e.target.value })}
                             />
-                            <div className="text-gray-500">{r.optik}</div>
+                            <div className="text-bc-dim">{r.optik}</div>
                           </td>
-                          <td className="py-1 pr-1 text-gray-400">{r.segment || '—'}</td>
-                          <td className="py-1 pr-1 text-gray-500">{r.stand}</td>
+                          <td className="py-1 pr-1 text-bc-muted">{r.segment || '—'}</td>
+                          <td className="py-1 pr-1 text-bc-dim">{r.stand}</td>
                           <td className="py-1 text-right">
                             <button
                               type="button"
                               aria-label={format(t('sidebar.cam.presetRemove', 'Remove preset {n}'), { n: r.nummer })}
-                              className="text-gray-500 hover:text-red-400"
+                              className="text-bc-dim hover:text-red-400"
                               onClick={() => removePreset(cam.id, Number(r.nummer))}
                             >
                               ×
@@ -1921,11 +1921,11 @@ function CameraCard({
               {/* Die Liste, wie sie JETZT im Empfaenger steht. Sie wird
                   HEREINGEHOLT und nicht gesucht: dieser Planer laeuft auf dem
                   Rechner des Planers und nicht auf dem der Regie. */}
-              <label className="mt-1 text-[10px] uppercase tracking-wider text-gray-500">
+              <label className="mt-1 text-[10px] uppercase tracking-wider text-bc-dim">
                 {t('sidebar.cam.source.list', 'Source list from the receiver (one per line)')}
               </label>
               <textarea
-                className="block min-h-[3.5rem] w-full resize-y rounded border border-bc-border bg-bc-dark text-xs text-white"
+                className="block min-h-[3.5rem] w-full resize-y rounded border border-bc-border bg-bc-dark text-xs text-bc-text-bright"
                 style={{ padding: '4px 6px' }}
                 rows={3}
                 placeholder={t('sidebar.cam.source.listPh', 'REGIE-PC (CAM 1)\nREGIE-PC (CAM 2)  10.0.0.42')}
@@ -1962,7 +1962,7 @@ function CameraCard({
                   Eine unerwartete Quelle ist der Zwilling einer fehlenden:
                   zusammen sind sie meist genau die Vertauschung. */}
               {quellenAbgleich.unexpected.length > 0 && (
-                <div className="text-[11px] text-gray-400">
+                <div className="text-[11px] text-bc-muted">
                   {t('sidebar.sources.unmatched', 'Not matched on the network:')}{' '}
                   {quellenAbgleich.unexpected.map(sourceLabel).join(' · ')}
                 </div>
@@ -1983,7 +1983,7 @@ function CameraCard({
 
           <Group id="note" title={t('sidebar.cam.notes', 'Notes')} defaultOpen={false} summary={cam.notes ? cam.notes.slice(0, 24) : undefined}>
             <textarea
-              className="block min-h-[2.5rem] w-full resize-y rounded border border-bc-border bg-bc-dark text-xs text-white"
+              className="block min-h-[2.5rem] w-full resize-y rounded border border-bc-border bg-bc-dark text-xs text-bc-text-bright"
               style={{ padding: '4px 6px' }}
               rows={2}
               placeholder={t('sidebar.cam.notesPlaceholder', 'Mount, operator, shot notes…')}
@@ -2148,7 +2148,7 @@ export default function Sidebar() {
     // ein zweites `w-80` haette die Spalte bei 320 px festgenagelt.
     <div className="w-full bg-bc-panel border-r border-bc-border h-full flex flex-col overflow-y-auto">
       {/* Venue settings */}
-      <div className={`border-b border-bc-border/60 ${venueOpen ? 'bg-white/[0.015]' : ''}`}>
+      <div className={`border-b border-bc-border/60 ${venueOpen ? 'bg-bc-hover-soft' : ''}`}>
         <AccordionHeader
           icon={<FiHome size={14} />}
           title={t('sidebar.venueSettings', 'Venue Settings')}
@@ -2158,35 +2158,35 @@ export default function Sidebar() {
         {venueOpen && (
           <div className="space-y-2 text-xs" style={{ padding: '0 14px 12px' }}>
             <label className="block">
-              <span className="text-gray-400">{t('sidebar.name', 'Name')}</span>
+              <span className="text-bc-muted">{t('sidebar.name', 'Name')}</span>
               <input
-                className="w-full bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
+                className="w-full bg-bc-dark border border-bc-border rounded px-2 py-1 text-bc-text-bright"
                 value={venue.name}
                 onChange={(e) => setVenue({ ...venue, name: e.target.value })}
               />
             </label>
             <div className="grid grid-cols-2 gap-2">
               <label>
-                <span className="text-gray-400">{t('sidebar.widthM', 'Width (m)')}</span>
+                <span className="text-bc-muted">{t('sidebar.widthM', 'Width (m)')}</span>
                 <input
                   type="number"
-                  className="w-full bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
+                  className="w-full bg-bc-dark border border-bc-border rounded px-2 py-1 text-bc-text-bright"
                   value={venue.widthM}
                   onChange={(e) => setVenue({ ...venue, widthM: parseFloat(e.target.value) || 10 })}
                 />
               </label>
               <label>
-                <span className="text-gray-400">{t('sidebar.depthM', 'Depth (m)')}</span>
+                <span className="text-bc-muted">{t('sidebar.depthM', 'Depth (m)')}</span>
                 <input
                   type="number"
-                  className="w-full bg-bc-dark border border-bc-border rounded px-2 py-1 text-white"
+                  className="w-full bg-bc-dark border border-bc-border rounded px-2 py-1 text-bc-text-bright"
                   value={venue.heightM}
                   onChange={(e) => setVenue({ ...venue, heightM: parseFloat(e.target.value) || 10 })}
                 />
               </label>
             </div>
             <label className="block">
-              <span className="text-gray-400">{format(t('sidebar.zoom', 'Zoom: {v}px/m'), { v: pixelsPerMeter })}</span>
+              <span className="text-bc-muted">{format(t('sidebar.zoom', 'Zoom: {v}px/m'), { v: pixelsPerMeter })}</span>
               <input
                 type="range"
                 className="w-full accent-bc-accent"
@@ -2201,7 +2201,7 @@ export default function Sidebar() {
       </div>
 
       {/* Background plan */}
-      <div className={`border-b border-bc-border/60 ${bgOpen ? 'bg-white/[0.015]' : ''}`}>
+      <div className={`border-b border-bc-border/60 ${bgOpen ? 'bg-bc-hover-soft' : ''}`}>
         <AccordionHeader
           icon={<FiImage size={14} />}
           title={t('sidebar.floorPlan', 'Floor Plan')}
@@ -2220,13 +2220,13 @@ export default function Sidebar() {
             {backgroundPlan && (
               <>
                 <label className="block">
-                  <span className="text-gray-400">{format(t('sidebar.opacity', 'Opacity: {v}%'), { v: (backgroundPlan.opacity * 100).toFixed(0) })}</span>
+                  <span className="text-bc-muted">{format(t('sidebar.opacity', 'Opacity: {v}%'), { v: (backgroundPlan.opacity * 100).toFixed(0) })}</span>
                   <input type="range" className="w-full accent-bc-accent" min={0.05} max={1} step={0.05}
                     value={backgroundPlan.opacity}
                     onChange={(e) => setBackgroundPlan({ ...backgroundPlan, opacity: parseFloat(e.target.value) })} />
                 </label>
                 <label className="block">
-                  <span className="text-gray-400">{format(t('sidebar.scaleX', 'Scale X: {v} mm/px ({w}m wide)'), { v: (backgroundPlan.scaleX * 1000).toFixed(1), w: (backgroundPlan.widthPx * backgroundPlan.scaleX).toFixed(1) })}</span>
+                  <span className="text-bc-muted">{format(t('sidebar.scaleX', 'Scale X: {v} mm/px ({w}m wide)'), { v: (backgroundPlan.scaleX * 1000).toFixed(1), w: (backgroundPlan.widthPx * backgroundPlan.scaleX).toFixed(1) })}</span>
                   <input type="range" className="w-full accent-bc-accent"
                     min={0.001} max={0.5} step={0.001}
                     value={backgroundPlan.scaleX}
@@ -2235,15 +2235,15 @@ export default function Sidebar() {
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setScaleLocked(!scaleLocked)}
-                    className={`p-1 rounded border ${scaleLocked ? 'border-bc-accent text-bc-accent' : 'border-bc-border text-gray-500 hover:text-gray-300'}`}
+                    className={`p-1 rounded border ${scaleLocked ? 'border-bc-accent text-bc-accent' : 'border-bc-border text-bc-dim hover:text-bc-text'}`}
                     title={scaleLocked ? t('sidebar.unlockY', 'Unlock Y scale for independent adjustment') : t('sidebar.lockY', 'Lock Y scale to X')}
                   >
                     {scaleLocked ? <FiLock size={11} /> : <FiUnlock size={11} />}
                   </button>
-                  <span className="text-[10px] text-gray-500">{scaleLocked ? t('sidebar.xyLinked', 'X/Y linked') : t('sidebar.xyIndependent', 'X/Y independent')}</span>
+                  <span className="text-[10px] text-bc-dim">{scaleLocked ? t('sidebar.xyLinked', 'X/Y linked') : t('sidebar.xyIndependent', 'X/Y independent')}</span>
                 </div>
                 <label className={`block ${scaleLocked ? 'opacity-40 pointer-events-none' : ''}`}>
-                  <span className="text-gray-400">{format(t('sidebar.scaleY', 'Scale Y: {v} mm/px ({h}m tall)'), { v: (backgroundPlan.scaleY * 1000).toFixed(1), h: (backgroundPlan.heightPx * backgroundPlan.scaleY).toFixed(1) })}</span>
+                  <span className="text-bc-muted">{format(t('sidebar.scaleY', 'Scale Y: {v} mm/px ({h}m tall)'), { v: (backgroundPlan.scaleY * 1000).toFixed(1), h: (backgroundPlan.heightPx * backgroundPlan.scaleY).toFixed(1) })}</span>
                   <input type="range" className="w-full accent-bc-accent"
                     min={0.001} max={0.5} step={0.001}
                     value={backgroundPlan.scaleY}
@@ -2253,44 +2253,44 @@ export default function Sidebar() {
                 <div className="flex gap-1">
                   <button
                     onClick={() => { const s = venue.widthM / backgroundPlan.widthPx; setBackgroundPlan({ ...backgroundPlan, scaleX: s, ...(scaleLocked ? { scaleY: s } : {}) }); }}
-                    className="flex-1 px-1 py-0.5 rounded bg-bc-dark border border-bc-border text-gray-400 hover:text-white text-[10px]"
+                    className="flex-1 px-1 py-0.5 rounded bg-bc-dark border border-bc-border text-bc-muted hover:text-bc-text-bright text-[10px]"
                   >
                     {t('sidebar.fitWidth', 'Fit Width')}
                   </button>
                   <button
                     onClick={() => { const s = venue.heightM / backgroundPlan.heightPx; setBackgroundPlan({ ...backgroundPlan, scaleY: s, ...(scaleLocked ? { scaleX: s } : {}) }); }}
-                    className={`flex-1 px-1 py-0.5 rounded bg-bc-dark border border-bc-border text-gray-400 hover:text-white text-[10px] ${scaleLocked ? 'opacity-40 pointer-events-none' : ''}`}
+                    className={`flex-1 px-1 py-0.5 rounded bg-bc-dark border border-bc-border text-bc-muted hover:text-bc-text-bright text-[10px] ${scaleLocked ? 'opacity-40 pointer-events-none' : ''}`}
                   >
                     {t('sidebar.fitHeight', 'Fit Height')}
                   </button>
                   <button
                     onClick={() => { const s = venue.widthM / backgroundPlan.widthPx; setBackgroundPlan({ ...backgroundPlan, scaleX: s, scaleY: s }); }}
-                    className="flex-1 px-1 py-0.5 rounded bg-bc-dark border border-bc-border text-gray-400 hover:text-white text-[10px]"
+                    className="flex-1 px-1 py-0.5 rounded bg-bc-dark border border-bc-border text-bc-muted hover:text-bc-text-bright text-[10px]"
                   >
                     {t('sidebar.fitBoth', 'Fit Both')}
                   </button>
                 </div>
                 {/* Calibration */}
                 <div className="p-2 rounded bg-bc-dark border border-bc-border space-y-1.5">
-                  <div className="flex items-center gap-1 text-gray-300 font-medium">
+                  <div className="flex items-center gap-1 text-bc-text font-medium">
                     <FiMaximize2 size={11} /> {t('sidebar.calibrateScale', 'Calibrate Scale')}{scaleLocked ? '' : t('sidebar.calibrateXY', ' (X / Y)')}
                   </div>
-                  <p className="text-gray-500 text-[10px] leading-tight">
+                  <p className="text-bc-dim text-[10px] leading-tight">
                     {scaleLocked
                       ? t('sidebar.calibHelpLocked', 'Click two points on the 2D plan to measure a known distance. Both X and Y scale will be set equally.')
                       : t('sidebar.calibHelpUnlocked', 'Measure a known horizontal (X) and vertical (Y) distance separately. Click two points on the 2D plan for each axis.')}
                   </p>
                   <div className="flex gap-1 items-end">
                     <label className="flex-1">
-                      <span className="text-gray-500">{scaleLocked ? t('sidebar.knownDistance', 'Known distance (m)') : t('sidebar.knownXDistance', 'Known X distance (m)')}</span>
+                      <span className="text-bc-dim">{scaleLocked ? t('sidebar.knownDistance', 'Known distance (m)') : t('sidebar.knownXDistance', 'Known X distance (m)')}</span>
                       <input type="number" min={0.1} step={0.1}
-                        className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white"
+                        className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright"
                         value={calibDistX}
                         onChange={(e) => setCalibDistX(e.target.value)} />
                     </label>
                     <button
                       onClick={() => startCalibration('x')}
-                      className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${calibAxis === 'x' ? 'bg-bc-red text-white' : 'bg-bc-green/20 text-bc-green hover:bg-bc-green/30'}`}
+                      className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${calibAxis === 'x' ? 'bg-bc-red text-bc-text-bright' : 'bg-bc-green/20 text-bc-green hover:bg-bc-green/30'}`}
                     >
                       {calibAxis === 'x' ? 'Cancel' : (scaleLocked ? t('sidebar.calibrate', 'Calibrate') : t('sidebar.calX', 'Cal X'))}
                     </button>
@@ -2298,35 +2298,35 @@ export default function Sidebar() {
                   {!scaleLocked && (
                     <div className="flex gap-1 items-end">
                       <label className="flex-1">
-                        <span className="text-gray-500">{t('sidebar.knownYDistance', 'Known Y distance (m)')}</span>
+                        <span className="text-bc-dim">{t('sidebar.knownYDistance', 'Known Y distance (m)')}</span>
                         <input type="number" min={0.1} step={0.1}
-                          className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white"
+                          className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright"
                           value={calibDistY}
                           onChange={(e) => setCalibDistY(e.target.value)} />
                       </label>
                       <button
                         onClick={() => startCalibration('y')}
-                        className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${calibAxis === 'y' ? 'bg-bc-red text-white' : 'bg-bc-green/20 text-bc-green hover:bg-bc-green/30'}`}
+                        className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${calibAxis === 'y' ? 'bg-bc-red text-bc-text-bright' : 'bg-bc-green/20 text-bc-green hover:bg-bc-green/30'}`}
                       >
                         {calibAxis === 'y' ? 'Cancel' : t('sidebar.calY', 'Cal Y')}
                       </button>
                     </div>
                   )}
-                  <label className="flex items-center gap-1.5 text-[10px] text-gray-400 cursor-pointer">
+                  <label className="flex items-center gap-1.5 text-[10px] text-bc-muted cursor-pointer">
                     <input type="checkbox" checked={autoResize} onChange={(e) => setAutoResize(e.target.checked)} className="accent-bc-accent" />
                     {t('sidebar.autoResize', 'Auto-resize venue to match floor plan')}
                   </label>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <label>
-                    <span className="text-gray-400">{t('sidebar.offsetX', 'Offset X (m)')}</span>
-                    <input type="number" className="w-full bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-white"
+                    <span className="text-bc-muted">{t('sidebar.offsetX', 'Offset X (m)')}</span>
+                    <input type="number" className="w-full bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-bc-text-bright"
                       value={backgroundPlan.offsetX} step={0.5}
                       onChange={(e) => setBackgroundPlan({ ...backgroundPlan, offsetX: parseFloat(e.target.value) || 0 })} />
                   </label>
                   <label>
-                    <span className="text-gray-400">{t('sidebar.offsetY', 'Offset Y (m)')}</span>
-                    <input type="number" className="w-full bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-white"
+                    <span className="text-bc-muted">{t('sidebar.offsetY', 'Offset Y (m)')}</span>
+                    <input type="number" className="w-full bg-bc-dark border border-bc-border rounded px-1 py-0.5 text-bc-text-bright"
                       value={backgroundPlan.offsetY} step={0.5}
                       onChange={(e) => setBackgroundPlan({ ...backgroundPlan, offsetY: parseFloat(e.target.value) || 0 })} />
                   </label>
@@ -2346,7 +2346,7 @@ export default function Sidebar() {
       </div>
 
       {/* Stages management */}
-      <div className={`border-b border-bc-border/60 ${stagesOpen ? 'bg-white/[0.015]' : ''}`}>
+      <div className={`border-b border-bc-border/60 ${stagesOpen ? 'bg-bc-hover-soft' : ''}`}>
         <AccordionHeader
           icon={<FiMap size={14} />}
           title={t('sidebar.stages.title', 'Stages')}
@@ -2360,7 +2360,7 @@ export default function Sidebar() {
               <div key={s.id} className="bg-bc-dark rounded p-2 border border-bc-border">
                 <div className="flex items-center justify-between mb-1">
                   <input
-                    className="bg-transparent text-white text-xs font-semibold w-24 outline-none"
+                    className="bg-transparent text-bc-text-bright text-xs font-semibold w-24 outline-none"
                     value={s.label}
                     onChange={(e) => updateStage(s.id, { label: e.target.value })}
                   />
@@ -2370,23 +2370,23 @@ export default function Sidebar() {
                 </div>
                 <div className="grid grid-cols-4 gap-1">
                   <label>
-                    <span className="text-gray-500">X</span>
-                    <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs" value={s.x} step={0.5}
+                    <span className="text-bc-dim">X</span>
+                    <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-xs" value={s.x} step={0.5}
                       onChange={(e) => updateStage(s.id, { x: parseFloat(e.target.value) || 0 })} />
                   </label>
                   <label>
-                    <span className="text-gray-500">Y</span>
-                    <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs" value={s.y} step={0.5}
+                    <span className="text-bc-dim">Y</span>
+                    <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-xs" value={s.y} step={0.5}
                       onChange={(e) => updateStage(s.id, { y: parseFloat(e.target.value) || 0 })} />
                   </label>
                   <label>
-                    <span className="text-gray-500">W</span>
-                    <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs" value={s.width} step={0.5}
+                    <span className="text-bc-dim">W</span>
+                    <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-xs" value={s.width} step={0.5}
                       onChange={(e) => updateStage(s.id, { width: parseFloat(e.target.value) || 1 })} />
                   </label>
                   <label>
-                    <span className="text-gray-500">T</span>
-                    <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs" value={s.height} step={0.5}
+                    <span className="text-bc-dim">T</span>
+                    <input type="number" className="w-full bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-xs" value={s.height} step={0.5}
                       title={t('sidebar.stage.depth.title', 'Depth of the footprint in metres')}
                       onChange={(e) => updateStage(s.id, { height: parseFloat(e.target.value) || 1 })} />
                   </label>
@@ -2395,11 +2395,11 @@ export default function Sidebar() {
                 {/* Podest statt Flaeche (#73): Hoehe, Farbe, Transparenz —
                     dieselben Stellschrauben wie bei den Wänden. */}
                 <div className="mt-1 flex items-center gap-1">
-                  <label className="flex items-center gap-1 text-gray-500">
+                  <label className="flex items-center gap-1 text-bc-dim">
                     {t('sidebar.stage.height', 'Height')}
                     <input
                       type="number"
-                      className="w-14 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-xs tabular-nums"
+                      className="w-14 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-xs tabular-nums"
                       value={s.elevationM ?? 0}
                       step={0.1}
                       min={0}
@@ -2410,7 +2410,7 @@ export default function Sidebar() {
                         updateStage(s.id, { elevationM: Number.isFinite(v) ? Math.max(0, Math.min(10, v)) : 0 });
                       }}
                     />
-                    <span className="text-[10px] text-gray-600">m</span>
+                    <span className="text-[10px] text-bc-faint">m</span>
                   </label>
                   <input
                     type="color"
@@ -2420,7 +2420,7 @@ export default function Sidebar() {
                     title={t('sidebar.stage.colour.title', 'Colour of the riser')}
                     aria-label={t('sidebar.stage.colour.aria', 'Colour of the riser')}
                   />
-                  <label className="flex flex-1 items-center gap-1 text-gray-500" title={t('sidebar.stage.opacity.title', 'Opacity in per cent')}>
+                  <label className="flex flex-1 items-center gap-1 text-bc-dim" title={t('sidebar.stage.opacity.title', 'Opacity in per cent')}>
                     <input
                       type="range"
                       className="flex-1 accent-bc-accent"
@@ -2431,7 +2431,7 @@ export default function Sidebar() {
                       aria-label={t('sidebar.stage.opacity.aria', 'Opacity of the riser in per cent')}
                       onChange={(e) => updateStage(s.id, { opacity: parseInt(e.target.value, 10) / 100 })}
                     />
-                    <span className="w-8 text-right text-[10px] tabular-nums text-gray-400">
+                    <span className="w-8 text-right text-[10px] tabular-nums text-bc-muted">
                       {Math.round((s.opacity ?? 0.4) * 100)}%
                     </span>
                   </label>
@@ -2450,7 +2450,7 @@ export default function Sidebar() {
 
 
       {/* Walls */}
-      <div className={`border-b border-bc-border/60 ${wallsOpen ? 'bg-white/[0.015]' : ''}`}>
+      <div className={`border-b border-bc-border/60 ${wallsOpen ? 'bg-bc-hover-soft' : ''}`}>
         <AccordionHeader
           icon={<FiColumns size={14} />}
           title={t('sidebar.walls.title', 'Walls')}
@@ -2462,17 +2462,17 @@ export default function Sidebar() {
           <div className="space-y-2 text-xs" style={{ padding: '0 14px 12px' }}>
             <button
               onClick={() => setWallDrawMode((active) => !active)}
-              className={`flex items-center gap-1 px-2 py-1 rounded text-xs w-full justify-center ${wallDrawMode ? 'bg-bc-yellow/20 text-bc-yellow hover:bg-bc-yellow/30' : 'bg-bc-dark text-gray-300 hover:text-white border border-bc-border'}`}
+              className={`flex items-center gap-1 px-2 py-1 rounded text-xs w-full justify-center ${wallDrawMode ? 'bg-bc-yellow/20 text-bc-yellow hover:bg-bc-yellow/30' : 'bg-bc-dark text-bc-text hover:text-bc-text-bright border border-bc-border'}`}
             >
               {wallDrawMode ? t('sidebar.stopDrawing', 'Stop Drawing') : t('sidebar.drawWalls', 'Draw Walls')}
             </button>
             {wallDrawMode && (
-              <div className="rounded border border-bc-border bg-bc-dark px-2 py-1.5 text-[10px] text-gray-400 leading-relaxed">
+              <div className="rounded border border-bc-border bg-bc-dark px-2 py-1.5 text-[10px] text-bc-muted leading-relaxed">
                 {t('sidebar.wallDrawHelp', 'Click once to place the start point, click again to finish the wall. Hold Shift to snap the angle. Right-click a wall to delete it.')}
               </div>
             )}
             {/* Endpoint snapping toggle (issue #40) */}
-            <label className="flex items-center gap-2 text-[11px] text-gray-300 cursor-pointer select-none">
+            <label className="flex items-center gap-2 text-[11px] text-bc-text cursor-pointer select-none">
               <input
                 type="checkbox"
                 className="accent-bc-accent"
@@ -2485,11 +2485,11 @@ export default function Sidebar() {
               <div key={w.id} className="bg-bc-dark rounded p-1.5 border border-bc-border space-y-1.5">
                 <div className="flex items-center gap-2">
                   <input
-                    className="bg-transparent text-white text-xs w-16 outline-none"
+                    className="bg-transparent text-bc-text-bright text-xs w-16 outline-none"
                     value={w.label}
                     onChange={(e) => updateWall(w.id, { label: e.target.value })}
                   />
-                  <span className="text-gray-500 text-[10px]">{w.height}m h</span>
+                  <span className="text-bc-dim text-[10px]">{w.height}m h</span>
                   <button onClick={() => removeWall(w.id)} className="ml-auto p-0.5 hover:text-bc-red"><FiTrash2 size={11} /></button>
                 </div>
                 {/* Surface pattern for blur-checking in the preview (issue #45) */}
@@ -2502,7 +2502,7 @@ export default function Sidebar() {
                     title={t('sidebar.wallColour', 'Wall colour')}
                   />
                   <select
-                    className="flex-1 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[10px]"
+                    className="flex-1 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-[10px]"
                     value={w.pattern ?? 'solid'}
                     onChange={(e) => updateWall(w.id, { pattern: e.target.value as WallPattern })}
                   >
@@ -2534,7 +2534,7 @@ export default function Sidebar() {
                       color: w.color, pattern: w.pattern, patternImage: w.patternImage,
                       patternFit: w.patternFit, patternRows: w.patternRows,
                     }))}
-                    className="px-1.5 py-0.5 rounded border border-bc-border text-gray-400 hover:text-bc-accent hover:border-bc-accent text-[10px] shrink-0"
+                    className="px-1.5 py-0.5 rounded border border-bc-border text-bc-muted hover:text-bc-accent hover:border-bc-accent text-[10px] shrink-0"
                     title={t('sidebar.applyToAllWalls', 'Apply this wall\'s colour & pattern to all walls')}
                   >
                     {t('sidebar.all', 'All')}
@@ -2546,7 +2546,7 @@ export default function Sidebar() {
                 {(w.pattern ?? 'solid') !== 'solid' && (
                   <div className="flex items-center gap-1">
                     <select
-                      className="flex-1 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[10px]"
+                      className="flex-1 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-[10px]"
                       value={w.patternFit ?? 'tile'}
                       onChange={(e) => updateWall(w.id, { patternFit: e.target.value as WallFit })}
                       title={t('sidebar.patternFit.title', 'How the pattern is laid onto the wall surface')}
@@ -2557,11 +2557,11 @@ export default function Sidebar() {
                       <option value="stretch">{t('sidebar.patternFitStretch', 'Stretched')}</option>
                     </select>
                     {(w.patternFit ?? 'tile') === 'tile' && (
-                      <label className="flex items-center gap-1 text-[10px] text-gray-400">
+                      <label className="flex items-center gap-1 text-[10px] text-bc-muted">
                         {t('sidebar.patternRows', 'Rows')}
                         <input
                           type="number"
-                          className="w-12 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-white text-[10px] tabular-nums"
+                          className="w-12 bg-bc-panel border border-bc-border rounded px-1 py-0.5 text-bc-text-bright text-[10px] tabular-nums"
                           min={PATTERN_ROWS_MIN}
                           max={PATTERN_ROWS_MAX}
                           step={1}
@@ -2590,7 +2590,7 @@ export default function Sidebar() {
       </div>
 
       {/* Persons & Stage Objects */}
-      <div className={`border-b border-bc-border/60 ${personsOpen ? 'bg-white/[0.015]' : ''}`}>
+      <div className={`border-b border-bc-border/60 ${personsOpen ? 'bg-bc-hover-soft' : ''}`}>
         <AccordionHeader
           icon={<FiUsers size={14} />}
           title={t('sidebar.objectsPersons.title', 'Objects & Persons')}
@@ -2614,10 +2614,10 @@ export default function Sidebar() {
                 p.objectType === 'custom' ? '◇' : '👤';
               return (
                 <div key={p.id} className="flex items-center gap-2 bg-bc-dark rounded p-1.5 border border-bc-border">
-                  <span className="text-gray-500 text-[10px] w-6 text-center">{icon}</span>
-                  <input className="bg-transparent text-white text-xs w-16 outline-none" value={p.label}
+                  <span className="text-bc-dim text-[10px] w-6 text-center">{icon}</span>
+                  <input className="bg-transparent text-bc-text-bright text-xs w-16 outline-none" value={p.label}
                     onChange={(e) => updatePerson(p.id, { label: e.target.value })} />
-                  <span className="text-gray-500">{p.height}m</span>
+                  <span className="text-bc-dim">{p.height}m</span>
                   <input
                     type="color"
                     className="w-5 h-5 rounded border border-bc-border cursor-pointer bg-transparent"
@@ -2625,7 +2625,7 @@ export default function Sidebar() {
                     onChange={(e) => updatePerson(p.id, { color: e.target.value })}
                     title={t('sidebar.customAccentColour', 'Custom accent colour')}
                   />
-                  <span className="text-gray-500">({p.x.toFixed(1)}, {p.y.toFixed(1)})</span>
+                  <span className="text-bc-dim">({p.x.toFixed(1)}, {p.y.toFixed(1)})</span>
                   <button onClick={() => removePerson(p.id)} className="ml-auto p-0.5 hover:text-bc-red"><FiTrash2 size={11} /></button>
                 </div>
               );
@@ -2672,10 +2672,10 @@ export default function Sidebar() {
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-bc-accent/20 text-bc-accent">
             <FiVideo size={14} />
           </span>
-          <span className="text-[13.5px] font-semibold text-white">{t('sidebar.cameras.title', 'Cameras')}</span>
+          <span className="text-[13.5px] font-semibold text-bc-text-bright">{t('sidebar.cameras.title', 'Cameras')}</span>
           <span
             style={{ padding: '2px 7px' }}
-            className="rounded-full bg-bc-dark text-[10.5px] font-semibold tabular-nums text-gray-300"
+            className="rounded-full bg-bc-dark text-[10.5px] font-semibold tabular-nums text-bc-text"
           >
             {cameras.length}
           </span>
@@ -2683,7 +2683,7 @@ export default function Sidebar() {
             <button
               onClick={toggleShowAllFov}
               style={{ padding: '6px' }}
-              className="rounded hover:bg-bc-border text-gray-400 hover:text-white"
+              className="rounded hover:bg-bc-border text-bc-muted hover:text-bc-text-bright"
               title={showAllFov ? t('sidebar.hideAllFov', 'Hide all FOV') : t('sidebar.showAllFov', 'Show all FOV')}
               aria-label={showAllFov ? t('sidebar.hideAllFov', 'Hide all FOV') : t('sidebar.showAllFov', 'Show all FOV')}
             >
@@ -2710,7 +2710,7 @@ export default function Sidebar() {
           ))}
 
           {cameras.length === 0 && (
-            <p className="text-gray-500 text-xs text-center mt-8">{t('sidebar.noCameras', 'No cameras yet. Add one with "Add" or load a template.')}</p>
+            <p className="text-bc-dim text-xs text-center mt-8">{t('sidebar.noCameras', 'No cameras yet. Add one with "Add" or load a template.')}</p>
           )}
         </div>
       </div>

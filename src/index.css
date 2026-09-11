@@ -20,9 +20,35 @@
   /* Aktionsflaeche der Marke: Off-White, darauf Navy — 13:1 statt 4:1. */
   --color-bc-accent: #F6F5F0;
   --color-bc-accent-text: #132040;
+  /* VIER TEXTSTUFEN, und das sind nicht drei plus eine Laune.
+   *
+   * Die Oberflaeche fuehrte bis 2026-09-11 rohe Tailwind-Graustufen —
+   * `text-white`, `text-gray-200/300/400/500/600` — und benutzte davon
+   * fuenf Abstufungen an 406 Stellen. Sie auf die drei vorhandenen Token zu
+   * quetschen haette die Hierarchie zerstoert: der Hinweis unter einem Feld
+   * saehe aus wie sein Wert. Also bekommt die Rampe zwei weitere Stufen,
+   * abgeleitet aus dem Stahlblau, und jede Stufe hat eine Rolle:
+   *
+   *   text-bright  Ueberschriften, aktive Zustaende      (war text-white)
+   *   text         Fliesstext                            (war gray-100..300)
+   *   muted        Meta, Platzhalter, inaktive Knoepfe   (war gray-400)
+   *   dim          Beschriftungen neben Werten           (war gray-500)
+   *   faint        Hinweise, Einheiten, Zaehlungen       (war gray-600)
+   */
   --color-bc-text: #E1ECEF;          /* Eisblau — Fliesstext auf Dunkel */
   --color-bc-text-bright: #F6F5F0;
   --color-bc-muted: #8C9CB3;         /* Stahlblau — Meta, Platzhalter */
+  --color-bc-dim: #6E7F97;           /* abgeleitet — Beschriftungen */
+  --color-bc-faint: #56657C;         /* abgeleitet — Hinweise */
+  /* Flaechen, die keine Farbe sind, sondern ein Zustand oder ein Grund.
+   * Als Token, weil `bg-white/[0.06]` im Hell-Thema unsichtbar waere und
+   * `bg-black/60` dort zu einem schwarzen Balken wuerde. */
+  --color-bc-hover: rgba(246, 245, 240, 0.06);
+  --color-bc-hover-soft: rgba(246, 245, 240, 0.015);
+  --color-bc-scrim: rgba(0, 0, 0, 0.6);
+  /* Der Letterbox-Grund hinter einem Framegrab. Schwarz in JEDEM Thema:
+   * das ist kein Oberflaechenton, sondern die Abwesenheit von Bild. */
+  --color-bc-media: #000000;
   /* Status: nur Meldungen. */
   --color-bc-green: #2F7D5C;
   --color-bc-red: #B04A3F;
@@ -31,6 +57,83 @@
    * Text, nie zweimal in einem Sichtfeld. In einem Kamera-Planer hat es
    * seine woertliche Bedeutung. */
   --color-bc-signal: #D6402E;
+}
+
+/* ─── DAS HELL-THEMA (B-70) ────────────────────────────────────────────────
+ *
+ * Nur die WERTE der Token werden getauscht, keine Regel und keine Klasse.
+ * Das ist die ganze Zusage dieses Blocks — und sie haelt nur, solange
+ * `src/` keine rohen Farb-Utilities mehr traegt. Bis zum 2026-09-11 waren es
+ * 406 (`text-white`, `text-gray-200/300/400/500/600`, `bg-white/[0.06]`,
+ * `bg-black/60`), und jede davon waere im Hell-Thema stehengeblieben:
+ * hellgrauer Text auf weissem Grund, unlesbar. `scripts/rohe-farben-check.mjs`
+ * misst, dass es null bleiben.
+ *
+ * DREI ZUSTAENDE, NICHT ZWEI. „System" ist keine Umschreibung fuer „dunkel":
+ * wer nichts waehlt, folgt dem Betriebssystem; wer waehlt, gewinnt gegen es.
+ * Deshalb `[data-theme]` am Wurzelelement UND eine Medienabfrage, und die
+ * Medienabfrage ist gegen eine ausdrueckliche Wahl abgesichert.
+ *
+ * WAS NICHT MITSPRINGT, und warum das kein Rest ist:
+ *
+ *   Die Kamera-Vorschau und die 3D-Ansicht. Sie zeigen einen SIMULIERTEN
+ *   Raum — Himmel, Boden, Waende, wie ihn ein Objektiv sehen wuerde. Ein
+ *   „helles" Kamerabild waere kein anderes Aussehen, sondern eine andere
+ *   Beleuchtung, also eine Aussage ueber den Saal, die niemand gemacht hat.
+ *   Ein Foto wird auch nicht heller, weil die Bildbetrachter-App es ist.
+ *
+ *   Die Statusfarben (gruen/rot/gelb) und das Signalrot. Sie bedeuten etwas,
+ *   und ihre Bedeutung haengt nicht am Thema. Sie sind auf beiden Gruenden
+ *   auf Kontrast geprueft.
+ */
+:root[data-theme='light'] {
+  --color-bc-dark: #F6F5F0;          /* Off-White — Grund */
+  --color-bc-panel: #FFFFFF;         /* Panels, Karten */
+  --color-bc-sunken: #E8E9E4;        /* Leisten, Eingaben */
+  --color-bc-panel-raised: #FDFDFB;  /* Chips, Hover */
+  --color-bc-border: rgba(19, 32, 64, 0.16);
+  /* Die Aktionsflaeche dreht sich MIT: auf Hell ist Navy die Flaeche und
+   * Off-White die Schrift darauf. Bliebe sie Off-White auf Off-White,
+   * verschwaende der einzige Knopf, den der Nutzer sucht. */
+  --color-bc-accent: #132040;
+  --color-bc-accent-text: #F6F5F0;
+  --color-bc-text: #1B2B45;
+  --color-bc-text-bright: #0B1729;
+  --color-bc-muted: #4E6180;
+  --color-bc-dim: #63748F;
+  --color-bc-faint: #7C8AA1;
+  --color-bc-hover: rgba(19, 32, 64, 0.06);
+  --color-bc-hover-soft: rgba(19, 32, 64, 0.02);
+  /* Der Schleier bleibt dunkel — er trennt nach UNTEN, und das tut er auf
+   * hellem Grund genauso. */
+  --color-bc-scrim: rgba(0, 0, 0, 0.45);
+  --color-bc-media: #000000;
+  color-scheme: light;
+}
+
+/* Ohne ausdrueckliche Wahl entscheidet das Betriebssystem. Die Abfrage ist
+ * gegen `data-theme='dark'` abgesichert: wer ausdruecklich dunkel gewaehlt
+ * hat, bekommt dunkel, auch auf einem hell eingestellten Rechner. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --color-bc-dark: #F6F5F0;
+    --color-bc-panel: #FFFFFF;
+    --color-bc-sunken: #E8E9E4;
+    --color-bc-panel-raised: #FDFDFB;
+    --color-bc-border: rgba(19, 32, 64, 0.16);
+    --color-bc-accent: #132040;
+    --color-bc-accent-text: #F6F5F0;
+    --color-bc-text: #1B2B45;
+    --color-bc-text-bright: #0B1729;
+    --color-bc-muted: #4E6180;
+    --color-bc-dim: #63748F;
+    --color-bc-faint: #7C8AA1;
+    --color-bc-hover: rgba(19, 32, 64, 0.06);
+    --color-bc-hover-soft: rgba(19, 32, 64, 0.02);
+    --color-bc-scrim: rgba(0, 0, 0, 0.45);
+    --color-bc-media: #000000;
+    color-scheme: light;
+  }
 }
 
 /* Tastatur-Fokus: 2 px Rot, 3 px Abstand (ADR-007). */

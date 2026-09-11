@@ -15,6 +15,7 @@ import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react'
 import type Konva from 'konva';
 import { FiCopy, FiLock, FiUnlock, FiTrash2 } from 'react-icons/fi';
 import { useTranslation, format } from '../../i18n';
+import { useIstHell } from '../../lib/useIstHell';
 
 // Shared style for context-menu items (issue #38).
 const ctxItemStyle: React.CSSProperties = {
@@ -32,8 +33,49 @@ const ctxItemStyle: React.CSSProperties = {
   font: 'inherit',
 };
 
+/**
+ * Die FLAECHEN des Plans — als Palette, nicht als Hex im Markup (B-70).
+ *
+ * ZWEI SORTEN FARBE STEHEN IN DIESER DATEI, und nur eine davon dreht sich
+ * mit dem Thema:
+ *
+ *   Flaeche   Grund, Blatt, Raster, Rahmen, Massstab. Das ist die
+ *             Zeichenunterlage, und die ist auf Papier weiss. Sie steht hier.
+ *   Bedeutung Kamera-Marken, Waende, Buehnen, Personen, Warnfarben. Die
+ *             bedeuten etwas, und ihre Bedeutung haengt nicht am Thema —
+ *             eine rote Marke bleibt rot. Sie stehen weiter dort, wo sie
+ *             gebraucht werden.
+ *
+ * Konva zeichnet in ein Canvas und kann keine CSS-Variable lesen; deshalb
+ * eine Tabelle im Code und nicht `var(--color-bc-…)`. Die Werte sind
+ * dieselben wie im Stilblatt — wer eine aendert, aendert beide.
+ */
+const PALETTE = {
+  dunkel: {
+    grund: '#0a0b0f',
+    blatt: '#111318',
+    raster: '#1D324F',
+    rasterText: '#555555',
+    rahmen: '#2a2d3a',
+    massstab: '#666666',
+    chip: '#000000aa',
+    chipText: '#9ca3af',
+  },
+  hell: {
+    grund: '#E8E9E4',
+    blatt: '#FFFFFF',
+    raster: '#C7CEDA',
+    rasterText: '#8A93A3',
+    rahmen: '#AAB3C2',
+    massstab: '#6E7684',
+    chip: '#ffffffcc',
+    chipText: '#4E6180',
+  },
+} as const;
+
 export default function Venue2D() {
   const { t } = useTranslation();
+  const P = PALETTE[useIstHell() ? 'hell' : 'dunkel'];
   const { venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, updateCamera, removeCamera, duplicateCamera, showAllFov, pixelsPerMeter, persons, updatePerson, removePerson, duplicatePerson, updateStage, addStage, removeStage, backgroundPlan, setBackgroundPlan, walls, updateWall, addWall, removeWall, wallSnap, editMode, avForeign, showForeign } = useStore();
 
   // Edit-mode locking (issue #43): each mode locks every category except its own.
@@ -554,9 +596,9 @@ export default function Venue2D() {
   }, [menu, removeCamera, removePerson, removeStage, removeWall, updateCamera, updatePerson, updateStage, duplicateCamera, duplicatePerson, addStage, venue.stages, venue.widthM, venue.heightM, selectedStageId]);
 
   return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%', background: '#0a0b0f', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+    <div ref={containerRef} style={{ width: '100%', height: '100%', background: P.grund, borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
       {/* Zoom indicator */}
-      <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 10, background: '#000000aa', padding: '4px 10px', borderRadius: 4, fontSize: 11, color: '#9ca3af', pointerEvents: 'none', backdropFilter: 'blur(4px)' }}>
+      <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 10, background: P.chip, padding: '4px 10px', borderRadius: 4, fontSize: 11, color: P.chipText, pointerEvents: 'none', backdropFilter: 'blur(4px)' }}>
         {(zoom * 100).toFixed(0)}%
       </div>
       <Stage
@@ -582,7 +624,7 @@ export default function Venue2D() {
       >
       {/* ── Layer 1: Static background (venue, image, grid, scale bar) ── */}
       <Layer listening={false}>
-        <Rect x={0} y={0} width={W} height={H} fill="#111318" />
+        <Rect x={0} y={0} width={W} height={H} fill={P.blatt} />
         {bgImage && backgroundPlan && (
           <KImage
             image={bgImage}
@@ -595,22 +637,22 @@ export default function Venue2D() {
         )}
         {Array.from({ length: Math.floor(venue.widthM) + 1 }).map((_, i) => (
           <Group key={`vg-${i}`}>
-            <Line points={[i * ppm, 0, i * ppm, H]} stroke="#1D324F" strokeWidth={1} />
-            <Text x={i * ppm + 2} y={2} text={`${i}m`} fontSize={9} fill="#555" />
+            <Line points={[i * ppm, 0, i * ppm, H]} stroke={P.raster} strokeWidth={1} />
+            <Text x={i * ppm + 2} y={2} text={`${i}m`} fontSize={9} fill={P.rasterText} />
           </Group>
         ))}
         {Array.from({ length: Math.floor(venue.heightM) + 1 }).map((_, i) => (
           <Group key={`hg-${i}`}>
-            <Line points={[0, i * ppm, W, i * ppm]} stroke="#1D324F" strokeWidth={1} />
-            <Text x={2} y={i * ppm + 2} text={`${i}m`} fontSize={9} fill="#555" />
+            <Line points={[0, i * ppm, W, i * ppm]} stroke={P.raster} strokeWidth={1} />
+            <Text x={2} y={i * ppm + 2} text={`${i}m`} fontSize={9} fill={P.rasterText} />
           </Group>
         ))}
-        <Rect x={0} y={0} width={W} height={H} stroke="#2a2d3a" strokeWidth={2} />
+        <Rect x={0} y={0} width={W} height={H} stroke={P.rahmen} strokeWidth={2} />
         {/* Scale bar */}
-        <Line points={[10, H - 20, 10 + 5 * ppm, H - 20]} stroke="#666" strokeWidth={2} />
-        <Line points={[10, H - 25, 10, H - 15]} stroke="#666" strokeWidth={2} />
-        <Line points={[10 + 5 * ppm, H - 25, 10 + 5 * ppm, H - 15]} stroke="#666" strokeWidth={2} />
-        <Text x={10} y={H - 38} text="5m" fontSize={11} fill="#666" />
+        <Line points={[10, H - 20, 10 + 5 * ppm, H - 20]} stroke={P.massstab} strokeWidth={2} />
+        <Line points={[10, H - 25, 10, H - 15]} stroke={P.massstab} strokeWidth={2} />
+        <Line points={[10 + 5 * ppm, H - 25, 10 + 5 * ppm, H - 15]} stroke={P.massstab} strokeWidth={2} />
+        <Text x={10} y={H - 38} text="5m" fontSize={11} fill={P.massstab} />
       </Layer>
 
       {/* ── Layer 2: Interactive objects (FOV, stages, walls, persons, cameras) ── */}

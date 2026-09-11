@@ -72,9 +72,9 @@ export default function StartupAssistant() {
         <div className="flex items-start gap-3">
           <div className="flex-1">
             <div className="text-bc-yellow text-xs font-semibold">{step.title}</div>
-            <div className="text-gray-300 text-xs mt-1 leading-relaxed">{step.hint}</div>
+            <div className="text-bc-text text-xs mt-1 leading-relaxed">{step.hint}</div>
           </div>
-          <button onClick={finishWizard} className="p-1 text-gray-500 hover:text-white" title={t('header.wizard.exit', 'Exit assistant (unlock everything)')}>
+          <button onClick={finishWizard} className="p-1 text-bc-dim hover:text-bc-text-bright" title={t('header.wizard.exit', 'Exit assistant (unlock everything)')}>
             <FiX size={14} />
           </button>
         </div>
@@ -97,13 +97,13 @@ export default function StartupAssistant() {
 
   // phase === 'choose'
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-bc-scrim backdrop-blur-sm">
       <div className="w-[440px] max-w-[92vw] rounded-2xl border border-bc-border bg-bc-panel shadow-2xl p-6 relative">
-        <button onClick={dismiss} className="absolute top-3 right-3 p-1 text-gray-500 hover:text-white" title={t('header.welcome.close', 'Close')}>
+        <button onClick={dismiss} className="absolute top-3 right-3 p-1 text-bc-dim hover:text-bc-text-bright" title={t('header.welcome.close', 'Close')}>
           <FiX size={16} />
         </button>
-        <h2 className="text-white font-bold text-lg">{t('header.welcome.title', 'Welcome to MultiCam Planner')}</h2>
-        <p className="text-gray-400 text-sm mt-1">{t('header.welcome.intro', 'How would you like to start?')}</p>
+        <h2 className="text-bc-text-bright font-bold text-lg">{t('header.welcome.title', 'Welcome to MultiCam Planner')}</h2>
+        <p className="text-bc-muted text-sm mt-1">{t('header.welcome.intro', 'How would you like to start?')}</p>
         <div className="grid grid-cols-1 gap-3 mt-5">
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -111,8 +111,8 @@ export default function StartupAssistant() {
           >
             <FiUpload size={20} className="text-bc-accent shrink-0" />
             <span>
-              <span className="block text-white text-sm font-medium">{t('header.welcome.load.title', 'Load Plan')}</span>
-              <span className="block text-gray-500 text-xs">{t('header.welcome.load.desc', 'Open an existing .mcplan file and jump to camera editing')}</span>
+              <span className="block text-bc-text-bright text-sm font-medium">{t('header.welcome.load.title', 'Load Plan')}</span>
+              <span className="block text-bc-dim text-xs">{t('header.welcome.load.desc', 'Open an existing .mcplan file and jump to camera editing')}</span>
             </span>
           </button>
           <button
@@ -121,8 +121,8 @@ export default function StartupAssistant() {
           >
             <FiPlus size={20} className="text-bc-yellow shrink-0" />
             <span>
-              <span className="block text-white text-sm font-medium">{t('header.welcome.new.title', 'New Plan')}</span>
-              <span className="block text-gray-500 text-xs">{t('header.welcome.new.desc', 'Step through floor plan → stages → objects → cameras')}</span>
+              <span className="block text-bc-text-bright text-sm font-medium">{t('header.welcome.new.title', 'New Plan')}</span>
+              <span className="block text-bc-dim text-xs">{t('header.welcome.new.desc', 'Step through floor plan → stages → objects → cameras')}</span>
             </span>
           </button>
         </div>
