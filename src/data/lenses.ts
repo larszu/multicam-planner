@@ -276,6 +276,24 @@ export const LENSES: Lens[] = [
   { id: 'samyang-xeen-35', manufacturer: 'Samyang', model: 'XEEN 35mm T1.5', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'samyang-xeen-50', manufacturer: 'Samyang', model: 'XEEN 50mm T1.5', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'samyang-xeen-85', manufacturer: 'Samyang', model: 'XEEN 85mm T1.5', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  // ── DZOFilm Vespid Prime (PL, Full Frame, T2.1; 90mm Macro T2.8) ──
+  { id: 'dzo-vespid-16', manufacturer: 'DZOFilm', model: 'Vespid 16mm T2.1', focalLengthMin: 16, focalLengthMax: 16, maxApertureWide: 2.1, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'dzo-vespid-25', manufacturer: 'DZOFilm', model: 'Vespid 25mm T2.1', focalLengthMin: 25, focalLengthMax: 25, maxApertureWide: 2.1, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'dzo-vespid-35', manufacturer: 'DZOFilm', model: 'Vespid 35mm T2.1', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 2.1, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'dzo-vespid-50', manufacturer: 'DZOFilm', model: 'Vespid 50mm T2.1', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.1, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'dzo-vespid-75', manufacturer: 'DZOFilm', model: 'Vespid 75mm T2.1', focalLengthMin: 75, focalLengthMax: 75, maxApertureWide: 2.1, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'dzo-vespid-100', manufacturer: 'DZOFilm', model: 'Vespid 100mm T2.1', focalLengthMin: 100, focalLengthMax: 100, maxApertureWide: 2.1, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'dzo-vespid-125', manufacturer: 'DZOFilm', model: 'Vespid 125mm T2.1', focalLengthMin: 125, focalLengthMax: 125, maxApertureWide: 2.1, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'dzo-vespid-90m', manufacturer: 'DZOFilm', model: 'Vespid 90mm Macro T2.8', focalLengthMin: 90, focalLengthMax: 90, maxApertureWide: 2.8, mount: 'PL', imageCircle: 'FF', type: 'prime', notes: 'Makro' },
+  // ── Laowa (Venus Optics) Cine ──
+  { id: 'laowa-probe-24', manufacturer: 'Laowa', model: '24mm T14 2x Macro Probe', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 14, mount: 'EF', imageCircle: 'FF', type: 'prime', notes: 'Probe-Makro' },
+  { id: 'laowa-12-t29', manufacturer: 'Laowa', model: '12mm T2.9 Zero-D Cine', focalLengthMin: 12, focalLengthMax: 12, maxApertureWide: 2.9, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'laowa-15-t21', manufacturer: 'Laowa', model: '15mm T2.1 Zero-D Cine', focalLengthMin: 15, focalLengthMax: 15, maxApertureWide: 2.1, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'laowa-10-t29', manufacturer: 'Laowa', model: '10mm T2.9 Zero-D VV Cine', focalLengthMin: 10, focalLengthMax: 10, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'laowa-9-t29', manufacturer: 'Laowa', model: '9mm T2.9 Zero-D Cine', focalLengthMin: 9, focalLengthMax: 9, maxApertureWide: 2.9, mount: 'E', imageCircle: 'S35', type: 'prime' },
+  { id: 'laowa-75-t21', manufacturer: 'Laowa', model: '7.5mm T2.1 Zero-D Cine', focalLengthMin: 7.5, focalLengthMax: 7.5, maxApertureWide: 2.1, mount: 'MFT', imageCircle: 'MFT', type: 'prime' },
+  { id: 'laowa-6-t21', manufacturer: 'Laowa', model: '6mm T2.1 Zero-D Cine', focalLengthMin: 6, focalLengthMax: 6, maxApertureWide: 2.1, mount: 'MFT', imageCircle: 'MFT', type: 'prime' },
+  { id: 'laowa-25-100', manufacturer: 'Laowa', model: '25-100mm T2.9 Cine', focalLengthMin: 25, focalLengthMax: 100, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'S35', type: 'zoom' },
 ];
 
 export function getLensById(id: string, customLenses?: Lens[]): Lens | undefined {
