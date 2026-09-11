@@ -53,7 +53,7 @@ const HARMLOS = new Set(
     // Deutsch mit echter Vokalfolge
     'zuerst', 'quer', 'dauer', 'fahrtdauer', 'mindestdauer', 'manuell',
     'manuelles', 'manuelle', 'quelle', 'quellen', 'quelltext', 'quellenname',
-    'quellenliste', 'quellausschnitt', 'quellausschnitts', 'steuer',
+    'quellenliste', 'quellausschnitt', 'quellausschnitts', 'quellsprache', 'steuer',
     'fernsteuerweg', 'fernsteuerbar', 'sequenz', 'neu', 'neue', 'neuer',
     'neues', 'neuen', 'aktuell', 'aktuelle', 'aktuellem', 'dauerhaft',
     'genaue', 'bauen', 'frequenz', 'steuerung', 'teuerste', 'aktuellen', 'steuert', 'gesteuert',

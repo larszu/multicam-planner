@@ -11,6 +11,7 @@ import { rig } from './de/rig';
 import { shotlist } from './de/shotlist';
 import { common } from './de/common';
 import { mount } from './de/mount';
+import { chrome } from './de/chrome';
 
 export const de: Record<string, string> = {
   ...sidebar,
@@ -22,4 +23,5 @@ export const de: Record<string, string> = {
   ...shotlist,
   ...common,
   ...mount,
+  ...chrome,
 };

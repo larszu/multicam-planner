@@ -69,6 +69,14 @@ jobs:
       - name: Oberflaechen-Regeln (ADR-007)
         run: npm run brand:check
 
+      # Nutzer-Auftrag 2026-09-11: "Stelle sicher das in allen repos
+      # uebergreifend das Einstellungen Menue an der gleichen Stelle ist wie
+      # im Cable planner und das die obere Menueleiste gleich aufgebaut ist."
+      # Der uebergreifende Massstab liegt in der Suite (chrome-parity.mjs);
+      # dieser Lauf ist die Haelfte, die im Repo mitwandert.
+      - name: Kopfzeile im Schnitt der Suite (ADR-007 Abschnitt 6)
+        run: npm run kopfzeile:check
+
       # Fragt die action.yml jedes Pins nach ihrer Node-Version, statt sie in
       # einem Kommentar zu behaupten. Am 2026-09-05 liefen in `release.yml`
       # drei Actions auf node20, und der Kommentar daneben begruendete das mit
