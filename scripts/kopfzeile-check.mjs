@@ -1,0 +1,146 @@
+// ───────────────────────────────────────────────────────────────────────────
+// Die Kopfzeile bleibt im Schnitt der Suite (ADR-007 Abschnitt 6).
+// Lauf: `npm run kopfzeile:check`
+//
+// NUTZER-AUFTRAG 2026-09-11: „Stelle sicher das in allen repos uebergreifend
+// das Einstellungen Menue an der gleichen Stelle ist wie im Cable planner und
+// das die obere Menueleiste gleich aufgebaut ist. Passe an den Cable planner
+// stand an, wenn noetig und vereinheitliche Komponenten."
+//
+// ─── WOGEGEN DIESER LAUF STEHT ────────────────────────────────────────────
+//
+// Nicht gegen das Bauen — das ist einmal passiert und steht im Diff. Gegen
+// das ZURUECKRUTSCHEN: gegen den naechsten losen Knopf, der neben die Menues
+// in die Kopfzeile wandert, weil dort gerade Platz war; gegen die Reiter, die
+// wieder in dieselbe Zeile rutschen; gegen einen Einstellungen-Einstieg, der
+// nicht mehr der letzte Punkt der Zeile ist. Das faellt niemandem auf, der
+// nur diese App benutzt — es faellt dem auf, der zwischen zwei Werkzeugen der
+// Suite wechselt und die Bedienung an derselben Stelle sucht.
+//
+// ─── WARUM ALS NODE-SKRIPT UND NICHT ALS VITEST-DATEI ─────────────────────
+//
+// Weil er ein STILBLATT lesen muss. Als `*.test.ts` gibt es dafuer keinen
+// verlaesslichen Weg: `node:fs` faellt nicht im Test, sondern im BUILD
+// (`tsc -b` ueber `tsconfig.app.json` kennt keine Node-Typen) — und lokal
+// auch das nur, wenn die `tsbuildinfo` nicht gerade sagt, es sei schon alles
+// geprueft; genau so war diese Pruefung am 2026-09-11 lokal gruen und in der
+// CI rot. Und `import '../index.css?raw'` liefert unter vitest eine LEERE
+// Zeichenkette — also eine Messung, die immer gruen ist, und das ist das
+// Schlimmere von beidem. Ein Node-Skript liest die Datei einfach.
+//
+// ─── WAS ER NICHT KANN ────────────────────────────────────────────────────
+//
+// Er liest Quelltext. Ob der Knopf im gerenderten Fenster wirklich rechts
+// aussen sitzt, sieht er nicht: ein `order-last` an einem anderen Kind wuerde
+// ihn taeuschen. Und er misst die REIHENFOLGE der Menues im Markup, nicht die
+// im Bild — ein `flex-row-reverse` an der Kopfzeile bliebe ihm verborgen.
+//
+// Der uebergreifende Massstab liegt in der Suite
+// (`scripts/chrome-parity.mjs`) und misst alle sechs Apps im selben Baum;
+// dieser Lauf ist die Haelfte, die MITWANDERT und schon vor dem Vendorieren
+// faellt.
+// ───────────────────────────────────────────────────────────────────────────
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+const lies = (rel) => readFileSync(new URL(`../${rel}`, import.meta.url), 'utf8');
+
+const kopf = lies('src/components/Layout/Header.tsx');
+const css = lies('src/index.css');
+const menu = lies('src/components/Layout/Menu.tsx');
+const einstellungen = lies('src/components/Settings/SettingsDialog.tsx');
+
+// ── 0. Gegenprobe zum Lauf selbst ────────────────────────────────────────
+for (const [name, inhalt] of Object.entries({ kopf, css, menu, einstellungen })) {
+  assert.ok(inhalt.length > 400, `${name} ist leer — dieser Lauf misst nichts`);
+}
+
+// ── 1. Das Mass ──────────────────────────────────────────────────────────
+const i = css.indexOf('.bc-topbar {');
+assert.ok(i > 0, 'keine .bc-topbar-Regel im Stilblatt');
+const block = css.slice(i, i + 300);
+assert.ok(block.includes('height: 40px'), '.bc-topbar ist nicht 40 px hoch');
+// `flex: none` gehoert dazu: ohne das schrumpft die Zeile, sobald der Inhalt
+// darunter waechst, und die 40 waeren eine Wunschzahl.
+assert.ok(block.includes('flex: none'), '.bc-topbar darf nicht schrumpfen duerfen');
+
+// ── 2. Die Einstellungen als LETZTER Bedienpunkt der Zeile ───────────────
+const rechts = kopf.indexOf('ml-auto flex shrink-0 items-center');
+const knopf = kopf.indexOf("title={t('settings.title', 'Settings')}");
+const ende = kopf.indexOf('</header>');
+assert.ok(rechts > 0, 'keine rechte Gruppe in der Kopfzeile');
+assert.ok(knopf > rechts, 'kein Einstellungen-Knopf in der rechten Gruppe');
+assert.ok(knopf < ende, 'der Einstellungen-Knopf steht nicht mehr in der Kopfzeile');
+// Ab dem `title`-Attribut bis zum Ende der Kopfzeile darf KEIN weiterer
+// `<button` mehr aufgehen. Was danach kommt, sind die drei versteckten
+// Datei-Felder — die sind keine Bedienpunkte, sie haben kein Bild.
+assert.ok(
+  !kopf.slice(knopf, ende).includes('<button'),
+  'nach den Einstellungen steht noch ein Bedienpunkt — sie sind nicht mehr rechts aussen',
+);
+
+// ── 3. Die Menues und ihre Reihenfolge ───────────────────────────────────
+const ROLLEN = ['file', 'edit', 'tools', 'view', 'help'];
+const stellen = ROLLEN.map((r) => {
+  const p = kopf.indexOf(`t('app.menu.${r}'`);
+  assert.ok(p > 0, `es gibt kein ${r}-Menue`);
+  return p;
+});
+assert.deepEqual(
+  stellen,
+  [...stellen].sort((a, b) => a - b),
+  'die Menues stehen nicht in der Folge des Cable Planners (File · Edit · Tools · View · Help)',
+);
+// Der gemeinsame Grundstock — an den SCHLUESSELN gemessen und nicht an den
+// uebersetzbaren Woertern.
+for (const k of ['header.new', 'header.open', 'header.save', 'header.saveAs']) {
+  assert.ok(kopf.includes(`'${k}'`), `das Datei-Menue fuehrt kein '${k}'`);
+}
+assert.ok(kopf.includes("'header.about'"), 'das Hilfe-Menue fuehrt kein Ueber');
+// Ein Menue, das es nicht gibt, wird auch nicht gefunden.
+assert.equal(kopf.indexOf("t('app.menu.gibtEsNicht'"), -1, 'der Lauf findet Menues, die es nicht gibt');
+
+// ── 4. Die Datei-Eintraege tun, was auf ihnen steht ──────────────────────
+//
+// OHNE KOMMENTARZEILEN gemessen — sonst besaenftigt eine Begruendung, die die
+// alte Zeile woertlich nennt, genau den Lauf, der sie finden soll (dieselbe
+// Falle wie bei B-69).
+const ohneKommentare = kopf
+  .split('\n')
+  .filter((z) => !z.trimStart().startsWith('//'))
+  .join('\n');
+assert.ok(ohneKommentare.includes('if (!window.confirm('), '„Neues Projekt" fragt nicht verneint zurueck');
+assert.ok(
+  !/if \(window\.confirm\(/.test(ohneKommentare),
+  'die Rueckfrage steht unverneint — Abbrechen wuerde das Projekt loeschen',
+);
+for (const s of ['saveProject()', 'handleSaveAs()', 'window.prompt(', 'saveProject(name)']) {
+  assert.ok(kopf.includes(s), `„Speichern unter" ist nicht eigenstaendig: ${s} fehlt`);
+}
+
+// ── 5. Reiter und Menueleiste sind zwei Zeilen ───────────────────────────
+assert.ok(css.includes('.bc-tabbar {'), 'keine eigene Reiter-Leiste im Stilblatt');
+assert.ok(kopf.indexOf('className="bc-tabbar"') > ende, 'die Reiter-Leiste steht nicht unter der Kopfzeile');
+assert.ok(!kopf.slice(0, ende).includes('TABS.map'), 'die Reiter stehen wieder in der Kopfzeile');
+
+// ── 6. Die Klappen sind EINE Mechanik, nicht vier Abschriften ────────────
+assert.ok(
+  !kopf.includes("document.addEventListener('mousedown'"),
+  'die Kopfzeile haelt wieder eigene Aussenklick-Effekte (vorher waren es vier Abschriften einer Sache)',
+);
+assert.ok(menu.includes("document.addEventListener('mousedown'"), 'die eine Mechanik schliesst nicht auf Klick daneben');
+assert.ok(menu.includes("e.key === 'Escape'"), 'die eine Mechanik kennt Escape nicht');
+
+// ── 7. Was der Dialog NICHT hat, steht begruendet darin ──────────────────
+//
+// Der gemeinsame Grundstock der Suite ist Sprache, Thema und Ueber. Das Thema
+// fehlt hier mit Messung (464 rohe Tailwind-Graustufen in 17 Dateien, dazu
+// der Canvas des 2D-Plans). Faellt diese Zeile, weil jemand die Umstellung
+// gebaut hat: dann gehoert der Umschalter hinein, und sie wird GEAENDERT
+// statt geloescht.
+assert.ok(einstellungen.includes("t('settings.language'"), 'der Dialog fuehrt keine Sprache');
+assert.ok(einstellungen.includes("t('settings.about'"), 'der Dialog fuehrt kein Ueber');
+assert.ok(!einstellungen.includes("t('settings.theme'"), 'ein Thema-Umschalter ohne Thema');
+assert.ok(einstellungen.includes('B-70'), 'der Grund fuer das fehlende Thema fehlt im Dialog');
+
+console.log('kopfzeile:check ok — 40 px, File/Edit/Tools/View/Help, Einstellungen rechts aussen, eine Klappen-Mechanik');
