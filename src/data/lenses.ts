@@ -365,6 +365,19 @@ export const LENSES: Lens[] = [
   { id: 'tokina-vista-85', manufacturer: 'Tokina', model: 'Vista Prime 85mm T1.5', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   { id: 'tokina-vista-105', manufacturer: 'Tokina', model: 'Vista Prime 105mm T1.5', focalLengthMin: 105, focalLengthMax: 105, maxApertureWide: 1.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   { id: 'tokina-vista-135', manufacturer: 'Tokina', model: 'Vista Prime 135mm T1.5', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 1.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  // ── Fujinon Premista (PL, Full Frame) ──
+  { id: 'fuj-premista-19-45', manufacturer: 'Fujinon', model: 'Premista 19-45 T2.9', focalLengthMin: 19, focalLengthMax: 45, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'FF', type: 'zoom' },
+  { id: 'fuj-premista-28-100', manufacturer: 'Fujinon', model: 'Premista 28-100 T2.9', focalLengthMin: 28, focalLengthMax: 100, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'FF', type: 'zoom' },
+  { id: 'fuj-premista-80-250', manufacturer: 'Fujinon', model: 'Premista 80-250 T2.9-3.5', focalLengthMin: 80, focalLengthMax: 250, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'FF', type: 'zoom' },
+  // ── Fujinon Cabrio ZK (PL, Super 35) ──
+  { id: 'fuj-cabrio-14-35', manufacturer: 'Fujinon', model: 'Cabrio ZK2.5x14 14-35 T2.9', focalLengthMin: 14, focalLengthMax: 35, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'S35', type: 'zoom' },
+  { id: 'fuj-cabrio-19-90', manufacturer: 'Fujinon', model: 'Cabrio ZK4.7x19 19-90 T2.9', focalLengthMin: 19, focalLengthMax: 90, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'S35', type: 'zoom' },
+  { id: 'fuj-cabrio-85-300', manufacturer: 'Fujinon', model: 'Cabrio ZK7.5x85 85-300 T2.9-4.0', focalLengthMin: 85, focalLengthMax: 300, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'S35', type: 'zoom' },
+  { id: 'fuj-cabrio-25-300', manufacturer: 'Fujinon', model: 'Cabrio ZK12x25 25-300 T3.5-4.2', focalLengthMin: 25, focalLengthMax: 300, maxApertureWide: 3.5, mount: 'PL', imageCircle: 'S35', type: 'zoom' },
+  // ── Angénieux EZ / Optimo Ultra (PL) ──
+  { id: 'ang-ez-1', manufacturer: 'Angénieux', model: 'Type EZ-1 30-90 T2 (S35)', focalLengthMin: 30, focalLengthMax: 90, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'zoom' },
+  { id: 'ang-ez-2', manufacturer: 'Angénieux', model: 'Type EZ-2 15-40 T2 (S35)', focalLengthMin: 15, focalLengthMax: 40, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'zoom' },
+  { id: 'ang-optimo-ultra-12x', manufacturer: 'Angénieux', model: 'Optimo Ultra 12x 24-290 T2.8', focalLengthMin: 24, focalLengthMax: 290, maxApertureWide: 2.8, mount: 'PL', imageCircle: 'FF', type: 'zoom' },
 ];
 
 export function getLensById(id: string, customLenses?: Lens[]): Lens | undefined {
