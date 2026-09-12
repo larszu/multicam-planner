@@ -104,7 +104,7 @@ export const CAMERAS: Camera[] = [
   } },
   { id: 'canon-xf605', manufacturer: 'Canon', model: 'XF605', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder' },
   { id: 'canon-cr-n500', manufacturer: 'Canon', model: 'CR-N500', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
-  { id: 'canon-cr-n300', manufacturer: 'Canon', model: 'CR-N300', sensor: SENSORS.HALF_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
+  { id: 'canon-cr-n300', manufacturer: 'Canon', model: 'CR-N300', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
 
   // ── Panasonic ──
   { id: 'pana-ak-uc4000', manufacturer: 'Panasonic', model: 'AK-UC4000', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
@@ -252,7 +252,7 @@ export const CAMERAS: Camera[] = [
   { id: 'pana-aw-ue160', manufacturer: 'Panasonic', model: 'AW-UE160', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
   { id: 'pana-aw-ue100', manufacturer: 'Panasonic', model: 'AW-UE100', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
   { id: 'sony-brc-x1000', manufacturer: 'Sony', model: 'BRC-X1000', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
-  { id: 'sony-srg-x400', manufacturer: 'Sony', model: 'SRG-X400', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
+  { id: 'sony-srg-x400', manufacturer: 'Sony', model: 'SRG-X400', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
   { id: 'canon-cr-n700', manufacturer: 'Canon', model: 'CR-N700', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz', notes: '15x Zoom' },
 
   // ── Cinema (Ausbau) ──
@@ -274,7 +274,7 @@ export const CAMERAS: Camera[] = [
   { id: 'jvc-gy-hc550', manufacturer: 'JVC', model: 'GY-HC550', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder' },
   { id: 'pana-ag-cx350', manufacturer: 'Panasonic', model: 'AG-CX350', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder' },
   // ── PTZ (Ausbau) ──
-  { id: 'canon-cr-n100', manufacturer: 'Canon', model: 'CR-N100', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
+  { id: 'canon-cr-n100', manufacturer: 'Canon', model: 'CR-N100', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
   { id: 'pana-aw-ue80', manufacturer: 'Panasonic', model: 'AW-UE80', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
   { id: 'pana-aw-ue50', manufacturer: 'Panasonic', model: 'AW-UE50', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
   { id: 'pana-aw-he145', manufacturer: 'Panasonic', model: 'AW-HE145', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz', notes: '3-MOS' },
@@ -331,7 +331,7 @@ export const CAMERAS: Camera[] = [
   { id: 'pana-lumix-s9', manufacturer: 'Panasonic', model: 'Lumix S9', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['EF'], resolutions: ['6K', '4K', 'HD'], type: 'mirrorless' },
   // ── PTZ (Ausbau) ──
   { id: 'sony-srg-a12', manufacturer: 'Sony', model: 'SRG-A12', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
-  { id: 'pana-aw-he40', manufacturer: 'Panasonic', model: 'AW-HE40', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
+  { id: 'pana-aw-he40', manufacturer: 'Panasonic', model: 'AW-HE40', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
   { id: 'ptzoptics-move-se', manufacturer: 'PTZOptics', model: 'Move SE', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
   { id: 'lumens-vc-tr40', manufacturer: 'Lumens', model: 'VC-TR40', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz', notes: 'Auto-Tracking' },
   { id: 'aver-tr311', manufacturer: 'AVer', model: 'TR311', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
@@ -418,9 +418,9 @@ export const CAMERAS: Camera[] = [
   { id: 'sony-brc-h900', manufacturer: 'Sony', model: 'BRC-H900', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
   { id: 'canon-cr-x500', manufacturer: 'Canon', model: 'CR-X500', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz', notes: 'Outdoor-PTZ' },
   { id: 'vaddio-roboshot-40', manufacturer: 'Vaddio', model: 'RoboSHOT 40 UHD', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
-  { id: 'panasonic-aw-he42', manufacturer: 'Panasonic', model: 'AW-HE42', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
+  { id: 'panasonic-aw-he42', manufacturer: 'Panasonic', model: 'AW-HE42', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
   { id: 'birddog-a300', manufacturer: 'BirdDog', model: 'A300', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
-  { id: 'ptzoptics-move-4k-30', manufacturer: 'PTZOptics', model: 'Move 4K 30x', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
+  { id: 'ptzoptics-move-4k-30', manufacturer: 'PTZOptics', model: 'Move 4K 30x', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
   // ── Action / POV / Kompakt ──
   { id: 'marshall-cv355', manufacturer: 'Marshall', model: 'CV355', sensor: SENSORS.THIRD_INCH, mount: 'M12', resolutions: ['HD'], type: 'broadcast', notes: 'Miniatur-POV' },
   { id: 'marshall-cv503', manufacturer: 'Marshall', model: 'CV503', sensor: SENSORS.THIRD_INCH, mount: 'M12', resolutions: ['HD'], type: 'broadcast' },
@@ -471,7 +471,7 @@ export const CAMERAS: Camera[] = [
   // ── PTZ / POV (Ausbau 3) ──
   { id: 'aver-tr335', manufacturer: 'AVer', model: 'TR335', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
   { id: 'lumens-vc-tr60', manufacturer: 'Lumens', model: 'VC-TR60A', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
-  { id: 'ptzoptics-move-4k-20', manufacturer: 'PTZOptics', model: 'Move 4K 20x', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'ptzoptics-move-4k-20', manufacturer: 'PTZOptics', model: 'Move 4K 20x', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
   { id: 'birddog-maki-4k', manufacturer: 'BirdDog', model: 'Maki 4K', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
   { id: 'panasonic-aw-ue40', manufacturer: 'Panasonic', model: 'AW-UE40', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
   { id: 'marshall-cv503-wp', manufacturer: 'Marshall', model: 'CV503-WP (IP67)', sensor: SENSORS.THIRD_INCH, mount: 'M12', resolutions: ['HD'], type: 'broadcast', notes: 'wetterfest' },
@@ -540,7 +540,7 @@ export const CAMERAS: Camera[] = [
   { id: 'ptzoptics-studio-pro', manufacturer: 'PTZOptics', model: 'Studio Pro 4K', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
   { id: 'birddog-p200', manufacturer: 'BirdDog', model: 'P200', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
   { id: 'birddog-p120', manufacturer: 'BirdDog', model: 'P120', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
-  { id: 'panasonic-aw-he38', manufacturer: 'Panasonic', model: 'AW-HE38', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
+  { id: 'panasonic-aw-he38', manufacturer: 'Panasonic', model: 'AW-HE38', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
   // ── Kompakt / Bridge / Action (1" & Action) ──
   { id: 'sony-rx100-vii', manufacturer: 'Sony', model: 'RX100 VII', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K','HD'], type: 'camcorder' },
   { id: 'sony-zv-1', manufacturer: 'Sony', model: 'ZV-1', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K','HD'], type: 'camcorder' },
@@ -581,7 +581,7 @@ export const CAMERAS: Camera[] = [
   { id: 'bolin-d-series', manufacturer: 'Bolin', model: 'D420', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
   { id: 'avonic-cm93-ip', manufacturer: 'Avonic', model: 'CM93-IP', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
   { id: 'sony-srg-a30-b', manufacturer: 'Sony', model: 'SRG-XB25', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
-  { id: 'canon-cr-n300w', manufacturer: 'Canon', model: 'CR-N300 (weiß)', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'canon-cr-n300w', manufacturer: 'Canon', model: 'CR-N300 (weiß)', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
   { id: 'ptzoptics-move-4k-ndi', manufacturer: 'PTZOptics', model: 'Move 4K SDI', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
   { id: 'lumens-vc-b11u', manufacturer: 'Lumens', model: 'VC-B11U', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
   { id: 'marshall-cv730-ndi', manufacturer: 'Marshall', model: 'CV730-NDI', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
