@@ -636,6 +636,50 @@ export const LENSES: Lens[] = [
   { id: 'slrmagic-anamorphot-35', manufacturer: 'SLR Magic', model: 'Anamorphot-CINE 35mm T2.4 1.33x', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 2.4, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 1.33 },
   { id: 'slrmagic-anamorphot-50', manufacturer: 'SLR Magic', model: 'Anamorphot-CINE 50mm T2.8 1.33x', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.8, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 1.33 },
   { id: 'slrmagic-anamorphot-70', manufacturer: 'SLR Magic', model: 'Anamorphot-CINE 70mm T4 1.33x', focalLengthMin: 70, focalLengthMax: 70, maxApertureWide: 4.0, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 1.33 },
+  // ── NiSi Athena Prime (E, FF; T1.9) ──
+  { id: 'nisi-athena-14', manufacturer: 'NiSi', model: 'Athena Prime 14mm T2.4', focalLengthMin: 14, focalLengthMax: 14, maxApertureWide: 2.4, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'nisi-athena-18', manufacturer: 'NiSi', model: 'Athena Prime 18mm T2.2', focalLengthMin: 18, focalLengthMax: 18, maxApertureWide: 2.2, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'nisi-athena-25', manufacturer: 'NiSi', model: 'Athena Prime 25mm T1.9', focalLengthMin: 25, focalLengthMax: 25, maxApertureWide: 1.9, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'nisi-athena-35', manufacturer: 'NiSi', model: 'Athena Prime 35mm T1.9', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.9, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'nisi-athena-40', manufacturer: 'NiSi', model: 'Athena Prime 40mm T1.9', focalLengthMin: 40, focalLengthMax: 40, maxApertureWide: 1.9, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'nisi-athena-50', manufacturer: 'NiSi', model: 'Athena Prime 50mm T1.9', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.9, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'nisi-athena-85', manufacturer: 'NiSi', model: 'Athena Prime 85mm T1.9', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.9, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'nisi-athena-135', manufacturer: 'NiSi', model: 'Athena Prime 135mm T2.2', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.2, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  // ── Irix Cine (EF, FF; T1.5) ──
+  { id: 'irix-cine-11', manufacturer: 'Irix', model: 'Cine 11mm T1.5', focalLengthMin: 11, focalLengthMax: 11, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'irix-cine-15', manufacturer: 'Irix', model: 'Cine 15mm T1.5', focalLengthMin: 15, focalLengthMax: 15, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'irix-cine-21', manufacturer: 'Irix', model: 'Cine 21mm T1.5', focalLengthMin: 21, focalLengthMax: 21, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'irix-cine-30', manufacturer: 'Irix', model: 'Cine 30mm T1.5', focalLengthMin: 30, focalLengthMax: 30, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'irix-cine-45', manufacturer: 'Irix', model: 'Cine 45mm T1.5', focalLengthMin: 45, focalLengthMax: 45, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'irix-cine-65', manufacturer: 'Irix', model: 'Cine 65mm T1.5', focalLengthMin: 65, focalLengthMax: 65, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  // ── Meike FF-Prime Cine (EF, FF; T2.1) ──
+  { id: 'meike-ff-16', manufacturer: 'Meike', model: 'FF-Prime 16mm T2.6', focalLengthMin: 16, focalLengthMax: 16, maxApertureWide: 2.6, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'meike-ff-24', manufacturer: 'Meike', model: 'FF-Prime 24mm T2.1', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 2.1, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'meike-ff-35', manufacturer: 'Meike', model: 'FF-Prime 35mm T2.1', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 2.1, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'meike-ff-50', manufacturer: 'Meike', model: 'FF-Prime 50mm T2.1', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.1, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'meike-ff-85', manufacturer: 'Meike', model: 'FF-Prime 85mm T2.1', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 2.1, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'meike-ff-105', manufacturer: 'Meike', model: 'FF-Prime 105mm T2.1', focalLengthMin: 105, focalLengthMax: 105, maxApertureWide: 2.1, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'meike-ff-135', manufacturer: 'Meike', model: 'FF-Prime 135mm T2.1', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.1, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  // ── Rokinon/Samyang XEEN CF (EF, FF) ──
+  { id: 'xeen-cf-16', manufacturer: 'Rokinon', model: 'XEEN CF 16mm T2.6', focalLengthMin: 16, focalLengthMax: 16, maxApertureWide: 2.6, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'xeen-cf-24', manufacturer: 'Rokinon', model: 'XEEN CF 24mm T1.5', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'xeen-cf-35', manufacturer: 'Rokinon', model: 'XEEN CF 35mm T1.5', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'xeen-cf-50', manufacturer: 'Rokinon', model: 'XEEN CF 50mm T1.5', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'xeen-cf-85', manufacturer: 'Rokinon', model: 'XEEN CF 85mm T1.5', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  // ── Viltrox AF APS-C (E) ──
+  { id: 'viltrox-e-aps-13', manufacturer: 'Viltrox', model: 'AF 13mm F1.4 (APS-C)', focalLengthMin: 13, focalLengthMax: 13, maxApertureWide: 1.4, mount: 'E', imageCircle: 'APSC', type: 'prime' },
+  { id: 'viltrox-e-aps-23', manufacturer: 'Viltrox', model: 'AF 23mm F1.4 (APS-C)', focalLengthMin: 23, focalLengthMax: 23, maxApertureWide: 1.4, mount: 'E', imageCircle: 'APSC', type: 'prime' },
+  { id: 'viltrox-e-aps-33', manufacturer: 'Viltrox', model: 'AF 33mm F1.4 (APS-C)', focalLengthMin: 33, focalLengthMax: 33, maxApertureWide: 1.4, mount: 'E', imageCircle: 'APSC', type: 'prime' },
+  { id: 'viltrox-e-aps-56', manufacturer: 'Viltrox', model: 'AF 56mm F1.4 (APS-C)', focalLengthMin: 56, focalLengthMax: 56, maxApertureWide: 1.4, mount: 'E', imageCircle: 'APSC', type: 'prime' },
+  // ── Samyang AF (E, FF) ──
+  { id: 'samyang-af-14', manufacturer: 'Samyang', model: 'AF 14mm F2.8 FE', focalLengthMin: 14, focalLengthMax: 14, maxApertureWide: 2.8, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'samyang-af-18', manufacturer: 'Samyang', model: 'AF 18mm F2.8 FE', focalLengthMin: 18, focalLengthMax: 18, maxApertureWide: 2.8, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'samyang-af-24', manufacturer: 'Samyang', model: 'AF 24mm F1.8 FE', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 1.8, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'samyang-af-35-14', manufacturer: 'Samyang', model: 'AF 35mm F1.4 FE II', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.4, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'samyang-af-45', manufacturer: 'Samyang', model: 'AF 45mm F1.8 FE', focalLengthMin: 45, focalLengthMax: 45, maxApertureWide: 1.8, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'samyang-af-75', manufacturer: 'Samyang', model: 'AF 75mm F1.8 FE', focalLengthMin: 75, focalLengthMax: 75, maxApertureWide: 1.8, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'samyang-af-85', manufacturer: 'Samyang', model: 'AF 85mm F1.4 FE II', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.4, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'samyang-af-135', manufacturer: 'Samyang', model: 'AF 135mm F1.8 FE', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 1.8, mount: 'E', imageCircle: 'FF', type: 'prime' },
 ];
 
 export function getLensById(id: string, customLenses?: Lens[]): Lens | undefined {
