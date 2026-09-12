@@ -282,6 +282,22 @@ export const CAMERAS: Camera[] = [
   { id: 'ptzoptics-move-4k', manufacturer: 'PTZOptics', model: 'Move 4K', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
   { id: 'marshall-cv730', manufacturer: 'Marshall', model: 'CV730', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
 
+  // ── Marshall POV/Kompakt ──
+  { id: 'marshall-cv420-cs', manufacturer: 'Marshall', model: 'CV420-CS', sensor: { name: '1/1.7" (7.6×5.7)', widthMm: 7.6, heightMm: 5.7, cropFactor: 4.55 }, mount: 'CS', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'True-4K60 12G-SDI, CS-Mount' },
+  { id: 'marshall-cv420e', manufacturer: 'Marshall', model: 'CV420e', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'CS', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'HDMI/IP/USB Stream' },
+  { id: 'marshall-cv506', manufacturer: 'Marshall', model: 'CV506', sensor: SENSORS.THIRD_INCH, mount: 'M12', resolutions: ['HD'], type: 'broadcast', notes: 'Miniatur POV, 3G-SDI+HDMI' },
+  { id: 'marshall-cv612', manufacturer: 'Marshall', model: 'CV612', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz', notes: 'Kompakt-PTZ' },
+  // ── PTZ (weitere Marken) ──
+  { id: 'lumens-vc-a71', manufacturer: 'Lumens', model: 'VC-A71', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz', notes: '1/1.8", 30x Zoom' },
+  { id: 'lumens-vc-a50p', manufacturer: 'Lumens', model: 'VC-A50P', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
+  { id: 'birddog-p400', manufacturer: 'BirdDog', model: 'P400', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz', notes: 'Full-NDI' },
+  { id: 'birddog-x1', manufacturer: 'BirdDog', model: 'X1', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
+  { id: 'aver-tr313', manufacturer: 'AVer', model: 'TR313', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz', notes: 'Auto-Tracking, 12x' },
+  { id: 'aver-tr333', manufacturer: 'AVer', model: 'TR333', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
+  { id: 'sony-srg-xp1', manufacturer: 'Sony', model: 'SRG-XP1', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz', notes: 'POV-Box' },
+  { id: 'pana-aw-ue20', manufacturer: 'Panasonic', model: 'AW-UE20', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
+  { id: 'ptzoptics-link-4k', manufacturer: 'PTZOptics', model: 'Link 4K', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
+
   // ── Marshall POV ──
   { id: 'marshall-cv568', manufacturer: 'Marshall', model: 'CV568', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'M12', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'POV camera, global shutter' },
 ];
