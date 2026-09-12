@@ -839,6 +839,56 @@ export const LENSES: Lens[] = [
   { id: 'canon-k35-35', manufacturer: 'Canon', model: 'K35 35mm T1.4', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.4, mount: 'PL', imageCircle: 'S35', type: 'prime' },
   { id: 'canon-k35-55', manufacturer: 'Canon', model: 'K35 55mm T1.3', focalLengthMin: 55, focalLengthMax: 55, maxApertureWide: 1.3, mount: 'PL', imageCircle: 'S35', type: 'prime' },
   { id: 'canon-k35-85', manufacturer: 'Canon', model: 'K35 85mm T1.5', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.5, mount: 'PL', imageCircle: 'S35', type: 'prime' },
+  // ── Anamorphoten-Rental-Klassiker (2x Squeeze) ──
+  // Panavision Primo (S35, T2) 
+  { id: 'panavision-primo-24', manufacturer: 'Panavision', model: 'Primo 24mm T2', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-primo-27', manufacturer: 'Panavision', model: 'Primo 27mm T2', focalLengthMin: 27, focalLengthMax: 27, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-primo-35', manufacturer: 'Panavision', model: 'Primo 35mm T2', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-primo-40', manufacturer: 'Panavision', model: 'Primo 40mm T2', focalLengthMin: 40, focalLengthMax: 40, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-primo-50', manufacturer: 'Panavision', model: 'Primo 50mm T2', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-primo-75', manufacturer: 'Panavision', model: 'Primo 75mm T2', focalLengthMin: 75, focalLengthMax: 75, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-primo-100', manufacturer: 'Panavision', model: 'Primo 100mm T2', focalLengthMin: 100, focalLengthMax: 100, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-primo-135', manufacturer: 'Panavision', model: 'Primo 135mm T2', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-primo-150', manufacturer: 'Panavision', model: 'Primo 150mm T2', focalLengthMin: 150, focalLengthMax: 150, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  // Panavision C-Series (S35, T2.3) 
+  { id: 'panavision-cseries-25', manufacturer: 'Panavision', model: 'C-Series 25mm T2.3', focalLengthMin: 25, focalLengthMax: 25, maxApertureWide: 2.3, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-cseries-30', manufacturer: 'Panavision', model: 'C-Series 30mm T2.3', focalLengthMin: 30, focalLengthMax: 30, maxApertureWide: 2.3, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-cseries-35', manufacturer: 'Panavision', model: 'C-Series 35mm T2.3', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 2.3, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-cseries-40', manufacturer: 'Panavision', model: 'C-Series 40mm T2.3', focalLengthMin: 40, focalLengthMax: 40, maxApertureWide: 2.3, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-cseries-50', manufacturer: 'Panavision', model: 'C-Series 50mm T2.3', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.3, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-cseries-60', manufacturer: 'Panavision', model: 'C-Series 60mm T2.3', focalLengthMin: 60, focalLengthMax: 60, maxApertureWide: 2.3, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-cseries-75', manufacturer: 'Panavision', model: 'C-Series 75mm T2.3', focalLengthMin: 75, focalLengthMax: 75, maxApertureWide: 2.3, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-cseries-100', manufacturer: 'Panavision', model: 'C-Series 100mm T2.3', focalLengthMin: 100, focalLengthMax: 100, maxApertureWide: 2.3, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-cseries-150', manufacturer: 'Panavision', model: 'C-Series 150mm T2.3', focalLengthMin: 150, focalLengthMax: 150, maxApertureWide: 2.3, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  // Panavision G-Series (S35, T2.6) 
+  { id: 'panavision-gseries-25', manufacturer: 'Panavision', model: 'G-Series 25mm T2.6', focalLengthMin: 25, focalLengthMax: 25, maxApertureWide: 2.6, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-gseries-35', manufacturer: 'Panavision', model: 'G-Series 35mm T2.6', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 2.6, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-gseries-50', manufacturer: 'Panavision', model: 'G-Series 50mm T2.6', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.6, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-gseries-75', manufacturer: 'Panavision', model: 'G-Series 75mm T2.6', focalLengthMin: 75, focalLengthMax: 75, maxApertureWide: 2.6, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'panavision-gseries-100', manufacturer: 'Panavision', model: 'G-Series 100mm T2.6', focalLengthMin: 100, focalLengthMax: 100, maxApertureWide: 2.6, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  // Kowa Prominar (S35, T2.3) 
+  { id: 'kowa-prominar-40', manufacturer: 'Kowa', model: 'Prominar 40mm T2.3', focalLengthMin: 40, focalLengthMax: 40, maxApertureWide: 2.3, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'kowa-prominar-50', manufacturer: 'Kowa', model: 'Prominar 50mm T2.3', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.3, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'kowa-prominar-75', manufacturer: 'Kowa', model: 'Prominar 75mm T2.3', focalLengthMin: 75, focalLengthMax: 75, maxApertureWide: 2.3, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'kowa-prominar-100', manufacturer: 'Kowa', model: 'Prominar 100mm T2.3', focalLengthMin: 100, focalLengthMax: 100, maxApertureWide: 2.3, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  // Lomo Round-Front (S35, T2.3) 
+  { id: 'lomo-35', manufacturer: 'Lomo', model: 'Anamorphic 35mm T2.3', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 2.3, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'lomo-50', manufacturer: 'Lomo', model: 'Anamorphic 50mm T2.3', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.3, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'lomo-75', manufacturer: 'Lomo', model: 'Anamorphic 75mm T2.3', focalLengthMin: 75, focalLengthMax: 75, maxApertureWide: 2.3, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  { id: 'lomo-100', manufacturer: 'Lomo', model: 'Anamorphic 100mm T2.3', focalLengthMin: 100, focalLengthMax: 100, maxApertureWide: 2.3, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  // Scorpio Anamorphic (FF, T2.4) 
+  { id: 'scorpio-ana-25', manufacturer: 'Servicevision', model: 'Scorpio 25mm T2.4', focalLengthMin: 25, focalLengthMax: 25, maxApertureWide: 2.4, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 2 },
+  { id: 'scorpio-ana-32', manufacturer: 'Servicevision', model: 'Scorpio 32mm T2.4', focalLengthMin: 32, focalLengthMax: 32, maxApertureWide: 2.4, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 2 },
+  { id: 'scorpio-ana-40', manufacturer: 'Servicevision', model: 'Scorpio 40mm T2.4', focalLengthMin: 40, focalLengthMax: 40, maxApertureWide: 2.4, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 2 },
+  { id: 'scorpio-ana-50', manufacturer: 'Servicevision', model: 'Scorpio 50mm T2.4', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.4, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 2 },
+  { id: 'scorpio-ana-75', manufacturer: 'Servicevision', model: 'Scorpio 75mm T2.4', focalLengthMin: 75, focalLengthMax: 75, maxApertureWide: 2.4, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 2 },
+  { id: 'scorpio-ana-100', manufacturer: 'Servicevision', model: 'Scorpio 100mm T2.4', focalLengthMin: 100, focalLengthMax: 100, maxApertureWide: 2.4, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 2 },
+  { id: 'scorpio-ana-135', manufacturer: 'Servicevision', model: 'Scorpio 135mm T2.4', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.4, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 2 },
+  // P+S Technik Evolution 2x (FF, T2.4) 
+  { id: 'psk-evolution-40', manufacturer: 'P+S Technik', model: 'Evolution 2x 40mm T2.4', focalLengthMin: 40, focalLengthMax: 40, maxApertureWide: 2.4, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 2 },
+  { id: 'psk-evolution-60', manufacturer: 'P+S Technik', model: 'Evolution 2x 60mm T2.4', focalLengthMin: 60, focalLengthMax: 60, maxApertureWide: 2.4, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 2 },
+  { id: 'psk-evolution-80', manufacturer: 'P+S Technik', model: 'Evolution 2x 80mm T2.4', focalLengthMin: 80, focalLengthMax: 80, maxApertureWide: 2.4, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 2 },
+  { id: 'psk-evolution-100', manufacturer: 'P+S Technik', model: 'Evolution 2x 100mm T2.4', focalLengthMin: 100, focalLengthMax: 100, maxApertureWide: 2.4, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 2 },
 ];
 
 export function getLensById(id: string, customLenses?: Lens[]): Lens | undefined {
