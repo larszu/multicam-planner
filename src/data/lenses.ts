@@ -335,6 +335,36 @@ export const LENSES: Lens[] = [
   { id: 'cooke-s7i-75', manufacturer: 'Cooke', model: 'S7/i FF+ 75mm T2.0', focalLengthMin: 75, focalLengthMax: 75, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   { id: 'cooke-s7i-100', manufacturer: 'Cooke', model: 'S7/i FF+ 100mm T2.0', focalLengthMin: 100, focalLengthMax: 100, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   { id: 'cooke-s7i-135', manufacturer: 'Cooke', model: 'S7/i FF+ 135mm T2.0', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  // ── Sigma Cine FF High-Speed Art Prime (EF, Full Frame; T1.5, 14/135 T2) ──
+  { id: 'sigma-cine-14', manufacturer: 'Sigma', model: 'FF High-Speed 14mm T2', focalLengthMin: 14, focalLengthMax: 14, maxApertureWide: 2.0, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-cine-20', manufacturer: 'Sigma', model: 'FF High-Speed 20mm T1.5', focalLengthMin: 20, focalLengthMax: 20, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-cine-24', manufacturer: 'Sigma', model: 'FF High-Speed 24mm T1.5', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-cine-28', manufacturer: 'Sigma', model: 'FF High-Speed 28mm T1.5', focalLengthMin: 28, focalLengthMax: 28, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-cine-35', manufacturer: 'Sigma', model: 'FF High-Speed 35mm T1.5', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-cine-40', manufacturer: 'Sigma', model: 'FF High-Speed 40mm T1.5', focalLengthMin: 40, focalLengthMax: 40, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-cine-50', manufacturer: 'Sigma', model: 'FF High-Speed 50mm T1.5', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-cine-65', manufacturer: 'Sigma', model: 'FF High-Speed 65mm T1.5', focalLengthMin: 65, focalLengthMax: 65, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-cine-85', manufacturer: 'Sigma', model: 'FF High-Speed 85mm T1.5', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-cine-105', manufacturer: 'Sigma', model: 'FF High-Speed 105mm T1.5', focalLengthMin: 105, focalLengthMax: 105, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-cine-135', manufacturer: 'Sigma', model: 'FF High-Speed 135mm T2', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.0, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  // ── Canon Sumire Prime CN-E (PL, Full Frame) ──
+  { id: 'canon-sumire-14', manufacturer: 'Canon', model: 'CN-E14mm Sumire T3.1', focalLengthMin: 14, focalLengthMax: 14, maxApertureWide: 3.1, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'canon-sumire-20', manufacturer: 'Canon', model: 'CN-E20mm Sumire T1.5', focalLengthMin: 20, focalLengthMax: 20, maxApertureWide: 1.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'canon-sumire-24', manufacturer: 'Canon', model: 'CN-E24mm Sumire T1.5', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 1.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'canon-sumire-35', manufacturer: 'Canon', model: 'CN-E35mm Sumire T1.5', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'canon-sumire-50', manufacturer: 'Canon', model: 'CN-E50mm Sumire T1.3', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.3, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'canon-sumire-85', manufacturer: 'Canon', model: 'CN-E85mm Sumire T1.3', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.3, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'canon-sumire-135', manufacturer: 'Canon', model: 'CN-E135mm Sumire T2.2', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.2, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  // ── Tokina Cinema Vista Prime (PL, Full Frame; T1.5) ──
+  { id: 'tokina-vista-18', manufacturer: 'Tokina', model: 'Vista Prime 18mm T1.5', focalLengthMin: 18, focalLengthMax: 18, maxApertureWide: 1.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'tokina-vista-25', manufacturer: 'Tokina', model: 'Vista Prime 25mm T1.5', focalLengthMin: 25, focalLengthMax: 25, maxApertureWide: 1.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'tokina-vista-35', manufacturer: 'Tokina', model: 'Vista Prime 35mm T1.5', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'tokina-vista-40', manufacturer: 'Tokina', model: 'Vista Prime 40mm T1.5', focalLengthMin: 40, focalLengthMax: 40, maxApertureWide: 1.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'tokina-vista-50', manufacturer: 'Tokina', model: 'Vista Prime 50mm T1.5', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'tokina-vista-65', manufacturer: 'Tokina', model: 'Vista Prime 65mm T1.5', focalLengthMin: 65, focalLengthMax: 65, maxApertureWide: 1.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'tokina-vista-85', manufacturer: 'Tokina', model: 'Vista Prime 85mm T1.5', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'tokina-vista-105', manufacturer: 'Tokina', model: 'Vista Prime 105mm T1.5', focalLengthMin: 105, focalLengthMax: 105, maxApertureWide: 1.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'tokina-vista-135', manufacturer: 'Tokina', model: 'Vista Prime 135mm T1.5', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 1.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
 ];
 
 export function getLensById(id: string, customLenses?: Lens[]): Lens | undefined {
