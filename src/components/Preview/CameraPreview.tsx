@@ -213,7 +213,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     const W = cssW;
     const H = cssH;
 
-    const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
+    const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive, lensDef?.squeeze ?? 1);
 
     const imgW = fov.imageWidthAtDistance;
     const imgH = fov.imageHeightAtDistance;
@@ -1177,7 +1177,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     let tiltSens = 0.2;
     if (canvas && camDef && lensDef) {
       const sensor = getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex, cam.activeMount);
-      const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive);
+      const fov = computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive, lensDef?.squeeze ?? 1);
       const cssW = canvas.clientWidth || canvas.width;
       const cssH = canvas.clientHeight || canvas.height;
       if (cssW > 0) panSens = fov.horizontalDeg / cssW;
@@ -1256,7 +1256,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   const lensDef = getLensById(cam.lensId, useStore.getState().customLenses);
   const sensor = camDef && lensDef ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex, cam.activeMount) : undefined;
   const adapterInfo = camDef && lensDef ? getAdapterInfo(camDef, lensDef, cam.useSpeedbooster, cam.activeMount) : null;
-  const fov = sensor ? computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive) : null;
+  const fov = sensor ? computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive, lensDef?.squeeze ?? 1) : null;
   const dof = sensor ? computeDof(sensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive) : null;
   const lightLoss = adapterInfo ? (adapterInfo.lightLossStops > 0 ? ` (−${adapterInfo.lightLossStops}T)` : adapterInfo.lightLossStops < 0 ? ` (+${Math.abs(adapterInfo.lightLossStops)}T)` : '') : '';
 

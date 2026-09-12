@@ -359,7 +359,7 @@ function CameraCard({
   const focusStepTicks = niceTicks(FOCUS_MIN_M, FOCUS_MAX_M);
   const focusTicks = sparseTicks(focusStepTicks, FOCUS_MIN_M, FOCUS_MAX_M);
 
-  const fov = effectiveSensor && lensDef ? computeFov(effectiveSensor, cam.focalLength, cam.focusDistance, cam.extenderActive) : null;
+  const fov = effectiveSensor && lensDef ? computeFov(effectiveSensor, cam.focalLength, cam.focusDistance, cam.extenderActive, lensDef.squeeze ?? 1) : null;
   const dof = effectiveSensor && lensDef ? computeDof(effectiveSensor, cam.focalLength, cam.aperture, cam.focusDistance, cam.extenderActive) : null;
 
   // Bedarf 58 -- kommt die Optik an den beauftragten Ausschnitt heran?
@@ -1190,6 +1190,13 @@ function CameraCard({
               <>
                 <Readout label={t('sidebar.cam.fovH', 'FOV horizontal')} value={`${fov.horizontalDeg.toFixed(1)}°`} />
                 <Readout label={`Bildbreite bei ${cam.focusDistance.toFixed(1)} m`} value={`${fov.imageWidthAtDistance.toFixed(2)} m`} />
+                {fov.squeeze > 1 && (
+                  <Readout
+                    label={t('sidebar.cam.anamorphic', 'Anamorphot')}
+                    value={`${fov.squeeze}× entzerrt`}
+                    tone="muted"
+                  />
+                )}
               </>
             )}
             {dof && (

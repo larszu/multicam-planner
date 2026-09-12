@@ -110,6 +110,10 @@ export interface Lens {
   imageCircle?: LensImageCircle;
   extenderFactors?: number[];
   type: 'zoom' | 'prime' | 'integrated';
+  /** Anamorphotischer Squeeze-Faktor (2, 1.8, 1.5, 1.33). Fehlt/1 = sphaerisch.
+   *  Schaltet im FOV-Modell die horizontale Entzerrung (siehe utils/fov.ts,
+   *  Anamorphoten-Modus): der entzerrte Frame wird um diesen Faktor breiter. */
+  squeeze?: number;
   isCustom?: boolean;
   notes?: string;
 }
@@ -737,6 +741,9 @@ export interface FovResult {
   imageWidthAtDistance: number; // metres
   imageHeightAtDistance: number;
   equivalentFocalLength: number;
+  /** Angewandter Anamorphoten-Squeeze (1 = sphaerisch). Horizontale FOV, Diagonale
+   *  und `imageWidthAtDistance` sind bereits entzerrt; vertikal bleibt es F. */
+  squeeze: number;
 }
 
 // ── DoF result ──

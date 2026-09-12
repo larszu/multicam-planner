@@ -91,7 +91,7 @@ export default function ExportPanel() {
     const focalLength = opts?.focalOverride ?? targetCam.focalLength;
     const sensor = getEffectiveSensor(camDef, lensDef, targetCam.useSpeedbooster, targetCam.sensorModeIndex, targetCam.activeMount);
     const adapterInfo = getAdapterInfo(camDef, lensDef, targetCam.useSpeedbooster, targetCam.activeMount);
-    const fov = computeFov(sensor, focalLength, targetCam.focusDistance, targetCam.extenderActive);
+    const fov = computeFov(sensor, focalLength, targetCam.focusDistance, targetCam.extenderActive, lensDef.squeeze ?? 1);
     const dof = computeDof(sensor, focalLength, targetCam.aperture, targetCam.focusDistance, targetCam.extenderActive);
     const personPx = personHeightInFrame(sensor.heightMm, focalLength * targetCam.extenderActive, targetCam.focusDistance);
 

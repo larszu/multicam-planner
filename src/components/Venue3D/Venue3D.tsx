@@ -393,9 +393,9 @@ function FovPyramid({ cam, isSelected }: { cam: ReturnType<typeof useStore.getSt
   const sensor = camDef && lensDef
     ? getEffectiveSensor(camDef, lensDef, cam.useSpeedbooster, cam.sensorModeIndex, cam.activeMount)
     : null;
-  const fov = sensor ? computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive) : null;
-  const fovMin = sensor && lensDef ? computeFov(sensor, lensDef.focalLengthMax, cam.focusDistance, cam.extenderActive) : null;
-  const fovMax = sensor && lensDef ? computeFov(sensor, lensDef.focalLengthMin, cam.focusDistance, cam.extenderActive) : null;
+  const fov = sensor ? computeFov(sensor, cam.focalLength, cam.focusDistance, cam.extenderActive, lensDef?.squeeze ?? 1) : null;
+  const fovMin = sensor && lensDef ? computeFov(sensor, lensDef.focalLengthMax, cam.focusDistance, cam.extenderActive, lensDef.squeeze ?? 1) : null;
+  const fovMax = sensor && lensDef ? computeFov(sensor, lensDef.focalLengthMin, cam.focusDistance, cam.extenderActive, lensDef.squeeze ?? 1) : null;
   const isZoom = !!lensDef && lensDef.focalLengthMin !== lensDef.focalLengthMax;
 
   const geometry = useMemo(() => {

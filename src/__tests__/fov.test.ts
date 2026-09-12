@@ -106,6 +106,54 @@ describe('computeFov', () => {
     expect(fov.horizontalDeg).toBeGreaterThan(20);
     expect(fov.horizontalDeg).toBeLessThan(90);
   });
+
+  it('defaults to spherical (squeeze 1) — unchanged from before', () => {
+    const fov = computeFov(FF_SENSOR, 50, 10);
+    expect(fov.squeeze).toBe(1);
+    // Ziffer fuer Ziffer wie die sphaerische Rechnung.
+    expect(fov.horizontalDeg).toBeCloseTo(horizontalFov(36, 50), 6);
+    expect(fov.imageWidthAtDistance).toBeCloseTo(imageWidthAtDistance(36, 50, 10), 6);
+  });
+});
+
+describe('computeFov — Anamorphoten-Modus (squeeze)', () => {
+  it('2x anamorphic widens horizontal FOV, leaves vertical unchanged', () => {
+    const sph = computeFov(FF_SENSOR, 50, 10, 1, 1);
+    const ana = computeFov(FF_SENSOR, 50, 10, 1, 2);
+    expect(ana.horizontalDeg).toBeGreaterThan(sph.horizontalDeg);
+    expect(ana.verticalDeg).toBeCloseTo(sph.verticalDeg, 6); // vertikal bleibt F
+    expect(ana.squeeze).toBe(2);
+  });
+
+  it('horizontal FOV of a 2x anamorphic equals a spherical lens on a 2x-wider sensor', () => {
+    const ana = computeFov(FF_SENSOR, 50, 10, 1, 2);
+    // Aequivalent: Sensorbreite × Squeeze bei sphaerischer Rechnung.
+    expect(ana.horizontalDeg).toBeCloseTo(horizontalFov(36 * 2, 50), 6);
+  });
+
+  it('desqueezed image is wider and the frame aspect widens by the squeeze', () => {
+    const sph = computeFov(FF_SENSOR, 50, 10, 1, 1);
+    const ana = computeFov(FF_SENSOR, 50, 10, 1, 2);
+    expect(ana.imageWidthAtDistance).toBeGreaterThan(sph.imageWidthAtDistance);
+    expect(ana.imageHeightAtDistance).toBeCloseTo(sph.imageHeightAtDistance, 6);
+    const aspectSph = sph.imageWidthAtDistance / sph.imageHeightAtDistance;
+    const aspectAna = ana.imageWidthAtDistance / ana.imageHeightAtDistance;
+    expect(aspectAna).toBeCloseTo(aspectSph * 2, 4);
+  });
+
+  it('diagonal FOV of the desqueezed frame exceeds the spherical diagonal', () => {
+    const sph = computeFov(FF_SENSOR, 50, 10, 1, 1);
+    const ana = computeFov(FF_SENSOR, 50, 10, 1, 2);
+    expect(ana.diagonalDeg).toBeGreaterThan(sph.diagonalDeg);
+  });
+
+  it('supports common squeeze factors between spherical and 2x', () => {
+    const sph = computeFov(S35_SENSOR, 40, 8, 1, 1).horizontalDeg;
+    const h133 = computeFov(S35_SENSOR, 40, 8, 1, 1.33).horizontalDeg;
+    const h2 = computeFov(S35_SENSOR, 40, 8, 1, 2).horizontalDeg;
+    expect(h133).toBeGreaterThan(sph);
+    expect(h2).toBeGreaterThan(h133);
+  });
 });
 
 describe('circleOfConfusion', () => {

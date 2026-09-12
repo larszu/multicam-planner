@@ -71,21 +71,49 @@ export function equivalentFocalLength(focalLengthMm: number, cropFactor: number)
   return focalLengthMm * cropFactor;
 }
 
-/** Full FOV computation */
+// ───────────────────────────────────────────────────────────────────────────
+// ANAMORPHOTEN-MODUS (Squeeze).
+//
+// Ein anamorphotisches Objektiv staucht das Bild HORIZONTAL optisch um seinen
+// Squeeze-Faktor S (2x, 1.8x, 1.5x, 1.33x) auf den Sensor und wird in der Post
+// wieder entzerrt. Fuer das Sichtfeld heisst das:
+//
+//   • VERTIKAL bleibt es ein Objektiv der Brennweite F — die vertikale FOV
+//     rechnet unveraendert mit `focalLengthMm`.
+//   • HORIZONTAL faengt es ein um S BREITERES Feld ein: die horizontale
+//     Brennweite ist effektiv F/S. Gleichwertig — und so hier gerechnet —
+//     verhaelt sich die Sensorbreite fuer die Horizontale wie `widthMm * S`.
+//
+// Der entzerrte (desqueezed) Frame ist also S-mal breiter; Diagonale und
+// `imageWidthAtDistance` folgen daraus. `squeeze = 1` ist der sphaerische
+// Normalfall und ergibt Ziffer fuer Ziffer dieselben Zahlen wie zuvor — jede
+// bestehende Aufrufstelle ohne Objektiv-Squeeze bleibt damit unveraendert.
+//
+// NICHT angefasst: die Schaerfentiefe (`computeDof`) rechnet weiter mit der
+// physischen Brennweite F. Das ist die uebliche Naeherung — die Schaerfentiefe
+// eines Anamorphoten richtet sich nach seiner tatsaechlichen (vertikalen)
+// Brennweite, nicht nach der entzerrten Horizontalen.
+// ───────────────────────────────────────────────────────────────────────────
+
+/** Full FOV computation. `squeeze` > 1 schaltet den Anamorphoten-Modus (s. o.). */
 export function computeFov(
   sensor: SensorSize,
   focalLengthMm: number,
   distanceM: number,
   extender: number = 1,
+  squeeze: number = 1,
 ): FovResult {
   const effectiveFl = focalLengthMm * extender;
+  // Horizontale Ausdehnung des entzerrten Frames: Sensorbreite × Squeeze.
+  const desqueezedWidthMm = sensor.widthMm * squeeze;
   return {
-    horizontalDeg: horizontalFov(sensor.widthMm, effectiveFl),
+    horizontalDeg: horizontalFov(desqueezedWidthMm, effectiveFl),
     verticalDeg: verticalFov(sensor.heightMm, effectiveFl),
-    diagonalDeg: diagonalFov(sensor.widthMm, sensor.heightMm, effectiveFl),
-    imageWidthAtDistance: imageWidthAtDistance(sensor.widthMm, effectiveFl, distanceM),
+    diagonalDeg: diagonalFov(desqueezedWidthMm, sensor.heightMm, effectiveFl),
+    imageWidthAtDistance: imageWidthAtDistance(desqueezedWidthMm, effectiveFl, distanceM),
     imageHeightAtDistance: imageHeightAtDistance(sensor.heightMm, effectiveFl, distanceM),
     equivalentFocalLength: equivalentFocalLength(effectiveFl, sensor.cropFactor),
+    squeeze,
   };
 }
 
