@@ -237,7 +237,7 @@ export default function LensSlider({
                 tabIndex={-1}
                 disabled={disabled}
                 onClick={() => onChange(t)}
-                className={`absolute top-0 ${shift} text-[8px] font-mono leading-none hover:text-bc-accent ${
+                className={`absolute top-0 ${shift} text-[11px] font-mono leading-none hover:text-bc-accent ${
                   active ? 'text-bc-accent' : 'text-bc-faint'
                 }`}
                 style={{ left: `${p}%` }}

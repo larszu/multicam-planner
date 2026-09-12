@@ -37,9 +37,44 @@
    */
   --color-bc-text: #E1ECEF;          /* Eisblau — Fliesstext auf Dunkel */
   --color-bc-text-bright: #F6F5F0;
-  --color-bc-muted: #8C9CB3;         /* Stahlblau — Meta, Platzhalter */
-  --color-bc-dim: #6E7F97;           /* abgeleitet — Beschriftungen */
-  --color-bc-faint: #56657C;         /* abgeleitet — Hinweise */
+  /* ── Die drei Meta-Toene, 2026-09-12 nachgemessen ─────────────────────
+   *
+   * NUTZER-MELDUNG: „man kann manche texte nicht lesen."
+   *
+   * Nachgemessen (WCAG-Kontrast gegen `bc-panel` #1D324F, den Grund, auf dem
+   * diese Toene ueberwiegend stehen):
+   *
+   *   muted   4.64   knapp ueber der Grenze
+   *   dim     3.17   darunter
+   *   faint   2.19   weit darunter — kaum sichtbar
+   *
+   * 2.19:1 ist kein blasser Ton. Und genau dieser stand an achtzehn Stellen
+   * unter `text-[9px]`, an Hinweisen, die etwas erklaeren sollten: zu klein
+   * UND zu blass, zwei Fehler, die sich gegenseitig verstaerken.
+   *
+   * DIE RAMPE UNTER `muted` GIBT ES HIER NICHT MEHR, und das ist kein
+   * Verlust, sondern die Rechnung: Stahlblau #8C9CB3 ist die MARKENFARBE
+   * fuer gedaempften Text (`brand:check` haelt sie fest) und liegt bei 4.64.
+   * Auf dunklem Grund heisst „noch gedaempfter" aber DUNKLER, also
+   * kontrastaermer — unterhalb von 4.64 ist kein Platz mehr.
+   *
+   * Der erste Anlauf hob deshalb alle drei an und brach damit die
+   * Markenfarbe. `brand:check` hat es sofort gemeldet, und er hatte recht:
+   * die Marke ist eine Entscheidung des Eigentuemers, die Lesbarkeit eine
+   * Rechnung. Wo beide sich widersprechen, gibt die RAMPE nach, nicht die
+   * Marke.
+   *
+   * `dim` und `faint` tragen deshalb denselben Wert. Die NAMEN bleiben — sie
+   * sagen, was gemeint ist, und mit einer helleren Panel-Flaeche geht die
+   * Rampe wieder auf. Was nicht bleibt, ist die Behauptung einer Hierarchie,
+   * die aus zwei unlesbaren Stufen bestand.
+   *
+   * Auf `--color-bc-panel-raised` (#24405F) liegt Stahlblau bei 3.81. Dort
+   * gehoert es an eine Trennlinie und nicht an Text; `kontrast:check` fuehrt
+   * diesen Grund deshalb nur bei den beiden hellen Toenen. */
+  --color-bc-muted: #8C9CB3;         /* Stahlblau — Meta, Platzhalter (Marke) */
+  --color-bc-dim: #8C9CB3;           /* = Stahlblau, siehe oben */
+  --color-bc-faint: #8C9CB3;         /* = Stahlblau, siehe oben */
   /* Flaechen, die keine Farbe sind, sondern ein Zustand oder ein Grund.
    * Als Token, weil `bg-white/[0.06]` im Hell-Thema unsichtbar waere und
    * `bg-black/60` dort zu einem schwarzen Balken wuerde. */
@@ -99,9 +134,16 @@
   --color-bc-accent-text: #F6F5F0;
   --color-bc-text: #1B2B45;
   --color-bc-text-bright: #0B1729;
+  /* Im HELL-Thema bleibt eine Stufe unter `muted` uebrig — dort heisst
+     „gedaempfter" DUNKLER, und dunkler ist auf hellem Grund
+     kontrastREICHER. Gerechnet gegen den dunkelsten hellen Grund
+     (#F6F5F0), nicht gegen Weiss: `muted` #4E6180 = 5.75, darunter
+     #5A7094 = 4.60. Gegen Weiss gerechnet lag dieselbe Farbe bei 4.22 —
+     der Lauf hat es gemeldet, bevor es jemand sehen konnte. `faint`
+     stand vorher auf #7C8AA1 = 3.50. */
   --color-bc-muted: #4E6180;
-  --color-bc-dim: #63748F;
-  --color-bc-faint: #7C8AA1;
+  --color-bc-dim: #5A7094;
+  --color-bc-faint: #5A7094;
   --color-bc-hover: rgba(19, 32, 64, 0.06);
   --color-bc-hover-soft: rgba(19, 32, 64, 0.02);
   /* Der Schleier bleibt dunkel — er trennt nach UNTEN, und das tut er auf
@@ -125,9 +167,16 @@
     --color-bc-accent-text: #F6F5F0;
     --color-bc-text: #1B2B45;
     --color-bc-text-bright: #0B1729;
+    /* Im HELL-Thema bleibt eine Stufe unter `muted` uebrig — dort heisst
+       „gedaempfter" DUNKLER, und dunkler ist auf hellem Grund
+       kontrastREICHER. Gerechnet gegen den dunkelsten hellen Grund
+       (#F6F5F0), nicht gegen Weiss: `muted` #4E6180 = 5.75, darunter
+       #5A7094 = 4.60. Gegen Weiss gerechnet lag dieselbe Farbe bei 4.22 —
+       der Lauf hat es gemeldet, bevor es jemand sehen konnte. `faint`
+       stand vorher auf #7C8AA1 = 3.50. */
     --color-bc-muted: #4E6180;
-    --color-bc-dim: #63748F;
-    --color-bc-faint: #7C8AA1;
+    --color-bc-dim: #5A7094;
+    --color-bc-faint: #5A7094;
     --color-bc-hover: rgba(19, 32, 64, 0.06);
     --color-bc-hover-soft: rgba(19, 32, 64, 0.02);
     --color-bc-scrim: rgba(0, 0, 0, 0.45);

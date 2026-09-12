@@ -403,9 +403,9 @@ export default function ShotlistPanel() {
                   {shot.thumbnail ? (
                     <img src={shot.thumbnail} alt="" className="w-full h-full object-contain" />
                   ) : (
-                    <span className="text-[9px] text-bc-faint">{t('shotlist.noThumb', 'no image')}</span>
+                    <span className="text-[11px] text-bc-faint">{t('shotlist.noThumb', 'no image')}</span>
                   )}
-                  <span className="absolute top-0.5 left-0.5 bg-bc-scrim text-bc-yellow font-bold text-[9px] px-1">
+                  <span className="absolute top-0.5 left-0.5 bg-bc-scrim text-bc-yellow font-bold text-[11px] px-1">
                     {String(i + 1).padStart(2, '0')}
                   </span>
                 </div>
@@ -426,7 +426,7 @@ export default function ShotlistPanel() {
                         e.stopPropagation();
                         if (list) updateShot(list.id, shot.id, { transition: nextTransitionMode(shot.transition) });
                       }}
-                      className="text-[9px] px-1 py-0.5 border border-bc-border text-bc-muted hover:text-bc-text-bright hover:border-bc-accent/60"
+                      className="text-[11px] px-1 py-0.5 border border-bc-border text-bc-muted hover:text-bc-text-bright hover:border-bc-accent/60"
                       title={t('shotlist.transitionToggle', 'Toggle the transition time (OFF / Fast / Slow / Manual)')}
                     >
                       {TRANSITION_LABEL[shot.transition]}
@@ -448,7 +448,7 @@ export default function ShotlistPanel() {
                             });
                           }
                         }}
-                        className="w-12 bg-bc-panel border border-bc-border px-1 py-0.5 text-[9px] text-bc-text-bright"
+                        className="w-12 bg-bc-panel border border-bc-border px-1 py-0.5 text-[11px] text-bc-text-bright"
                         title={t('shotlist.transitionSeconds', 'Transition time in seconds')}
                       />
                     )}
@@ -463,7 +463,7 @@ export default function ShotlistPanel() {
                           motionStyle: v ? (v as CameraMountType) : undefined,
                         });
                       }}
-                      className="bg-bc-panel border border-bc-border px-0.5 py-0.5 text-[9px] text-bc-muted max-w-[86px]"
+                      className="bg-bc-panel border border-bc-border px-0.5 py-0.5 text-[11px] text-bc-muted max-w-[86px]"
                       title={format(t('shotlist.motionStyle', 'Movement style - {hint}'), { hint: motionProfileHint(t, effStyle) })}
                     >
                       <option value="">
@@ -475,14 +475,14 @@ export default function ShotlistPanel() {
                     </select>
                     {tooFast && (
                       <span
-                        className="text-[9px] text-bc-yellow"
+                        className="text-[11px] text-bc-yellow"
                         title={format(t('shotlist.tooFast', 'On a {rig} this move needs at least {need} s - the {set} s set here are physically out of reach.'), { rig: motionProfileLabel(t, effStyle), need: needS, set: secs })}
                       >
                         min {needS}s
                       </span>
                     )}
                     {camGone && (
-                      <span className="text-[9px] text-bc-red" title={t('shotlist.cameraGone', 'The camera of this shot has been deleted')}>
+                      <span className="text-[11px] text-bc-red" title={t('shotlist.cameraGone', 'The camera of this shot has been deleted')}>
                         {t('shotlist.cameraMissing', 'Camera missing')}
                       </span>
                     )}
