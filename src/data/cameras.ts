@@ -515,6 +515,43 @@ export const CAMERAS: Camera[] = [
   { id: 'panasonic-ak-hc3500', manufacturer: 'Panasonic', model: 'AK-HC3500', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
   { id: 'grass-valley-ldk-8000', manufacturer: 'Grass Valley', model: 'LDK 8000', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
 
+  // ── Konferenz / Webcam / Auto-Tracking (Streaming/AV) ──
+  { id: 'obsbot-tail-air', manufacturer: 'OBSBOT', model: 'Tail Air', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz', notes: 'NDI-PTZ, KI-Tracking' },
+  { id: 'obsbot-tiny-2', manufacturer: 'OBSBOT', model: 'Tiny 2', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz', notes: 'KI-Webcam-PTZ' },
+  { id: 'obsbot-tiny-2-lite', manufacturer: 'OBSBOT', model: 'Tiny 2 Lite', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'obsbot-tiny-se', manufacturer: 'OBSBOT', model: 'Tiny SE', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
+  { id: 'logitech-mx-brio', manufacturer: 'Logitech', model: 'MX Brio', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'camcorder', notes: 'Webcam' },
+  { id: 'logitech-rally-camera', manufacturer: 'Logitech', model: 'Rally Camera', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz', notes: 'Konferenz-PTZ' },
+  { id: 'logitech-brio-4k', manufacturer: 'Logitech', model: 'Brio 4K', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'camcorder' },
+  { id: 'poly-studio-e70', manufacturer: 'Poly', model: 'Studio E70', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz', notes: 'Dual-Sensor-Konferenz' },
+  { id: 'huddly-l1', manufacturer: 'Huddly', model: 'L1', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
+  { id: 'insta360-link-2', manufacturer: 'Insta360', model: 'Link 2', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz', notes: 'KI-Webcam-Gimbal' },
+  { id: 'elgato-facecam-mk2', manufacturer: 'Elgato', model: 'Facecam MK.2', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['HD'], type: 'camcorder' },
+  { id: 'avermedia-pw515', manufacturer: 'AVerMedia', model: 'PW515', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'camcorder' },
+  // ── PTZ (Ausbau 4) ──
+  { id: 'panasonic-aw-ue160w', manufacturer: 'Panasonic', model: 'AW-UE160W', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'sony-srg-a30', manufacturer: 'Sony', model: 'SRG-A30', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'sony-srg-x40uh', manufacturer: 'Sony', model: 'SRG-X40UH', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'lumens-vc-a51s', manufacturer: 'Lumens', model: 'VC-A51S', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'lumens-vc-a71p', manufacturer: 'Lumens', model: 'VC-A71P', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'avonic-cm93', manufacturer: 'Avonic', model: 'CM93-NDI', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'avonic-cm70', manufacturer: 'Avonic', model: 'CM70-NDI', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'ptzoptics-move-4k-12', manufacturer: 'PTZOptics', model: 'Move 4K 12x', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'ptzoptics-studio-pro', manufacturer: 'PTZOptics', model: 'Studio Pro 4K', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'birddog-p200', manufacturer: 'BirdDog', model: 'P200', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
+  { id: 'birddog-p120', manufacturer: 'BirdDog', model: 'P120', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
+  { id: 'panasonic-aw-he38', manufacturer: 'Panasonic', model: 'AW-HE38', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
+  // ── Kompakt / Bridge / Action (1" & Action) ──
+  { id: 'sony-rx100-vii', manufacturer: 'Sony', model: 'RX100 VII', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K','HD'], type: 'camcorder' },
+  { id: 'sony-zv-1', manufacturer: 'Sony', model: 'ZV-1', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K','HD'], type: 'camcorder' },
+  { id: 'sony-rx0-ii', manufacturer: 'Sony', model: 'RX0 II', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K','HD'], type: 'camcorder', notes: 'Ultra-Kompakt' },
+  { id: 'canon-powershot-v10', manufacturer: 'Canon', model: 'PowerShot V10', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K','HD'], type: 'camcorder' },
+  { id: 'panasonic-lx100-ii', manufacturer: 'Panasonic', model: 'Lumix LX100 II', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K','HD'], type: 'camcorder' },
+  { id: 'dji-osmo-action-5', manufacturer: 'DJI', model: 'Osmo Action 5 Pro', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K','HD'], type: 'camcorder' },
+  { id: 'gopro-hero11', manufacturer: 'GoPro', model: 'HERO11 Black', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['5.3K','4K'], type: 'camcorder' },
+  { id: 'insta360-ace-pro', manufacturer: 'Insta360', model: 'Ace Pro', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['8K','4K'], type: 'camcorder' },
+  { id: 'insta360-x3', manufacturer: 'Insta360', model: 'X3', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['5.7K','4K'], type: 'camcorder', notes: '360°' },
+
   // ── Marshall POV ──
   { id: 'marshall-cv568', manufacturer: 'Marshall', model: 'CV568', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'M12', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'POV camera, global shutter' },
 ];
