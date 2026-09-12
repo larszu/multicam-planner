@@ -528,8 +528,11 @@ select {
  * Die Kopfzeile war `h-14` (56 px) — eine Zahl, die niemand entschieden hat,
  * sondern die aus einer Tailwind-Stufe stammte. 40 px ist die Zahl der Suite.
  *
- * Eine Statusleiste gibt es hier (noch) nicht; wo keine ist, wird auch keine
- * erfunden, nur um eine Regel abzuhaken. */
+ * Die Statusleiste kam am 2026-09-12 dazu. Hier stand bis dahin „wo keine
+ * ist, wird auch keine erfunden, nur um eine Regel abzuhaken" — und das war
+ * richtig, solange offen war, WAS darin steht. Der ADR beantwortet genau das:
+ * „Meldungen links · Zaehler rechts". Zaehler sind ableitbar, nicht erfunden;
+ * die drei Zahlen unten stehen ohnehin im Zustand. */
 
 .bc-topbar {
   display: flex;
@@ -540,6 +543,24 @@ select {
   padding: 0 12px;
   background: var(--color-bc-panel);
   border-bottom: 1px solid var(--color-bc-border);
+}
+
+/* Die Statusleiste: 24 px, dieselbe Zahl wie `.cp-statusbar` und `.statusbar`
+ * in den beiden anderen grossen Apps. `env(safe-area-inset-bottom)` wie dort:
+ * auf dem Telefon laeuft die Seite sonst unter den Home-Balken. */
+.bc-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: calc(24px + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  flex: none;
+  padding-left: 12px;
+  padding-right: 12px;
+  background: var(--color-bc-panel);
+  border-top: 1px solid var(--color-bc-border);
+  font-size: 12px;
+  color: var(--color-bc-muted);
 }
 
 /* Die Modul-Reiter - eine EIGENE Zeile unter der Kopfzeile, seit 2026-09-11.

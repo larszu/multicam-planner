@@ -53,4 +53,13 @@ export const chrome: Record<string, string> = {
   'settings.about': 'Über',
   'settings.about.suite':
     'Teil der AV-Planner-Suite — Kamerapositionen, Objektive, Deckung und Schichtübergabe.',
+
+  // ── Die Statusleiste (ADR-007 Abschnitt 6: Meldungen links, Zähler rechts) ──
+  'status.cameras': '{count} Kameras',
+  'status.people': '{count} Personen & Objekte',
+  'status.walls': '{count} Wände',
+  'status.mode.floorplan': 'Bearbeiten: Grundriss',
+  'status.mode.stage': 'Bearbeiten: Bühne',
+  'status.mode.objects': 'Bearbeiten: Objekte',
+  'status.mode.cameras': 'Bearbeiten: Kameras',
 };

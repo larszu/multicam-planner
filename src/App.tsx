@@ -2,6 +2,7 @@ import { useStore } from './store/useStore';
 import Header from './components/Layout/Header';
 import { TABS } from './components/Layout/tabs';
 import StartupAssistant from './components/Layout/StartupAssistant';
+import StatusBar from './components/Layout/StatusBar';
 import CommandPalette, { type Command } from './components/Layout/CommandPalette';
 import Sidebar from './components/Sidebar/Sidebar';
 import Venue2D from './components/Venue2D/Venue2D';
@@ -606,6 +607,8 @@ export default function App() {
           />
         </div>
       </div>
+
+      <StatusBar />
 
       <ExportPanel />
       <StartupAssistant />
