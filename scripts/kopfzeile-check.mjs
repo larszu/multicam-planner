@@ -185,4 +185,36 @@ for (const zustand of ['settings.theme.system', 'settings.theme.dark', 'settings
 // die dieser ganze Abschnitt steht.
 assert.ok(einstellungen.includes('setzeThema('), 'der Thema-Schalter ruft setzeThema nicht auf');
 
-console.log('kopfzeile:check ok — 40 px, File/Edit/Tools/View/Help, Einstellungen rechts aussen, eine Klappen-Mechanik');
+// ── Die Statusleiste ─────────────────────────────────────────────────────
+//
+// ADR-007 Abschnitt 6 nennt sie im Rahmen: „Statusleiste 24 px". Bis zum
+// 2026-09-12 gab es sie hier nicht — und der Satz dazu im Stilblatt war
+// ehrlich („wo keine ist, wird auch keine erfunden"), aber niemand hat
+// gemessen, ob sie inzwischen da ist. Jetzt schon.
+//
+// DIESELBE BEGRUENDUNG WIE OBEN BEI DEN 40 px: die Zahl steht als benannte
+// Klasse im Stilblatt und nicht als `h-6` am Element. Am Element waere sie
+// dieselbe Zahl, aber keine Regel.
+const j = css.indexOf('.bc-statusbar {');
+assert.ok(j > 0, 'keine .bc-statusbar-Regel im Stilblatt');
+const sblock = css.slice(j, j + 400);
+assert.ok(sblock.includes('height: calc(24px'), '.bc-statusbar ist nicht 24 px hoch');
+assert.ok(sblock.includes('flex: none'), '.bc-statusbar darf nicht schrumpfen duerfen');
+
+// Und sie wird auch GERENDERT. Eine Klasse im Stilblatt ohne Element ist
+// dasselbe wie die Regel ohne Klasse: eine Absichtserklaerung.
+const app = lies('src/App.tsx');
+assert.ok(/<StatusBar\s*\/>/.test(app), 'die Statusleiste wird nirgends gerendert');
+// GEGEN DEN ARBEITSBEREICH UND NICHT GEGEN `<Layout`: der erste Anlauf
+// verglich mit `app.indexOf('<Layout')` und blieb GRUEN, als die Leiste
+// versuchsweise ueber den Arbeitsbereich geschoben wurde — denn weiter oben
+// steht `useState<LayoutMode>(…)`, und darin findet `indexOf` sein `<Layout`.
+// Dieselbe Falle wie beim Register-Unterstrich im `chrome:parity`: ein
+// Teilstring, der zufaellig passt, bestaetigt die falsche Stelle.
+// `flexlayout-custom-theme` steht genau einmal und nur am Arbeitsbereich.
+assert.ok(
+  app.indexOf('<StatusBar />') > app.indexOf('flexlayout-custom-theme'),
+  'die Statusleiste steht nicht unter dem Arbeitsbereich',
+);
+
+console.log('kopfzeile:check ok — 40 px, File/Edit/Tools/View/Help, Einstellungen rechts aussen, eine Klappen-Mechanik, Statusleiste 24 px');

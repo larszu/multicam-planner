@@ -127,7 +127,7 @@ export default function AiPlanAnalysis() {
           onChange={(e) => persistKey(e.target.value)}
         />
       </div>
-      <p className="text-bc-faint text-[9px]">{provider.keyHint}</p>
+      <p className="text-bc-faint text-[11px]">{provider.keyHint}</p>
 
       <input
         type="text"
@@ -161,7 +161,7 @@ export default function AiPlanAnalysis() {
         {busy ? <><FiLoader size={11} className="animate-spin" /> {t('sidebar.ai.analysing', 'Analysing…')}</> : <>{t('sidebar.ai.analyse', 'Analyse plan with AI')}</>}
       </button>
 
-      {!backgroundPlan && <p className="text-bc-faint text-[9px]">{t('sidebar.ai.uploadHint', 'Upload a plan above to enable analysis.')}</p>}
+      {!backgroundPlan && <p className="text-bc-faint text-[11px]">{t('sidebar.ai.uploadHint', 'Upload a plan above to enable analysis.')}</p>}
       {error && <p className="text-bc-red text-[10px] break-words">{error}</p>}
       {summary && <p className="text-bc-green text-[10px]">{summary}</p>}
     </div>

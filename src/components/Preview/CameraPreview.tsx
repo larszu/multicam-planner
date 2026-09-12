@@ -1459,13 +1459,13 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                   <input
                     type="number" min={1} max={manualMax - 1} value={manualMin}
                     onChange={(e) => setManualMin(Math.max(1, Math.min(manualMax - 1, parseFloat(e.target.value) || 1)))}
-                    className="w-12 bg-bc-dark border border-bc-border px-1 text-[9px] text-bc-text font-mono"
+                    className="w-12 bg-bc-dark border border-bc-border px-1 text-[11px] text-bc-text font-mono"
                     title={t('preview.manualMin', 'Manual minimum focal length (mm)')}
                   />
                   <input
                     type="number" min={manualMin + 1} max={2000} value={manualMax}
                     onChange={(e) => setManualMax(Math.max(manualMin + 1, Math.min(2000, parseFloat(e.target.value) || 500)))}
-                    className="w-12 bg-bc-dark border border-bc-border px-1 text-[9px] text-bc-text font-mono"
+                    className="w-12 bg-bc-dark border border-bc-border px-1 text-[11px] text-bc-text font-mono"
                     title={t('preview.manualMax', 'Manual maximum focal length (mm)')}
                   />
                 </>
@@ -1480,7 +1480,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                   return next;
                 })}
                 title={t('preview.manualTitle', "Temporarily scrub focal length beyond the lens's real range")}
-                className={`px-1.5 py-0.5 text-[9px] font-medium border transition-colors ${manualZoom ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-bc-dim hover:text-bc-text'}`}
+                className={`px-1.5 py-0.5 text-[11px] font-medium border transition-colors ${manualZoom ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-bc-dim hover:text-bc-text'}`}
               >
                 {t('preview.manual', 'Manual')}
               </button>
@@ -1507,13 +1507,13 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                   <input
                     type="number" min={0.1} max={manualApMax - 0.1} step={0.1} value={manualApMin}
                     onChange={(e) => setManualApMin(Math.max(0.1, Math.min(manualApMax - 0.1, parseFloat(e.target.value) || 0.1)))}
-                    className="w-12 bg-bc-dark border border-bc-border px-1 text-[9px] text-bc-text font-mono"
+                    className="w-12 bg-bc-dark border border-bc-border px-1 text-[11px] text-bc-text font-mono"
                     title={t('preview.apertureManualMin', 'Manual minimum (aperture)')}
                   />
                   <input
                     type="number" min={manualApMin + 0.1} max={64} step={0.1} value={manualApMax}
                     onChange={(e) => setManualApMax(Math.max(manualApMin + 0.1, Math.min(64, parseFloat(e.target.value) || 32)))}
-                    className="w-12 bg-bc-dark border border-bc-border px-1 text-[9px] text-bc-text font-mono"
+                    className="w-12 bg-bc-dark border border-bc-border px-1 text-[11px] text-bc-text font-mono"
                     title={t('preview.apertureManualMax', 'Manual maximum (aperture)')}
                   />
                 </>
@@ -1529,7 +1529,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
                   return next;
                 })}
                 title={t('preview.aperture.beyond', 'Run the aperture beyond the real lens limits')}
-                className={`px-1.5 py-0.5 text-[9px] font-medium border transition-colors ${manualAperture ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-bc-dim hover:text-bc-text'}`}
+                className={`px-1.5 py-0.5 text-[11px] font-medium border transition-colors ${manualAperture ? 'border-bc-yellow text-bc-yellow bg-bc-yellow/10' : 'border-bc-border text-bc-dim hover:text-bc-text'}`}
               >
                 {t('preview.manual', 'Manual')}
               </button>

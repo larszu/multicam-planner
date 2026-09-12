@@ -528,7 +528,7 @@ export function CustomCameraForm({ initial, onSubmit, onCancel, submitLabel, tit
                 <FiTrash2 size={11} />
               </button>
               {cf > 0 && (
-                <span className="col-span-12 text-[9px] text-bc-dim -mt-0.5">
+                <span className="col-span-12 text-[11px] text-bc-dim -mt-0.5">
                   → {t('sidebar.form.cropFactor', 'crop factor')} ×{cf.toFixed(2)}
                 </span>
               )}

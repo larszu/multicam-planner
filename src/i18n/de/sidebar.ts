@@ -25,6 +25,12 @@ export const sidebar: Record<string, string> = {
   'sidebar.rigging.kitPh': 'Kit an dieser Position — eine Zeile je Posten',
   // ── Calculator / CalculationBreakdown (sidebar.calc.*) ──
   'sidebar.calc.title': 'FOV- & Schärfentiefe-Rechner',
+  // Die Herkunft der Zahlen (Nutzer-Auftrag 2026-09-12: der Rechner haengt
+  // an der gewaehlten Kamera).
+  'sidebar.calc.fromCamera': 'Von {label}',
+  'sidebar.calc.detached': 'eigene Werte',
+  'sidebar.calc.reload': 'Werte wieder von der Kamera holen',
+  'sidebar.calc.noCamera': 'Keine Kamera gewählt — die Werte unten sind deine eigenen.',
   'sidebar.calc.sensorSize': 'Sensorgröße',
   'sidebar.calc.focalLength': 'Brennweite: {v}mm',
   'sidebar.calc.aperture': 'Blende: f/{v}',

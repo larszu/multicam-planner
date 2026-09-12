@@ -74,7 +74,7 @@ export function CalculationBreakdown({
     <div className="bg-bc-dark p-2 border border-bc-border text-[10px] font-mono space-y-1">
       <div className="text-bc-accent font-bold text-[11px] mb-1">{t('sidebar.calc.trace', 'CALCULATION TRACE')}</div>
 
-      <div className="text-bc-dim text-[9px] -mt-0.5 mb-1">
+      <div className="text-bc-dim text-[11px] -mt-0.5 mb-1">
         Sensor {sensor.name} · W={fmt(W)} mm · H={fmt(H)} mm · diag D={fmt(D)} mm
         {ext !== 1 && <> · f_eff = {fmt(f)} × {ext} = {fmt(fe)} mm</>}
       </div>

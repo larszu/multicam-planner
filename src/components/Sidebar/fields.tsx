@@ -241,7 +241,7 @@ export function ValueSlider({
           return (
             <span
               key={`${m.value}-${m.label}`}
-              className="absolute top-0 text-[9px] tabular-nums text-bc-faint"
+              className="absolute top-0 text-[11px] tabular-nums text-bc-faint"
               style={{
                 left: `${pct}%`,
                 transform: pct <= 0 ? 'none' : pct >= 100 ? 'translateX(-100%)' : 'translateX(-50%)',

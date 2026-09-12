@@ -93,6 +93,14 @@ jobs:
       - name: Keine Rundungen/Schatten (ADR-007)
         run: npm run form:check
 
+      # Die LESBARKEIT, seit der Nutzer-Meldung vom 2026-09-12 („man kann
+      # manche texte nicht lesen"). Gemessen wurde damals ein Kontrast von
+      # 2.19:1 an Hinweisen, die in 9 px gesetzt waren — beide Zahlen sind
+      # ausrechenbar, und genau deshalb gehoeren sie in einen Lauf und nicht
+      # in ein Auge.
+      - name: Kontrast und Schriftgroesse (WCAG AA)
+        run: npm run kontrast:check
+
       # Fragt die action.yml jedes Pins nach ihrer Node-Version, statt sie in
       # einem Kommentar zu behaupten. Am 2026-09-05 liefen in `release.yml`
       # drei Actions auf node20, und der Kommentar daneben begruendete das mit
