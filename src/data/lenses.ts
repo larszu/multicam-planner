@@ -889,6 +889,50 @@ export const LENSES: Lens[] = [
   { id: 'psk-evolution-60', manufacturer: 'P+S Technik', model: 'Evolution 2x 60mm T2.4', focalLengthMin: 60, focalLengthMax: 60, maxApertureWide: 2.4, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 2 },
   { id: 'psk-evolution-80', manufacturer: 'P+S Technik', model: 'Evolution 2x 80mm T2.4', focalLengthMin: 80, focalLengthMax: 80, maxApertureWide: 2.4, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 2 },
   { id: 'psk-evolution-100', manufacturer: 'P+S Technik', model: 'Evolution 2x 100mm T2.4', focalLengthMin: 100, focalLengthMax: 100, maxApertureWide: 2.4, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 2 },
+  // ── Fujinon Broadcast (B4, 2/3") ──
+  { id: 'fuj-ua125x8', manufacturer: 'Fujinon', model: 'UA125x8 (Feld)', focalLengthMin: 8, focalLengthMax: 1000, maxApertureWide: 1.7, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  { id: 'fuj-ua107x8.4b', manufacturer: 'Fujinon', model: 'UA107x8.4 (Feld)', focalLengthMin: 8.4, focalLengthMax: 900, maxApertureWide: 1.7, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  { id: 'fuj-ha18x5.5', manufacturer: 'Fujinon', model: 'HA18x5.5 (HD Portable)', focalLengthMin: 5.5, focalLengthMax: 99, maxApertureWide: 1.9, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  { id: 'fuj-xa77x9.5', manufacturer: 'Fujinon', model: 'XA77x9.5 (4K Feld)', focalLengthMin: 9.5, focalLengthMax: 731, maxApertureWide: 1.7, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  // ── Sony FE (weitere) ──
+  { id: 'sony-fe-24-50g', manufacturer: 'Sony', model: 'FE 24-50 F2.8 G', focalLengthMin: 24, focalLengthMax: 50, maxApertureWide: 2.8, mount: 'E', imageCircle: 'FF', type: 'zoom' },
+  { id: 'sony-fe-20-70g', manufacturer: 'Sony', model: 'FE 20-70 F4 G', focalLengthMin: 20, focalLengthMax: 70, maxApertureWide: 4.0, mount: 'E', imageCircle: 'FF', type: 'zoom' },
+  { id: 'sony-fe-70-300g', manufacturer: 'Sony', model: 'FE 70-300 F4.5-5.6 G', focalLengthMin: 70, focalLengthMax: 300, maxApertureWide: 4.5, mount: 'E', imageCircle: 'FF', type: 'zoom' },
+  { id: 'sony-fe-16-35-pz', manufacturer: 'Sony', model: 'FE PZ 16-35 F4 G', focalLengthMin: 16, focalLengthMax: 35, maxApertureWide: 4.0, mount: 'E', imageCircle: 'FF', type: 'zoom' },
+  { id: 'sony-fe-35f18', manufacturer: 'Sony', model: 'FE 35 F1.8', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.8, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'sony-fe-85f18', manufacturer: 'Sony', model: 'FE 85 F1.8', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.8, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'sony-fe-20f18g', manufacturer: 'Sony', model: 'FE 20 F1.8 G', focalLengthMin: 20, focalLengthMax: 20, maxApertureWide: 1.8, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'sony-fe-24f14gm2', manufacturer: 'Sony', model: 'FE 24 F1.4 GM', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 1.4, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  // ── Canon RF / EF (weitere) ──
+  { id: 'canon-rf-24-50', manufacturer: 'Canon', model: 'RF 24-50 F4.5-6.3', focalLengthMin: 24, focalLengthMax: 50, maxApertureWide: 4.5, mount: 'RF', imageCircle: 'FF', type: 'zoom' },
+  { id: 'canon-rf-28-70-28', manufacturer: 'Canon', model: 'RF 28-70 F2.8 IS', focalLengthMin: 28, focalLengthMax: 70, maxApertureWide: 2.8, mount: 'RF', imageCircle: 'FF', type: 'zoom' },
+  { id: 'canon-rf-28', manufacturer: 'Canon', model: 'RF 28 F2.8 STM', focalLengthMin: 28, focalLengthMax: 28, maxApertureWide: 2.8, mount: 'RF', imageCircle: 'FF', type: 'prime' },
+  { id: 'canon-ef-24-70', manufacturer: 'Canon', model: 'EF 24-70 F2.8L II', focalLengthMin: 24, focalLengthMax: 70, maxApertureWide: 2.8, mount: 'EF', imageCircle: 'FF', type: 'zoom' },
+  { id: 'canon-ef-70-200', manufacturer: 'Canon', model: 'EF 70-200 F2.8L IS III', focalLengthMin: 70, focalLengthMax: 200, maxApertureWide: 2.8, mount: 'EF', imageCircle: 'FF', type: 'zoom' },
+  { id: 'canon-ef-16-35', manufacturer: 'Canon', model: 'EF 16-35 F2.8L III', focalLengthMin: 16, focalLengthMax: 35, maxApertureWide: 2.8, mount: 'EF', imageCircle: 'FF', type: 'zoom' },
+  { id: 'canon-ef-50-12', manufacturer: 'Canon', model: 'EF 50 F1.2L', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.2, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'canon-ef-85-14', manufacturer: 'Canon', model: 'EF 85 F1.4L IS', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.4, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  // ── Nikon Z (weitere) ──
+  { id: 'nikon-z-28-400', manufacturer: 'Nikon', model: 'Z 28-400 F4-8 VR', focalLengthMin: 28, focalLengthMax: 400, maxApertureWide: 4.0, mount: 'Z', imageCircle: 'FF', type: 'zoom' },
+  { id: 'nikon-z-24-50', manufacturer: 'Nikon', model: 'Z 24-50 F4-6.3', focalLengthMin: 24, focalLengthMax: 50, maxApertureWide: 4.0, mount: 'Z', imageCircle: 'FF', type: 'zoom' },
+  { id: 'nikon-z-40', manufacturer: 'Nikon', model: 'Z 40 F2', focalLengthMin: 40, focalLengthMax: 40, maxApertureWide: 2.0, mount: 'Z', imageCircle: 'FF', type: 'prime' },
+  { id: 'nikon-z-28', manufacturer: 'Nikon', model: 'Z 28 F2.8', focalLengthMin: 28, focalLengthMax: 28, maxApertureWide: 2.8, mount: 'Z', imageCircle: 'FF', type: 'prime' },
+  { id: 'nikon-z-105-mc', manufacturer: 'Nikon', model: 'Z MC 105 F2.8 VR Macro', focalLengthMin: 105, focalLengthMax: 105, maxApertureWide: 2.8, mount: 'Z', imageCircle: 'FF', type: 'prime' },
+  // ── MFT (Olympus/Panasonic/Leica) ──
+  { id: 'olympus-12-mft', manufacturer: 'OM System', model: 'M.Zuiko 12 F2', focalLengthMin: 12, focalLengthMax: 12, maxApertureWide: 2.0, mount: 'MFT', imageCircle: 'MFT', type: 'prime' },
+  { id: 'olympus-25-mft', manufacturer: 'OM System', model: 'M.Zuiko 25 F1.2 PRO', focalLengthMin: 25, focalLengthMax: 25, maxApertureWide: 1.2, mount: 'MFT', imageCircle: 'MFT', type: 'prime' },
+  { id: 'olympus-45-mft', manufacturer: 'OM System', model: 'M.Zuiko 45 F1.2 PRO', focalLengthMin: 45, focalLengthMax: 45, maxApertureWide: 1.2, mount: 'MFT', imageCircle: 'MFT', type: 'prime' },
+  { id: 'olympus-12-40-mft', manufacturer: 'OM System', model: 'M.Zuiko 12-40 F2.8 PRO', focalLengthMin: 12, focalLengthMax: 40, maxApertureWide: 2.8, mount: 'MFT', imageCircle: 'MFT', type: 'zoom' },
+  { id: 'olympus-40-150-mft', manufacturer: 'OM System', model: 'M.Zuiko 40-150 F2.8 PRO', focalLengthMin: 40, focalLengthMax: 150, maxApertureWide: 2.8, mount: 'MFT', imageCircle: 'MFT', type: 'zoom' },
+  { id: 'pana-12-35-mft', manufacturer: 'Panasonic', model: 'Lumix G 12-35 F2.8', focalLengthMin: 12, focalLengthMax: 35, maxApertureWide: 2.8, mount: 'MFT', imageCircle: 'MFT', type: 'zoom' },
+  { id: 'pana-35-100-mft', manufacturer: 'Panasonic', model: 'Lumix G 35-100 F2.8', focalLengthMin: 35, focalLengthMax: 100, maxApertureWide: 2.8, mount: 'MFT', imageCircle: 'MFT', type: 'zoom' },
+  { id: 'leica-nocticron-mft', manufacturer: 'Panasonic', model: 'Leica DG Nocticron 42.5 F1.2', focalLengthMin: 42.5, focalLengthMax: 42.5, maxApertureWide: 1.2, mount: 'MFT', imageCircle: 'MFT', type: 'prime' },
+  // ── Tamron / Sigma (weitere) ──
+  { id: 'tamron-e-11-20', manufacturer: 'Tamron', model: '11-20 F2.8 Di III-A (APS-C)', focalLengthMin: 11, focalLengthMax: 20, maxApertureWide: 2.8, mount: 'E', imageCircle: 'APSC', type: 'zoom' },
+  { id: 'tamron-e-18-300', manufacturer: 'Tamron', model: '18-300 F3.5-6.3 Di III-A (APS-C)', focalLengthMin: 18, focalLengthMax: 300, maxApertureWide: 3.5, mount: 'E', imageCircle: 'APSC', type: 'zoom' },
+  { id: 'sigma-e-18-50', manufacturer: 'Sigma', model: '18-50 F2.8 DC DN (APS-C)', focalLengthMin: 18, focalLengthMax: 50, maxApertureWide: 2.8, mount: 'E', imageCircle: 'APSC', type: 'zoom' },
+  { id: 'sigma-e-10-18', manufacturer: 'Sigma', model: '10-18 F2.8 DC DN (APS-C)', focalLengthMin: 10, focalLengthMax: 18, maxApertureWide: 2.8, mount: 'E', imageCircle: 'APSC', type: 'zoom' },
+  { id: 'sigma-e-60-600', manufacturer: 'Sigma', model: '60-600 F4.5-6.3 DG DN Sports', focalLengthMin: 60, focalLengthMax: 600, maxApertureWide: 4.5, mount: 'E', imageCircle: 'FF', type: 'zoom' },
 ];
 
 export function getLensById(id: string, customLenses?: Lens[]): Lens | undefined {
