@@ -438,7 +438,7 @@ export const CAMERAS: Camera[] = [
   { id: 'panasonic-ag-cx10', manufacturer: 'Panasonic', model: 'AG-CX10', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder' },
 
   // ── Cinema (Kinefinity/RED/ARRI/BMD Ausbau) ──
-  { id: 'kine-terra-4k', manufacturer: 'Kinefinity', model: 'TERRA 4K', sensor: SENSORS.APSC, mount: 'E', adaptedMounts: ['PL','EF'], resolutions: ['4K','HD'], type: 'cinema' },
+  { id: 'kine-terra-4k', manufacturer: 'Kinefinity', model: 'TERRA 4K', sensor: { name: 'sub-S35 (20.5×11.5)', widthMm: 20.5, heightMm: 11.5, cropFactor: 1.84 }, mount: 'E', adaptedMounts: ['PL','EF'], resolutions: ['4K','HD'], type: 'cinema' },
   { id: 'red-raptor-xl-vv', manufacturer: 'RED', model: 'V-RAPTOR XL 8K VV', sensor: SENSORS.FF, mount: 'PL', adaptedMounts: ['RF','EF'], resolutions: ['8K','6K','4K'], type: 'cinema' },
   { id: 'arri-alexa-265', manufacturer: 'ARRI', model: 'ALEXA 65', sensor: { name: 'ARRI 65 (54.12×25.59)', widthMm: 54.12, heightMm: 25.59, cropFactor: 0.72 }, mount: 'XPL', resolutions: ['6.5K','4K'], type: 'cinema', notes: '65-mm-Format, XPL' },
   { id: 'bmd-cinema-camera-6k-b', manufacturer: 'Blackmagic', model: 'Cinema Camera 6K L', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['EF','PL'], resolutions: ['6K','4K'], type: 'cinema' },
