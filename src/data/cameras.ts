@@ -348,6 +348,14 @@ export const CAMERAS: Camera[] = [
   { id: 'jvc-gy-hm250', manufacturer: 'JVC', model: 'GY-HM250', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder' },
   { id: 'canon-xf400', manufacturer: 'Canon', model: 'XF400', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder' },
 
+  // ── Broadcast / PTZ (Ergänzung) ──
+  { id: 'sony-hdc-p31', manufacturer: 'Sony', model: 'HDC-P31', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'POV-Systemkamera' },
+  { id: 'sony-hdc-p43', manufacturer: 'Sony', model: 'HDC-P43', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
+  { id: 'pana-ak-plv100', manufacturer: 'Panasonic', model: 'AK-PLV100', sensor: SENSORS.FF, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'Vollformat-Box-Systemkamera' },
+  { id: 'aver-ptz330', manufacturer: 'AVer', model: 'PTZ330', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
+  { id: 'lumens-vc-b30u', manufacturer: 'Lumens', model: 'VC-B30U', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
+  { id: 'pana-aw-ue4', manufacturer: 'Panasonic', model: 'AW-UE4', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
+
   // ── Marshall POV ──
   { id: 'marshall-cv568', manufacturer: 'Marshall', model: 'CV568', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'M12', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'POV camera, global shutter' },
 ];
