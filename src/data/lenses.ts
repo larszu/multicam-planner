@@ -934,10 +934,10 @@ export const LENSES: Lens[] = [
   { id: 'sigma-e-10-18', manufacturer: 'Sigma', model: '10-18 F2.8 DC DN (APS-C)', focalLengthMin: 10, focalLengthMax: 18, maxApertureWide: 2.8, mount: 'E', imageCircle: 'APSC', type: 'zoom' },
   { id: 'sigma-e-60-600', manufacturer: 'Sigma', model: '60-600 F4.5-6.3 DG DN Sports', focalLengthMin: 60, focalLengthMax: 600, maxApertureWide: 4.5, mount: 'E', imageCircle: 'FF', type: 'zoom' },
   // ── Zeiss CP.2 (EF, FF; T2.1) ──
-  { id: 'zeiss-cp2-15', manufacturer: 'Zeiss', model: 'CP.2 15mm T2.9', focalLengthMin: 15, focalLengthMax: 15, maxApertureWide: 2.9, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'zeiss-cp2-15', manufacturer: 'Zeiss', model: 'CP.2 15mm T2.1', focalLengthMin: 15, focalLengthMax: 15, maxApertureWide: 2.1, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'zeiss-cp2-18', manufacturer: 'Zeiss', model: 'CP.2 18mm T3.6', focalLengthMin: 18, focalLengthMax: 18, maxApertureWide: 3.6, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'zeiss-cp2-21', manufacturer: 'Zeiss', model: 'CP.2 21mm T2.9', focalLengthMin: 21, focalLengthMax: 21, maxApertureWide: 2.9, mount: 'EF', imageCircle: 'FF', type: 'prime' },
-  { id: 'zeiss-cp2-25', manufacturer: 'Zeiss', model: 'CP.2 25mm T2.9', focalLengthMin: 25, focalLengthMax: 25, maxApertureWide: 2.9, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'zeiss-cp2-25', manufacturer: 'Zeiss', model: 'CP.2 25mm T2.1', focalLengthMin: 25, focalLengthMax: 25, maxApertureWide: 2.1, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'zeiss-cp2-28', manufacturer: 'Zeiss', model: 'CP.2 28mm T2.1', focalLengthMin: 28, focalLengthMax: 28, maxApertureWide: 2.1, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'zeiss-cp2-35', manufacturer: 'Zeiss', model: 'CP.2 35mm T2.1', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 2.1, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'zeiss-cp2-50', manufacturer: 'Zeiss', model: 'CP.2 50mm T2.1', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.1, mount: 'EF', imageCircle: 'FF', type: 'prime' },
@@ -965,7 +965,7 @@ export const LENSES: Lens[] = [
   { id: 'cooke-minis4i-100', manufacturer: 'Cooke', model: 'miniS4/i 100mm T2.8', focalLengthMin: 100, focalLengthMax: 100, maxApertureWide: 2.8, mount: 'PL', imageCircle: 'S35', type: 'prime' },
   { id: 'cooke-minis4i-135', manufacturer: 'Cooke', model: 'miniS4/i 135mm T2.8', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.8, mount: 'PL', imageCircle: 'S35', type: 'prime' },
   // ── Sigma FF Classic Prime (PL, FF; T2.5) ──
-  { id: 'sigma-ffclassic-14', manufacturer: 'Sigma', model: 'FF Classic 14mm T2.5', focalLengthMin: 14, focalLengthMax: 14, maxApertureWide: 2.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-ffclassic-14', manufacturer: 'Sigma', model: 'FF Classic 14mm T3.2', focalLengthMin: 14, focalLengthMax: 14, maxApertureWide: 3.2, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   { id: 'sigma-ffclassic-20', manufacturer: 'Sigma', model: 'FF Classic 20mm T2.5', focalLengthMin: 20, focalLengthMax: 20, maxApertureWide: 2.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   { id: 'sigma-ffclassic-24', manufacturer: 'Sigma', model: 'FF Classic 24mm T2.5', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 2.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   { id: 'sigma-ffclassic-28', manufacturer: 'Sigma', model: 'FF Classic 28mm T2.5', focalLengthMin: 28, focalLengthMax: 28, maxApertureWide: 2.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
@@ -974,7 +974,7 @@ export const LENSES: Lens[] = [
   { id: 'sigma-ffclassic-50', manufacturer: 'Sigma', model: 'FF Classic 50mm T2.5', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   { id: 'sigma-ffclassic-85', manufacturer: 'Sigma', model: 'FF Classic 85mm T2.5', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 2.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   { id: 'sigma-ffclassic-105', manufacturer: 'Sigma', model: 'FF Classic 105mm T2.5', focalLengthMin: 105, focalLengthMax: 105, maxApertureWide: 2.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
-  { id: 'sigma-ffclassic-135', manufacturer: 'Sigma', model: 'FF Classic 135mm T2.5', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-ffclassic-135', manufacturer: 'Sigma', model: 'FF Classic 135mm T3.2', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 3.2, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   // ── Tokina Vista One (PL, FF; T1.5) ──
   { id: 'tokina-vistaone-18', manufacturer: 'Tokina', model: 'Vista One 18mm T1.5', focalLengthMin: 18, focalLengthMax: 18, maxApertureWide: 1.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   { id: 'tokina-vistaone-25', manufacturer: 'Tokina', model: 'Vista One 25mm T1.5', focalLengthMin: 25, focalLengthMax: 25, maxApertureWide: 1.5, mount: 'PL', imageCircle: 'FF', type: 'prime' },
