@@ -356,6 +356,48 @@ export const CAMERAS: Camera[] = [
   { id: 'lumens-vc-b30u', manufacturer: 'Lumens', model: 'VC-B30U', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
   { id: 'pana-aw-ue4', manufacturer: 'Panasonic', model: 'AW-UE4', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
 
+  // ── Sony Alpha (Ausbau) ──
+  { id: 'sony-a7c2', manufacturer: 'Sony', model: 'A7C II', sensor: SENSORS.FF, mount: 'E', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'sony-a7cr', manufacturer: 'Sony', model: 'A7CR', sensor: SENSORS.FF, mount: 'E', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'sony-a7r4', manufacturer: 'Sony', model: 'A7R IV', sensor: SENSORS.FF, mount: 'E', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'sony-a9-ii', manufacturer: 'Sony', model: 'A9 II', sensor: SENSORS.FF, mount: 'E', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'sony-a6400', manufacturer: 'Sony', model: 'A6400', sensor: SENSORS.APSC, mount: 'E', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'sony-a6600', manufacturer: 'Sony', model: 'A6600', sensor: SENSORS.APSC, mount: 'E', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'sony-zv-e10', manufacturer: 'Sony', model: 'ZV-E10', sensor: SENSORS.APSC, mount: 'E', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  // ── Canon EOS (Ausbau) ──
+  { id: 'canon-eos-r', manufacturer: 'Canon', model: 'EOS R', sensor: SENSORS.FF, mount: 'RF', adaptedMounts: ['EF'], resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'canon-eos-rp', manufacturer: 'Canon', model: 'EOS RP', sensor: SENSORS.FF, mount: 'RF', adaptedMounts: ['EF'], resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'canon-eos-r6', manufacturer: 'Canon', model: 'EOS R6', sensor: SENSORS.FF, mount: 'RF', adaptedMounts: ['EF'], resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'canon-eos-r7', manufacturer: 'Canon', model: 'EOS R7', sensor: SENSORS.APSC, mount: 'RF', adaptedMounts: ['EF'], resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'canon-eos-r8', manufacturer: 'Canon', model: 'EOS R8', sensor: SENSORS.FF, mount: 'RF', adaptedMounts: ['EF'], resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'canon-eos-r10', manufacturer: 'Canon', model: 'EOS R10', sensor: SENSORS.APSC, mount: 'RF', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'canon-eos-90d', manufacturer: 'Canon', model: 'EOS 90D', sensor: SENSORS.APSC, mount: 'EF', resolutions: ['4K', 'HD'], type: 'mirrorless', notes: 'DSLR EF' },
+  { id: 'canon-eos-1dx3', manufacturer: 'Canon', model: 'EOS-1D X Mark III', sensor: SENSORS.FF, mount: 'EF', resolutions: ['5.5K', '4K', 'HD'], type: 'mirrorless', notes: 'DSLR EF' },
+  // ── Nikon (Z/DSLR) ──
+  { id: 'nikon-z5', manufacturer: 'Nikon', model: 'Z5', sensor: SENSORS.FF, mount: 'Z', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'nikon-z6-ii', manufacturer: 'Nikon', model: 'Z6 II', sensor: SENSORS.FF, mount: 'Z', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'nikon-z7-ii', manufacturer: 'Nikon', model: 'Z7 II', sensor: SENSORS.FF, mount: 'Z', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'nikon-z50-ii', manufacturer: 'Nikon', model: 'Z50 II', sensor: SENSORS.APSC, mount: 'Z', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'nikon-z5-ii', manufacturer: 'Nikon', model: 'Z5 II', sensor: SENSORS.FF, mount: 'Z', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'nikon-d850', manufacturer: 'Nikon', model: 'D850', sensor: SENSORS.FF, mount: 'NF', resolutions: ['4K', 'HD'], type: 'mirrorless', notes: 'DSLR F' },
+  // ── Panasonic Lumix (Ausbau) ──
+  { id: 'pana-lumix-s5', manufacturer: 'Panasonic', model: 'Lumix S5', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['EF'], resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'pana-lumix-s5-iix', manufacturer: 'Panasonic', model: 'Lumix S5 IIX', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['EF'], resolutions: ['6K', '4K', 'HD'], type: 'cinema' },
+  { id: 'pana-lumix-s1r-ii', manufacturer: 'Panasonic', model: 'Lumix S1R II', sensor: SENSORS.FF, mount: 'L', resolutions: ['8K', '4K', 'HD'], type: 'mirrorless' },
+  { id: 'pana-lumix-g9-ii', manufacturer: 'Panasonic', model: 'Lumix G9 II', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'pana-lumix-gh5', manufacturer: 'Panasonic', model: 'Lumix GH5', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  // ── Fujifilm (X / GFX) ──
+  { id: 'fuji-xh2s', manufacturer: 'Fujifilm', model: 'X-H2S', sensor: SENSORS.APSC, mount: 'X', resolutions: ['6.2K', '4K', 'HD'], type: 'mirrorless', notes: 'APS-C X-Mount' },
+  { id: 'fuji-xh2', manufacturer: 'Fujifilm', model: 'X-H2', sensor: SENSORS.APSC, mount: 'X', resolutions: ['8K', '4K', 'HD'], type: 'mirrorless' },
+  { id: 'fuji-xt5', manufacturer: 'Fujifilm', model: 'X-T5', sensor: SENSORS.APSC, mount: 'X', resolutions: ['6.2K', '4K', 'HD'], type: 'mirrorless' },
+  { id: 'fuji-xs20', manufacturer: 'Fujifilm', model: 'X-S20', sensor: SENSORS.APSC, mount: 'X', resolutions: ['6.2K', '4K', 'HD'], type: 'mirrorless' },
+  { id: 'fuji-gfx100-ii', manufacturer: 'Fujifilm', model: 'GFX100 II', sensor: { name: 'Mittelformat 44×33', widthMm: 44, heightMm: 33, cropFactor: 0.79 }, mount: 'G', resolutions: ['8K', '4K', 'HD'], type: 'cinema', notes: 'Mittelformat 44×33' },
+  { id: 'fuji-gfx100s', manufacturer: 'Fujifilm', model: 'GFX100S', sensor: { name: 'Mittelformat 44×33', widthMm: 44, heightMm: 33, cropFactor: 0.79 }, mount: 'G', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  // ── Weitere Cinema / Box ──
+  { id: 'bmd-pyxis-12k', manufacturer: 'Blackmagic', model: 'PYXIS 12K', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['PL', 'EF'], resolutions: ['12K', '8K', '4K'], type: 'cinema' },
+  { id: 'sony-fx6-ii', manufacturer: 'Sony', model: 'FX6 II', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF'], resolutions: ['4K', 'HD'], type: 'cinema' },
+  { id: 'nikon-zr', manufacturer: 'Nikon', model: 'ZR (RED-Cinema)', sensor: SENSORS.FF, mount: 'Z', resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'RED-Farbwissenschaft, Z-Mount' },
+
   // ── Marshall POV ──
   { id: 'marshall-cv568', manufacturer: 'Marshall', model: 'CV568', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'M12', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'POV camera, global shutter' },
 ];
