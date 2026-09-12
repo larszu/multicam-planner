@@ -318,6 +318,24 @@ export const CAMERAS: Camera[] = [
   { id: 'marshall-cv346', manufacturer: 'Marshall', model: 'CV346', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'M12', resolutions: ['HD'], type: 'broadcast' },
   { id: 'marshall-cv380', manufacturer: 'Marshall', model: 'CV380-CS', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'CS', resolutions: ['4K', 'HD'], type: 'broadcast' },
 
+  // ── Nikon Z (Bodies für die Z-Objektive) ──
+  { id: 'nikon-z9', manufacturer: 'Nikon', model: 'Z9', sensor: SENSORS.FF, mount: 'Z', resolutions: ['8K', '4K', 'HD'], type: 'mirrorless', notes: 'Global-ish Stacked FF, Z-Mount' },
+  { id: 'nikon-z8', manufacturer: 'Nikon', model: 'Z8', sensor: SENSORS.FF, mount: 'Z', resolutions: ['8K', '4K', 'HD'], type: 'mirrorless' },
+  { id: 'nikon-z6-iii', manufacturer: 'Nikon', model: 'Z6 III', sensor: SENSORS.FF, mount: 'Z', resolutions: ['6K', '4K', 'HD'], type: 'mirrorless' },
+  { id: 'nikon-zf', manufacturer: 'Nikon', model: 'Zf', sensor: SENSORS.FF, mount: 'Z', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  // ── Sony / Panasonic Mirrorless (Ausbau) ──
+  { id: 'sony-zv-e1', manufacturer: 'Sony', model: 'ZV-E1', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF'], resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'sony-a7-iii', manufacturer: 'Sony', model: 'A7 III', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF'], resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'sony-a6700', manufacturer: 'Sony', model: 'A6700', sensor: SENSORS.APSC, mount: 'E', resolutions: ['4K', 'HD'], type: 'mirrorless', notes: 'APS-C' },
+  { id: 'sony-fx2', manufacturer: 'Sony', model: 'FX2', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF'], resolutions: ['4K', 'HD'], type: 'cinema', notes: 'Cinema Line FF' },
+  { id: 'pana-lumix-s9', manufacturer: 'Panasonic', model: 'Lumix S9', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['EF'], resolutions: ['6K', '4K', 'HD'], type: 'mirrorless' },
+  // ── PTZ (Ausbau) ──
+  { id: 'sony-srg-a12', manufacturer: 'Sony', model: 'SRG-A12', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
+  { id: 'pana-aw-he40', manufacturer: 'Panasonic', model: 'AW-HE40', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
+  { id: 'ptzoptics-move-se', manufacturer: 'PTZOptics', model: 'Move SE', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
+  { id: 'lumens-vc-tr40', manufacturer: 'Lumens', model: 'VC-TR40', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz', notes: 'Auto-Tracking' },
+  { id: 'aver-tr311', manufacturer: 'AVer', model: 'TR311', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
+
   // ── Marshall POV ──
   { id: 'marshall-cv568', manufacturer: 'Marshall', model: 'CV568', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'M12', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'POV camera, global shutter' },
 ];
