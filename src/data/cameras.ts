@@ -107,8 +107,8 @@ export const CAMERAS: Camera[] = [
   { id: 'canon-cr-n300', manufacturer: 'Canon', model: 'CR-N300', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
 
   // ── Panasonic ──
-  { id: 'pana-ak-uc4000', manufacturer: 'Panasonic', model: 'AK-UC4000', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
-  { id: 'pana-ak-uc3300', manufacturer: 'Panasonic', model: 'AK-UC3300', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
+  { id: 'pana-ak-uc4000', manufacturer: 'Panasonic', model: 'AK-UC4000', sensor: SENSORS.S35, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'Large-format single 4.4K MOS sensor (S35-class); built-in optical block adapts 2/3" B4 lenses (Quelle: pro-av.panasonic.net/en/products/ak-uc4000)' },
+  { id: 'pana-ak-uc3300', manufacturer: 'Panasonic', model: 'AK-UC3300', sensor: SENSORS.S35, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'Large-format single S35 MOS 4K sensor; built-in conversion lens adapts 2/3" B4 lenses (Quelle: pro-av.panasonic.net/en/products/ak-uc3300)' },
   { id: 'pana-ak-hc5000', manufacturer: 'Panasonic', model: 'AK-HC5000', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
   { id: 'pana-eva1', manufacturer: 'Panasonic', model: 'AU-EVA1', sensor: SENSORS.S35, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['5.7K', '4K', 'HD'], type: 'cinema', notes: 'EF native; PL via Wooden Camera mount', mountAdapters: {
     PL: { name: 'Wooden Camera PL → EF Mount (EVA1)', lightLossStops: 0, notes: 'Replaces the EVA1 EF mount with a PL mount. Mechanical only — no relay, no light loss; the full Super-35 sensor remains.' },
@@ -217,8 +217,8 @@ export const CAMERAS: Camera[] = [
   { id: 'ikegami-hdk-97arri', manufacturer: 'Ikegami', model: 'HDK-97ARRI', sensor: SENSORS.S35, mount: 'PL', resolutions: ['HD'], type: 'broadcast', notes: 'Super-35 mit ARRI-ALEV-Sensor, PL-Mount' },
 
   // ── Panasonic Broadcast (2/3" B4) ──
-  { id: 'pana-ak-uc3000', manufacturer: 'Panasonic', model: 'AK-UC3000', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
-  { id: 'pana-ak-hc3900', manufacturer: 'Panasonic', model: 'AK-HC3900', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'pana-ak-uc3000', manufacturer: 'Panasonic', model: 'AK-UC3000', sensor: SENSORS.S35, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'Large-format single 4K MOS sensor (S35-class); built-in optical block adapts 2/3" B4 lenses (Quelle: pro-av.panasonic.net/en/products/ak-uc3000)' },
+  { id: 'pana-ak-hc3900', manufacturer: 'Panasonic', model: 'AK-HC3900', sensor: SENSORS.S35, mount: 'B4', resolutions: ['HD'], type: 'broadcast', notes: 'Large single 11.14MP 4K-CMOS sensor (S35-class); built-in optical block adapts 2/3" B4 lenses (Quelle: pro-av.panasonic.net/en/products/ak-hc3900)' },
   { id: 'pana-ak-hc3800', manufacturer: 'Panasonic', model: 'AK-HC3800', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
   // ── Sony Broadcast (2/3" B4) ──
   { id: 'sony-hdc-3200', manufacturer: 'Sony', model: 'HDC-3200', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
