@@ -298,6 +298,26 @@ export const CAMERAS: Camera[] = [
   { id: 'pana-aw-ue20', manufacturer: 'Panasonic', model: 'AW-UE20', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
   { id: 'ptzoptics-link-4k', manufacturer: 'PTZOptics', model: 'Link 4K', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
 
+  // ── Cinema-Hybride / Mirrorless (Ausbau) ──
+  { id: 'canon-eos-r5c', manufacturer: 'Canon', model: 'EOS R5 C', sensor: SENSORS.FF, mount: 'RF', adaptedMounts: ['EF'], resolutions: ['8K', '4K', 'HD'], type: 'cinema', notes: 'Cine-Hybrid, aktive Kühlung' },
+  { id: 'canon-eos-r5-ii', manufacturer: 'Canon', model: 'EOS R5 Mark II', sensor: SENSORS.FF, mount: 'RF', adaptedMounts: ['EF'], resolutions: ['8K', '4K', 'HD'], type: 'mirrorless' },
+  { id: 'canon-eos-r3', manufacturer: 'Canon', model: 'EOS R3', sensor: SENSORS.FF, mount: 'RF', adaptedMounts: ['EF'], resolutions: ['6K', '4K', 'HD'], type: 'mirrorless' },
+  { id: 'canon-eos-r6-ii', manufacturer: 'Canon', model: 'EOS R6 Mark II', sensor: SENSORS.FF, mount: 'RF', adaptedMounts: ['EF'], resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'sony-a1', manufacturer: 'Sony', model: 'A1', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF'], resolutions: ['8K', '4K', 'HD'], type: 'mirrorless' },
+  { id: 'sony-a7r5', manufacturer: 'Sony', model: 'A7R V', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF'], resolutions: ['8K', '4K', 'HD'], type: 'mirrorless' },
+  { id: 'sony-a9-iii', manufacturer: 'Sony', model: 'A9 III', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF'], resolutions: ['4K', 'HD'], type: 'mirrorless', notes: 'Global Shutter' },
+  { id: 'pana-lumix-s5-ii', manufacturer: 'Panasonic', model: 'Lumix S5 II', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['EF', 'PL'], resolutions: ['6K', '4K', 'HD'], type: 'mirrorless' },
+  { id: 'pana-lumix-s1', manufacturer: 'Panasonic', model: 'Lumix S1', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['EF'], resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'pana-lumix-gh5-ii', manufacturer: 'Panasonic', model: 'Lumix GH5 II', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  // ── RED DSMC2 ──
+  { id: 'red-dsmc2-monstro', manufacturer: 'RED', model: 'DSMC2 Monstro 8K VV', sensor: { name: 'RED VV Monstro (40.96×21.6)', widthMm: 40.96, heightMm: 21.6, cropFactor: 0.88 }, mount: 'PL', adaptedMounts: ['RF', 'EF'], resolutions: ['8K', '6K', '4K'], type: 'cinema' },
+  { id: 'red-dsmc2-helium', manufacturer: 'RED', model: 'DSMC2 Helium 8K S35', sensor: { name: 'RED S35 Helium (29.9×15.77)', widthMm: 29.9, heightMm: 15.77, cropFactor: 1.2 }, mount: 'RF', adaptedMounts: ['PL', 'EF'], resolutions: ['8K', '6K', '4K'], type: 'cinema' },
+  { id: 'red-dsmc2-gemini', manufacturer: 'RED', model: 'DSMC2 Gemini 5K S35', sensor: { name: 'RED S35 Gemini (30.72×18.0)', widthMm: 30.72, heightMm: 18.0, cropFactor: 1.16 }, mount: 'RF', adaptedMounts: ['PL', 'EF'], resolutions: ['5K', '4K', 'HD'], type: 'cinema', notes: 'Dual-ISO Low-Light' },
+  // ── Broadcast / POV (Ausbau) ──
+  { id: 'marshall-cv566', manufacturer: 'Marshall', model: 'CV566', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'M12', resolutions: ['HD'], type: 'broadcast', notes: 'Micro-Genlock POV' },
+  { id: 'marshall-cv346', manufacturer: 'Marshall', model: 'CV346', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'M12', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'marshall-cv380', manufacturer: 'Marshall', model: 'CV380-CS', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'CS', resolutions: ['4K', 'HD'], type: 'broadcast' },
+
   // ── Marshall POV ──
   { id: 'marshall-cv568', manufacturer: 'Marshall', model: 'CV568', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'M12', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'POV camera, global shutter' },
 ];
