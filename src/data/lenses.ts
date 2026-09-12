@@ -606,6 +606,36 @@ export const LENSES: Lens[] = [
   { id: 'hawk-vlite-80', manufacturer: 'Hawk', model: 'V-Lite 80mm T2.2', focalLengthMin: 80, focalLengthMax: 80, maxApertureWide: 2.2, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
   { id: 'hawk-vlite-110', manufacturer: 'Hawk', model: 'V-Lite 110mm T3', focalLengthMin: 110, focalLengthMax: 110, maxApertureWide: 3.0, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
   { id: 'hawk-vlite-140', manufacturer: 'Hawk', model: 'V-Lite 140mm T3.5', focalLengthMin: 140, focalLengthMax: 140, maxApertureWide: 3.5, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 2 },
+  // ── Anamorphoten (weitere Squeeze-Faktoren) ──
+  // Sirui Venus 1.6x FF (E, T2.9) 
+  { id: 'sirui-venus-35', manufacturer: 'Sirui', model: 'Venus 35mm T2.9 1.6x', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 2.9, mount: 'E', imageCircle: 'FF', type: 'prime', squeeze: 1.6 },
+  { id: 'sirui-venus-50', manufacturer: 'Sirui', model: 'Venus 50mm T2.9 1.6x', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.9, mount: 'E', imageCircle: 'FF', type: 'prime', squeeze: 1.6 },
+  { id: 'sirui-venus-75', manufacturer: 'Sirui', model: 'Venus 75mm T2.9 1.6x', focalLengthMin: 75, focalLengthMax: 75, maxApertureWide: 2.9, mount: 'E', imageCircle: 'FF', type: 'prime', squeeze: 1.6 },
+  { id: 'sirui-venus-100', manufacturer: 'Sirui', model: 'Venus 100mm T2.9 1.6x', focalLengthMin: 100, focalLengthMax: 100, maxApertureWide: 2.9, mount: 'E', imageCircle: 'FF', type: 'prime', squeeze: 1.6 },
+  { id: 'sirui-venus-150', manufacturer: 'Sirui', model: 'Venus 150mm T2.9 1.6x', focalLengthMin: 150, focalLengthMax: 150, maxApertureWide: 2.9, mount: 'E', imageCircle: 'FF', type: 'prime', squeeze: 1.6 },
+  { id: 'sirui-venus-135', manufacturer: 'Sirui', model: 'Venus 135mm T2.9 1.8x', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.9, mount: 'E', imageCircle: 'FF', type: 'prime', squeeze: 1.8 },
+  // Laowa Nanomorph 1.5x (PL) 
+  { id: 'laowa-nanomorph-27', manufacturer: 'Laowa', model: 'Nanomorph 27mm T2.9 1.5x', focalLengthMin: 27, focalLengthMax: 27, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 1.5 },
+  { id: 'laowa-nanomorph-32', manufacturer: 'Laowa', model: 'Nanomorph 32mm T2.9 1.5x', focalLengthMin: 32, focalLengthMax: 32, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 1.5 },
+  { id: 'laowa-nanomorph-42', manufacturer: 'Laowa', model: 'Nanomorph 42mm T2.9 1.5x', focalLengthMin: 42, focalLengthMax: 42, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 1.5 },
+  { id: 'laowa-nanomorph-55', manufacturer: 'Laowa', model: 'Nanomorph 55mm T2.9 1.5x', focalLengthMin: 55, focalLengthMax: 55, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 1.5 },
+  { id: 'laowa-nanomorph-85', manufacturer: 'Laowa', model: 'Nanomorph 85mm T2.9 1.5x', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 1.5 },
+  { id: 'laowa-nanomorph-65', manufacturer: 'Laowa', model: 'Nanomorph 65mm T2.4 1.5x', focalLengthMin: 65, focalLengthMax: 65, maxApertureWide: 2.4, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 1.5 },
+  { id: 'laowa-nanomorph-80', manufacturer: 'Laowa', model: 'Nanomorph 80mm T2.4 1.5x', focalLengthMin: 80, focalLengthMax: 80, maxApertureWide: 2.4, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 1.5 },
+  { id: 'laowa-nanomorph-28-55', manufacturer: 'Laowa', model: 'Nanomorph 28-55 T2.9 1.5x', focalLengthMin: 28, focalLengthMax: 55, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'S35', type: 'zoom', squeeze: 1.5 },
+  { id: 'laowa-nanomorph-50-100', manufacturer: 'Laowa', model: 'Nanomorph 50-100 T2.9 1.5x', focalLengthMin: 50, focalLengthMax: 100, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'S35', type: 'zoom', squeeze: 1.5 },
+  // Vazen 1.8x (PL) 
+  { id: 'vazen-40', manufacturer: 'Vazen', model: '40mm T2 1.8x', focalLengthMin: 40, focalLengthMax: 40, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 1.8 },
+  { id: 'vazen-50', manufacturer: 'Vazen', model: '50mm T2.1 1.8x', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.1, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 1.8 },
+  { id: 'vazen-85', manufacturer: 'Vazen', model: '85mm T2.8 1.8x', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 2.8, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 1.8 },
+  { id: 'vazen-135', manufacturer: 'Vazen', model: '135mm T2.8 1.8x', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.8, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 1.8 },
+  { id: 'vazen-28-mft', manufacturer: 'Vazen', model: '28mm T2.2 1.8x (MFT)', focalLengthMin: 28, focalLengthMax: 28, maxApertureWide: 2.2, mount: 'MFT', imageCircle: 'MFT', type: 'prime', squeeze: 1.8 },
+  { id: 'vazen-40-mft', manufacturer: 'Vazen', model: '40mm T2 1.8x (MFT)', focalLengthMin: 40, focalLengthMax: 40, maxApertureWide: 2.0, mount: 'MFT', imageCircle: 'MFT', type: 'prime', squeeze: 1.8 },
+  { id: 'vazen-65-mft', manufacturer: 'Vazen', model: '65mm T2 1.8x (MFT)', focalLengthMin: 65, focalLengthMax: 65, maxApertureWide: 2.0, mount: 'MFT', imageCircle: 'MFT', type: 'prime', squeeze: 1.8 },
+  // SLR Magic Anamorphot-CINE 1.33x (PL, S35) 
+  { id: 'slrmagic-anamorphot-35', manufacturer: 'SLR Magic', model: 'Anamorphot-CINE 35mm T2.4 1.33x', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 2.4, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 1.33 },
+  { id: 'slrmagic-anamorphot-50', manufacturer: 'SLR Magic', model: 'Anamorphot-CINE 50mm T2.8 1.33x', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.8, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 1.33 },
+  { id: 'slrmagic-anamorphot-70', manufacturer: 'SLR Magic', model: 'Anamorphot-CINE 70mm T4 1.33x', focalLengthMin: 70, focalLengthMax: 70, maxApertureWide: 4.0, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 1.33 },
 ];
 
 export function getLensById(id: string, customLenses?: Lens[]): Lens | undefined {
