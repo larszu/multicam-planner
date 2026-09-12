@@ -477,6 +477,44 @@ export const CAMERAS: Camera[] = [
   { id: 'marshall-cv503-wp', manufacturer: 'Marshall', model: 'CV503-WP (IP67)', sensor: SENSORS.THIRD_INCH, mount: 'M12', resolutions: ['HD'], type: 'broadcast', notes: 'wetterfest' },
   { id: 'marshall-cv504', manufacturer: 'Marshall', model: 'CV504', sensor: SENSORS.THIRD_INCH, mount: 'M12', resolutions: ['HD'], type: 'broadcast' },
 
+  // ── ARRI ALEXA Klassiker (Rental) ──
+  { id: 'arri-alexa-classic', manufacturer: 'ARRI', model: 'ALEXA Classic', sensor: { name: 'ARRI ALEV III S35 (28.25×18.17)', widthMm: 28.25, heightMm: 18.17, cropFactor: 1.28 }, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['2.8K','HD'], type: 'cinema' },
+  { id: 'arri-alexa-xt', manufacturer: 'ARRI', model: 'ALEXA XT', sensor: { name: 'ARRI ALEV III S35 (28.25×18.17)', widthMm: 28.25, heightMm: 18.17, cropFactor: 1.28 }, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['3.4K','2.8K','HD'], type: 'cinema' },
+  { id: 'arri-alexa-sxt', manufacturer: 'ARRI', model: 'ALEXA SXT W', sensor: { name: 'ARRI ALEV III S35 (28.25×18.17)', widthMm: 28.25, heightMm: 18.17, cropFactor: 1.28 }, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['3.4K','UHD','HD'], type: 'cinema' },
+  { id: 'arri-alexa-mini', manufacturer: 'ARRI', model: 'ALEXA Mini', sensor: { name: 'ARRI ALEV III S35 (28.25×18.17)', widthMm: 28.25, heightMm: 18.17, cropFactor: 1.28 }, mount: 'PL', adaptedMounts: ['EF','B4'], resolutions: ['3.4K','UHD','HD'], type: 'cinema' },
+  { id: 'arri-alexa-studio', manufacturer: 'ARRI', model: 'ALEXA Studio', sensor: { name: 'ARRI ALEV III S35 (28.25×18.17)', widthMm: 28.25, heightMm: 18.17, cropFactor: 1.28 }, mount: 'PL', resolutions: ['2.8K','HD'], type: 'cinema' },
+  // ── RED Klassiker ──
+  { id: 'red-epic-dragon', manufacturer: 'RED', model: 'EPIC Dragon', sensor: { name: 'RED Dragon S35 (30.7×15.8)', widthMm: 30.7, heightMm: 15.8, cropFactor: 1.17 }, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['6K','5K','4K'], type: 'cinema' },
+  { id: 'red-scarlet-w', manufacturer: 'RED', model: 'SCARLET-W', sensor: { name: 'RED Dragon S35 (30.7×15.8)', widthMm: 30.7, heightMm: 15.8, cropFactor: 1.17 }, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['5K','4K'], type: 'cinema' },
+  { id: 'red-epic-w-helium', manufacturer: 'RED', model: 'EPIC-W Helium 8K', sensor: { name: 'ARRI ALEV III S35 (28.25×18.17)', widthMm: 28.25, heightMm: 18.17, cropFactor: 1.28 }, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['8K','6K','4K'], type: 'cinema' },
+  { id: 'red-raven-4k', manufacturer: 'RED', model: 'RAVEN 4.5K', sensor: SENSORS.S35, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['4.5K','4K'], type: 'cinema' },
+  { id: 'red-weapon-8k-vv', manufacturer: 'RED', model: 'WEAPON 8K VV Monstro', sensor: SENSORS.FF, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['8K','6K','4K'], type: 'cinema' },
+  // ── Sony Cinema Klassiker ──
+  { id: 'sony-f65', manufacturer: 'Sony', model: 'F65 CineAlta', sensor: { name: 'Sony F65 S35 (24.7×13.1)', widthMm: 24.7, heightMm: 13.1, cropFactor: 1.46 }, mount: 'PL', resolutions: ['8K','4K','HD'], type: 'cinema' },
+  { id: 'sony-f35', manufacturer: 'Sony', model: 'F35 CineAlta', sensor: SENSORS.S35, mount: 'PL', resolutions: ['HD'], type: 'cinema' },
+  { id: 'sony-pmw-f3', manufacturer: 'Sony', model: 'PMW-F3', sensor: SENSORS.S35, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['HD'], type: 'cinema' },
+  { id: 'sony-nex-fs700', manufacturer: 'Sony', model: 'NEX-FS700', sensor: SENSORS.S35, mount: 'E', adaptedMounts: ['PL','EF'], resolutions: ['4K','HD'], type: 'cinema' },
+  { id: 'sony-nex-fs100', manufacturer: 'Sony', model: 'NEX-FS100', sensor: SENSORS.S35, mount: 'E', adaptedMounts: ['PL','EF'], resolutions: ['HD'], type: 'cinema' },
+  { id: 'sony-pxw-fs5-ii', manufacturer: 'Sony', model: 'PXW-FS5 II', sensor: SENSORS.S35, mount: 'E', adaptedMounts: ['PL','EF'], resolutions: ['4K','HD'], type: 'cinema' },
+  // ── Panasonic / Canon Cinema Klassiker ──
+  { id: 'pana-varicam-classic', manufacturer: 'Panasonic', model: 'VariCam (2.5K Klassiker)', sensor: SENSORS.S35, mount: 'B4', resolutions: ['HD'], type: 'cinema' },
+  { id: 'pana-ag-af101', manufacturer: 'Panasonic', model: 'AG-AF101', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['HD'], type: 'cinema' },
+  { id: 'canon-eos-c300', manufacturer: 'Canon', model: 'EOS C300', sensor: SENSORS.S35, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['HD'], type: 'cinema' },
+  { id: 'canon-eos-c300-ii', manufacturer: 'Canon', model: 'EOS C300 Mark II', sensor: SENSORS.S35, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['4K','HD'], type: 'cinema' },
+  { id: 'canon-eos-c100-ii', manufacturer: 'Canon', model: 'EOS C100 Mark II', sensor: SENSORS.S35, mount: 'EF', resolutions: ['HD'], type: 'cinema' },
+  { id: 'canon-eos-c500', manufacturer: 'Canon', model: 'EOS C500 (Klassiker)', sensor: SENSORS.S35, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['4K','HD'], type: 'cinema' },
+  { id: 'canon-eos-c700', manufacturer: 'Canon', model: 'EOS C700 FF', sensor: SENSORS.FF, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['5.9K','4K','HD'], type: 'cinema' },
+  { id: 'canon-me20f', manufacturer: 'Canon', model: 'ME20F-SH (Ultra-Low-Light)', sensor: SENSORS.FF, mount: 'EF', resolutions: ['HD'], type: 'cinema' },
+  // ── Broadcast / Studio Klassiker ──
+  { id: 'sony-hdc-2500', manufacturer: 'Sony', model: 'HDC-2500', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'sony-hdc-1700', manufacturer: 'Sony', model: 'HDC-1700', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'sony-hxc-d70', manufacturer: 'Sony', model: 'HXC-D70', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'grass-valley-ldx-86', manufacturer: 'Grass Valley', model: 'LDX 86 Universe', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K','HD'], type: 'broadcast' },
+  { id: 'hitachi-sk-hd1000', manufacturer: 'Hitachi', model: 'SK-HD1000', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'ikegami-hdk-97a', manufacturer: 'Ikegami', model: 'HDK-97A', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'panasonic-ak-hc3500', manufacturer: 'Panasonic', model: 'AK-HC3500', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'grass-valley-ldk-8000', manufacturer: 'Grass Valley', model: 'LDK 8000', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+
   // ── Marshall POV ──
   { id: 'marshall-cv568', manufacturer: 'Marshall', model: 'CV568', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'M12', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'POV camera, global shutter' },
 ];
