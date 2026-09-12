@@ -552,6 +552,42 @@ export const CAMERAS: Camera[] = [
   { id: 'insta360-ace-pro', manufacturer: 'Insta360', model: 'Ace Pro', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['8K','4K'], type: 'camcorder' },
   { id: 'insta360-x3', manufacturer: 'Insta360', model: 'X3', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['5.7K','4K'], type: 'camcorder', notes: '360°' },
 
+  // ── DSLR (Rental/Foto) ──
+  { id: 'canon-eos-6d2', manufacturer: 'Canon', model: 'EOS 6D Mark II', sensor: SENSORS.FF, mount: 'EF', resolutions: ['HD'], type: 'mirrorless', notes: 'DSLR' },
+  { id: 'canon-eos-80d', manufacturer: 'Canon', model: 'EOS 80D', sensor: SENSORS.APSC, mount: 'EF', resolutions: ['HD'], type: 'mirrorless', notes: 'DSLR' },
+  { id: 'canon-eos-1dx2', manufacturer: 'Canon', model: 'EOS-1D X Mark II', sensor: SENSORS.FF, mount: 'EF', resolutions: ['4K','HD'], type: 'mirrorless', notes: 'DSLR' },
+  { id: 'nikon-d780', manufacturer: 'Nikon', model: 'D780', sensor: SENSORS.FF, mount: 'NF', resolutions: ['4K','HD'], type: 'mirrorless', notes: 'DSLR' },
+  { id: 'nikon-d500', manufacturer: 'Nikon', model: 'D500', sensor: SENSORS.APSC, mount: 'NF', resolutions: ['4K','HD'], type: 'mirrorless', notes: 'DSLR' },
+  { id: 'nikon-d6', manufacturer: 'Nikon', model: 'D6', sensor: SENSORS.FF, mount: 'NF', resolutions: ['4K','HD'], type: 'mirrorless', notes: 'DSLR' },
+  { id: 'pentax-k1-ii', manufacturer: 'Pentax', model: 'K-1 Mark II', sensor: SENSORS.FF, mount: 'K', resolutions: ['HD'], type: 'mirrorless', notes: 'DSLR' },
+  // ── Mittelformat (High-End) ──
+  { id: 'hasselblad-x2d', manufacturer: 'Hasselblad', model: 'X2D 100C', sensor: { name: 'Mittelformat 44×33', widthMm: 44, heightMm: 33, cropFactor: 0.79 }, mount: 'XCD', resolutions: ['HD'], type: 'mirrorless', notes: 'Mittelformat 100 MP' },
+  { id: 'hasselblad-907x', manufacturer: 'Hasselblad', model: '907X & CFV 100C', sensor: { name: 'Mittelformat 44×33', widthMm: 44, heightMm: 33, cropFactor: 0.79 }, mount: 'XCD', resolutions: ['HD'], type: 'mirrorless' },
+  { id: 'phaseone-xt', manufacturer: 'Phase One', model: 'XT / IQ4', sensor: { name: 'Mittelformat 53.4×40', widthMm: 53.4, heightMm: 40, cropFactor: 0.64 }, mount: 'XT', resolutions: ['HD'], type: 'mirrorless', notes: 'Mittelformat 150 MP' },
+  { id: 'fuji-gfx100rf', manufacturer: 'Fujifilm', model: 'GFX100RF', sensor: { name: 'Mittelformat 44×33', widthMm: 44, heightMm: 33, cropFactor: 0.79 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'mirrorless', notes: 'Mittelformat Kompakt' },
+  // ── Mirrorless (weitere) ──
+  { id: 'sony-a7', manufacturer: 'Sony', model: 'A7 (Klassiker)', sensor: SENSORS.FF, mount: 'E', resolutions: ['HD'], type: 'mirrorless' },
+  { id: 'sony-a7-ii', manufacturer: 'Sony', model: 'A7 II', sensor: SENSORS.FF, mount: 'E', resolutions: ['HD'], type: 'mirrorless' },
+  { id: 'sony-a1-ii', manufacturer: 'Sony', model: 'A1 II', sensor: SENSORS.FF, mount: 'E', resolutions: ['8K','4K'], type: 'mirrorless' },
+  { id: 'canon-eos-r6-mark-i', manufacturer: 'Canon', model: 'EOS R6 (Klassiker)', sensor: SENSORS.FF, mount: 'RF', resolutions: ['4K','HD'], type: 'mirrorless' },
+  { id: 'canon-eos-ra', manufacturer: 'Canon', model: 'EOS Ra (Astro)', sensor: SENSORS.FF, mount: 'RF', resolutions: ['4K','HD'], type: 'mirrorless' },
+  { id: 'fuji-xh1', manufacturer: 'Fujifilm', model: 'X-H1', sensor: SENSORS.APSC, mount: 'X', resolutions: ['4K','HD'], type: 'mirrorless' },
+  { id: 'fuji-xt3', manufacturer: 'Fujifilm', model: 'X-T3', sensor: SENSORS.APSC, mount: 'X', resolutions: ['4K','HD'], type: 'mirrorless' },
+  { id: 'om-om3', manufacturer: 'OM System', model: 'OM-3', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K','HD'], type: 'mirrorless' },
+  // ── PTZ (Marken-Ausbau) ──
+  { id: 'datavideo-ptc-305', manufacturer: 'Datavideo', model: 'PTC-305', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'datavideo-ptc-145', manufacturer: 'Datavideo', model: 'PTC-145', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
+  { id: 'bolin-2-20', manufacturer: 'Bolin', model: '2-20 (D2-420)', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'bolin-d-series', manufacturer: 'Bolin', model: 'D420', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'avonic-cm93-ip', manufacturer: 'Avonic', model: 'CM93-IP', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'sony-srg-a30-b', manufacturer: 'Sony', model: 'SRG-XB25', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'canon-cr-n300w', manufacturer: 'Canon', model: 'CR-N300 (weiß)', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'ptzoptics-move-4k-ndi', manufacturer: 'PTZOptics', model: 'Move 4K SDI', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'lumens-vc-b11u', manufacturer: 'Lumens', model: 'VC-B11U', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'marshall-cv730-ndi', manufacturer: 'Marshall', model: 'CV730-NDI', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'aida-uhd-100a', manufacturer: 'AIDA', model: 'UHD-100A', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+  { id: 'aida-ptz4k-ndi', manufacturer: 'AIDA', model: 'PTZ4K-NDI-X30', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['4K','HD'], type: 'ptz' },
+
   // ── Marshall POV ──
   { id: 'marshall-cv568', manufacturer: 'Marshall', model: 'CV568', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'M12', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'POV camera, global shutter' },
 ];
