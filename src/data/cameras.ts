@@ -216,6 +216,49 @@ export const CAMERAS: Camera[] = [
   { id: 'ikegami-hdk-55', manufacturer: 'Ikegami', model: 'HDK-55', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
   { id: 'ikegami-hdk-97arri', manufacturer: 'Ikegami', model: 'HDK-97ARRI', sensor: SENSORS.S35, mount: 'PL', resolutions: ['HD'], type: 'broadcast', notes: 'Super-35 mit ARRI-ALEV-Sensor, PL-Mount' },
 
+  // ── Panasonic Broadcast (2/3" B4) ──
+  { id: 'pana-ak-uc4000', manufacturer: 'Panasonic', model: 'AK-UC4000', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast', notes: '4,4K-Systemkamera' },
+  { id: 'pana-ak-uc3300', manufacturer: 'Panasonic', model: 'AK-UC3300', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
+  { id: 'pana-ak-uc3000', manufacturer: 'Panasonic', model: 'AK-UC3000', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
+  { id: 'pana-ak-hc5000', manufacturer: 'Panasonic', model: 'AK-HC5000', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast', notes: 'HD-Highspeed' },
+  { id: 'pana-ak-hc3900', manufacturer: 'Panasonic', model: 'AK-HC3900', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'pana-ak-hc3800', manufacturer: 'Panasonic', model: 'AK-HC3800', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  // ── Sony Broadcast (2/3" B4) ──
+  { id: 'sony-hdc-3200', manufacturer: 'Sony', model: 'HDC-3200', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
+  { id: 'sony-hdc-3170', manufacturer: 'Sony', model: 'HDC-3170', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
+  { id: 'sony-hdc-3100', manufacturer: 'Sony', model: 'HDC-3100', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'sony-hxc-fb80', manufacturer: 'Sony', model: 'HXC-FB80', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
+  { id: 'sony-hsc-100', manufacturer: 'Sony', model: 'HSC-100', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'sony-pxw-z750', manufacturer: 'Sony', model: 'PXW-Z750', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'Schulter-Camcorder, 3-CMOS Global Shutter' },
+  { id: 'sony-pxw-z450', manufacturer: 'Sony', model: 'PXW-Z450', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
+  // ── Grass Valley / Hitachi (2/3" B4) ──
+  { id: 'gv-ldx-135', manufacturer: 'Grass Valley', model: 'LDX 135', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
+  { id: 'gv-ldx-98', manufacturer: 'Grass Valley', model: 'LDX 98', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
+  { id: 'gv-ldx-86n', manufacturer: 'Grass Valley', model: 'LDX 86N', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
+  { id: 'hitachi-sk-hd1500', manufacturer: 'Hitachi', model: 'SK-HD1500', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'hitachi-z-hd6500', manufacturer: 'Hitachi', model: 'Z-HD6500', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'hitachi-sk-uhd4000b', manufacturer: 'Hitachi', model: 'SK-UHD4000B', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
+  // ── Panasonic Cinema / Lumix ──
+  { id: 'pana-au-eva1', manufacturer: 'Panasonic', model: 'AU-EVA1', sensor: SENSORS.S35, mount: 'EF', resolutions: ['5.7K', '4K', 'HD'], type: 'cinema', notes: 'S35, EF-Mount' },
+  { id: 'pana-varicam-lt', manufacturer: 'Panasonic', model: 'VariCam LT', sensor: SENSORS.S35, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['4K', 'HD'], type: 'cinema' },
+  { id: 'pana-varicam-35', manufacturer: 'Panasonic', model: 'VariCam 35', sensor: SENSORS.S35, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['4K', 'HD'], type: 'cinema' },
+  { id: 'pana-lumix-s1h', manufacturer: 'Panasonic', model: 'Lumix S1H', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['EF', 'PL'], resolutions: ['6K', '4K', 'HD'], type: 'mirrorless' },
+  { id: 'pana-lumix-gh6', manufacturer: 'Panasonic', model: 'Lumix GH6', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['5.7K', '4K', 'HD'], type: 'mirrorless' },
+  { id: 'pana-lumix-gh7', manufacturer: 'Panasonic', model: 'Lumix GH7', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['5.8K', '4K', 'HD'], type: 'mirrorless' },
+  { id: 'pana-lumix-bgh1', manufacturer: 'Panasonic', model: 'Lumix BGH1', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'cinema', notes: 'Box-Style MFT' },
+  // ── Kinefinity (Cine) ──
+  { id: 'kine-mavo-edge-8k', manufacturer: 'Kinefinity', model: 'MAVO Edge 8K', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF'], resolutions: ['8K', '6K', '4K'], type: 'cinema' },
+  { id: 'kine-mavo-edge-6k', manufacturer: 'Kinefinity', model: 'MAVO Edge 6K', sensor: SENSORS.S35, mount: 'E', adaptedMounts: ['PL', 'EF'], resolutions: ['6K', '4K', 'HD'], type: 'cinema' },
+  { id: 'kine-mavo-lf', manufacturer: 'Kinefinity', model: 'MAVO LF', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF'], resolutions: ['6K', '4K', 'HD'], type: 'cinema' },
+  { id: 'kine-mavo-s35', manufacturer: 'Kinefinity', model: 'MAVO S35', sensor: SENSORS.S35, mount: 'E', adaptedMounts: ['PL', 'EF'], resolutions: ['6K', '4K', 'HD'], type: 'cinema' },
+  // ── PTZ (1" Sensor) ──
+  { id: 'pana-aw-ue150', manufacturer: 'Panasonic', model: 'AW-UE150', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz', notes: '1-Zoll, 20x Zoom' },
+  { id: 'pana-aw-ue160', manufacturer: 'Panasonic', model: 'AW-UE160', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
+  { id: 'pana-aw-ue100', manufacturer: 'Panasonic', model: 'AW-UE100', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
+  { id: 'sony-brc-x1000', manufacturer: 'Sony', model: 'BRC-X1000', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
+  { id: 'sony-srg-x400', manufacturer: 'Sony', model: 'SRG-X400', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
+  { id: 'canon-cr-n700', manufacturer: 'Canon', model: 'CR-N700', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz', notes: '15x Zoom' },
+
   // ── Marshall POV ──
   { id: 'marshall-cv568', manufacturer: 'Marshall', model: 'CV568', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'M12', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'POV camera, global shutter' },
 ];
