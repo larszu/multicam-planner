@@ -440,7 +440,7 @@ export const CAMERAS: Camera[] = [
   // ── Cinema (Kinefinity/RED/ARRI/BMD Ausbau) ──
   { id: 'kine-terra-4k', manufacturer: 'Kinefinity', model: 'TERRA 4K', sensor: SENSORS.APSC, mount: 'E', adaptedMounts: ['PL','EF'], resolutions: ['4K','HD'], type: 'cinema' },
   { id: 'red-raptor-xl-vv', manufacturer: 'RED', model: 'V-RAPTOR XL 8K VV', sensor: SENSORS.FF, mount: 'PL', adaptedMounts: ['RF','EF'], resolutions: ['8K','6K','4K'], type: 'cinema' },
-  { id: 'arri-alexa-265', manufacturer: 'ARRI', model: 'ALEXA 65', sensor: { name: 'Mittelformat 44×33', widthMm: 44, heightMm: 33, cropFactor: 0.79 }, mount: 'XPL', resolutions: ['6.5K','4K'], type: 'cinema', notes: '65-mm-Format, XPL' },
+  { id: 'arri-alexa-265', manufacturer: 'ARRI', model: 'ALEXA 65', sensor: { name: 'ARRI 65 (54.12×25.59)', widthMm: 54.12, heightMm: 25.59, cropFactor: 0.72 }, mount: 'XPL', resolutions: ['6.5K','4K'], type: 'cinema', notes: '65-mm-Format, XPL' },
   { id: 'bmd-cinema-camera-6k-b', manufacturer: 'Blackmagic', model: 'Cinema Camera 6K L', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['EF','PL'], resolutions: ['6K','4K'], type: 'cinema' },
   // ── Sony/Canon/Nikon/Panasonic Mirrorless (Ausbau 3) ──
   { id: 'sony-a7c', manufacturer: 'Sony', model: 'A7C', sensor: SENSORS.FF, mount: 'E', resolutions: ['4K','HD'], type: 'mirrorless' },
@@ -478,17 +478,17 @@ export const CAMERAS: Camera[] = [
   { id: 'marshall-cv504', manufacturer: 'Marshall', model: 'CV504', sensor: SENSORS.THIRD_INCH, mount: 'M12', resolutions: ['HD'], type: 'broadcast' },
 
   // ── ARRI ALEXA Klassiker (Rental) ──
-  { id: 'arri-alexa-classic', manufacturer: 'ARRI', model: 'ALEXA Classic', sensor: { name: 'ARRI ALEV III S35 (28.25×18.17)', widthMm: 28.25, heightMm: 18.17, cropFactor: 1.28 }, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['2.8K','HD'], type: 'cinema' },
-  { id: 'arri-alexa-xt', manufacturer: 'ARRI', model: 'ALEXA XT', sensor: { name: 'ARRI ALEV III S35 (28.25×18.17)', widthMm: 28.25, heightMm: 18.17, cropFactor: 1.28 }, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['3.4K','2.8K','HD'], type: 'cinema' },
-  { id: 'arri-alexa-sxt', manufacturer: 'ARRI', model: 'ALEXA SXT W', sensor: { name: 'ARRI ALEV III S35 (28.25×18.17)', widthMm: 28.25, heightMm: 18.17, cropFactor: 1.28 }, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['3.4K','UHD','HD'], type: 'cinema' },
-  { id: 'arri-alexa-mini', manufacturer: 'ARRI', model: 'ALEXA Mini', sensor: { name: 'ARRI ALEV III S35 (28.25×18.17)', widthMm: 28.25, heightMm: 18.17, cropFactor: 1.28 }, mount: 'PL', adaptedMounts: ['EF','B4'], resolutions: ['3.4K','UHD','HD'], type: 'cinema' },
-  { id: 'arri-alexa-studio', manufacturer: 'ARRI', model: 'ALEXA Studio', sensor: { name: 'ARRI ALEV III S35 (28.25×18.17)', widthMm: 28.25, heightMm: 18.17, cropFactor: 1.28 }, mount: 'PL', resolutions: ['2.8K','HD'], type: 'cinema' },
+  { id: 'arri-alexa-classic', manufacturer: 'ARRI', model: 'ALEXA Classic', sensor: { name: 'ARRI ALEV III S35 (28.17×18.13)', widthMm: 28.17, heightMm: 18.13, cropFactor: 1.29 }, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['2.8K','HD'], type: 'cinema' },
+  { id: 'arri-alexa-xt', manufacturer: 'ARRI', model: 'ALEXA XT', sensor: { name: 'ARRI ALEV III S35 (28.17×18.13)', widthMm: 28.17, heightMm: 18.13, cropFactor: 1.29 }, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['3.4K','2.8K','HD'], type: 'cinema' },
+  { id: 'arri-alexa-sxt', manufacturer: 'ARRI', model: 'ALEXA SXT W', sensor: { name: 'ARRI ALEV III S35 (28.17×18.13)', widthMm: 28.17, heightMm: 18.13, cropFactor: 1.29 }, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['3.4K','UHD','HD'], type: 'cinema' },
+  { id: 'arri-alexa-mini', manufacturer: 'ARRI', model: 'ALEXA Mini', sensor: { name: 'ARRI ALEV III S35 (28.17×18.13)', widthMm: 28.17, heightMm: 18.13, cropFactor: 1.29 }, mount: 'PL', adaptedMounts: ['EF','B4'], resolutions: ['3.4K','UHD','HD'], type: 'cinema' },
+  { id: 'arri-alexa-studio', manufacturer: 'ARRI', model: 'ALEXA Studio', sensor: { name: 'ARRI ALEV III S35 (28.17×18.13)', widthMm: 28.17, heightMm: 18.13, cropFactor: 1.29 }, mount: 'PL', resolutions: ['2.8K','HD'], type: 'cinema' },
   // ── RED Klassiker ──
   { id: 'red-epic-dragon', manufacturer: 'RED', model: 'EPIC Dragon', sensor: { name: 'RED Dragon S35 (30.7×15.8)', widthMm: 30.7, heightMm: 15.8, cropFactor: 1.17 }, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['6K','5K','4K'], type: 'cinema' },
   { id: 'red-scarlet-w', manufacturer: 'RED', model: 'SCARLET-W', sensor: { name: 'RED Dragon S35 (30.7×15.8)', widthMm: 30.7, heightMm: 15.8, cropFactor: 1.17 }, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['5K','4K'], type: 'cinema' },
-  { id: 'red-epic-w-helium', manufacturer: 'RED', model: 'EPIC-W Helium 8K', sensor: { name: 'ARRI ALEV III S35 (28.25×18.17)', widthMm: 28.25, heightMm: 18.17, cropFactor: 1.28 }, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['8K','6K','4K'], type: 'cinema' },
+  { id: 'red-epic-w-helium', manufacturer: 'RED', model: 'EPIC-W Helium 8K', sensor: { name: 'RED Helium S35 (29.9×15.77)', widthMm: 29.9, heightMm: 15.77, cropFactor: 1.28 }, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['8K','6K','4K'], type: 'cinema' },
   { id: 'red-raven-4k', manufacturer: 'RED', model: 'RAVEN 4.5K', sensor: SENSORS.S35, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['4.5K','4K'], type: 'cinema' },
-  { id: 'red-weapon-8k-vv', manufacturer: 'RED', model: 'WEAPON 8K VV Monstro', sensor: SENSORS.FF, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['8K','6K','4K'], type: 'cinema' },
+  { id: 'red-weapon-8k-vv', manufacturer: 'RED', model: 'WEAPON 8K VV Monstro', sensor: { name: 'RED Monstro VV (40.96×21.6)', widthMm: 40.96, heightMm: 21.6, cropFactor: 0.93 }, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['8K','6K','4K'], type: 'cinema' },
   // ── Sony Cinema Klassiker ──
   { id: 'sony-f65', manufacturer: 'Sony', model: 'F65 CineAlta', sensor: { name: 'Sony F65 S35 (24.7×13.1)', widthMm: 24.7, heightMm: 13.1, cropFactor: 1.46 }, mount: 'PL', resolutions: ['8K','4K','HD'], type: 'cinema' },
   { id: 'sony-f35', manufacturer: 'Sony', model: 'F35 CineAlta', sensor: SENSORS.S35, mount: 'PL', resolutions: ['HD'], type: 'cinema' },
