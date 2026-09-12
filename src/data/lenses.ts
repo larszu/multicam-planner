@@ -527,6 +527,19 @@ export const LENSES: Lens[] = [
   { id: 'viltrox-e-50', manufacturer: 'Viltrox', model: 'AF 50 F1.8 FE', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.8, mount: 'E', imageCircle: 'FF', type: 'prime' },
   { id: 'viltrox-e-85', manufacturer: 'Viltrox', model: 'AF 85 F1.8 FE', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.8, mount: 'E', imageCircle: 'FF', type: 'prime' },
   { id: 'viltrox-e-135lab', manufacturer: 'Viltrox', model: 'AF 135 F1.8 LAB FE', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 1.8, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  // ── Canon Broadcast UHDgc / DIGISUPER (B4, 2/3"; 4K) ──
+  { id: 'canon-cj12ex4.3', manufacturer: 'Canon', model: 'UHDgc CJ12ex4.3B', focalLengthMin: 4.3, focalLengthMax: 51.6, maxApertureWide: 1.8, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  { id: 'canon-cj14ex4.3', manufacturer: 'Canon', model: 'UHDgc CJ14ex4.3B', focalLengthMin: 4.3, focalLengthMax: 60, maxApertureWide: 1.8, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  { id: 'canon-cj17ex6.2', manufacturer: 'Canon', model: 'UHDgc CJ17ex6.2B', focalLengthMin: 6.2, focalLengthMax: 106, maxApertureWide: 1.9, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  { id: 'canon-cj18ex7.6', manufacturer: 'Canon', model: 'UHDgc CJ18ex7.6B', focalLengthMin: 7.6, focalLengthMax: 137, maxApertureWide: 1.8, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  { id: 'canon-cj18ex28', manufacturer: 'Canon', model: 'UHDgc CJ18ex28B', focalLengthMin: 28, focalLengthMax: 500, maxApertureWide: 2.5, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  { id: 'canon-cj20ex5', manufacturer: 'Canon', model: 'UHDgc CJ20ex5B', focalLengthMin: 5, focalLengthMax: 100, maxApertureWide: 1.8, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  { id: 'canon-cj24ex7.5', manufacturer: 'Canon', model: 'UHDgc CJ24ex7.5B', focalLengthMin: 7.5, focalLengthMax: 180, maxApertureWide: 1.8, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  { id: 'canon-cj25ex7.6', manufacturer: 'Canon', model: 'UHDgc CJ25ex7.6B', focalLengthMin: 7.6, focalLengthMax: 190, maxApertureWide: 1.8, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  { id: 'canon-cj45ex13.6', manufacturer: 'Canon', model: 'UHDgc CJ45ex13.6B', focalLengthMin: 13.6, focalLengthMax: 612, maxApertureWide: 2.8, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  { id: 'canon-uj90x9', manufacturer: 'Canon', model: 'UHD DIGISUPER 90 (UJ90x9B)', focalLengthMin: 9, focalLengthMax: 810, maxApertureWide: 1.7, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  { id: 'canon-uj111x8.3', manufacturer: 'Canon', model: 'UHD DIGISUPER 111 (UJ111x8.3B)', focalLengthMin: 8.3, focalLengthMax: 925, maxApertureWide: 1.7, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  { id: 'canon-uj122x8.2', manufacturer: 'Canon', model: 'UHD DIGISUPER 122 (UJ122x8.2B)', focalLengthMin: 8.2, focalLengthMax: 1000, maxApertureWide: 1.7, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
 ];
 
 export function getLensById(id: string, customLenses?: Lens[]): Lens | undefined {
