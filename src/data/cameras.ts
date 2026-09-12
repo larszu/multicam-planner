@@ -398,6 +398,45 @@ export const CAMERAS: Camera[] = [
   { id: 'sony-fx6-ii', manufacturer: 'Sony', model: 'FX6 II', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL', 'EF'], resolutions: ['4K', 'HD'], type: 'cinema' },
   { id: 'nikon-zr', manufacturer: 'Nikon', model: 'ZR (RED-Cinema)', sensor: SENSORS.FF, mount: 'Z', resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'RED-Farbwissenschaft, Z-Mount' },
 
+  // ── Sony (Ausbau 2) ──
+  { id: 'sony-a7s2', manufacturer: 'Sony', model: 'A7S II', sensor: SENSORS.FF, mount: 'E', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'sony-a99-ii', manufacturer: 'Sony', model: 'A99 II', sensor: SENSORS.FF, mount: 'A', resolutions: ['4K', 'HD'], type: 'mirrorless', notes: 'A-Mount DSLR' },
+  { id: 'sony-fx9-ii', manufacturer: 'Sony', model: 'PXW-FX9 II', sensor: SENSORS.FF, mount: 'E', adaptedMounts: ['PL','EF'], resolutions: ['6K', '4K', 'HD'], type: 'cinema' },
+  { id: 'sony-hdc-p31-b', manufacturer: 'Sony', model: 'HDC-F5500V2', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K','HD'], type: 'broadcast' },
+  // ── Panasonic / OM System ──
+  { id: 'pana-lumix-gh4', manufacturer: 'Panasonic', model: 'Lumix GH4', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'pana-lumix-s1h-b', manufacturer: 'Panasonic', model: 'Lumix S1R', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['EF'], resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'om-om1-ii', manufacturer: 'OM System', model: 'OM-1 Mark II', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  { id: 'om-om5', manufacturer: 'OM System', model: 'OM-5', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'mirrorless' },
+  // ── Broadcast Systemkameras (Ausbau) ──
+  { id: 'sony-hxc-100', manufacturer: 'Sony', model: 'HXC-100', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'gv-ldx-100-b', manufacturer: 'Grass Valley', model: 'LDX 92', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'hitachi-sk-hd1200', manufacturer: 'Hitachi', model: 'SK-HD1200', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'ikegami-hdk-79', manufacturer: 'Ikegami', model: 'HDK-79EX III', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  // ── PTZ (Ausbau 2) ──
+  { id: 'pana-aw-ue160-b', manufacturer: 'Panasonic', model: 'AW-UR100', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K','HD'], type: 'ptz', notes: '4K-PTZ mit B4-Optik' },
+  { id: 'sony-brc-h900', manufacturer: 'Sony', model: 'BRC-H900', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
+  { id: 'canon-cr-x500', manufacturer: 'Canon', model: 'CR-X500', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz', notes: 'Outdoor-PTZ' },
+  { id: 'vaddio-roboshot-40', manufacturer: 'Vaddio', model: 'RoboSHOT 40 UHD', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
+  { id: 'panasonic-aw-he42', manufacturer: 'Panasonic', model: 'AW-HE42', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
+  { id: 'birddog-a300', manufacturer: 'BirdDog', model: 'A300', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
+  { id: 'ptzoptics-move-4k-30', manufacturer: 'PTZOptics', model: 'Move 4K 30x', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
+  // ── Action / POV / Kompakt ──
+  { id: 'marshall-cv355', manufacturer: 'Marshall', model: 'CV355', sensor: SENSORS.THIRD_INCH, mount: 'M12', resolutions: ['HD'], type: 'broadcast', notes: 'Miniatur-POV' },
+  { id: 'marshall-cv503', manufacturer: 'Marshall', model: 'CV503', sensor: SENSORS.THIRD_INCH, mount: 'M12', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'marshall-cv225', manufacturer: 'Marshall', model: 'CV225-M2', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'M12', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'marshall-cv605', manufacturer: 'Marshall', model: 'CV605', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
+  { id: 'gopro-hero12', manufacturer: 'GoPro', model: 'HERO12 Black', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['5.3K', '4K', 'HD'], type: 'camcorder', notes: 'Action-Cam' },
+  { id: 'gopro-hero13', manufacturer: 'GoPro', model: 'HERO13 Black', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['5.3K', '4K', 'HD'], type: 'camcorder' },
+  { id: 'dji-osmo-action-4', manufacturer: 'DJI', model: 'Osmo Action 4', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder', notes: 'Action-Cam' },
+  { id: 'dji-pocket-3', manufacturer: 'DJI', model: 'Osmo Pocket 3', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder', notes: 'Gimbal-Cam' },
+  { id: 'insta360-x4', manufacturer: 'Insta360', model: 'X4', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['8K', '5.7K', '4K'], type: 'camcorder', notes: '360°' },
+  // ── Camcorder (Ausbau) ──
+  { id: 'sony-pxw-z280', manufacturer: 'Sony', model: 'PXW-Z280', sensor: SENSORS.THIRD_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder', notes: '1/3" 3-CMOS' },
+  { id: 'canon-xa60', manufacturer: 'Canon', model: 'XA60', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder' },
+  { id: 'panasonic-hc-x2', manufacturer: 'Panasonic', model: 'HC-X2', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder' },
+  { id: 'panasonic-ag-cx10', manufacturer: 'Panasonic', model: 'AG-CX10', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder' },
+
   // ── Marshall POV ──
   { id: 'marshall-cv568', manufacturer: 'Marshall', model: 'CV568', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'M12', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'POV camera, global shutter' },
 ];
