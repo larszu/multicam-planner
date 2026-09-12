@@ -540,6 +540,29 @@ export const LENSES: Lens[] = [
   { id: 'canon-uj90x9', manufacturer: 'Canon', model: 'UHD DIGISUPER 90 (UJ90x9B)', focalLengthMin: 9, focalLengthMax: 810, maxApertureWide: 1.7, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
   { id: 'canon-uj111x8.3', manufacturer: 'Canon', model: 'UHD DIGISUPER 111 (UJ111x8.3B)', focalLengthMin: 8.3, focalLengthMax: 925, maxApertureWide: 1.7, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
   { id: 'canon-uj122x8.2', manufacturer: 'Canon', model: 'UHD DIGISUPER 122 (UJ122x8.2B)', focalLengthMin: 8.2, focalLengthMax: 1000, maxApertureWide: 1.7, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  // ── Sony E APS-C (für A6700/FX30) ──
+  { id: 'sony-e-10-20pz', manufacturer: 'Sony', model: 'E PZ 10-20 F4 G', focalLengthMin: 10, focalLengthMax: 20, maxApertureWide: 4.0, mount: 'E', imageCircle: 'APSC', type: 'zoom' },
+  { id: 'sony-e-16-55', manufacturer: 'Sony', model: 'E 16-55 F2.8 G', focalLengthMin: 16, focalLengthMax: 55, maxApertureWide: 2.8, mount: 'E', imageCircle: 'APSC', type: 'zoom' },
+  { id: 'sony-e-70-350', manufacturer: 'Sony', model: 'E 70-350 F4.5-6.3 G', focalLengthMin: 70, focalLengthMax: 350, maxApertureWide: 4.5, mount: 'E', imageCircle: 'APSC', type: 'zoom' },
+  { id: 'sony-e-18-105', manufacturer: 'Sony', model: 'E PZ 18-105 F4 G', focalLengthMin: 18, focalLengthMax: 105, maxApertureWide: 4.0, mount: 'E', imageCircle: 'APSC', type: 'zoom' },
+  { id: 'sony-e-11', manufacturer: 'Sony', model: 'E 11 F1.8', focalLengthMin: 11, focalLengthMax: 11, maxApertureWide: 1.8, mount: 'E', imageCircle: 'APSC', type: 'prime' },
+  { id: 'sony-e-15', manufacturer: 'Sony', model: 'E 15 F1.4 G', focalLengthMin: 15, focalLengthMax: 15, maxApertureWide: 1.4, mount: 'E', imageCircle: 'APSC', type: 'prime' },
+  { id: 'sony-e-35-18', manufacturer: 'Sony', model: 'E 35 F1.8 OSS', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.8, mount: 'E', imageCircle: 'APSC', type: 'prime' },
+  // ── Sigma i-series Contemporary (E, Full Frame) ──
+  { id: 'sigma-c-17', manufacturer: 'Sigma', model: '17 F4 DG DN C', focalLengthMin: 17, focalLengthMax: 17, maxApertureWide: 4.0, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-c-20', manufacturer: 'Sigma', model: '20 F2 DG DN C', focalLengthMin: 20, focalLengthMax: 20, maxApertureWide: 2.0, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-c-24', manufacturer: 'Sigma', model: '24 F3.5 DG DN C', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 3.5, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-c-35', manufacturer: 'Sigma', model: '35 F2 DG DN C', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 2.0, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-c-45', manufacturer: 'Sigma', model: '45 F2.8 DG DN C', focalLengthMin: 45, focalLengthMax: 45, maxApertureWide: 2.8, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-c-50', manufacturer: 'Sigma', model: '50 F2 DG DN C', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.0, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-c-65', manufacturer: 'Sigma', model: '65 F2 DG DN C', focalLengthMin: 65, focalLengthMax: 65, maxApertureWide: 2.0, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-c-90', manufacturer: 'Sigma', model: '90 F2.8 DG DN C', focalLengthMin: 90, focalLengthMax: 90, maxApertureWide: 2.8, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  // ── Samyang V-AF (E, Full Frame; Cine-Style AF) ──
+  { id: 'samyang-vaf-20', manufacturer: 'Samyang', model: 'V-AF 20 T1.9', focalLengthMin: 20, focalLengthMax: 20, maxApertureWide: 1.9, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'samyang-vaf-24', manufacturer: 'Samyang', model: 'V-AF 24 T1.9', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 1.9, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'samyang-vaf-35', manufacturer: 'Samyang', model: 'V-AF 35 T1.9', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.9, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'samyang-vaf-45', manufacturer: 'Samyang', model: 'V-AF 45 T1.9', focalLengthMin: 45, focalLengthMax: 45, maxApertureWide: 1.9, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'samyang-vaf-75', manufacturer: 'Samyang', model: 'V-AF 75 T1.9', focalLengthMin: 75, focalLengthMax: 75, maxApertureWide: 1.9, mount: 'E', imageCircle: 'FF', type: 'prime' },
 ];
 
 export function getLensById(id: string, customLenses?: Lens[]): Lens | undefined {
