@@ -996,6 +996,28 @@ export const LENSES: Lens[] = [
   // ── Fujinon MK (E, S35) ──
   { id: 'fuj-mk-18-55', manufacturer: 'Fujinon', model: 'MK 18-55 T2.9', focalLengthMin: 18, focalLengthMax: 55, maxApertureWide: 2.9, mount: 'E', imageCircle: 'S35', type: 'zoom' },
   { id: 'fuj-mk-50-135', manufacturer: 'Fujinon', model: 'MK 50-135 T2.9', focalLengthMin: 50, focalLengthMax: 135, maxApertureWide: 2.9, mount: 'E', imageCircle: 'S35', type: 'zoom' },
+  // ── Weitere Foto-/Cine-Objektive (Abschluss) ──
+  { id: 'sony-fe-12-24-4', manufacturer: 'Sony', model: 'FE 12-24 F4 G', focalLengthMin: 12, focalLengthMax: 24, maxApertureWide: 4.0, mount: 'E', imageCircle: 'FF', type: 'zoom' },
+  { id: 'sony-fe-24f28-b', manufacturer: 'Sony', model: 'FE 28 F2', focalLengthMin: 28, focalLengthMax: 28, maxApertureWide: 2.0, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'sony-fe-90-macro', manufacturer: 'Sony', model: 'FE 90 F2.8 Macro G', focalLengthMin: 90, focalLengthMax: 90, maxApertureWide: 2.8, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'sony-fe-14-18', manufacturer: 'Sony', model: 'FE 14 F1.8 GM', focalLengthMin: 14, focalLengthMax: 14, maxApertureWide: 1.8, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'canon-rf-10-20', manufacturer: 'Canon', model: 'RF 10-20 F4 L', focalLengthMin: 10, focalLengthMax: 20, maxApertureWide: 4.0, mount: 'RF', imageCircle: 'FF', type: 'zoom' },
+  { id: 'canon-rf-24-14', manufacturer: 'Canon', model: 'RF 24 F1.4 VCM', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 1.4, mount: 'RF', imageCircle: 'FF', type: 'prime' },
+  { id: 'canon-rf-50-14', manufacturer: 'Canon', model: 'RF 50 F1.4 VCM', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.4, mount: 'RF', imageCircle: 'FF', type: 'prime' },
+  { id: 'canon-rf-35-14', manufacturer: 'Canon', model: 'RF 35 F1.4 VCM', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.4, mount: 'RF', imageCircle: 'FF', type: 'prime' },
+  { id: 'nikon-z-35-14', manufacturer: 'Nikon', model: 'Z 35 F1.4', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.4, mount: 'Z', imageCircle: 'FF', type: 'prime' },
+  { id: 'nikon-z-50-14', manufacturer: 'Nikon', model: 'Z 50 F1.4', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.4, mount: 'Z', imageCircle: 'FF', type: 'prime' },
+  { id: 'nikon-z-28-28', manufacturer: 'Nikon', model: 'Z 28 F2.8 SE', focalLengthMin: 28, focalLengthMax: 28, maxApertureWide: 2.8, mount: 'Z', imageCircle: 'FF', type: 'prime' },
+  { id: 'nikon-z-28-135', manufacturer: 'Nikon', model: 'Z 28-135 F4 PZ', focalLengthMin: 28, focalLengthMax: 135, maxApertureWide: 4.0, mount: 'Z', imageCircle: 'FF', type: 'zoom' },
+  { id: 'panasonic-s-18-40', manufacturer: 'Panasonic', model: 'Lumix S 18-40 F4.5-6.3', focalLengthMin: 18, focalLengthMax: 40, maxApertureWide: 4.5, mount: 'L', imageCircle: 'FF', type: 'zoom' },
+  { id: 'panasonic-s-18-18', manufacturer: 'Panasonic', model: 'Lumix S 18 F1.8', focalLengthMin: 18, focalLengthMax: 18, maxApertureWide: 1.8, mount: 'L', imageCircle: 'FF', type: 'prime' },
+  { id: 'panasonic-s-24-18', manufacturer: 'Panasonic', model: 'Lumix S 24 F1.8', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 1.8, mount: 'L', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-e-28-45', manufacturer: 'Sigma', model: '28-45 F1.8 DG DN Art', focalLengthMin: 28, focalLengthMax: 45, maxApertureWide: 1.8, mount: 'E', imageCircle: 'FF', type: 'zoom' },
+  { id: 'sigma-e-24-70-ii', manufacturer: 'Sigma', model: '24-70 F2.8 DG DN Art II', focalLengthMin: 24, focalLengthMax: 70, maxApertureWide: 2.8, mount: 'E', imageCircle: 'FF', type: 'zoom' },
+  { id: 'tamron-e-50-300', manufacturer: 'Tamron', model: '50-300 F4.5-6.3 Di III VC VXD', focalLengthMin: 50, focalLengthMax: 300, maxApertureWide: 4.5, mount: 'E', imageCircle: 'FF', type: 'zoom' },
+  { id: 'viltrox-e-40-25lab', manufacturer: 'Viltrox', model: 'AF 40 F2.5 Air FE', focalLengthMin: 40, focalLengthMax: 40, maxApertureWide: 2.5, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: '7artisans-e-50-af', manufacturer: '7Artisans', model: 'AF 50 F1.8 FE', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.8, mount: 'E', imageCircle: 'FF', type: 'prime' },
+  { id: 'ttartisan-e-27-af', manufacturer: 'TTArtisan', model: 'AF 27 F2.8 (APS-C)', focalLengthMin: 27, focalLengthMax: 27, maxApertureWide: 2.8, mount: 'E', imageCircle: 'APSC', type: 'prime' },
 ];
 
 export function getLensById(id: string, customLenses?: Lens[]): Lens | undefined {
