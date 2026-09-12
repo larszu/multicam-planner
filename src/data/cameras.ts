@@ -336,6 +336,18 @@ export const CAMERAS: Camera[] = [
   { id: 'lumens-vc-tr40', manufacturer: 'Lumens', model: 'VC-TR40', sensor: { name: '1/2.5" (5.76×4.29)', widthMm: 5.76, heightMm: 4.29, cropFactor: 6.25 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz', notes: 'Auto-Tracking' },
   { id: 'aver-tr311', manufacturer: 'AVer', model: 'TR311', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'integrated', resolutions: ['HD'], type: 'ptz' },
 
+  // ── Broadcast / Cinema (Abschluss) ──
+  { id: 'sony-hdc-p50', manufacturer: 'Sony', model: 'HDC-P50', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'POV-Systemkamera' },
+  { id: 'sony-hdc-5500v2', manufacturer: 'Sony', model: 'HDC-5500V2', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
+  { id: 'sony-hxc-fz90', manufacturer: 'Sony', model: 'HXC-FZ90', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
+  { id: 'pana-ak-ub300', manufacturer: 'Panasonic', model: 'AK-UB300', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'Box-Systemkamera' },
+  { id: 'gv-ldx-82', manufacturer: 'Grass Valley', model: 'LDX 82', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
+  { id: 'hitachi-sk-uhd8060b', manufacturer: 'Hitachi', model: 'SK-UHD8060B', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
+  { id: 'bmd-ursa-mini-pro-12k', manufacturer: 'Blackmagic', model: 'URSA Mini Pro 12K', sensor: SENSORS.S35, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['12K', '8K', '4K'], type: 'cinema', notes: 'S35 12K' },
+  { id: 'jvc-gy-hc500', manufacturer: 'JVC', model: 'GY-HC500', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder' },
+  { id: 'jvc-gy-hm250', manufacturer: 'JVC', model: 'GY-HM250', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder' },
+  { id: 'canon-xf400', manufacturer: 'Canon', model: 'XF400', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder' },
+
   // ── Marshall POV ──
   { id: 'marshall-cv568', manufacturer: 'Marshall', model: 'CV568', sensor: { name: '1/1.8" (7.44×5.58)', widthMm: 7.44, heightMm: 5.58, cropFactor: 4.84 }, mount: 'M12', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'POV camera, global shutter' },
 ];
