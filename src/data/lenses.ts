@@ -1010,8 +1010,6 @@ export const LENSES: Lens[] = [
   { id: 'nikon-z-28-28', manufacturer: 'Nikon', model: 'Z 28 F2.8 SE', focalLengthMin: 28, focalLengthMax: 28, maxApertureWide: 2.8, mount: 'Z', imageCircle: 'FF', type: 'prime' },
   { id: 'nikon-z-28-135', manufacturer: 'Nikon', model: 'Z 28-135 F4 PZ', focalLengthMin: 28, focalLengthMax: 135, maxApertureWide: 4.0, mount: 'Z', imageCircle: 'FF', type: 'zoom' },
   { id: 'panasonic-s-18-40', manufacturer: 'Panasonic', model: 'Lumix S 18-40 F4.5-6.3', focalLengthMin: 18, focalLengthMax: 40, maxApertureWide: 4.5, mount: 'L', imageCircle: 'FF', type: 'zoom' },
-  { id: 'panasonic-s-18-18', manufacturer: 'Panasonic', model: 'Lumix S 18 F1.8', focalLengthMin: 18, focalLengthMax: 18, maxApertureWide: 1.8, mount: 'L', imageCircle: 'FF', type: 'prime' },
-  { id: 'panasonic-s-24-18', manufacturer: 'Panasonic', model: 'Lumix S 24 F1.8', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 1.8, mount: 'L', imageCircle: 'FF', type: 'prime' },
   { id: 'sigma-e-28-45', manufacturer: 'Sigma', model: '28-45 F1.8 DG DN Art', focalLengthMin: 28, focalLengthMax: 45, maxApertureWide: 1.8, mount: 'E', imageCircle: 'FF', type: 'zoom' },
   { id: 'sigma-e-24-70-ii', manufacturer: 'Sigma', model: '24-70 F2.8 DG DN Art II', focalLengthMin: 24, focalLengthMax: 70, maxApertureWide: 2.8, mount: 'E', imageCircle: 'FF', type: 'zoom' },
   { id: 'tamron-e-50-300', manufacturer: 'Tamron', model: '50-300 F4.5-6.3 Di III VC VXD', focalLengthMin: 50, focalLengthMax: 300, maxApertureWide: 4.5, mount: 'E', imageCircle: 'FF', type: 'zoom' },

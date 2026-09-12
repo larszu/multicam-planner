@@ -114,7 +114,6 @@ export const CAMERAS: Camera[] = [
     PL: { name: 'Wooden Camera PL → EF Mount (EVA1)', lightLossStops: 0, notes: 'Replaces the EVA1 EF mount with a PL mount. Mechanical only — no relay, no light loss; the full Super-35 sensor remains.' },
   } },
   { id: 'pana-aw-ue150', manufacturer: 'Panasonic', model: 'AW-UE150', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
-  { id: 'pana-aw-ue40', manufacturer: 'Panasonic', model: 'AW-UE40', sensor: SENSORS.HALF_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
 
   // ── Blackmagic Design ──
   { id: 'bmd-ursa-broadcast-g2', manufacturer: 'Blackmagic', model: 'URSA Broadcast G2', sensor: { name: 'BMD 6K (23.1×12.99)', widthMm: 23.1, heightMm: 12.99, cropFactor: 1.56 }, mount: 'B4', adaptedMounts: ['EF', 'PL'], resolutions: ['6K', '4K', 'HD'], type: 'broadcast', notes: 'B4 native, EF/PL via adapter. Broadcast camera with cinema sensor.', sensorModes: [
@@ -182,7 +181,7 @@ export const CAMERAS: Camera[] = [
   } },
 
   // ── RED ──
-  { id: 'red-v-raptor', manufacturer: 'RED', model: 'V-RAPTOR XL', sensor: { name: 'RED VV (40.96×21.6)', widthMm: 40.96, heightMm: 21.6, cropFactor: 0.88 }, mount: 'PL', adaptedMounts: ['EF', 'L', 'RF'], resolutions: ['8K', '6K', '4K'], type: 'cinema', notes: 'PL native (LPL optional); EF/L/RF via interchangeable RED mounts', mountAdapters: {
+  { id: 'red-v-raptor', manufacturer: 'RED', model: 'V-RAPTOR XL', sensor: { name: 'RED VV (40.96×21.6)', widthMm: 40.96, heightMm: 21.6, cropFactor: 0.93 }, mount: 'PL', adaptedMounts: ['EF', 'L', 'RF'], resolutions: ['8K', '6K', '4K'], type: 'cinema', notes: 'PL native (LPL optional); EF/L/RF via interchangeable RED mounts', mountAdapters: {
     EF: { name: 'RED V-RAPTOR EF Mount', lightLossStops: 0, notes: 'RED-official swappable EF mount. Mechanical change only — full VistaVision sensor area available, no light loss.' },
     L: { name: 'RED V-RAPTOR L-mount', lightLossStops: 0, notes: 'RED-official swappable L-mount. Useful with Sigma / Leica L lenses. Passive optically.' },
     RF: { name: 'RED V-RAPTOR RF Mount', lightLossStops: 0, notes: 'RED-official swappable Canon RF mount. Electronic aperture / IS supported with most RF glass.' },
@@ -236,7 +235,6 @@ export const CAMERAS: Camera[] = [
   { id: 'hitachi-z-hd6500', manufacturer: 'Hitachi', model: 'Z-HD6500', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
   { id: 'hitachi-sk-uhd4000b', manufacturer: 'Hitachi', model: 'SK-UHD4000B', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
   // ── Panasonic Cinema / Lumix ──
-  { id: 'pana-au-eva1', manufacturer: 'Panasonic', model: 'AU-EVA1', sensor: SENSORS.S35, mount: 'EF', resolutions: ['5.7K', '4K', 'HD'], type: 'cinema', notes: 'S35, EF-Mount' },
   { id: 'pana-varicam-lt', manufacturer: 'Panasonic', model: 'VariCam LT', sensor: SENSORS.S35, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['4K', 'HD'], type: 'cinema' },
   { id: 'pana-varicam-35', manufacturer: 'Panasonic', model: 'VariCam 35', sensor: SENSORS.S35, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['4K', 'HD'], type: 'cinema' },
   { id: 'pana-lumix-s1h', manufacturer: 'Panasonic', model: 'Lumix S1H', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['EF', 'PL'], resolutions: ['6K', '4K', 'HD'], type: 'mirrorless' },
@@ -310,8 +308,8 @@ export const CAMERAS: Camera[] = [
   { id: 'pana-lumix-s1', manufacturer: 'Panasonic', model: 'Lumix S1', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['EF'], resolutions: ['4K', 'HD'], type: 'mirrorless' },
   { id: 'pana-lumix-gh5-ii', manufacturer: 'Panasonic', model: 'Lumix GH5 II', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'mirrorless' },
   // ── RED DSMC2 ──
-  { id: 'red-dsmc2-monstro', manufacturer: 'RED', model: 'DSMC2 Monstro 8K VV', sensor: { name: 'RED VV Monstro (40.96×21.6)', widthMm: 40.96, heightMm: 21.6, cropFactor: 0.88 }, mount: 'PL', adaptedMounts: ['RF', 'EF'], resolutions: ['8K', '6K', '4K'], type: 'cinema' },
-  { id: 'red-dsmc2-helium', manufacturer: 'RED', model: 'DSMC2 Helium 8K S35', sensor: { name: 'RED S35 Helium (29.9×15.77)', widthMm: 29.9, heightMm: 15.77, cropFactor: 1.2 }, mount: 'RF', adaptedMounts: ['PL', 'EF'], resolutions: ['8K', '6K', '4K'], type: 'cinema' },
+  { id: 'red-dsmc2-monstro', manufacturer: 'RED', model: 'DSMC2 Monstro 8K VV', sensor: { name: 'RED VV Monstro (40.96×21.6)', widthMm: 40.96, heightMm: 21.6, cropFactor: 0.93 }, mount: 'PL', adaptedMounts: ['RF', 'EF'], resolutions: ['8K', '6K', '4K'], type: 'cinema' },
+  { id: 'red-dsmc2-helium', manufacturer: 'RED', model: 'DSMC2 Helium 8K S35', sensor: { name: 'RED S35 Helium (29.9×15.77)', widthMm: 29.9, heightMm: 15.77, cropFactor: 1.28 }, mount: 'RF', adaptedMounts: ['PL', 'EF'], resolutions: ['8K', '6K', '4K'], type: 'cinema' },
   { id: 'red-dsmc2-gemini', manufacturer: 'RED', model: 'DSMC2 Gemini 5K S35', sensor: { name: 'RED S35 Gemini (30.72×18.0)', widthMm: 30.72, heightMm: 18.0, cropFactor: 1.16 }, mount: 'RF', adaptedMounts: ['PL', 'EF'], resolutions: ['5K', '4K', 'HD'], type: 'cinema', notes: 'Dual-ISO Low-Light' },
   // ── Broadcast / POV (Ausbau) ──
   { id: 'marshall-cv566', manufacturer: 'Marshall', model: 'CV566', sensor: { name: '1/2.8" (5.37×4.04)', widthMm: 5.37, heightMm: 4.04, cropFactor: 6.7 }, mount: 'M12', resolutions: ['HD'], type: 'broadcast', notes: 'Micro-Genlock POV' },
@@ -343,7 +341,6 @@ export const CAMERAS: Camera[] = [
   { id: 'pana-ak-ub300', manufacturer: 'Panasonic', model: 'AK-UB300', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast', notes: 'Box-Systemkamera' },
   { id: 'gv-ldx-82', manufacturer: 'Grass Valley', model: 'LDX 82', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['HD'], type: 'broadcast' },
   { id: 'hitachi-sk-uhd8060b', manufacturer: 'Hitachi', model: 'SK-UHD8060B', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K', 'HD'], type: 'broadcast' },
-  { id: 'bmd-ursa-mini-pro-12k', manufacturer: 'Blackmagic', model: 'URSA Mini Pro 12K', sensor: SENSORS.S35, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['12K', '8K', '4K'], type: 'cinema', notes: 'S35 12K' },
   { id: 'jvc-gy-hc500', manufacturer: 'JVC', model: 'GY-HC500', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder' },
   { id: 'jvc-gy-hm250', manufacturer: 'JVC', model: 'GY-HM250', sensor: { name: '1/2.3" (6.17×4.55)', widthMm: 6.17, heightMm: 4.55, cropFactor: 5.64 }, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder' },
   { id: 'canon-xf400', manufacturer: 'Canon', model: 'XF400', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'camcorder' },
@@ -400,7 +397,6 @@ export const CAMERAS: Camera[] = [
   // ── Sony (Ausbau 2) ──
   { id: 'sony-a7s2', manufacturer: 'Sony', model: 'A7S II', sensor: SENSORS.FF, mount: 'E', resolutions: ['4K', 'HD'], type: 'mirrorless' },
   { id: 'sony-a99-ii', manufacturer: 'Sony', model: 'A99 II', sensor: SENSORS.FF, mount: 'A', resolutions: ['4K', 'HD'], type: 'mirrorless', notes: 'A-Mount DSLR' },
-  { id: 'sony-hdc-p31-b', manufacturer: 'Sony', model: 'HDC-P31', sensor: SENSORS.TWO_THIRD, mount: 'B4', resolutions: ['4K','HD'], type: 'broadcast', notes: '3×2/3" CMOS POV-Systemkamera (Quelle: pro.sony HDC-P31)' },
   // ── Panasonic / OM System ──
   { id: 'pana-lumix-gh4', manufacturer: 'Panasonic', model: 'Lumix GH4', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'mirrorless' },
   { id: 'pana-lumix-s1h-b', manufacturer: 'Panasonic', model: 'Lumix S1R', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['EF'], resolutions: ['4K', 'HD'], type: 'mirrorless' },
@@ -482,13 +478,13 @@ export const CAMERAS: Camera[] = [
   { id: 'arri-alexa-mini', manufacturer: 'ARRI', model: 'ALEXA Mini', sensor: { name: 'ARRI ALEV III S35 (28.17×18.13)', widthMm: 28.17, heightMm: 18.13, cropFactor: 1.29 }, mount: 'PL', adaptedMounts: ['EF','B4'], resolutions: ['3.4K','UHD','HD'], type: 'cinema' },
   { id: 'arri-alexa-studio', manufacturer: 'ARRI', model: 'ALEXA Studio', sensor: { name: 'ARRI ALEV III S35 (28.17×18.13)', widthMm: 28.17, heightMm: 18.13, cropFactor: 1.29 }, mount: 'PL', resolutions: ['2.8K','HD'], type: 'cinema' },
   // ── RED Klassiker ──
-  { id: 'red-epic-dragon', manufacturer: 'RED', model: 'EPIC Dragon', sensor: { name: 'RED Dragon S35 (30.7×15.8)', widthMm: 30.7, heightMm: 15.8, cropFactor: 1.17 }, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['6K','5K','4K'], type: 'cinema' },
-  { id: 'red-scarlet-w', manufacturer: 'RED', model: 'SCARLET-W', sensor: { name: 'RED Dragon S35 (30.7×15.8)', widthMm: 30.7, heightMm: 15.8, cropFactor: 1.17 }, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['5K','4K'], type: 'cinema' },
+  { id: 'red-epic-dragon', manufacturer: 'RED', model: 'EPIC Dragon', sensor: { name: 'RED Dragon S35 (30.7×15.8)', widthMm: 30.7, heightMm: 15.8, cropFactor: 1.25 }, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['6K','5K','4K'], type: 'cinema' },
+  { id: 'red-scarlet-w', manufacturer: 'RED', model: 'SCARLET-W', sensor: { name: 'RED Dragon S35 (30.7×15.8)', widthMm: 30.7, heightMm: 15.8, cropFactor: 1.25 }, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['5K','4K'], type: 'cinema' },
   { id: 'red-epic-w-helium', manufacturer: 'RED', model: 'EPIC-W Helium 8K', sensor: { name: 'RED Helium S35 (29.9×15.77)', widthMm: 29.9, heightMm: 15.77, cropFactor: 1.28 }, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['8K','6K','4K'], type: 'cinema' },
   { id: 'red-raven-4k', manufacturer: 'RED', model: 'RAVEN 4.5K', sensor: SENSORS.S35, mount: 'EF', adaptedMounts: ['PL'], resolutions: ['4.5K','4K'], type: 'cinema' },
   { id: 'red-weapon-8k-vv', manufacturer: 'RED', model: 'WEAPON 8K VV Monstro', sensor: { name: 'RED Monstro VV (40.96×21.6)', widthMm: 40.96, heightMm: 21.6, cropFactor: 0.93 }, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['8K','6K','4K'], type: 'cinema' },
   // ── Sony Cinema Klassiker ──
-  { id: 'sony-f65', manufacturer: 'Sony', model: 'F65 CineAlta', sensor: { name: 'Sony F65 S35 (24.7×13.1)', widthMm: 24.7, heightMm: 13.1, cropFactor: 1.46 }, mount: 'PL', resolutions: ['8K','4K','HD'], type: 'cinema' },
+  { id: 'sony-f65', manufacturer: 'Sony', model: 'F65 CineAlta', sensor: { name: 'Sony F65 S35 (24.7×13.1)', widthMm: 24.7, heightMm: 13.1, cropFactor: 1.55 }, mount: 'PL', resolutions: ['8K','4K','HD'], type: 'cinema' },
   { id: 'sony-f35', manufacturer: 'Sony', model: 'F35 CineAlta', sensor: SENSORS.S35, mount: 'PL', resolutions: ['HD'], type: 'cinema' },
   { id: 'sony-pmw-f3', manufacturer: 'Sony', model: 'PMW-F3', sensor: SENSORS.S35, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['HD'], type: 'cinema' },
   { id: 'sony-nex-fs700', manufacturer: 'Sony', model: 'NEX-FS700', sensor: SENSORS.S35, mount: 'E', adaptedMounts: ['PL','EF'], resolutions: ['4K','HD'], type: 'cinema' },
