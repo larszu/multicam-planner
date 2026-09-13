@@ -4,6 +4,7 @@
 // vorher fest im JSX stand — mit einer bewussten Ausnahme, die unten steht.
 export const shotlist: Record<string, string> = {
   'shotlist.none': '— keine Shotlist —',
+  'shotlist.pick': 'Shotlist',
   'shotlist.new': 'Neue Shotlist',
   'shotlist.rename': 'Shotlist umbenennen',
   'shotlist.renamePrompt': 'Name der Shotlist:',

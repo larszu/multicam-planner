@@ -238,7 +238,13 @@ export default function ShotlistPanel() {
     <div data-shotlist-panel className="w-full h-full flex flex-col bg-bc-panel text-bc-text-bright overflow-hidden">
       {/* ── Kopfzeile: Liste waehlen / anlegen ── */}
       <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-bc-border shrink-0">
+        {/* `aria-label` (B-77): das Feld steht ohne Beschriftung daneben, und
+            seine Optionen tragen Listennamen — ohne Namen weiss ein
+            Screenreader nicht, WOFUER die Liste gewaehlt wird. Es war das
+            einzige Feld dieser App ohne Namen; `bedienbar:check` in der Suite
+            misst genau das. */}
         <select
+          aria-label={t('shotlist.pick', 'Shotlist')}
           value={activeShotlistId ?? ''}
           onChange={(e) => setActiveShotlist(e.target.value || null)}
           className="bg-bc-dark border border-bc-border px-1.5 py-1 text-xs text-bc-text-bright max-w-[45%] flex-1 min-w-0"

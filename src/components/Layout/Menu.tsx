@@ -24,7 +24,7 @@
 // funktioniert, verschluckt aber jeden Punkt, der ein Untermenue aufklappen
 // oder ein Eingabefeld zeigen will (die Preset-Zeile hier tut genau das).
 // ───────────────────────────────────────────────────────────────────────────
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { FiCheck, FiChevronDown } from 'react-icons/fi';
 
 interface MenuProps {
@@ -36,6 +36,9 @@ interface MenuProps {
 export function Menu({ label, children }: MenuProps) {
   const [open, setOpen] = useState(false);
   const shell = useRef<HTMLDivElement>(null);
+  /** Das Rechteck des angeklickten Titels — Ausgangspunkt der Klappe. */
+  const [anker, setAnker] = useState<{ links: number; oben: number } | null>(null);
+  const klappe = useRef<HTMLDivElement>(null);
 
   // Klick daneben schliesst, Escape auch. Ohne beides bliebe ein Menue
   // stehen, sobald jemand woanders hinklickt — und zwei offene Klappen
@@ -48,13 +51,64 @@ export function Menu({ label, children }: MenuProps) {
     const esc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
     };
+    // ROLLEN FUEHRT NACH, GROESSE SCHLIESST.
+    //
+    // Beides muss etwas tun, weil die Klappe seit B-77 am Fenster haengt: sie
+    // weiss von sich aus nicht, dass ihr Titel sich bewegt hat. Die
+    // Menue-Gruppe rollt auf schmalen Fenstern waagerecht, also bewegt er
+    // sich.
+    //
+    // Der erste Anlauf SCHLOSS bei beidem, und das war falsch — gemessen mit
+    // `bedienbar:check`: bei 390 px liegt „Help" ausserhalb der Leiste, ein
+    // Klick darauf rollt sie erst um 21 px, und das Rollereignis kam NACH dem
+    // Klick. Die Klappe ging auf und sofort wieder zu. Wer den Titel
+    // antippt, den er sehen kann, merkt davon nichts; wer ihn ueber die
+    // Tastatur oder einen Rollbefehl erreicht, oeffnet ins Leere.
+    //
+    // Nachfuehren ist ausserdem das bessere Verhalten: die Klappe bleibt an
+    // ihrem Titel, statt bei jeder Rollbewegung zu verschwinden.
+    const nachfuehren = () => {
+      const knopf = shell.current?.querySelector('button');
+      if (!knopf) return;
+      const r = knopf.getBoundingClientRect();
+      setAnker({ links: r.left, oben: r.bottom + 4 });
+    };
+    const weg = () => setOpen(false);
     document.addEventListener('mousedown', away);
     document.addEventListener('keydown', esc);
+    window.addEventListener('resize', weg);
+    window.addEventListener('scroll', nachfuehren, true);
     return () => {
       document.removeEventListener('mousedown', away);
       document.removeEventListener('keydown', esc);
+      window.removeEventListener('resize', weg);
+      window.removeEventListener('scroll', nachfuehren, true);
     };
   }, [open]);
+
+  // B-77 — DIE KLAPPE HAENGT AM FENSTER, NICHT AN DER LEISTE.
+  //
+  // Sie war ein `absolute`-Kind der Kopfzeile. Solange die Kopfzeile nichts
+  // abschneidet, faellt das nicht auf; sobald ein Vorfahr rollt oder klemmt,
+  // ist die Klappe weg. Im `light-planner` ist genau das passiert: ein
+  // `overflow: hidden`, das die Kopfzeile einzeilig halten sollte, machte
+  // aus einer 505 px hohen Datei-Klappe eine mit 0 px sichtbarer Hoehe —
+  // vier Menues, kein einziges ging mehr auf.
+  //
+  // Hier wird die Menue-Gruppe seit B-77 rollend, also waere es nur eine
+  // Frage der Zeit. Eine Klappe am VIEWPORT kennt den Beschnitt ihrer
+  // Vorfahren nicht. Gemessen wird NACH dem Einhaengen: die Breite haengt am
+  // laengsten Eintrag und ist auf Deutsch eine andere als auf Englisch.
+  useLayoutEffect(() => {
+    const el = klappe.current;
+    if (!el || !anker) return;
+    const r = el.getBoundingClientRect();
+    const rand = 8;
+    const links = Math.max(rand, Math.min(anker.links, window.innerWidth - rand - r.width));
+    const oben = Math.max(rand, Math.min(anker.oben, window.innerHeight - rand - r.height));
+    el.style.left = `${links}px`;
+    el.style.top = `${oben}px`;
+  }, [anker, open]);
 
   return (
     <div className="relative shrink-0" ref={shell}>
@@ -62,7 +116,11 @@ export function Menu({ label, children }: MenuProps) {
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
+        onClick={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          setAnker({ links: r.left, oben: r.bottom + 4 });
+          setOpen((o) => !o);
+        }}
         style={{ padding: '4px 6px' }}
         className={`flex items-center gap-0.5 text-xs text-bc-text-bright transition-colors hover:bg-bc-panel-raised ${open ? 'bg-bc-panel-raised' : ''}`}
       >
@@ -75,7 +133,8 @@ export function Menu({ label, children }: MenuProps) {
           /* GEDECKELT wie im Cable Planner: die Klappe darf nicht laenger
              werden als das Fenster hoch ist, sonst stehen ihre letzten Punkte
              unter dem Fensterrand und existieren fuer den Nutzer nicht. */
-          className="absolute left-0 top-full z-[100] mt-1 max-h-[calc(100vh-3.5rem)] min-w-[16rem] overflow-y-auto border border-bc-border bg-bc-panel py-1"
+          ref={klappe}
+          className="fixed left-0 top-0 z-[100] max-h-[calc(100vh-3.5rem)] min-w-[16rem] overflow-y-auto border border-bc-border bg-bc-panel py-1"
         >
           {children(() => setOpen(false))}
         </div>
