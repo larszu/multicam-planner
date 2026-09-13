@@ -51,20 +51,38 @@ export function Menu({ label, children }: MenuProps) {
     const esc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
     };
-    // Groesse und Rollen des Fensters schliessen die Klappe, statt sie
-    // nachzufuehren: eine Klappe, die beim Rollen stehenbleibt, zeigt auf
-    // einen Titel, der nicht mehr dort ist. Genau das kann seit B-77
-    // passieren — die Menue-Gruppe rollt auf schmalen Fenstern waagerecht.
+    // ROLLEN FUEHRT NACH, GROESSE SCHLIESST.
+    //
+    // Beides muss etwas tun, weil die Klappe seit B-77 am Fenster haengt: sie
+    // weiss von sich aus nicht, dass ihr Titel sich bewegt hat. Die
+    // Menue-Gruppe rollt auf schmalen Fenstern waagerecht, also bewegt er
+    // sich.
+    //
+    // Der erste Anlauf SCHLOSS bei beidem, und das war falsch — gemessen mit
+    // `bedienbar:check`: bei 390 px liegt „Help" ausserhalb der Leiste, ein
+    // Klick darauf rollt sie erst um 21 px, und das Rollereignis kam NACH dem
+    // Klick. Die Klappe ging auf und sofort wieder zu. Wer den Titel
+    // antippt, den er sehen kann, merkt davon nichts; wer ihn ueber die
+    // Tastatur oder einen Rollbefehl erreicht, oeffnet ins Leere.
+    //
+    // Nachfuehren ist ausserdem das bessere Verhalten: die Klappe bleibt an
+    // ihrem Titel, statt bei jeder Rollbewegung zu verschwinden.
+    const nachfuehren = () => {
+      const knopf = shell.current?.querySelector('button');
+      if (!knopf) return;
+      const r = knopf.getBoundingClientRect();
+      setAnker({ links: r.left, oben: r.bottom + 4 });
+    };
     const weg = () => setOpen(false);
     document.addEventListener('mousedown', away);
     document.addEventListener('keydown', esc);
     window.addEventListener('resize', weg);
-    window.addEventListener('scroll', weg, true);
+    window.addEventListener('scroll', nachfuehren, true);
     return () => {
       document.removeEventListener('mousedown', away);
       document.removeEventListener('keydown', esc);
       window.removeEventListener('resize', weg);
-      window.removeEventListener('scroll', weg, true);
+      window.removeEventListener('scroll', nachfuehren, true);
     };
   }, [open]);
 
