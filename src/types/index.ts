@@ -92,7 +92,7 @@ export interface AdapterInfo {
 // lens reports `mount: 'EF'` but only fills an APS-C circle. Used by the
 // coverage check so an EF-S lens on a 5D body flags as vignetting even
 // though the mount fits.
-export type LensImageCircle = 'FF' | 'S35' | 'APSC' | 'MFT' | '2/3' | '1' | 'integrated';
+export type LensImageCircle = 'FF' | 'S35' | 'APSC' | 'MFT' | '2/3' | '1' | 'MF' | 'integrated';
 
 // ── Lens ──
 export interface Lens {

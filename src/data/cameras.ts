@@ -737,6 +737,7 @@ const IMAGE_CIRCLE_KIND_MM: Record<string, number> = {
   MFT:  21.6,
   '2/3': 11.0,
   '1':  16.0,
+  MF:   55.0,
   integrated: 0,
 };
 

@@ -10,36 +10,36 @@ export const LENSES: Lens[] = [
   // └─────────────────────────────────────────────┘
   { id: 'fuj-ua107x8.4', manufacturer: 'Fujinon', model: 'UA107x8.4BESM', focalLengthMin: 8.4, focalLengthMax: 900, maxApertureWide: 1.7, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Box lens 107x, 4K Premier' },
   { id: 'fuj-ua80x9', manufacturer: 'Fujinon', model: 'UA80x9BESM', focalLengthMin: 9, focalLengthMax: 720, maxApertureWide: 1.7, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Box lens 80x' },
-  { id: 'fuj-ua46x9.5', manufacturer: 'Fujinon', model: 'UA46x9.5BERD', focalLengthMin: 9.5, focalLengthMax: 437, maxApertureWide: 1.7, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Box lens 46x' },
-  { id: 'fuj-ua27x6.5', manufacturer: 'Fujinon', model: 'UA27x6.5BERD', focalLengthMin: 6.5, focalLengthMax: 176, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K Premier handheld 27x' },
+  { id: 'fuj-ua46x9.5', manufacturer: 'Fujinon', model: 'UA46x9.5BERD', focalLengthMin: 9.5, focalLengthMax: 437, maxApertureWide: 2.0, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Box lens 46x' },
+  { id: 'fuj-ua27x6.5', manufacturer: 'Fujinon', model: 'UA27x6.5BESM', focalLengthMin: 6.5, focalLengthMax: 176, maxApertureWide: 1.5, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K Premier handheld 27x' },
   { id: 'fuj-ua24x7.8', manufacturer: 'Fujinon', model: 'UA24x7.8BERD', focalLengthMin: 7.8, focalLengthMax: 187, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K Premier handheld 24x' },
   { id: 'fuj-ua22x8', manufacturer: 'Fujinon', model: 'UA22x8BERD', focalLengthMin: 8, focalLengthMax: 176, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K Premier handheld 22x' },
   { id: 'fuj-ua18x7.6', manufacturer: 'Fujinon', model: 'UA18x7.6BERD', focalLengthMin: 7.6, focalLengthMax: 137, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K Premier handheld 18x' },
-  { id: 'fuj-ua18x5.6', manufacturer: 'Fujinon', model: 'UA18x5.6BERD', focalLengthMin: 5.6, focalLengthMax: 101, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K Premier wide-angle 18x' },
+  { id: 'fuj-ua18x5.6', manufacturer: 'Fujinon', model: 'UA18x5.5BERD', focalLengthMin: 5.5, focalLengthMax: 100, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K Premier wide-angle 18x' },
   { id: 'fuj-ua14x4.5', manufacturer: 'Fujinon', model: 'UA14x4.5BERD', focalLengthMin: 4.5, focalLengthMax: 63, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K Premier ultra-wide 14x' },
   { id: 'fuj-ua13x4.5', manufacturer: 'Fujinon', model: 'UA13x4.5BERD', focalLengthMin: 4.5, focalLengthMax: 59, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K Premier ultra-wide 13x' },
 
   // ┌─────────────────────────────────────────────┐
   // │  FUJINON B4 – HA Series (HD Premier)        │
   // └─────────────────────────────────────────────┘
-  { id: 'fuj-ha42x13.5', manufacturer: 'Fujinon', model: 'HA42x13.5BERD', focalLengthMin: 13.5, focalLengthMax: 567, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Super telephoto 42x' },
-  { id: 'fuj-ha42x9.7', manufacturer: 'Fujinon', model: 'HA42x9.7BERD', focalLengthMin: 9.7, focalLengthMax: 407, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Telephoto 42x' },
-  { id: 'fuj-ha25x16.5', manufacturer: 'Fujinon', model: 'HA25x16.5BERD', focalLengthMin: 16.5, focalLengthMax: 413, maxApertureWide: 2.0, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Telephoto handheld' },
+  { id: 'fuj-ha42x13.5', manufacturer: 'Fujinon', model: 'HA42x13.5BERD', focalLengthMin: 13.5, focalLengthMax: 567, maxApertureWide: 2.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Super telephoto 42x' },
+  { id: 'fuj-ha42x9.7', manufacturer: 'Fujinon', model: 'HA42x9.7BERD', focalLengthMin: 9.7, focalLengthMax: 407, maxApertureWide: 2.0, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Telephoto 42x' },
+  { id: 'fuj-ha25x16.5', manufacturer: 'Fujinon', model: 'HA25x16.5BERD', focalLengthMin: 16.5, focalLengthMax: 413, maxApertureWide: 2.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Telephoto handheld' },
   { id: 'fuj-ha23x7.6', manufacturer: 'Fujinon', model: 'HA23x7.6BERD', focalLengthMin: 7.6, focalLengthMax: 175, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom' },
-  { id: 'fuj-ha22x7.3', manufacturer: 'Fujinon', model: 'HA22x7.3BERD', focalLengthMin: 7.3, focalLengthMax: 161, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom' },
+  { id: 'fuj-ha22x7.3', manufacturer: 'Fujinon', model: 'HA22x7.3BERD', focalLengthMin: 7.3, focalLengthMax: 161, maxApertureWide: 1.9, mount: 'B4', extenderFactors: [2], type: 'zoom' },
   { id: 'fuj-ha18x7.6', manufacturer: 'Fujinon', model: 'HA18x7.6BERM', focalLengthMin: 7.6, focalLengthMax: 137, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom' },
   { id: 'fuj-ha16x6.3', manufacturer: 'Fujinon', model: 'HA16x6.3BERM', focalLengthMin: 6.3, focalLengthMax: 101, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Wide 16x' },
   { id: 'fuj-ha14x4.5', manufacturer: 'Fujinon', model: 'HA14x4.5BERD', focalLengthMin: 4.5, focalLengthMax: 63, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Ultra wide angle' },
-  { id: 'fuj-ha13x4.5', manufacturer: 'Fujinon', model: 'HA13x4.5BERM', focalLengthMin: 4.5, focalLengthMax: 59, maxApertureWide: 2.0, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Ultra wide' },
+  { id: 'fuj-ha13x4.5', manufacturer: 'Fujinon', model: 'HA13x4.5BERM', focalLengthMin: 4.5, focalLengthMax: 59, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Ultra wide' },
 
   // ┌─────────────────────────────────────────────┐
   // │  FUJINON B4 – XA Series (HD Standard)       │
   // └─────────────────────────────────────────────┘
   { id: 'fuj-xa20sx8.5', manufacturer: 'Fujinon', model: 'XA20sx8.5BRM', focalLengthMin: 8.5, focalLengthMax: 170, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom' },
   { id: 'fuj-xa17x7.6', manufacturer: 'Fujinon', model: 'XA17x7.6BRM', focalLengthMin: 7.6, focalLengthMax: 129, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom' },
-  { id: 'fuj-xa16x8a', manufacturer: 'Fujinon', model: 'XA16x8A', focalLengthMin: 8, focalLengthMax: 128, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD standard 16x' },
-  { id: 'fuj-xs17x5.5', manufacturer: 'Fujinon', model: 'XS17x5.5BRM', focalLengthMin: 5.5, focalLengthMax: 94, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Wide 17x' },
-  { id: 'fuj-xs13x3.3', manufacturer: 'Fujinon', model: 'XS13x3.3BRM', focalLengthMin: 3.3, focalLengthMax: 43, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Super wide 13x' },
+  { id: 'fuj-xa16x8a', manufacturer: 'Fujinon', model: 'XA16x8A', focalLengthMin: 8, focalLengthMax: 128, maxApertureWide: 1.9, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD standard 16x' },
+  { id: 'fuj-xs17x5.5', manufacturer: 'Fujinon', model: 'XS17x5.5BRM', focalLengthMin: 5.5, focalLengthMax: 94, maxApertureWide: 1.4, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Wide 17x' },
+  { id: 'fuj-xs13x3.3', manufacturer: 'Fujinon', model: 'XS13x3.3BRM', focalLengthMin: 3.3, focalLengthMax: 43, maxApertureWide: 1.4, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Super wide 13x' },
 
   // ┌─────────────────────────────────────────────┐
   // │  FUJINON B4 – ZA Series (HD Economy/Std)    │
@@ -54,19 +54,19 @@ export const LENSES: Lens[] = [
   // │  FUJINON B4 – Box Lenses (XA/HA/UA)         │
   // └─────────────────────────────────────────────┘
   { id: 'fuj-xa101x8.9', manufacturer: 'Fujinon', model: 'XA101x8.9BESM', focalLengthMin: 8.9, focalLengthMax: 899, maxApertureWide: 1.7, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD box lens 101x' },
-  { id: 'fuj-ha87x9.3', manufacturer: 'Fujinon', model: 'HA87x9.3BESM', focalLengthMin: 9.3, focalLengthMax: 810, maxApertureWide: 1.7, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD box 87x' },
-  { id: 'fuj-ha66x9.5', manufacturer: 'Fujinon', model: 'HA66x9.5BESM', focalLengthMin: 9.5, focalLengthMax: 627, maxApertureWide: 1.7, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD box 66x' },
-  { id: 'fuj-ha55x9.5', manufacturer: 'Fujinon', model: 'HA55x9.5BESM', focalLengthMin: 9.5, focalLengthMax: 523, maxApertureWide: 1.7, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD box 55x' },
+  { id: 'fuj-ha87x9.3', manufacturer: 'Fujinon', model: 'XA87x9.3BESM', focalLengthMin: 9.3, focalLengthMax: 810, maxApertureWide: 1.7, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD box 87x' },
+  { id: 'fuj-ha66x9.5', manufacturer: 'Fujinon', model: 'XA66x9.3BESM', focalLengthMin: 9.3, focalLengthMax: 615, maxApertureWide: 1.7, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD box 66x' },
+  { id: 'fuj-ha55x9.5', manufacturer: 'Fujinon', model: 'XA55x9.5BESM', focalLengthMin: 9.5, focalLengthMax: 523, maxApertureWide: 1.7, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD box 55x' },
 
   // ┌─────────────────────────────────────────────┐
   // │  CANON B4 – CJ Series (4K UHD)              │
   // └─────────────────────────────────────────────┘
-  { id: 'can-cj45ex9.7b', manufacturer: 'Canon', model: 'CJ45ex9.7B', focalLengthMin: 9.7, focalLengthMax: 436, maxApertureWide: 1.7, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K field box 45x' },
+  { id: 'can-cj45ex9.7b', manufacturer: 'Canon', model: 'CJ45ex9.7B', focalLengthMin: 9.7, focalLengthMax: 436, maxApertureWide: 2.0, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K field box 45x' },
   { id: 'can-cj27ex7.3b', manufacturer: 'Canon', model: 'CJ27ex7.3B', focalLengthMin: 7.3, focalLengthMax: 197, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K handheld 27x' },
   { id: 'can-cj25ex7.6b', manufacturer: 'Canon', model: 'CJ25ex7.6B', focalLengthMin: 7.6, focalLengthMax: 190, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K handheld 25x' },
   { id: 'can-cj24ex7.5b', manufacturer: 'Canon', model: 'CJ24ex7.5B', focalLengthMin: 7.5, focalLengthMax: 180, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K handheld 24x' },
   { id: 'can-cj20ex7.8b', manufacturer: 'Canon', model: 'CJ20ex7.8B', focalLengthMin: 7.8, focalLengthMax: 156, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K handheld 20x' },
-  { id: 'can-cj18ex28b', manufacturer: 'Canon', model: 'CJ18ex28B', focalLengthMin: 28, focalLengthMax: 500, maxApertureWide: 2.0, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K telephoto 18x' },
+  { id: 'can-cj18ex28b', manufacturer: 'Canon', model: 'CJ18ex28B', focalLengthMin: 28, focalLengthMax: 500, maxApertureWide: 2.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K telephoto 18x' },
   { id: 'can-cj17ex6.2b', manufacturer: 'Canon', model: 'CJ17ex6.2B', focalLengthMin: 6.2, focalLengthMax: 105, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K wide 17x' },
   { id: 'can-cj15ex4.3b', manufacturer: 'Canon', model: 'CJ15ex4.3B', focalLengthMin: 4.3, focalLengthMax: 64.5, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K wide 15x' },
   { id: 'can-cj14ex4.3b', manufacturer: 'Canon', model: 'CJ14ex4.3B', focalLengthMin: 4.3, focalLengthMax: 60, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K ultra-wide 14x' },
@@ -75,28 +75,25 @@ export const LENSES: Lens[] = [
   // ┌─────────────────────────────────────────────┐
   // │  CANON B4 – HJ Series (HD)                  │
   // └─────────────────────────────────────────────┘
-  { id: 'can-hj40x14b', manufacturer: 'Canon', model: 'HJ40x14B', focalLengthMin: 14, focalLengthMax: 560, maxApertureWide: 2.0, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD telephoto 40x' },
-  { id: 'can-hj40x10b', manufacturer: 'Canon', model: 'HJ40x10B', focalLengthMin: 10, focalLengthMax: 400, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD telephoto 40x' },
+  { id: 'can-hj40x14b', manufacturer: 'Canon', model: 'HJ40x14B', focalLengthMin: 14, focalLengthMax: 560, maxApertureWide: 2.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD telephoto 40x' },
+  { id: 'can-hj40x10b', manufacturer: 'Canon', model: 'HJ40x10B', focalLengthMin: 10, focalLengthMax: 400, maxApertureWide: 2.0, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD telephoto 40x' },
   { id: 'can-hj24ex7.5b', manufacturer: 'Canon', model: 'HJ24ex7.5B', focalLengthMin: 7.5, focalLengthMax: 180, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD handheld 24x' },
   { id: 'can-hj22ex7.6b', manufacturer: 'Canon', model: 'HJ22ex7.6B', focalLengthMin: 7.6, focalLengthMax: 167, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom' },
   { id: 'can-hj17ex7.6b', manufacturer: 'Canon', model: 'HJ17ex7.6B', focalLengthMin: 7.6, focalLengthMax: 129, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD standard 17x' },
   { id: 'can-hj17ex6.2b', manufacturer: 'Canon', model: 'HJ17ex6.2B', focalLengthMin: 6.2, focalLengthMax: 105, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD wide 17x' },
   { id: 'can-hj14ex4.3b', manufacturer: 'Canon', model: 'HJ14ex4.3B', focalLengthMin: 4.3, focalLengthMax: 60, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD wide 14x' },
-  { id: 'can-hj11ex4.7b', manufacturer: 'Canon', model: 'HJ11ex4.7B', focalLengthMin: 4.7, focalLengthMax: 52, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD ultra-wide 11x' },
+  { id: 'can-hj11ex4.7b', manufacturer: 'Canon', model: 'HJ11ex4.7B', focalLengthMin: 4.7, focalLengthMax: 52, maxApertureWide: 1.9, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD ultra-wide 11x' },
 
   // ┌─────────────────────────────────────────────┐
   // │  CANON B4 – Box Lenses (HJ/CJ)              │
   // └─────────────────────────────────────────────┘
-  { id: 'can-uj90x9b', manufacturer: 'Canon', model: 'UJ90x9B', focalLengthMin: 9, focalLengthMax: 810, maxApertureWide: 1.7, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K field box 90x' },
+  { id: 'can-uj90x9b', manufacturer: 'Canon', model: 'UJ90x9B', focalLengthMin: 9, focalLengthMax: 810, maxApertureWide: 2.4, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K field box 90x' },
   { id: 'can-uj86x9.3b', manufacturer: 'Canon', model: 'UJ86x9.3B', focalLengthMin: 9.3, focalLengthMax: 800, maxApertureWide: 1.7, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: '4K box 86x' },
-  { id: 'can-hj100x5.5b', manufacturer: 'Canon', model: 'HJ100x5.5B', focalLengthMin: 5.5, focalLengthMax: 550, maxApertureWide: 2.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD super-wide box 100x' },
-  { id: 'can-hj100x6.2b', manufacturer: 'Canon', model: 'HJ100x6.2B', focalLengthMin: 6.2, focalLengthMax: 620, maxApertureWide: 2.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD box 100x' },
-  { id: 'can-hj66x20b', manufacturer: 'Canon', model: 'HJ66x20B', focalLengthMin: 20, focalLengthMax: 1320, maxApertureWide: 2.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'HD super-telephoto box' },
 
   // ┌─────────────────────────────────────────────┐
   // │  FUJINON B4 – Legacy HD Series              │
   // └─────────────────────────────────────────────┘
-  { id: 'fuj-th17x5b', manufacturer: 'Fujinon', model: 'TH17x5BRMU', focalLengthMin: 5, focalLengthMax: 85, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Legacy HD wide 17x' },
+  { id: 'fuj-th17x5b', manufacturer: 'Fujinon', model: 'TH17x5BRMU', focalLengthMin: 5, focalLengthMax: 85, maxApertureWide: 1.4, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Legacy HD wide 17x' },
   { id: 'fuj-a22x7.8', manufacturer: 'Fujinon', model: 'A22x7.8BERM', focalLengthMin: 7.8, focalLengthMax: 172, maxApertureWide: 1.8, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Legacy HD 22x' },
   { id: 'fuj-a36x10.5', manufacturer: 'Fujinon', model: 'A36x10.5BERD', focalLengthMin: 10.5, focalLengthMax: 378, maxApertureWide: 2.0, mount: 'B4', extenderFactors: [2], type: 'zoom', notes: 'Legacy box 36x' },
 
@@ -238,13 +235,13 @@ export const LENSES: Lens[] = [
   // ══════════════════════════════════════════════
   //  PTZ INTEGRATED LENSES (virtual entries)
   // ══════════════════════════════════════════════
-  { id: 'ptz-sony-brc-x400', manufacturer: 'Sony', model: 'BRC-X400 integrated 20x', focalLengthMin: 4.4, focalLengthMax: 88, maxApertureWide: 2.0, mount: 'integrated', type: 'integrated', notes: '20x optical zoom' },
-  { id: 'ptz-sony-srg-x120', manufacturer: 'Sony', model: 'SRG-X120 integrated 12x', focalLengthMin: 4.4, focalLengthMax: 52.8, maxApertureWide: 2.0, mount: 'integrated', type: 'integrated', notes: '12x optical zoom' },
-  { id: 'ptz-sony-brc-h800', manufacturer: 'Sony', model: 'BRC-H800 integrated 12x', focalLengthMin: 4.5, focalLengthMax: 54, maxApertureWide: 1.6, mount: 'integrated', type: 'integrated', notes: '12x optical zoom, HD PTZ' },
-  { id: 'ptz-pana-ue150', manufacturer: 'Panasonic', model: 'AW-UE150 integrated 20x', focalLengthMin: 4.08, focalLengthMax: 81.6, maxApertureWide: 1.6, mount: 'integrated', type: 'integrated', notes: '20x optical zoom' },
-  { id: 'ptz-pana-ue40', manufacturer: 'Panasonic', model: 'AW-UE40 integrated 24x', focalLengthMin: 4.3, focalLengthMax: 103.2, maxApertureWide: 1.8, mount: 'integrated', type: 'integrated', notes: '24x optical zoom' },
-  { id: 'ptz-canon-crn500', manufacturer: 'Canon', model: 'CR-N500 integrated 15x', focalLengthMin: 8.9, focalLengthMax: 133.5, maxApertureWide: 2.8, mount: 'integrated', type: 'integrated', notes: '15x optical zoom' },
-  { id: 'ptz-canon-crn300', manufacturer: 'Canon', model: 'CR-N300 integrated 20x', focalLengthMin: 4.3, focalLengthMax: 86, maxApertureWide: 2.0, mount: 'integrated', type: 'integrated', notes: '20x optical zoom' },
+  { id: 'ptz-sony-brc-x400', manufacturer: 'Sony', model: 'BRC-X400 integrated 20x', focalLengthMin: 4.4, focalLengthMax: 88, maxApertureWide: 2.0, maxApertureTele: 3.8, mount: 'integrated', type: 'integrated', notes: '20x optical zoom' },
+  { id: 'ptz-sony-srg-x120', manufacturer: 'Sony', model: 'SRG-X120 integrated 12x', focalLengthMin: 4.4, focalLengthMax: 52.8, maxApertureWide: 2.0, maxApertureTele: 3.7, mount: 'integrated', type: 'integrated', notes: '12x optical zoom' },
+  { id: 'ptz-sony-brc-h800', manufacturer: 'Sony', model: 'BRC-H800 integrated 12x', focalLengthMin: 9.3, focalLengthMax: 111.6, maxApertureWide: 2.8, maxApertureTele: 4.5, mount: 'integrated', type: 'integrated', notes: '12x optical zoom, HD PTZ' },
+  { id: 'ptz-pana-ue150', manufacturer: 'Panasonic', model: 'AW-UE150 integrated 20x', focalLengthMin: 8.8, focalLengthMax: 176.0, maxApertureWide: 2.8, maxApertureTele: 4.5, mount: 'integrated', type: 'integrated', notes: '20x optical zoom' },
+  { id: 'ptz-pana-ue40', manufacturer: 'Panasonic', model: 'AW-UE40 integrated 24x', focalLengthMin: 4.12, focalLengthMax: 98.9, maxApertureWide: 1.8, maxApertureTele: 4.0, mount: 'integrated', type: 'integrated', notes: '24x optical zoom' },
+  { id: 'ptz-canon-crn500', manufacturer: 'Canon', model: 'CR-N500 integrated 15x', focalLengthMin: 8.3, focalLengthMax: 124.5, maxApertureWide: 2.8, maxApertureTele: 4.5, mount: 'integrated', type: 'integrated', notes: '15x optical zoom' },
+  { id: 'ptz-canon-crn300', manufacturer: 'Canon', model: 'CR-N300 integrated 20x', focalLengthMin: 3.67, focalLengthMax: 73.4, maxApertureWide: 1.8, maxApertureTele: 2.8, mount: 'integrated', type: 'integrated', notes: '20x optical zoom' },
   { id: 'ptz-sony-fr7', manufacturer: 'Sony', model: 'FR7 (no integrated lens)', focalLengthMin: 28, focalLengthMax: 135, maxApertureWide: 4, mount: 'E', type: 'zoom', notes: 'Use E-mount lens' },
   // ══════════════════════════════════════════════
   //  CINEMA-OPTIKEN (PL/LPL) — T-Blenden laut Hersteller (2026-09)
@@ -448,19 +445,19 @@ export const LENSES: Lens[] = [
   { id: 'zeiss-cp3-100', manufacturer: 'Zeiss', model: 'CP.3 100mm T2.1', focalLengthMin: 100, focalLengthMax: 100, maxApertureWide: 2.1, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   { id: 'zeiss-cp3-135', manufacturer: 'Zeiss', model: 'CP.3 135mm T2.1', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.1, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   // ── Leitz Cine Summicron-C (PL, Full Frame; T2.0) ──
-  { id: 'leitz-summicron-c-15', manufacturer: 'Leitz', model: 'Summicron-C 15mm T2.0', focalLengthMin: 15, focalLengthMax: 15, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'FF', type: 'prime' },
-  { id: 'leitz-summicron-c-18', manufacturer: 'Leitz', model: 'Summicron-C 18mm T2.0', focalLengthMin: 18, focalLengthMax: 18, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'FF', type: 'prime' },
-  { id: 'leitz-summicron-c-21', manufacturer: 'Leitz', model: 'Summicron-C 21mm T2.0', focalLengthMin: 21, focalLengthMax: 21, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'FF', type: 'prime' },
-  { id: 'leitz-summicron-c-25', manufacturer: 'Leitz', model: 'Summicron-C 25mm T2.0', focalLengthMin: 25, focalLengthMax: 25, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'FF', type: 'prime' },
-  { id: 'leitz-summicron-c-29', manufacturer: 'Leitz', model: 'Summicron-C 29mm T2.0', focalLengthMin: 29, focalLengthMax: 29, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'FF', type: 'prime' },
-  { id: 'leitz-summicron-c-32', manufacturer: 'Leitz', model: 'Summicron-C 32mm T2.0', focalLengthMin: 32, focalLengthMax: 32, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'FF', type: 'prime' },
-  { id: 'leitz-summicron-c-40', manufacturer: 'Leitz', model: 'Summicron-C 40mm T2.0', focalLengthMin: 40, focalLengthMax: 40, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'FF', type: 'prime' },
-  { id: 'leitz-summicron-c-50', manufacturer: 'Leitz', model: 'Summicron-C 50mm T2.0', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'FF', type: 'prime' },
-  { id: 'leitz-summicron-c-75', manufacturer: 'Leitz', model: 'Summicron-C 75mm T2.0', focalLengthMin: 75, focalLengthMax: 75, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'FF', type: 'prime' },
-  { id: 'leitz-summicron-c-100', manufacturer: 'Leitz', model: 'Summicron-C 100mm T2.0', focalLengthMin: 100, focalLengthMax: 100, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'FF', type: 'prime' },
-  { id: 'leitz-summicron-c-135', manufacturer: 'Leitz', model: 'Summicron-C 135mm T2.0', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'leitz-summicron-c-15', manufacturer: 'Leitz', model: 'Summicron-C 15mm T2.0', focalLengthMin: 15, focalLengthMax: 15, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime' },
+  { id: 'leitz-summicron-c-18', manufacturer: 'Leitz', model: 'Summicron-C 18mm T2.0', focalLengthMin: 18, focalLengthMax: 18, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime' },
+  { id: 'leitz-summicron-c-21', manufacturer: 'Leitz', model: 'Summicron-C 21mm T2.0', focalLengthMin: 21, focalLengthMax: 21, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime' },
+  { id: 'leitz-summicron-c-25', manufacturer: 'Leitz', model: 'Summicron-C 25mm T2.0', focalLengthMin: 25, focalLengthMax: 25, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime' },
+  { id: 'leitz-summicron-c-29', manufacturer: 'Leitz', model: 'Summicron-C 29mm T2.0', focalLengthMin: 29, focalLengthMax: 29, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime' },
+  { id: 'leitz-summicron-c-32', manufacturer: 'Leitz', model: 'Summicron-C 32mm T2.0', focalLengthMin: 32, focalLengthMax: 32, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime' },
+  { id: 'leitz-summicron-c-40', manufacturer: 'Leitz', model: 'Summicron-C 40mm T2.0', focalLengthMin: 40, focalLengthMax: 40, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime' },
+  { id: 'leitz-summicron-c-50', manufacturer: 'Leitz', model: 'Summicron-C 50mm T2.0', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime' },
+  { id: 'leitz-summicron-c-75', manufacturer: 'Leitz', model: 'Summicron-C 75mm T2.0', focalLengthMin: 75, focalLengthMax: 75, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime' },
+  { id: 'leitz-summicron-c-100', manufacturer: 'Leitz', model: 'Summicron-C 100mm T2.0', focalLengthMin: 100, focalLengthMax: 100, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime' },
+  { id: 'leitz-summicron-c-135', manufacturer: 'Leitz', model: 'Summicron-C 135mm T2.0', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'S35', type: 'prime' },
   // ── Angénieux Optimo Prime (PL, Full Frame; T1.8) ──
-  { id: 'ang-optimoprime-18', manufacturer: 'Angénieux', model: 'Optimo Prime 18mm T1.8', focalLengthMin: 18, focalLengthMax: 18, maxApertureWide: 1.8, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'ang-optimoprime-18', manufacturer: 'Angénieux', model: 'Optimo Prime 18mm T1.8', focalLengthMin: 18, focalLengthMax: 18, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   { id: 'ang-optimoprime-21', manufacturer: 'Angénieux', model: 'Optimo Prime 21mm T1.8', focalLengthMin: 21, focalLengthMax: 21, maxApertureWide: 1.8, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   { id: 'ang-optimoprime-24', manufacturer: 'Angénieux', model: 'Optimo Prime 24mm T1.8', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 1.8, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   { id: 'ang-optimoprime-28', manufacturer: 'Angénieux', model: 'Optimo Prime 28mm T1.8', focalLengthMin: 28, focalLengthMax: 28, maxApertureWide: 1.8, mount: 'PL', imageCircle: 'FF', type: 'prime' },
@@ -471,7 +468,7 @@ export const LENSES: Lens[] = [
   { id: 'ang-optimoprime-75', manufacturer: 'Angénieux', model: 'Optimo Prime 75mm T1.8', focalLengthMin: 75, focalLengthMax: 75, maxApertureWide: 1.8, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   { id: 'ang-optimoprime-100', manufacturer: 'Angénieux', model: 'Optimo Prime 100mm T1.8', focalLengthMin: 100, focalLengthMax: 100, maxApertureWide: 1.8, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   { id: 'ang-optimoprime-135', manufacturer: 'Angénieux', model: 'Optimo Prime 135mm T1.8', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 1.8, mount: 'PL', imageCircle: 'FF', type: 'prime' },
-  { id: 'ang-optimoprime-200', manufacturer: 'Angénieux', model: 'Optimo Prime 200mm T1.8', focalLengthMin: 200, focalLengthMax: 200, maxApertureWide: 1.8, mount: 'PL', imageCircle: 'FF', type: 'prime' },
+  { id: 'ang-optimoprime-200', manufacturer: 'Angénieux', model: 'Optimo Prime 200mm T1.8', focalLengthMin: 200, focalLengthMax: 200, maxApertureWide: 2.2, mount: 'PL', imageCircle: 'FF', type: 'prime' },
   // ── Sigma Art DG (E-Mount, Full Frame) ──
   { id: 'sigma-art-e-14', manufacturer: 'Sigma', model: '14mm f/1.8 DG HSM Art', focalLengthMin: 14, focalLengthMax: 14, maxApertureWide: 1.8, mount: 'E', imageCircle: 'FF', type: 'prime' },
   { id: 'sigma-art-e-20', manufacturer: 'Sigma', model: '20mm f/1.4 DG HSM Art', focalLengthMin: 20, focalLengthMax: 20, maxApertureWide: 1.4, mount: 'E', imageCircle: 'FF', type: 'prime' },
@@ -498,14 +495,14 @@ export const LENSES: Lens[] = [
   // ── Sigma Art DG DN (L-Mount, Full Frame) ──
   { id: 'sigma-l-35-12', manufacturer: 'Sigma', model: '35 F1.2 DG DN Art', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.2, mount: 'L', imageCircle: 'FF', type: 'prime' },
   { id: 'sigma-l-50-12', manufacturer: 'Sigma', model: '50 F1.2 DG DN Art', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.2, mount: 'L', imageCircle: 'FF', type: 'prime' },
-  { id: 'sigma-l-14', manufacturer: 'Sigma', model: '14 F1.8 DG DN Art', focalLengthMin: 14, focalLengthMax: 14, maxApertureWide: 1.8, mount: 'L', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-l-14', manufacturer: 'Sigma', model: '14 F1.8 DG HSM Art', focalLengthMin: 14, focalLengthMax: 14, maxApertureWide: 1.8, mount: 'L', imageCircle: 'FF', type: 'prime' },
   { id: 'sigma-l-20', manufacturer: 'Sigma', model: '20 F1.4 DG DN Art', focalLengthMin: 20, focalLengthMax: 20, maxApertureWide: 1.4, mount: 'L', imageCircle: 'FF', type: 'prime' },
   { id: 'sigma-l-24', manufacturer: 'Sigma', model: '24 F1.4 DG DN Art', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 1.4, mount: 'L', imageCircle: 'FF', type: 'prime' },
   { id: 'sigma-l-35-14', manufacturer: 'Sigma', model: '35 F1.4 DG DN Art', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 1.4, mount: 'L', imageCircle: 'FF', type: 'prime' },
   { id: 'sigma-l-50-14', manufacturer: 'Sigma', model: '50 F1.4 DG DN Art', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.4, mount: 'L', imageCircle: 'FF', type: 'prime' },
   { id: 'sigma-l-85', manufacturer: 'Sigma', model: '85 F1.4 DG DN Art', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.4, mount: 'L', imageCircle: 'FF', type: 'prime' },
-  { id: 'sigma-l-105', manufacturer: 'Sigma', model: '105 F1.4 DG DN Art', focalLengthMin: 105, focalLengthMax: 105, maxApertureWide: 1.4, mount: 'L', imageCircle: 'FF', type: 'prime' },
-  { id: 'sigma-l-135', manufacturer: 'Sigma', model: '135 F1.8 DG DN Art', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 1.8, mount: 'L', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-l-105', manufacturer: 'Sigma', model: '105 F1.4 DG HSM Art', focalLengthMin: 105, focalLengthMax: 105, maxApertureWide: 1.4, mount: 'L', imageCircle: 'FF', type: 'prime' },
+  { id: 'sigma-l-135', manufacturer: 'Sigma', model: '135 F1.8 DG HSM Art', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 1.8, mount: 'L', imageCircle: 'FF', type: 'prime' },
   // ── Tamron (Sony E, Full Frame) ──
   { id: 'tamron-e-16-30', manufacturer: 'Tamron', model: '16-30 F2.8 Di III VXD G2', focalLengthMin: 16, focalLengthMax: 30, maxApertureWide: 2.8, mount: 'E', imageCircle: 'FF', type: 'zoom' },
   { id: 'tamron-e-28-75', manufacturer: 'Tamron', model: '28-75 F2.8 Di III VXD G2', focalLengthMin: 28, focalLengthMax: 75, maxApertureWide: 2.8, mount: 'E', imageCircle: 'FF', type: 'zoom' },
@@ -530,20 +527,20 @@ export const LENSES: Lens[] = [
   // ── Canon Broadcast UHDgc / DIGISUPER (B4, 2/3"; 4K) ──
   { id: 'canon-cj12ex4.3', manufacturer: 'Canon', model: 'UHDgc CJ12ex4.3B', focalLengthMin: 4.3, focalLengthMax: 51.6, maxApertureWide: 1.8, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
   { id: 'canon-cj14ex4.3', manufacturer: 'Canon', model: 'UHDgc CJ14ex4.3B', focalLengthMin: 4.3, focalLengthMax: 60, maxApertureWide: 1.8, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
-  { id: 'canon-cj17ex6.2', manufacturer: 'Canon', model: 'UHDgc CJ17ex6.2B', focalLengthMin: 6.2, focalLengthMax: 106, maxApertureWide: 1.9, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  { id: 'canon-cj17ex6.2', manufacturer: 'Canon', model: 'UHDgc CJ17ex6.2B', focalLengthMin: 6.2, focalLengthMax: 106, maxApertureWide: 1.8, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
   { id: 'canon-cj18ex7.6', manufacturer: 'Canon', model: 'UHDgc CJ18ex7.6B', focalLengthMin: 7.6, focalLengthMax: 137, maxApertureWide: 1.8, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
-  { id: 'canon-cj18ex28', manufacturer: 'Canon', model: 'UHDgc CJ18ex28B', focalLengthMin: 28, focalLengthMax: 500, maxApertureWide: 2.5, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  { id: 'canon-cj18ex28', manufacturer: 'Canon', model: 'UHDgc CJ18ex28B', focalLengthMin: 28, focalLengthMax: 500, maxApertureWide: 2.8, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
   { id: 'canon-cj20ex5', manufacturer: 'Canon', model: 'UHDgc CJ20ex5B', focalLengthMin: 5, focalLengthMax: 100, maxApertureWide: 1.8, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
   { id: 'canon-cj24ex7.5', manufacturer: 'Canon', model: 'UHDgc CJ24ex7.5B', focalLengthMin: 7.5, focalLengthMax: 180, maxApertureWide: 1.8, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
   { id: 'canon-cj25ex7.6', manufacturer: 'Canon', model: 'UHDgc CJ25ex7.6B', focalLengthMin: 7.6, focalLengthMax: 190, maxApertureWide: 1.8, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
   { id: 'canon-cj45ex13.6', manufacturer: 'Canon', model: 'UHDgc CJ45ex13.6B', focalLengthMin: 13.6, focalLengthMax: 612, maxApertureWide: 2.8, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
-  { id: 'canon-uj90x9', manufacturer: 'Canon', model: 'UHD DIGISUPER 90 (UJ90x9B)', focalLengthMin: 9, focalLengthMax: 810, maxApertureWide: 1.7, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
+  { id: 'canon-uj90x9', manufacturer: 'Canon', model: 'UHD DIGISUPER 90 (UJ90x9B)', focalLengthMin: 9, focalLengthMax: 810, maxApertureWide: 2.4, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
   { id: 'canon-uj111x8.3', manufacturer: 'Canon', model: 'UHD DIGISUPER 111 (UJ111x8.3B)', focalLengthMin: 8.3, focalLengthMax: 925, maxApertureWide: 1.7, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
   { id: 'canon-uj122x8.2', manufacturer: 'Canon', model: 'UHD DIGISUPER 122 (UJ122x8.2B)', focalLengthMin: 8.2, focalLengthMax: 1000, maxApertureWide: 1.7, mount: 'B4', imageCircle: '2/3', extenderFactors: [2], type: 'zoom' },
   // ── Sony E APS-C (für A6700/FX30) ──
   { id: 'sony-e-10-20pz', manufacturer: 'Sony', model: 'E PZ 10-20 F4 G', focalLengthMin: 10, focalLengthMax: 20, maxApertureWide: 4.0, mount: 'E', imageCircle: 'APSC', type: 'zoom' },
   { id: 'sony-e-16-55', manufacturer: 'Sony', model: 'E 16-55 F2.8 G', focalLengthMin: 16, focalLengthMax: 55, maxApertureWide: 2.8, mount: 'E', imageCircle: 'APSC', type: 'zoom' },
-  { id: 'sony-e-70-350', manufacturer: 'Sony', model: 'E 70-350 F4.5-6.3 G', focalLengthMin: 70, focalLengthMax: 350, maxApertureWide: 4.5, mount: 'E', imageCircle: 'APSC', type: 'zoom' },
+  { id: 'sony-e-70-350', manufacturer: 'Sony', model: 'E 70-350 F4.5-6.3 G', focalLengthMin: 70, focalLengthMax: 350, maxApertureWide: 4.5, maxApertureTele: 6.3, mount: 'E', imageCircle: 'APSC', type: 'zoom' },
   { id: 'sony-e-18-105', manufacturer: 'Sony', model: 'E PZ 18-105 F4 G', focalLengthMin: 18, focalLengthMax: 105, maxApertureWide: 4.0, mount: 'E', imageCircle: 'APSC', type: 'zoom' },
   { id: 'sony-e-11', manufacturer: 'Sony', model: 'E 11 F1.8', focalLengthMin: 11, focalLengthMax: 11, maxApertureWide: 1.8, mount: 'E', imageCircle: 'APSC', type: 'prime' },
   { id: 'sony-e-15', manufacturer: 'Sony', model: 'E 15 F1.4 G', focalLengthMin: 15, focalLengthMax: 15, maxApertureWide: 1.4, mount: 'E', imageCircle: 'APSC', type: 'prime' },
@@ -615,7 +612,7 @@ export const LENSES: Lens[] = [
   { id: 'sirui-venus-150', manufacturer: 'Sirui', model: 'Venus 150mm T2.9 1.6x', focalLengthMin: 150, focalLengthMax: 150, maxApertureWide: 2.9, mount: 'E', imageCircle: 'FF', type: 'prime', squeeze: 1.6 },
   { id: 'sirui-venus-135', manufacturer: 'Sirui', model: 'Venus 135mm T2.9 1.8x', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.9, mount: 'E', imageCircle: 'FF', type: 'prime', squeeze: 1.8 },
   // Laowa Nanomorph 1.5x (PL) 
-  { id: 'laowa-nanomorph-27', manufacturer: 'Laowa', model: 'Nanomorph 27mm T2.9 1.5x', focalLengthMin: 27, focalLengthMax: 27, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 1.5 },
+  { id: 'laowa-nanomorph-27', manufacturer: 'Laowa', model: 'Nanomorph 27mm T2.9 1.5x', focalLengthMin: 27, focalLengthMax: 27, maxApertureWide: 2.8, mount: 'PL', imageCircle: 'S35', type: 'prime', squeeze: 1.5 },
   { id: 'laowa-nanomorph-32', manufacturer: 'Laowa', model: 'Nanomorph 32mm T2.9 1.5x', focalLengthMin: 32, focalLengthMax: 32, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 1.5 },
   { id: 'laowa-nanomorph-42', manufacturer: 'Laowa', model: 'Nanomorph 42mm T2.9 1.5x', focalLengthMin: 42, focalLengthMax: 42, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 1.5 },
   { id: 'laowa-nanomorph-55', manufacturer: 'Laowa', model: 'Nanomorph 55mm T2.9 1.5x', focalLengthMin: 55, focalLengthMax: 55, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 1.5 },
@@ -625,7 +622,6 @@ export const LENSES: Lens[] = [
   { id: 'laowa-nanomorph-28-55', manufacturer: 'Laowa', model: 'Nanomorph 28-55 T2.9 1.5x', focalLengthMin: 28, focalLengthMax: 55, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'S35', type: 'zoom', squeeze: 1.5 },
   { id: 'laowa-nanomorph-50-100', manufacturer: 'Laowa', model: 'Nanomorph 50-100 T2.9 1.5x', focalLengthMin: 50, focalLengthMax: 100, maxApertureWide: 2.9, mount: 'PL', imageCircle: 'S35', type: 'zoom', squeeze: 1.5 },
   // Vazen 1.8x (PL) 
-  { id: 'vazen-40', manufacturer: 'Vazen', model: '40mm T2 1.8x', focalLengthMin: 40, focalLengthMax: 40, maxApertureWide: 2.0, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 1.8 },
   { id: 'vazen-50', manufacturer: 'Vazen', model: '50mm T2.1 1.8x', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.1, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 1.8 },
   { id: 'vazen-85', manufacturer: 'Vazen', model: '85mm T2.8 1.8x', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 2.8, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 1.8 },
   { id: 'vazen-135', manufacturer: 'Vazen', model: '135mm T2.8 1.8x', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.8, mount: 'PL', imageCircle: 'FF', type: 'prime', squeeze: 1.8 },
@@ -646,20 +642,20 @@ export const LENSES: Lens[] = [
   { id: 'nisi-athena-85', manufacturer: 'NiSi', model: 'Athena Prime 85mm T1.9', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.9, mount: 'E', imageCircle: 'FF', type: 'prime' },
   { id: 'nisi-athena-135', manufacturer: 'NiSi', model: 'Athena Prime 135mm T2.2', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.2, mount: 'E', imageCircle: 'FF', type: 'prime' },
   // ── Irix Cine (EF, FF; T1.5) ──
-  { id: 'irix-cine-11', manufacturer: 'Irix', model: 'Cine 11mm T1.5', focalLengthMin: 11, focalLengthMax: 11, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
-  { id: 'irix-cine-15', manufacturer: 'Irix', model: 'Cine 15mm T1.5', focalLengthMin: 15, focalLengthMax: 15, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'irix-cine-11', manufacturer: 'Irix', model: 'Cine 11mm T1.5', focalLengthMin: 11, focalLengthMax: 11, maxApertureWide: 4.3, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'irix-cine-15', manufacturer: 'Irix', model: 'Cine 15mm T1.5', focalLengthMin: 15, focalLengthMax: 15, maxApertureWide: 2.6, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'irix-cine-21', manufacturer: 'Irix', model: 'Cine 21mm T1.5', focalLengthMin: 21, focalLengthMax: 21, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'irix-cine-30', manufacturer: 'Irix', model: 'Cine 30mm T1.5', focalLengthMin: 30, focalLengthMax: 30, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'irix-cine-45', manufacturer: 'Irix', model: 'Cine 45mm T1.5', focalLengthMin: 45, focalLengthMax: 45, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'irix-cine-65', manufacturer: 'Irix', model: 'Cine 65mm T1.5', focalLengthMin: 65, focalLengthMax: 65, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   // ── Meike FF-Prime Cine (EF, FF; T2.1) ──
-  { id: 'meike-ff-16', manufacturer: 'Meike', model: 'FF-Prime 16mm T2.6', focalLengthMin: 16, focalLengthMax: 16, maxApertureWide: 2.6, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'meike-ff-16', manufacturer: 'Meike', model: 'FF-Prime 16mm T2.6', focalLengthMin: 16, focalLengthMax: 16, maxApertureWide: 2.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'meike-ff-24', manufacturer: 'Meike', model: 'FF-Prime 24mm T2.1', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 2.1, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'meike-ff-35', manufacturer: 'Meike', model: 'FF-Prime 35mm T2.1', focalLengthMin: 35, focalLengthMax: 35, maxApertureWide: 2.1, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'meike-ff-50', manufacturer: 'Meike', model: 'FF-Prime 50mm T2.1', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 2.1, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'meike-ff-85', manufacturer: 'Meike', model: 'FF-Prime 85mm T2.1', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 2.1, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'meike-ff-105', manufacturer: 'Meike', model: 'FF-Prime 105mm T2.1', focalLengthMin: 105, focalLengthMax: 105, maxApertureWide: 2.1, mount: 'EF', imageCircle: 'FF', type: 'prime' },
-  { id: 'meike-ff-135', manufacturer: 'Meike', model: 'FF-Prime 135mm T2.1', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.1, mount: 'EF', imageCircle: 'FF', type: 'prime' },
+  { id: 'meike-ff-135', manufacturer: 'Meike', model: 'FF-Prime 135mm T2.1', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.4, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   // ── Rokinon/Samyang XEEN CF (EF, FF) ──
   { id: 'xeen-cf-16', manufacturer: 'Rokinon', model: 'XEEN CF 16mm T2.6', focalLengthMin: 16, focalLengthMax: 16, maxApertureWide: 2.6, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'xeen-cf-24', manufacturer: 'Rokinon', model: 'XEEN CF 24mm T1.5', focalLengthMin: 24, focalLengthMax: 24, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
@@ -696,18 +692,18 @@ export const LENSES: Lens[] = [
   { id: 'fuji-xf-100-400', manufacturer: 'Fujifilm', model: 'XF 100-400 F4.5-5.6', focalLengthMin: 100, focalLengthMax: 400, maxApertureWide: 4.5, mount: 'X', imageCircle: 'APSC', type: 'zoom' },
   { id: 'fuji-xf-150-600', manufacturer: 'Fujifilm', model: 'XF 150-600 F5.6-8', focalLengthMin: 150, focalLengthMax: 600, maxApertureWide: 5.6, mount: 'X', imageCircle: 'APSC', type: 'zoom' },
   // ── Fujifilm GF (G-Mount, Mittelformat) ──
-  { id: 'fuji-gf-30', manufacturer: 'Fujifilm', model: 'GF 30 F3.5 R WR', focalLengthMin: 30, focalLengthMax: 30, maxApertureWide: 3.5, mount: 'G', imageCircle: 'FF', type: 'prime' },
-  { id: 'fuji-gf-45', manufacturer: 'Fujifilm', model: 'GF 45 F2.8 R WR', focalLengthMin: 45, focalLengthMax: 45, maxApertureWide: 2.8, mount: 'G', imageCircle: 'FF', type: 'prime' },
-  { id: 'fuji-gf-55', manufacturer: 'Fujifilm', model: 'GF 55 F1.7 R WR', focalLengthMin: 55, focalLengthMax: 55, maxApertureWide: 1.7, mount: 'G', imageCircle: 'FF', type: 'prime' },
-  { id: 'fuji-gf-63', manufacturer: 'Fujifilm', model: 'GF 63 F2.8 R WR', focalLengthMin: 63, focalLengthMax: 63, maxApertureWide: 2.8, mount: 'G', imageCircle: 'FF', type: 'prime' },
-  { id: 'fuji-gf-80', manufacturer: 'Fujifilm', model: 'GF 80 F1.7 R WR', focalLengthMin: 80, focalLengthMax: 80, maxApertureWide: 1.7, mount: 'G', imageCircle: 'FF', type: 'prime' },
-  { id: 'fuji-gf-110', manufacturer: 'Fujifilm', model: 'GF 110 F2 R LM WR', focalLengthMin: 110, focalLengthMax: 110, maxApertureWide: 2.0, mount: 'G', imageCircle: 'FF', type: 'prime' },
-  { id: 'fuji-gf-120macro', manufacturer: 'Fujifilm', model: 'GF 120 F4 Macro', focalLengthMin: 120, focalLengthMax: 120, maxApertureWide: 4.0, mount: 'G', imageCircle: 'FF', type: 'prime' },
-  { id: 'fuji-gf-250', manufacturer: 'Fujifilm', model: 'GF 250 F4 R LM', focalLengthMin: 250, focalLengthMax: 250, maxApertureWide: 4.0, mount: 'G', imageCircle: 'FF', type: 'prime' },
-  { id: 'fuji-gf-20-35', manufacturer: 'Fujifilm', model: 'GF 20-35 F4 R WR', focalLengthMin: 20, focalLengthMax: 35, maxApertureWide: 4.0, mount: 'G', imageCircle: 'FF', type: 'zoom' },
-  { id: 'fuji-gf-32-64', manufacturer: 'Fujifilm', model: 'GF 32-64 F4 R LM', focalLengthMin: 32, focalLengthMax: 64, maxApertureWide: 4.0, mount: 'G', imageCircle: 'FF', type: 'zoom' },
-  { id: 'fuji-gf-45-100', manufacturer: 'Fujifilm', model: 'GF 45-100 F4 R LM', focalLengthMin: 45, focalLengthMax: 100, maxApertureWide: 4.0, mount: 'G', imageCircle: 'FF', type: 'zoom' },
-  { id: 'fuji-gf-100-200', manufacturer: 'Fujifilm', model: 'GF 100-200 F5.6 R', focalLengthMin: 100, focalLengthMax: 200, maxApertureWide: 5.6, mount: 'G', imageCircle: 'FF', type: 'zoom' },
+  { id: 'fuji-gf-30', manufacturer: 'Fujifilm', model: 'GF 30 F3.5 R WR', focalLengthMin: 30, focalLengthMax: 30, maxApertureWide: 3.5, mount: 'G', imageCircle: 'MF', type: 'prime' },
+  { id: 'fuji-gf-45', manufacturer: 'Fujifilm', model: 'GF 45 F2.8 R WR', focalLengthMin: 45, focalLengthMax: 45, maxApertureWide: 2.8, mount: 'G', imageCircle: 'MF', type: 'prime' },
+  { id: 'fuji-gf-55', manufacturer: 'Fujifilm', model: 'GF 55 F1.7 R WR', focalLengthMin: 55, focalLengthMax: 55, maxApertureWide: 1.7, mount: 'G', imageCircle: 'MF', type: 'prime' },
+  { id: 'fuji-gf-63', manufacturer: 'Fujifilm', model: 'GF 63 F2.8 R WR', focalLengthMin: 63, focalLengthMax: 63, maxApertureWide: 2.8, mount: 'G', imageCircle: 'MF', type: 'prime' },
+  { id: 'fuji-gf-80', manufacturer: 'Fujifilm', model: 'GF 80 F1.7 R WR', focalLengthMin: 80, focalLengthMax: 80, maxApertureWide: 1.7, mount: 'G', imageCircle: 'MF', type: 'prime' },
+  { id: 'fuji-gf-110', manufacturer: 'Fujifilm', model: 'GF 110 F2 R LM WR', focalLengthMin: 110, focalLengthMax: 110, maxApertureWide: 2.0, mount: 'G', imageCircle: 'MF', type: 'prime' },
+  { id: 'fuji-gf-120macro', manufacturer: 'Fujifilm', model: 'GF 120 F4 Macro', focalLengthMin: 120, focalLengthMax: 120, maxApertureWide: 4.0, mount: 'G', imageCircle: 'MF', type: 'prime' },
+  { id: 'fuji-gf-250', manufacturer: 'Fujifilm', model: 'GF 250 F4 R LM', focalLengthMin: 250, focalLengthMax: 250, maxApertureWide: 4.0, mount: 'G', imageCircle: 'MF', type: 'prime' },
+  { id: 'fuji-gf-20-35', manufacturer: 'Fujifilm', model: 'GF 20-35 F4 R WR', focalLengthMin: 20, focalLengthMax: 35, maxApertureWide: 4.0, mount: 'G', imageCircle: 'MF', type: 'zoom' },
+  { id: 'fuji-gf-32-64', manufacturer: 'Fujifilm', model: 'GF 32-64 F4 R LM', focalLengthMin: 32, focalLengthMax: 64, maxApertureWide: 4.0, mount: 'G', imageCircle: 'MF', type: 'zoom' },
+  { id: 'fuji-gf-45-100', manufacturer: 'Fujifilm', model: 'GF 45-100 F4 R LM', focalLengthMin: 45, focalLengthMax: 100, maxApertureWide: 4.0, mount: 'G', imageCircle: 'MF', type: 'zoom' },
+  { id: 'fuji-gf-100-200', manufacturer: 'Fujifilm', model: 'GF 100-200 F5.6 R', focalLengthMin: 100, focalLengthMax: 200, maxApertureWide: 5.6, mount: 'G', imageCircle: 'MF', type: 'zoom' },
   // ── Canon RF-S (APS-C) / Nikon Z DX ──
   { id: 'canon-rfs-18-45', manufacturer: 'Canon', model: 'RF-S 18-45 F4.5-6.3', focalLengthMin: 18, focalLengthMax: 45, maxApertureWide: 4.5, mount: 'RF', imageCircle: 'APSC', type: 'zoom' },
   { id: 'canon-rfs-18-150', manufacturer: 'Canon', model: 'RF-S 18-150 F3.5-6.3', focalLengthMin: 18, focalLengthMax: 150, maxApertureWide: 3.5, mount: 'RF', imageCircle: 'APSC', type: 'zoom' },
@@ -723,7 +719,7 @@ export const LENSES: Lens[] = [
   { id: 'leica-sl-90-280', manufacturer: 'Leica', model: 'SL 90-280 F2.8-4', focalLengthMin: 90, focalLengthMax: 280, maxApertureWide: 2.8, mount: 'L', imageCircle: 'FF', type: 'zoom' },
   { id: 'leica-sl-50-14', manufacturer: 'Leica', model: 'SL 50 F1.4', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.4, mount: 'L', imageCircle: 'FF', type: 'prime' },
   { id: 'sigma-l-24-70dgdn', manufacturer: 'Sigma', model: '24-70 F2.8 DG DN Art (L)', focalLengthMin: 24, focalLengthMax: 70, maxApertureWide: 2.8, mount: 'L', imageCircle: 'FF', type: 'zoom' },
-  { id: 'sigma-l-70-200dgdn', manufacturer: 'Sigma', model: '70-200 F2.8 DG DN Art (L)', focalLengthMin: 70, focalLengthMax: 200, maxApertureWide: 2.8, mount: 'L', imageCircle: 'FF', type: 'zoom' },
+  { id: 'sigma-l-70-200dgdn', manufacturer: 'Sigma', model: '70-200 F2.8 DG DN OS Sports (L)', focalLengthMin: 70, focalLengthMax: 200, maxApertureWide: 2.8, mount: 'L', imageCircle: 'FF', type: 'zoom' },
   // ── Canon CN-E Cine (EF, Full Frame) ──
   { id: 'canon-cne-14', manufacturer: 'Canon', model: 'CN-E 14mm T3.1', focalLengthMin: 14, focalLengthMax: 14, maxApertureWide: 3.1, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'canon-cne-20', manufacturer: 'Canon', model: 'CN-E 20mm T1.5', focalLengthMin: 20, focalLengthMax: 20, maxApertureWide: 1.5, mount: 'EF', imageCircle: 'FF', type: 'prime' },
@@ -732,7 +728,7 @@ export const LENSES: Lens[] = [
   { id: 'canon-cne-50', manufacturer: 'Canon', model: 'CN-E 50mm T1.3', focalLengthMin: 50, focalLengthMax: 50, maxApertureWide: 1.3, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'canon-cne-85', manufacturer: 'Canon', model: 'CN-E 85mm T1.3', focalLengthMin: 85, focalLengthMax: 85, maxApertureWide: 1.3, mount: 'EF', imageCircle: 'FF', type: 'prime' },
   { id: 'canon-cne-135', manufacturer: 'Canon', model: 'CN-E 135mm T2.2', focalLengthMin: 135, focalLengthMax: 135, maxApertureWide: 2.2, mount: 'EF', imageCircle: 'FF', type: 'prime' },
-  { id: 'canon-cne-15-47', manufacturer: 'Canon', model: 'CN-E 15.5-47 T2.8', focalLengthMin: 15.5, focalLengthMax: 47, maxApertureWide: 2.8, mount: 'EF', imageCircle: 'FF', type: 'zoom' },
+  { id: 'canon-cne-15-47', manufacturer: 'Canon', model: 'CN-E 15.5-47 T2.8', focalLengthMin: 15.5, focalLengthMax: 47, maxApertureWide: 2.8, mount: 'EF', imageCircle: 'S35', type: 'zoom' },
   { id: 'canon-cne-30-105', manufacturer: 'Canon', model: 'CN-E 30-105 T2.8', focalLengthMin: 30, focalLengthMax: 105, maxApertureWide: 2.8, mount: 'EF', imageCircle: 'FF', type: 'zoom' },
   { id: 'canon-cne-30-300', manufacturer: 'Canon', model: 'CN-E 30-300 T2.95-3.7', focalLengthMin: 30, focalLengthMax: 300, maxApertureWide: 2.95, mount: 'EF', imageCircle: 'FF', type: 'zoom' },
   { id: 'canon-cne-18-80', manufacturer: 'Canon', model: 'CN-E 18-80 T4.4', focalLengthMin: 18, focalLengthMax: 80, maxApertureWide: 4.4, mount: 'EF', imageCircle: 'FF', type: 'zoom' },
