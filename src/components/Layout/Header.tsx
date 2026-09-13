@@ -286,6 +286,13 @@ export default function Header({
           )}
         </div>
 
+        {/* Die fuenf Menues in EINER Gruppe (B-77) — sie ist es, die auf
+            schmalen Fenstern rollt, und nicht die ganze Kopfzeile. Gemessen
+            bei 390 px: das Help-Menue endete bei 419 px, die Einstellungen
+            bei 463 px. Beides lag ausserhalb des Fensters und war auf einem
+            Telefon nicht erreichbar. Die Gruppe darf rollen, weil die
+            Klappen seit B-77 am Fenster haengen und nicht mehr in ihr. */}
+        <div className="bc-menubar">
         {/* ── File ── */}
         <Menu label={t('app.menu.file', 'File')}>
           {(close) => (
@@ -541,6 +548,7 @@ export default function Header({
             </MenuItem>
           )}
         </Menu>
+        </div>
 
         {/* Rechts aussen, als LETZTER Bedienpunkt der Zeile — dieselbe Stelle
             wie im Cable Planner. Das Wort erst ab breiten Fenstern, darunter

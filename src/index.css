@@ -407,12 +407,14 @@ select {
   display: none; /* hide close X and drag handle for cleaner look */
 }
 
-/* Toolbar buttons (maximize, etc) in tab strip */
+/* Toolbar buttons (maximize, etc) in tab strip.
+ * 24 px standen hier bis B-77; die Zahl ist jetzt `--ziel` und steht an
+ * einer Stelle statt an dreien. */
 .flexlayout__tab_toolbar_button {
   color: #4b5563 !important;
   border-radius: 0;
-  width: 24px;
-  height: 24px;
+  width: var(--ziel);
+  height: var(--ziel);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -427,8 +429,8 @@ select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: var(--ziel);
+  height: var(--ziel);
   margin-left: 4px;
   border: 1px solid transparent;
   border-radius: 0;
@@ -635,4 +637,111 @@ select {
   gap: 8px;
   padding: 10px 12px;
   border-bottom: 1px solid var(--color-bc-accent);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * B-77 — DIE MENUE-GRUPPE ROLLT, DIE KOPFZEILE NICHT.
+ *
+ * GEMESSEN bei 390 px: das Help-Menue endete bei 419 px, die Einstellungen
+ * bei 463 px. Beides lag ausserhalb des Fensters. Auf einem Telefon war
+ * damit weder „Help" noch der Einstellungen-Knopf erreichbar — und das
+ * ausgerechnet an der Zeile, die ADR-007 als „Einstellungen rechts aussen"
+ * festlegt.
+ *
+ * WARUM DIE GRUPPE UND NICHT DIE GANZE ZEILE: rollte die Kopfzeile selbst,
+ * rollte der Einstellungen-Knopf mit aus dem Bild — er soll aber stehen
+ * bleiben. Die Gruppe traegt nur die fuenf Menues; Marke links und
+ * Einstellungen rechts bleiben, wo sie sind.
+ *
+ * DASS SIE ROLLEN DARF, ist keine Selbstverstaendlichkeit: ein
+ * Rollbereich schneidet ab, was nicht hineinpasst, und die Klappen WAREN
+ * Kinder dieser Zeile. Sie haengen seit B-77 am Fenster (`Menu.tsx`,
+ * `position: fixed`) — im `light-planner` ist genau diese Kombination
+ * schiefgegangen, dort war jede Klappe monatelang 0 px hoch sichtbar.
+ *
+ * Die 40 px der Kopfzeile bleiben (ADR-007, von `chrome-parity.mjs`
+ * gemessen): sie bricht nicht um, sie rollt.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.bc-menubar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+@media (max-width: 820px) {
+  .bc-topbar {
+    gap: 4px;
+    padding: 0 8px;
+  }
+  .bc-menubar {
+    gap: 2px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+  .bc-menubar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * B-77 — EIN BEDIENPUNKT IST 32 PX HOCH UND 32 PX BREIT.
+ *
+ * DER ANLASS. Dieselbe Messung, die suite#231 fuer Lager und Gebaeude
+ * ausloeste, im Browser gegen diese App laufen lassen (2026-09-13,
+ * `scripts/bedienbar.mjs` in der Suite, 390/768/1440 px):
+ *
+ *   Menue-Knoepfe (File · Edit · Tools · View · Help)   24 px hoch
+ *   Modul-Reiter (2D Plan · 3D View · Preview · …)      18 px hoch
+ *   Einstellungen                                       22 px hoch
+ *   Zoom minus / plus                                   12 x 12 px
+ *   Panel-Werkzeugknoepfe, FlexLayout-Werkzeugknoepfe   24 x 24 px
+ *
+ * Zwoelf mal zwoelf Pixel ist kein kleiner Knopf, das ist ein Ziel, das man
+ * mit dem Finger nicht trifft und mit der Maus suchen muss.
+ *
+ * WARUM 32 UND NICHT 24 ODER 44. WCAG 2.2 zieht die Untergrenze bei 24 px
+ * (SC 2.5.8) und empfiehlt 44 px (SC 2.5.5). 32 liegt auf dem 8-px-Raster
+ * dieser Oberflaeche und ist dieselbe Zahl, die `inventory-planner` und
+ * `larszu-facility-planner` als `--ziel` fuehren und die
+ * `scripts/bedienbar.mjs` in der Suite misst. Eine zweite Zahl waere eine
+ * zweite Wahrheit.
+ *
+ * WARUM EINE GLOBALE REGEL UND NICHT 40 KLASSEN-STRINGS. Die Hoehen oben
+ * entstehen aus Tailwind-Polsterung (`py-1`, `p-1.5`) und nicht aus einer
+ * Hoehen-Angabe. Sie einzeln nachzuziehen hiesse, an vierzig Stellen
+ * dieselbe Entscheidung zu wiederholen — und die einundvierzigste, die
+ * morgen jemand schreibt, faellt wieder durch. `min-height` gewinnt gegen
+ * `height`, deshalb hebt diese Regel auch die ausdruecklich auf 24 px
+ * gesetzten Werkzeugknoepfe an, ohne dass sie doppelt gepflegt werden
+ * muessen.
+ *
+ * WAS AUSGENOMMEN IST, und warum: Kontrollkaestchen, Auswahlknoepfe und
+ * Schieberegler. Ein 32-px-Kaestchen ist kein besseres Kaestchen, es ist ein
+ * grosses Quadrat; der Schieberegler wird ueber seinen Griff bedient und
+ * faellt unter `slider:check` im light-planner. Dieselbe Ausnahme trifft
+ * die Sonde in der Suite.
+ * ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  --ziel: 32px;
+}
+
+button,
+summary,
+[role='button'],
+select,
+textarea,
+input:not([type='checkbox']):not([type='radio']):not([type='range']) {
+  min-height: var(--ziel);
+}
+
+/* Die Breite nur dort, wo ein Knopf zum Quadrat schrumpfen kann — ein
+ * Eingabefeld ist nie zu schmal, aber ein Icon-Knopf ohne Beschriftung ist
+ * genau das (die beiden Zoom-Knoepfe massen 12 px). */
+button,
+summary,
+[role='button'] {
+  min-width: var(--ziel);
 }
