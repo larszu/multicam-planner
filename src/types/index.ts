@@ -324,7 +324,7 @@ export interface PositionComms {
 /**
  * Bedarf 48 — wie eine Kameraposition ferngesteuert wird.
  *
- * Die Kennungen sind 1:1 die `ConnectionMode` aus `lz-camera-bridge`
+ * Die Kennungen sind 1:1 die `ConnectionMode` aus `sony-camera-bridge`
  * (`packages/web-rcp/src/types.ts`), plus `none`. Sie hier umzubenennen waere
  * bequem und der Anfang einer zweiten Wahrheit — der Paritaets-Guard der
  * Suite haelt beide Listen gegeneinander.

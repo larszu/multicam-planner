@@ -25,7 +25,7 @@
 //
 // ─── DER BUS STEHT WOANDERS, UND ER BLEIBT DORT ────────────────────────────
 //
-// Den „normalised command bus" gibt es bereits: `lz-camera-bridge`,
+// Den „normalised command bus" gibt es bereits: `sony-camera-bridge`,
 // `packages/web-rcp/src/capabilities.ts`. Dort steht `MODE_CAPS` — je
 // Verbindungsweg, welche Befehle das jeweilige Backend WIRKLICH implementiert;
 // der Kopf jener Datei sagt es selbst: „Mirrors exactly what each backend's
@@ -77,7 +77,7 @@ import { PAINT_UNSTATED } from './paintState';
  * gedruckten Blatt steht, worauf die Aussage beruht.
  */
 export const BRIDGE_SOURCE = {
-  repo: 'lz-camera-bridge',
+  repo: 'sony-camera-bridge',
   file: 'packages/web-rcp/src/capabilities.ts',
   symbol: 'MODE_CAPS',
   /** Stand der Quelle, aus der diese Kopie genommen wurde. */
