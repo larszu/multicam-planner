@@ -11,6 +11,8 @@ export interface SensorSize {
 // ── Camera ──
 export interface Camera {
   id: string;
+  /** Datenblatt-/Hersteller-URL als Herkunftsbeleg der Daten (optional). */
+  manufacturerUrl?: string;
   /**
    * Stabile geraeteuebergreifende Typ-Identitaet (GUID, GDTF/DIN-SPEC-15800-
    * analog: FixtureTypeID). Optional — gesetzt fuer Modelle, deren echte I/O im
@@ -97,6 +99,8 @@ export type LensImageCircle = 'FF' | 'S35' | 'APSC' | 'MFT' | '2/3' | '1' | 'MF'
 // ── Lens ──
 export interface Lens {
   id: string;
+  /** Datenblatt-/Hersteller-URL als Herkunftsbeleg der Daten (optional). */
+  manufacturerUrl?: string;
   manufacturer: string;
   model: string;
   focalLengthMin: number; // mm
