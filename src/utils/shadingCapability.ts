@@ -81,7 +81,7 @@ export const BRIDGE_SOURCE = {
   file: 'packages/web-rcp/src/capabilities.ts',
   symbol: 'MODE_CAPS',
   /** Stand der Quelle, aus der diese Kopie genommen wurde. */
-  commit: '5cdb954648ad115c478c48a5eff1e0d20cbbad2d',
+  commit: '9c4882c8695cbee3ab9ee2bd849abe3c346f8044',
 } as const;
 
 /**
@@ -180,8 +180,11 @@ export const CONTROL_PATH_LABEL: Readonly<Record<ControlPath, string>> = {
   zcam: 'Z CAM (HTTP)',
   'panasonic-ptz': 'Panasonic AW PTZ (CGI)',
   visca: 'VISCA over IP',
+  'visca-serial': 'VISCA (RS-232/422)',
   jvc: 'JVC (Web-API)',
   birddog: 'BirdDog (VISCA + REST)',
+  'dji-osmo': 'DJI Osmo Pocket (Gimbal)',
+  'dji-ronin': 'DJI Ronin RS 2 / RS 3 Pro (Gimbal)',
   none: 'kein Fernsteuerweg — von Hand am Body',
 };
 
@@ -224,8 +227,17 @@ export const MODE_PAINT: Readonly<Record<ControlPath, readonly PaintFunction[]>>
   zcam: ['iris', 'shutter', 'iso', 'masterGain', 'colorTemp', 'awb'],
   'panasonic-ptz': ['iris', 'bars'],
   visca: ['iris', 'masterGain', 'awb'],
+  // Derselbe Befehlssatz wie ueber IP -- der Draht aendert die Huelle, nicht
+  // die Kommandos. Weniger einzutragen hiesse, auf dem gedruckten Blatt
+  // etwas zu verbieten, was die Kamera kann.
+  'visca-serial': ['iris', 'masterGain', 'awb'],
   jvc: ['iris', 'masterGain', 'colorTemp', 'awb'],
   birddog: ['iris', 'masterGain', 'colorTemp', 'awb'],
+  // Gimbals stellen NICHTS am Bild. Leer ist hier die richtige Aussage und
+  // nicht eine fehlende: sie bewegen den Kopf, das Bild macht die Kamera
+  // darauf, und die hat ihren eigenen Fernsteuerweg.
+  'dji-osmo': [],
+  'dji-ronin': [],
   none: [],
 };
 
