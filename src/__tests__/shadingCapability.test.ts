@@ -66,7 +66,7 @@ describe('die Herkunft der Tabelle steht als Wert da', () => {
   it('nennt Repo, Datei, Symbol und den Stand', () => {
     // Nicht nur im Kommentar: der Paritaets-Guard der Suite braucht die
     // Stelle, gegen die er prueft, und ein Blatt braucht den Grund.
-    expect(BRIDGE_SOURCE.repo).toBe('sony-camera-bridge');
+    expect(BRIDGE_SOURCE.repo).toBe('lz-camera-bridge');
     expect(BRIDGE_SOURCE.file).toBe('packages/web-rcp/src/capabilities.ts');
     expect(BRIDGE_SOURCE.symbol).toBe('MODE_CAPS');
     expect(BRIDGE_SOURCE.commit).toMatch(/^[0-9a-f]{40}$/);

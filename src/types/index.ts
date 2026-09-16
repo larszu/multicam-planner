@@ -324,7 +324,7 @@ export interface PositionComms {
 /**
  * Bedarf 48 — wie eine Kameraposition ferngesteuert wird.
  *
- * Die Kennungen sind 1:1 die `ConnectionMode` aus `sony-camera-bridge`
+ * Die Kennungen sind 1:1 die `ConnectionMode` aus `lz-camera-bridge`
  * (`packages/web-rcp/src/types.ts`), plus `none`. Sie hier umzubenennen waere
  * bequem und der Anfang einer zweiten Wahrheit — der Paritaets-Guard der
  * Suite haelt beide Listen gegeneinander.
@@ -335,7 +335,13 @@ export interface PositionComms {
  */
 export type ControlPath =
   | 'tcp' | 'serial' | 'lumix-http' | 'sony-usb' | 'blackmagic' | 'sony-mnc'
-  | 'canon-ccapi' | 'zcam' | 'panasonic-ptz' | 'visca' | 'jvc' | 'birddog'
+  | 'canon-ccapi' | 'zcam' | 'panasonic-ptz' | 'visca' | 'visca-serial'
+  | 'jvc' | 'birddog'
+  // Gimbals. Sie tragen eine Kamera, sie sind keine: vom Pult aus bewegen
+  // sie den Kopf und stellen NICHTS am Bild. Sie stehen hier trotzdem,
+  // weil man sie aufbaut und also plant -- anders als `demo`, das es in
+  // einem echten Aufbau nicht gibt.
+  | 'dji-osmo' | 'dji-ronin'
   | 'none';
 
 export interface VenueCamera {
