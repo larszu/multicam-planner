@@ -346,6 +346,12 @@ export type ControlPath =
   // weil man sie aufbaut und also plant -- anders als `demo`, das es in
   // einem echten Aufbau nicht gibt.
   | 'dji-osmo' | 'dji-ronin'
+  // Ein B4-OBJEKTIV, keine Kamera: das ESP32-S3-Interface aus
+  // larszu/b4-lens-control im 12-poligen Hirose-Kabel zwischen Kamera
+  // und Optik. Es steht hier, weil man es aufbaut und also plant --
+  // und weil es die Frage beantwortet, die sonst in der Probe kommt:
+  // ob sich die Blende dieser Position vom Pult aus stellen laesst.
+  | 'b4-lens'
   | 'none';
 
 export interface VenueCamera {

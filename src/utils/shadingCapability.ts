@@ -81,7 +81,7 @@ export const BRIDGE_SOURCE = {
   file: 'packages/web-rcp/src/capabilities.ts',
   symbol: 'MODE_CAPS',
   /** Stand der Quelle, aus der diese Kopie genommen wurde. */
-  commit: '9c4882c8695cbee3ab9ee2bd849abe3c346f8044',
+  commit: 'dce1fdfc17c4e22bc3836a771df0e5a601b7eac5',
 } as const;
 
 /**
@@ -185,6 +185,7 @@ export const CONTROL_PATH_LABEL: Readonly<Record<ControlPath, string>> = {
   birddog: 'BirdDog (VISCA + REST)',
   'dji-osmo': 'DJI Osmo Pocket (Gimbal)',
   'dji-ronin': 'DJI Ronin RS 2 / RS 3 Pro (Gimbal)',
+  'b4-lens': 'B4-Objektiv (ESP32 am 12-Pin-Hirose)',
   none: 'kein Fernsteuerweg — von Hand am Body',
 };
 
@@ -238,6 +239,18 @@ export const MODE_PAINT: Readonly<Record<ControlPath, readonly PaintFunction[]>>
   // darauf, und die hat ihren eigenen Fernsteuerweg.
   'dji-osmo': [],
   'dji-ronin': [],
+  // Ein Objektiv am 12-poligen Hirose. Der Steckverbinder kennt GENAU
+  // EINEN fernstellbaren Wert -- fuer Zoom und Fokus gibt es dort gar
+  // keinen analogen Antriebseingang, die laufen ueber die eigenen
+  // Demand-Buchsen der Optik. Eine kurze Zeile ist hier die richtige
+  // Auskunft und keine unfertige.
+  //
+  // `autoIris` steht hier als EINZIGE Zeile der Tabelle auf ja, und der
+  // Kopf dieser Datei sagt warum es sonst nirgends steht: Sonys
+  // 700-Protokoll haelt die Auto-Setup-Codes unter NDA. Hier ist es
+  // kein Befehlscode, sondern Pin 8 -- ein Draht, der die Optik
+  // zwischen ihrer eigenen Automatik und Fernsteuerung umschaltet.
+  'b4-lens': ['iris', 'autoIris'],
   none: [],
 };
 
