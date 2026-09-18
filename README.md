@@ -49,6 +49,7 @@ MultiCam Planner is designed for quick, intuitive camera planning with essential
 ### ⚡ 3D Venue View
 - Interactive 3D venue visualization with FOV pyramids
 - FPS-style controls (WASD + mouse look, Space/Shift up/down, Ctrl sprint)
+- **Touch: one finger looks around, two fingers pinch to move forward/back and drag to slide sideways and up/down** — no keyboard needed on a phone or tablet
 - Drag cameras in space, visualize stage meshes & venue boundaries
 - Background floor plan projection, floor grid with metric labels
 
@@ -56,7 +57,8 @@ MultiCam Planner is designed for quick, intuitive camera planning with essential
 - Live viewfinder simulation with accurate perspective
 - Ground grid, sky/horizon, stage outlines, reference silhouettes
 - Overlays: rule of thirds, safe areas, crosshair, data HUD
-- Pan/tilt using mouse drag
+- Pan/tilt by dragging — with the mouse or one finger; pinch with two fingers to zoom the lens
+- On a narrow window the data readout moves **below** the image instead of taking a fixed column beside it: the picture gets the full width
 
 ### 📐 FOV & DoF Calculator
 - 9 sensor sizes (Full Frame, Super 35, APS-C, MFT, 1", 2/3", 1/2", 1/3", 1/2.3")

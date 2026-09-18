@@ -1,3 +1,5 @@
+import { FingerNavigation, kneifFaktor } from '../../lib/fingerNavigation';
+import { useSchmal } from '../../lib/useSchmal';
 import { useStore } from '../../store/useStore';
 import { getCameraById, getEffectiveSensor, getAdapterInfo } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
@@ -70,10 +72,16 @@ interface PreviewProps {
 export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   const { cameras, selectedCameraId, venue, persons, walls, selectNextCamera, selectPrevCamera } = useStore();
   const { t } = useTranslation();
+  // Schmales Fenster: das Bild bekommt die volle Breite, die Zahlen wandern
+  // darunter (#137).
+  const schmal = useSchmal();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const cam = cameras.find((c) => c.id === selectedCameraId);
   const isDragging = useRef(false);
+  // Die liegenden Finger (#137). Eine Instanz je Vorschau: die Geste IST der
+  // Zustand zwischen den Ereignissen, und den kann ein Handler nicht halten.
+  const finger = useRef(new FingerNavigation());
   const lastMouse = useRef({ x: 0, y: 0 });
 
   // Overlay toggles
@@ -1150,14 +1158,43 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
 
   // ── PTZ Mouse Controls ──
   const dragStart = useRef({ x: 0, y: 0 });
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  // ─── ZEIGER STATT MAUS (#137) ───────────────────────────────────────
+  //
+  // Vorher hingen Schwenk und Neigung an `onMouseDown/Move/Up`. Ein Browser
+  // auf dem Telefon bildet `mousemove` waehrend einer Beruehrung NICHT nach
+  // — er schickt eines nach dem Loslassen. Der Zug am Bild tat dort also
+  // nichts, und das Kneifen gibt es als Maus-Ereignis ueberhaupt nicht.
+  //
+  // Dieselben Handler bedienen jetzt beides. Fuer die Maus aendert sich
+  // nichts: ein `pointerdown` mit `pointerType: 'mouse'` traegt dieselben
+  // Koordinaten wie das `mousedown` davor.
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (e.pointerType !== 'mouse') {
+      finger.current.runter({ id: e.pointerId, x: e.clientX, y: e.clientY });
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    }
     isDragging.current = true;
     lastMouse.current = { x: e.clientX, y: e.clientY };
     dragStart.current = { x: e.clientX, y: e.clientY };
     (e.target as HTMLElement).style.cursor = focusPickMode ? 'crosshair' : 'grabbing';
   }, [focusPickMode]);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (e.pointerType !== 'mouse') {
+      const zug = finger.current.bewegt({ id: e.pointerId, x: e.clientX, y: e.clientY });
+      if (finger.current.anzahl >= 2) {
+        // Kneifen zoomt — als FAKTOR, nicht als Millimeter-Summe: 40 mm sind
+        // am Weitwinkel eine andere Welt als am 600er. Der Bezugswert ist
+        // der Fingerabstand, damit dieselbe Geste am Telefon und am Tablet
+        // dasselbe tut.
+        if (cam) {
+          const f = kneifFaktor(zug.abstandVorher, zug.fahre);
+          const ziel = Math.max(1, Math.min(2000, cam.focalLength * f));
+          useStore.getState().updateCamera(cam.id, { focalLength: ziel });
+        }
+        return;
+      }
+    }
     if (!isDragging.current || !cam) return;
     // In focus-pick mode the press is a click target — don't pan/tilt
     if (focusPickMode) return;
@@ -1195,7 +1232,10 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
     useStore.getState().updateCamera(cam.id, { pan: newPan, tilt: newTilt });
   }, [cam, focusPickMode]);
 
-  const handleMouseUp = useCallback((e: React.MouseEvent) => {
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (e.pointerType !== 'mouse') {
+      finger.current.hoch(e.pointerId);
+    }
     const wasDragging = isDragging.current;
     isDragging.current = false;
     (e.target as HTMLElement).style.cursor = focusPickMode ? 'crosshair' : 'grab';
@@ -1342,9 +1382,20 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
   const presetGroups = groupPresets(presets, cam.id, cameras.map((c) => c.id));
 
   return (
-    <div className="relative w-full h-full flex gap-2 overflow-hidden">
+    // ─── DAS BILD ZUERST (#137) ──────────────────────────────────────────
+    //
+    // NUTZER-MELDUNG: „In preview mode ueberlagert der Text das Bild. Das
+    // Bild ist das wichtigste. Bedienelemente muessen dann darunter und
+    // intuitiver zu bedienen sein."
+    //
+    // Der Datenblock stand als feste 224-px-Spalte NEBEN dem Bild. Auf einem
+    // Telefon mit 390 px blieben dem Bild 150 px — die Kamera-Vorschau war
+    // schmaler als die Zahlen daneben. Auf schmalen Fenstern liegt der Block
+    // jetzt DARUNTER, zweispaltig, und der Scrollbereich wandert nach aussen:
+    // Bild, Bedienung, Zahlen, in dieser Reihenfolge.
+    <div className={`relative w-full h-full flex gap-2 ${schmal ? 'flex-col overflow-y-auto' : 'overflow-hidden'}`}>
       {/* Left: Canvas + controls */}
-      <div className="flex-1 flex flex-col gap-2 min-w-0 overflow-y-auto">
+      <div className={`flex-1 flex flex-col gap-2 min-w-0 ${schmal ? '' : 'overflow-y-auto'}`}>
         {/* Camera switcher bar */}
         <div className="flex items-center gap-2 px-2">
           <button onClick={selectPrevCamera} className="p-1 hover:bg-bc-border text-bc-muted hover:text-bc-text-bright" title={t('preview.prevCamera', 'Previous camera')}><FiChevronLeft size={16} /></button>
@@ -1359,11 +1410,14 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
             ref={canvasRef}
             data-preview-canvas
             className="w-full"
-            style={{ cursor: focusPickMode ? 'crosshair' : 'grab', display: 'block' }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
+            // `touchAction: none`: sonst scrollt die Seite unter dem Bild
+            // weg, statt die Kamera zu schwenken (#137).
+            style={{ cursor: focusPickMode ? 'crosshair' : 'grab', display: 'block', touchAction: 'none' }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            onPointerLeave={handlePointerUp}
             onWheel={handleWheel}
           />
         </div>
@@ -1669,9 +1723,11 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
 
       {/* Right: Data readout panel */}
       {camDef && lensDef && fov && dof && showData && (
-        <div className="w-56 shrink-0 overflow-y-auto space-y-1.5 pr-1">
+        <div className={schmal
+          ? 'w-full grid grid-cols-2 gap-1.5 px-2 pb-2'
+          : 'w-56 shrink-0 overflow-y-auto space-y-1.5 pr-1'}>
           {/* Camera + Lens header */}
-          <div className="bg-bc-dark border border-bc-border p-2">
+          <div className={`bg-bc-dark border border-bc-border p-2 ${schmal ? 'col-span-2' : ''}`}>
             <span className="text-bc-text-bright font-semibold text-xs">{cam.label}</span>
             <div className="text-bc-dim text-[10px]">{camDef.sensor.name} · {camDef.mount}</div>
             <div className="text-bc-muted text-[10px] mt-0.5">{camDef.manufacturer} {camDef.model}</div>
@@ -1683,7 +1739,7 @@ export default function CameraPreview({ undocked, onUndock }: PreviewProps) {
 
           {/* Notes — only when filled */}
           {cam.notes && cam.notes.trim() && (
-            <div className="bg-bc-dark border border-bc-border p-2">
+            <div className={`bg-bc-dark border border-bc-border p-2 ${schmal ? 'col-span-2' : ''}`}>
               <div className="text-[10px] text-bc-dim leading-tight mb-0.5">{t('preview.notes', 'Notes')}</div>
               <div className="text-[11px] text-bc-text whitespace-pre-wrap leading-snug">{cam.notes}</div>
             </div>

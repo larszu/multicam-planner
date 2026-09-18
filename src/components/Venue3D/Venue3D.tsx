@@ -10,6 +10,7 @@ import RigStructure from './RigStructure';
 import * as THREE from 'three';
 import { configureTextBuilder } from 'troika-three-text';
 import { getExportRegistry } from '../../store/exportRegistry';
+import { FingerNavigation } from '../../lib/fingerNavigation';
 import type { FramingState } from '../../store/exportRegistry';
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import type { BackgroundPlan, Stage, StageObjectType } from '../../types';
@@ -189,6 +190,9 @@ function FPSControls({ mouseLookEnabled, defaultPitch }: { mouseLookEnabled: boo
   const yaw = useRef(0);
   const pitch = useRef(defaultPitch);
   const isLooking = useRef(false);
+  // Die liegenden Finger. Eine Instanz je Ansicht, nicht je Ereignis — die
+  // Geste IST der Zustand zwischen den Ereignissen.
+  const fingerRef = useRef(new FingerNavigation());
   const speed = 6; // m/s base
 
   // Sync yaw from initial camera orientation; die Neigung kommt aus der
@@ -249,6 +253,7 @@ function FPSControls({ mouseLookEnabled, defaultPitch }: { mouseLookEnabled: boo
 
   useEffect(() => {
     const canvas = gl.domElement;
+    const finger = fingerRef.current;
 
     const onKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
@@ -304,6 +309,59 @@ function FPSControls({ mouseLookEnabled, defaultPitch }: { mouseLookEnabled: boo
 
     const onContext = (e: Event) => e.preventDefault();
 
+    // ─── FINGER (#137) ───────────────────────────────────────────────────
+    //
+    // NUTZER-MELDUNG: „Auf mobilen Endgeraeten funktioniert im 3d Mode
+    // intuitive ansichts Steuerung nicht."
+    //
+    // Sie funktionierte nicht, weil es sie nicht gab: Umsehen hing an
+    // `mousemove`, Vorfahren am Rad, Gehen an WASD. Ein Telefon hat weder
+    // Rad noch Tastatur. Die Nachbildung `mousemove` haette EINEN Finger
+    // geliefert — aber `mouseLookEnabled` verlangt vorher ein `mousedown`
+    // auf dem Canvas, und Kneifen gibt es als Maus-Ereignis ueberhaupt
+    // nicht. Wer die Halle auf dem Telefon oeffnete, sah sie und kam nicht
+    // von der Stelle.
+    //
+    // Die Geste selbst rechnet `lib/fingerNavigation.ts`; hier steht nur,
+    // was ihre Deltas an der Kamera bedeuten. Die Umrechnung ist dieselbe
+    // wie fuer die Maus (0.002 rad/px), damit sich beides gleich anfuehlt.
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.pointerType === 'mouse') return;
+      finger.runter({ id: e.pointerId, x: e.clientX, y: e.clientY });
+      canvas.setPointerCapture?.(e.pointerId);
+    };
+    const onPointerMove = (e: PointerEvent) => {
+      if (e.pointerType === 'mouse') return;
+      // Ohne das scrollt die Seite unter der Halle weg. `touch-action: none`
+      // im Stil erledigt den Regelfall; dieses `preventDefault` faengt die
+      // Browser, die es nur teilweise befolgen.
+      e.preventDefault();
+      const zug = finger.bewegt({ id: e.pointerId, x: e.clientX, y: e.clientY });
+      if (finger.anzahl === 1) {
+        yaw.current -= zug.dreheX * 0.002;
+        pitch.current -= zug.dreheY * 0.002;
+        pitch.current = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, pitch.current));
+        return;
+      }
+      // Zwei Finger: kneifen faehrt vor/zurueck, schieben versetzt seitwaerts
+      // und in der Hoehe. Beides zugleich — ein Modus-Umschalter dazwischen
+      // waere genau die Bedienung, die der Nutzer „nicht intuitiv" nannte.
+      const blick = new THREE.Vector3(
+        -Math.sin(yaw.current) * Math.cos(pitch.current),
+        Math.sin(pitch.current),
+        -Math.cos(yaw.current) * Math.cos(pitch.current),
+      );
+      camera.position.add(blick.clone().multiplyScalar(zug.fahre * 0.03));
+      const rechts = new THREE.Vector3(-Math.cos(yaw.current), 0, Math.sin(yaw.current));
+      camera.position.add(rechts.multiplyScalar(zug.schiebeX * 0.02));
+      camera.position.y += zug.schiebeY * 0.02;
+    };
+    const onPointerUp = (e: PointerEvent) => {
+      if (e.pointerType === 'mouse') return;
+      finger.hoch(e.pointerId);
+      canvas.releasePointerCapture?.(e.pointerId);
+    };
+
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     canvas.addEventListener('mousedown', onMouseDown);
@@ -311,7 +369,14 @@ function FPSControls({ mouseLookEnabled, defaultPitch }: { mouseLookEnabled: boo
     window.addEventListener('mousemove', onMouseMove);
     canvas.addEventListener('wheel', onWheel, { passive: false });
     canvas.addEventListener('contextmenu', onContext);
+    canvas.addEventListener('pointerdown', onPointerDown);
+    canvas.addEventListener('pointermove', onPointerMove, { passive: false });
+    canvas.addEventListener('pointerup', onPointerUp);
+    canvas.addEventListener('pointercancel', onPointerUp);
     canvas.style.cursor = mouseLookEnabled ? 'grab' : 'default';
+    // Der Browser wuerde sonst scrollen und hineinzoomen, statt die Geste an
+    // die Halle zu geben.
+    canvas.style.touchAction = 'none';
 
     return () => {
       window.removeEventListener('keydown', onKeyDown);
@@ -321,6 +386,11 @@ function FPSControls({ mouseLookEnabled, defaultPitch }: { mouseLookEnabled: boo
       window.removeEventListener('mousemove', onMouseMove);
       canvas.removeEventListener('wheel', onWheel);
       canvas.removeEventListener('contextmenu', onContext);
+      canvas.removeEventListener('pointerdown', onPointerDown);
+      canvas.removeEventListener('pointermove', onPointerMove);
+      canvas.removeEventListener('pointerup', onPointerUp);
+      canvas.removeEventListener('pointercancel', onPointerUp);
+      finger.leeren();
     };
   }, [camera, gl, mouseLookEnabled]);
 
