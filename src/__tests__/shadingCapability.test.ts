@@ -107,10 +107,32 @@ describe('die Herkunft der Tabelle steht als Wert da', () => {
     // oeffentliche Quelle dokumentiert die Auto-Setup-Codes. Eine Spalte, die
     // ueberall „nein" sagt, bleibt trotzdem stehen — sie beantwortet die
     // Frage, die sonst in der Probe gestellt wird.
+    //
+    // `b4-lens` ist die EINE Ausnahme, und sie ist genau deshalb hier
+    // aufgezaehlt und nicht uebersprungen: an einem B4-Objektiv ist die
+    // Blendenautomatik kein Befehlscode, sondern HIROSE PIN 8 — ein Draht,
+    // der die Optik zwischen ihrer eigenen Automatik und Fernsteuerung
+    // umschaltet. Was dieser Test verbietet, ist eine BEHAUPTUNG OHNE QUELLE,
+    // nicht eine Automatik, die man anfassen kann.
+    //
+    // Als Liste und nicht als `if`, damit die naechste solche Ausnahme eine
+    // Zeile mit Begruendung braucht. `abb` bleibt ausnahmslos verboten: einen
+    // Schwarzabgleich kann keiner dieser Wege ausloesen.
+    const AUTOIRIS_ERLAUBT: readonly ControlPath[] = ['b4-lens'];
+
     for (const w of Object.keys(MODE_PAINT) as ControlPath[]) {
       expect(MODE_PAINT[w]).not.toContain('abb');
-      expect(MODE_PAINT[w]).not.toContain('autoIris');
+      if (!AUTOIRIS_ERLAUBT.includes(w)) {
+        expect(MODE_PAINT[w]).not.toContain('autoIris');
+      }
     }
+
+    // Die Gegenprobe: eine Ausnahme, die ihre Ausnahme nicht nutzt, ist ein
+    // vergessener Eintrag und keine Entscheidung.
+    for (const w of AUTOIRIS_ERLAUBT) {
+      expect(MODE_PAINT[w]).toContain('autoIris');
+    }
+
     expect(PAINT_FUNCTIONS).toContain('abb');
     expect(PAINT_FUNCTIONS).toContain('autoIris');
   });
