@@ -24,6 +24,7 @@
     "actions:check": "node scripts/actions-node-runtime.mjs",
     "brand:check": "node scripts/brand-tokens-check.mjs",
     "slider:check": "node scripts/slider-groesse-check.mjs",
+    "ci:complete": "node scripts/ci-runs-every-check.mjs",
     "kopfzeile:check": "node scripts/kopfzeile-check.mjs",
     "farben:check": "node scripts/rohe-farben-check.mjs",
     "form:check": "node scripts/marken-form-check.mjs",

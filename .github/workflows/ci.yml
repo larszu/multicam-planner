@@ -101,6 +101,21 @@ jobs:
       - name: Kontrast und Schriftgroesse (WCAG AA)
         run: npm run kontrast:check
 
+      # Die GRIFFGROESSE (ADR-007): ein Schieberegler, den man mit dem Finger
+      # nicht trifft, ist auf einem Tablet in der Halle kein Bedienelement.
+      # Der Lauf gab es seit dem 2026-09-12 — und er stand in KEINEM
+      # CI-Schritt, war also sieben Tage lang gruen, ohne je gefahren zu sein
+      # (gefunden 2026-09-19 vom Lauf darunter).
+      - name: Schieberegler sind mit dem Finger bedienbar (ADR-007)
+        run: npm run slider:check
+
+      # Der Waechter ueber den Waechtern: jeder `*:check` aus package.json
+      # steht auch hier. Ohne ihn ist diese Liste der Kenntnisstand dessen,
+      # der sie zuletzt angefasst hat — und der naechste Lauf, den jemand
+      # anlegt, faellt still heraus. Genau so ist es `slider:check` ergangen.
+      - name: Jeder Pruef-Lauf steht auch im CI
+        run: npm run ci:complete
+
       # Fragt die action.yml jedes Pins nach ihrer Node-Version, statt sie in
       # einem Kommentar zu behaupten. Am 2026-09-05 liefen in `release.yml`
       # drei Actions auf node20, und der Kommentar daneben begruendete das mit
