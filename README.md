@@ -152,6 +152,7 @@ page. It can also be triggered manually via the Actions tab for testing.
 | npm run dist:mac   | Build macOS DMG + ZIP (x64 + arm64, host = macOS) |
 | npm run preview    | Preview production build                          |
 | npm run lint       | Run ESLint linter                                 |
+| npm run ci:complete| Assert every `*:check` script is actually run by CI |
 
 ---
 
