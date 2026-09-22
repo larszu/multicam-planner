@@ -1,9 +1,10 @@
-import { Stage, Layer, Rect, Wedge, Circle, Text, Group, Line, Image as KImage, Transformer } from 'react-konva';
+import { Stage, Layer, Rect, Wedge, Arc, Circle, Text, Group, Line, Image as KImage, Transformer } from 'react-konva';
 import { useStore } from '../../store/useStore';
 import { foreignFixturesFrom, cctToColor } from '../../utils/foreignView';
 import { getCameraById, getEffectiveSensor } from '../../data/cameras';
 import { getLensById } from '../../data/lenses';
 import { computeFov } from '../../utils/fov';
+import { dofBand } from '../../utils/dofBand';
 import type { VenueCamera, Wall } from '../../types';
 import { effectiveCameraPos, rigYaw } from '../../utils/camera';
 import { dragIsOwn, dropToParked } from '../../utils/venueDrag';
@@ -76,7 +77,7 @@ const PALETTE = {
 export default function Venue2D() {
   const { t } = useTranslation();
   const P = PALETTE[useIstHell() ? 'hell' : 'dunkel'];
-  const { venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, updateCamera, removeCamera, duplicateCamera, showAllFov, pixelsPerMeter, persons, updatePerson, removePerson, duplicatePerson, updateStage, addStage, removeStage, backgroundPlan, setBackgroundPlan, walls, updateWall, addWall, removeWall, wallSnap, editMode, avForeign, showForeign } = useStore();
+  const { venue, setVenue, cameras, selectedCameraId, selectCamera, moveCamera, updateCamera, removeCamera, duplicateCamera, showAllFov, showDof, pixelsPerMeter, persons, updatePerson, removePerson, duplicatePerson, updateStage, addStage, removeStage, backgroundPlan, setBackgroundPlan, walls, updateWall, addWall, removeWall, wallSnap, editMode, avForeign, showForeign } = useStore();
 
   // Edit-mode locking (issue #43): each mode locks every category except its own.
   // 'all' falls through to each object's individual lock flag.
@@ -671,6 +672,30 @@ export default function Venue2D() {
           const range = cam.focusDistance * ppm;
           const isSelected = cam.id === selectedCameraId;
 
+          /*
+            Das Schaerfeband (#141).
+
+            Die Zahlen gab es laengst — Nahgrenze, Ferngrenze, hyperfokale
+            Distanz standen in Seitenleiste, Vorschau und Export. Die Frage
+            beim Planen einer Kameraposition ist aber raeumlich: steht die
+            Band im Schaerfebereich von Kamera 3? Sie aus einem Zahlenpaar in
+            den Grundriss zu uebertragen ist genau der Schritt, den ein Plan
+            abnehmen soll.
+
+            Gezeichnet als Ring im selben Winkel wie der Sichtkegel. Er reicht
+            bewusst UEBER den Kegel hinaus: der Kegel endet am Fokusabstand,
+            weil er die Bildbreite dort zeigt — die Schaerfe tut das nicht.
+
+            Begrenzt auf die dargestellte Flaeche, sonst zeichnet eine
+            unendliche Ferngrenze nichts (Radius Infinity ergibt in Konva
+            keine Form, sondern Stille — und zwar genau dann, wenn der
+            Schaerfebereich am groessten ist).
+          */
+          const band = showDof
+            ? dofBand(sensor, cam.focalLength, cam.aperture, cam.focusDistance,
+                      cam.extenderActive ? 2 : 1, Math.max(venue.widthM, venue.heightM))
+            : null;
+
           return (
             <React.Fragment key={`fov-group-${cam.id}`}>
               {isSelected && lensDef.focalLengthMin !== lensDef.focalLengthMax && (
@@ -694,6 +719,20 @@ export default function Venue2D() {
                 stroke={cam.color + (isSelected ? 'cc' : '66')}
                 strokeWidth={isSelected ? 2 : 1} listening={false}
               />
+              {band && (
+                <Arc
+                  x={cam.x * ppm} y={cam.y * ppm}
+                  innerRadius={band.vonM * ppm} outerRadius={band.bisM * ppm}
+                  angle={fov.horizontalDeg} rotation={cam.pan - fov.horizontalDeg / 2}
+                  fill={cam.color + (isSelected ? '55' : '2a')}
+                  stroke={cam.color + (isSelected ? 'ff' : '88')}
+                  // Gestrichelt heisst: das Band hoert hier nicht auf, die
+                  // Zeichenflaeche tut es. „Geht weiter" und „endet hier"
+                  // muessen unterscheidbar bleiben.
+                  dash={band.gekuerzt ? [6, 4] : undefined}
+                  strokeWidth={isSelected ? 2 : 1} listening={false}
+                />
+              )}
             </React.Fragment>
           );
         })}

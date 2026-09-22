@@ -188,6 +188,16 @@ interface AppState {
   setActiveTab: (tab: ViewTab) => void;
   showAllFov: boolean;
   toggleShowAllFov: () => void;
+  /**
+   * Das Schaerfeband im Grundriss (#141).
+   *
+   * Aus, solange niemand es einschaltet: der Sichtkegel beantwortet die
+   * haeufigere Frage (was ist im Bild), das Schaerfeband die seltenere (was
+   * davon ist scharf). Beides gleichzeitig standardmaessig uebereinander zu
+   * legen macht aus zwei Aussagen einen Farbbrei.
+   */
+  showDof: boolean;
+  toggleShowDof: () => void;
   /** Read-only Anzeige der fremden .avplan-Lampen im 2D-Venue. */
   showForeign: boolean;
   toggleShowForeign: () => void;
@@ -906,6 +916,8 @@ export const useStore = create<AppState>((set, get) => ({
   setEditMode: (mode) => set({ editMode: mode }),
   showAllFov: true,
   toggleShowAllFov: () => set((s) => ({ showAllFov: !s.showAllFov })),
+  showDof: false,
+  toggleShowDof: () => set((s) => ({ showDof: !s.showDof })),
   showForeign: true,
   toggleShowForeign: () => set((s) => ({ showForeign: !s.showForeign })),
 

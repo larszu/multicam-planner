@@ -253,6 +253,8 @@ export const sidebar: Record<string, string> = {
   'sidebar.objLectern': 'Rednerpult',
   'sidebar.hideAllFov': 'Bildwinkel aller Kameras ausblenden',
   'sidebar.showAllFov': 'Bildwinkel aller Kameras einblenden',
+  'sidebar.hideDof': 'Schärfebereich ausblenden',
+  'sidebar.showDof': 'Schärfebereich im Grundriss zeigen',
   'sidebar.add': 'Neu',
   'sidebar.noCameras': 'Noch keine Kamera. Über „Neu" anlegen oder eine Vorlage laden.',
   'sidebar.clearConfirm': 'Wirklich alles löschen? Dies kann nicht rückgängig gemacht werden.',
