@@ -64,6 +64,13 @@ MultiCam Planner is designed for quick, intuitive camera planning with essential
 - 9 sensor sizes (Full Frame, Super 35, APS-C, MFT, 1", 2/3", 1/2", 1/3", 1/2.3")
 - Controls for focal length, aperture, distance, extenders
 - Outputs: horizontal/vertical/diagonal FOV, image dimensions at distance, 35mm equivalent, DoF near/far/total, hyperfocal distance, person height in frame
+- **Depth of field in the floor plan** — the sharp zone drawn as a band inside
+  the FOV cone, so "is the band inside camera 3's focus range?" is a look
+  instead of a calculation. Toggled next to the FOV eye in the camera list.
+  The band deliberately reaches past the cone: the cone ends at the focus
+  distance because it shows the frame width there — sharpness does not. A
+  dashed outer edge means the band continues beyond the drawn area, which is
+  the normal case once focus sits at or past the hyperfocal distance.
 
 ### 💾 Project & Layout
 - Save/load projects as JSON with version tracking and unsaved changes detection

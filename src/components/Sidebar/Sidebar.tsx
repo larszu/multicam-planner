@@ -23,7 +23,7 @@ import {
   CARD_FINDING_LABEL,
   cardFindings,
 } from '../../utils/cameraCardExtras';
-import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2, FiRotateCcw, FiHome, FiImage, FiColumns, FiUsers, FiVideo } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2, FiRotateCcw, FiHome, FiImage, FiColumns, FiUsers, FiVideo, FiTarget } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { BackgroundPlan, StageObjectType, Camera, CameraMountType, VenueCamera, WallFit, WallPattern } from '../../types';
 
@@ -2008,7 +2008,7 @@ function CameraCard({
 export default function Sidebar() {
   const { t } = useTranslation();
   const {
-    cameras, addCamera, venue, setVenue, showAllFov, toggleShowAllFov, clearAll,
+    cameras, addCamera, venue, setVenue, showAllFov, toggleShowAllFov, showDof, toggleShowDof, clearAll,
     pixelsPerMeter, setPixelsPerMeter,
     addStage, removeStage, updateStage,
     persons, addPerson, addStageObject, removePerson, updatePerson,
@@ -2695,6 +2695,25 @@ export default function Sidebar() {
               aria-label={showAllFov ? t('sidebar.hideAllFov', 'Hide all FOV') : t('sidebar.showAllFov', 'Show all FOV')}
             >
               {showAllFov ? <FiEye size={15} /> : <FiEyeOff size={15} />}
+            </button>
+            {/* Das Schaerfeband (#141) — neben dem Sichtkegel, weil es dieselbe
+                Flaeche im Grundriss betrifft. Getrennt schaltbar, weil es die
+                andere Frage beantwortet: der Kegel sagt, was im Bild ist, das
+                Band, was davon scharf ist. */}
+            <button
+              onClick={toggleShowDof}
+              style={{ padding: '6px' }}
+              className={showDof
+                ? 'bg-bc-border text-bc-text-bright'
+                : 'hover:bg-bc-border text-bc-muted hover:text-bc-text-bright'}
+              title={showDof
+                ? t('sidebar.hideDof', 'Hide depth of field')
+                : t('sidebar.showDof', 'Show depth of field')}
+              aria-label={showDof
+                ? t('sidebar.hideDof', 'Hide depth of field')
+                : t('sidebar.showDof', 'Show depth of field')}
+            >
+              <FiTarget size={15} />
             </button>
             <button
               onClick={() => addCamera()}
