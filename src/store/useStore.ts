@@ -24,7 +24,7 @@ import {
 } from '../utils/venueExchange';
 import { pickUnknownDomains, type AvPlan } from '../utils/avplan';
 import type { AvPlanCamerasSlot } from './avplanExport';
-import { newProjectId, isProjectId } from '../utils/projectId';
+import { newProjectId, isProjectId, legacyProjectId } from '../utils/projectId';
 import { pickProjectLibrary, mergeProjectLibrary } from '../utils/projectLibrary';
 import { translate } from '../i18n';
 
@@ -1238,7 +1238,7 @@ export const useStore = create<AppState>((set, get) => ({
       lastSavedVersion: project.projectVersion,
       // Eine Datei ohne Id (vor cable-planner#908 gespeichert) bekommt hier
       // ihre — und behaelt sie ab dem naechsten Speichern.
-      projectId: isProjectId(project.projectId) ? project.projectId : newProjectId(),
+      projectId: isProjectId(project.projectId) ? project.projectId : legacyProjectId(project),
       // ADR-005 — was die Datei an fremden Domaenen mitbringt, kommt zurueck in
       // den Store, damit der naechste .avplan-Export es wieder mitgibt. Eine
       // Datei ohne sie setzt zurueck: sonst leckten die Domaenen des zuletzt

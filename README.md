@@ -92,11 +92,14 @@ MultiCam Planner is designed for quick, intuitive camera planning with essential
 - Save/load projects as JSON with version tracking and unsaved changes detection
 - **Autosave:** the open project is kept in the browser's local storage one
   second after the last change (and at once when the page is left) and comes
-  back on the next start — including whether it has unsaved changes. Opening a
-  file or starting a new project replaces it. If the storage is full, the
+  back on the next start — including whether it has unsaved changes. The start
+  screen then offers *Continue last project*; opening a file or starting a new
+  project replaces it, and asks first if it has unsaved changes. If the storage is full, the
   status bar says so; the project stays open and can still be saved as a file.
-- **Stable project id:** every project gets a UUID when it is created (older
-  files get one when they are opened) and keeps it through every save. The
+- **Stable project id:** every project gets a UUID when it is created and keeps
+  it through every save. An older file without one gets an id derived from the
+  file (save time and venue name), so opening the same file twice gives the
+  same id. The
   Cable Planner uses it to recognise a project it has seen before.
 - **Camera list for the Cable Planner** (`*.cameras.json`, format `camera-list`
   v2): every placed camera with manufacturer, model, device-type GUID, position

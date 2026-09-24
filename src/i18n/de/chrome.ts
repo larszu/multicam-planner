@@ -13,6 +13,7 @@ export const chrome: Record<string, string> = {
   // ── Datei ──
   'header.new': 'Neues Projekt',
   'header.new.note': 'Leerer Raum, keine Kameras',
+  'header.open.confirm': 'Plan öffnen — das aktuelle Projekt wird ersetzt und hat ungesicherte Änderungen. Fortfahren?',
   'header.new.confirm': 'Neues Projekt — das aktuelle wird ersetzt. Fortfahren?',
   'header.open': 'Öffnen…',
   'header.save': 'Speichern',

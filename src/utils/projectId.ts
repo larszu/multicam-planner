@@ -24,3 +24,29 @@ export function newProjectId(): string {
 /** Eine brauchbare Projekt-Id: Text und nicht leer. Die Form wird nicht
  *  verlangt — eine Id aus einer fremden Quelle bleibt, was sie ist. */
 export const isProjectId = (v: unknown): v is string => typeof v === 'string' && v.trim() !== '';
+
+/**
+ * Die Id einer ALTEN Datei ohne `projectId` — aus der Datei abgeleitet, nicht
+ * gewuerfelt.
+ *
+ * Gewuerfelt bekaeme dieselbe Datei bei jedem Oeffnen eine andere Id, solange
+ * niemand sie speichert. Der cable-planner hielte jede Kamera-Liste daraus
+ * fuer ein fremdes Projekt und legte die Kameras jedes Mal neu an — genau das
+ * Duplikat, gegen das die Id eingefuehrt wurde. `savedAt` und der Raumname
+ * stehen in jeder gespeicherten Datei und aendern sich nur mit einem neuen
+ * Speichern, und dann steht die Id ohnehin darin.
+ */
+export function legacyProjectId(project: { savedAt?: unknown; venue?: { name?: unknown } }): string {
+  const quelle = `${String(project.savedAt ?? '')}\u0000${String(project.venue?.name ?? '')}`;
+  // FNV-1a, zweimal 32 Bit mit verschiedenem Startwert: kein Kryptohash,
+  // nur eine stabile Kennung aus derselben Eingabe.
+  const fnv = (start: number) => {
+    let h = start >>> 0;
+    for (let i = 0; i < quelle.length; i++) {
+      h ^= quelle.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h.toString(16).padStart(8, '0');
+  };
+  return `legacy-${fnv(0x811c9dc5)}${fnv(0x01000193)}`;
+}
