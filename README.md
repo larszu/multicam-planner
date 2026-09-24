@@ -32,12 +32,27 @@ MultiCam Planner is designed for quick, intuitive camera planning with essential
 ## 🚀 Features
 
 ### 📷 Camera & Lens Database
-- 54+ broadcast cameras from 10 major brands (Sony, Canon, Panasonic, Blackmagic, ARRI, RED, Grass Valley, Hitachi, Marshall)
-- 163+ lenses (Fujinon, Canon, Sony, Sigma, Tamron, Tokina, PTZ integrated)
-- 11+ mounts: B4, EF, E, PL, MFT, RF, FZ, L, M12, integrated, universal
+- **377 cameras from 36 brands** (Sony, Canon, Panasonic, Blackmagic, ARRI, RED,
+  Grass Valley, Hitachi, Ikegami, JVC, Nikon, Kinefinity, Z CAM, PTZOptics,
+  Marshall, AIDA, Avonic, BirdDog, Lumens, Vaddio, DJI, GoPro, Insta360 …) —
+  372 with a manufacturer datasheet link
+- **835 lenses from 37 brands** (Fujinon, Angénieux, Cooke, ARRI, Zeiss, Leitz,
+  Canon, Sony, Sigma, Tamron, Atlas, Hawk, Panavision, DZOFilm, Laowa …) — 798
+  with a datasheet link
+- **49 camera rigs** with real dimensions (Jimmy Jib, Technocrane, SuperTechno,
+  Spidercam, Panther, J.L. Fisher, Sachtler, Vinten, Newton, Slidekamera)
+- 24 mounts: B4, EF, E, PL, MFT, RF, FZ, L, LPL, XPL, M12, C/CS, Z, X, K, G,
+  XCD, integrated …
 - Adapter system: automatic adapter detection with T-stop light loss, sensor crop info, Speed Booster support (e.g., EF→MFT)
 - Custom lens support: create and save your own lenses
 - Favorites: star cameras and lenses for quick access
+- **Every catalogue entry carries a stable device-type GUID** (`src/data/geraetetypIds.ts`,
+  generated). A camera exported to the cable planner resolves there to its own
+  datasheet entry instead of being matched on its model name — a name goes stale
+  when something is renamed, and exists in two spellings. Before this, 368 of the
+  377 cameras went across with no identity at all. The nine hand-set GUIDs in
+  `cameras.ts` still win: they are older, and saved plans point at them.
+  Regenerate from the cable planner with `npm run katalog:uebernahme`.
 
 ### 🗺 2D Venue Planner
 - Top-down drag & drop camera placement with real-time FOV cones

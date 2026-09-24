@@ -10,6 +10,7 @@
 // Reine Daten, headless testbar.
 // ───────────────────────────────────────────────────────────────────────────
 import type { VenueCamera, Camera } from '../types';
+import { geraetetypIdVon } from '../data/geraetetypIds';
 
 export const CAMERA_LIST_KIND = 'camera-list' as const;
 export const CAMERA_LIST_VERSION = 1 as const;
@@ -52,7 +53,18 @@ export function toCameraList(
       return {
         id: c.id, label: c.label,
         manufacturer: def?.manufacturer, model: def?.model,
-        deviceTypeId: def?.deviceTypeId,
+        // ─── WARUM HIER EIN RUECKFALL STEHT (2026-09-24) ───────────────────
+        //
+        // `def.deviceTypeId` ist an NEUN der 377 Kameras gesetzt — an denen,
+        // deren echte I/O im Kamera-Katalog des Cable-Planers liegt. Bei den
+        // uebrigen 368 stand hier `undefined`, und der Cable-Planer musste
+        // wieder ueber Hersteller + Modellnamen raten. Genau das sollte die
+        // GUID abschaffen.
+        //
+        // `geraetetypIdVon` liefert die abgeleitete Id aus der erzeugten
+        // Tabelle. Die von Hand gesetzte gewinnt weiter: sie ist aelter, und
+        // gespeicherte Plaene zeigen auf sie.
+        deviceTypeId: def?.deviceTypeId ?? geraetetypIdVon('camera', def?.id),
         x: c.x, y: c.y,
       };
     }),
