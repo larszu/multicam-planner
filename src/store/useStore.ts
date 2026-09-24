@@ -25,6 +25,7 @@ import {
 import { pickUnknownDomains, type AvPlan } from '../utils/avplan';
 import type { AvPlanCamerasSlot } from './avplanExport';
 import { newProjectId, isProjectId } from '../utils/projectId';
+import { pickProjectLibrary, mergeProjectLibrary } from '../utils/projectLibrary';
 import { translate } from '../i18n';
 
 // Injected by Vite from package.json. In a release build that came through
@@ -60,6 +61,8 @@ export function buildProjectFile(s: {
   floorPlanForeign: ForeignFloorPlanFields;
   wallForeign: Record<string, ForeignWallFields>;
   personForeign: Record<string, ForeignPersonFields>;
+  customCameras?: Camera[];
+  customLenses?: Lens[];
 }): ProjectFile {
   return {
     formatVersion: 1,
@@ -91,6 +94,8 @@ export function buildProjectFile(s: {
     ...(Object.keys(s.personForeign ?? {}).length > 0
       ? { personForeign: s.personForeign }
       : {}),
+    // cable-planner#917 — die benutzten eigenen Kameras/Optiken reisen mit.
+    ...pickProjectLibrary(s.cameras, s.customCameras ?? [], s.customLenses ?? []),
   };
 }
 
@@ -311,6 +316,11 @@ interface AppState {
    *  beschreibt einen Ladevorgang, nicht das Projekt. */
   lastIdRepair: number | null;
   dismissIdRepair: () => void;
+  /** cable-planner#917 — was beim letzten Laden aus der mitgebrachten
+   *  Bibliothek NICHT uebernommen wurde, `null` wenn alles aufging. Nicht
+   *  persistiert, wie `lastIdRepair`: das beschreibt einen Ladevorgang. */
+  lastLibraryMerge: { conflicts: string[]; invalid: number } | null;
+  dismissLibraryMerge: () => void;
   /** Importiert ein .avplan-Gesamtprojekt: laedt den cameras-Slot nativ,
    *  ueberlagert den geteilten Raum und bewahrt lighting/cabling verlustfrei. */
   importAvPlan: (avplan: AvPlan) => void;
@@ -1196,6 +1206,20 @@ export const useStore = create<AppState>((set, get) => ({
     const stagesFixed = dedupeIds(loadedStages, stageUid);
     const cameras = camerasFixed.items;
 
+    // cable-planner#917 — die mitgebrachten eigenen Kameras/Optiken. Nur
+    // geschrieben, wenn etwas hinzukam: sonst setzte jedes Oeffnen die
+    // Speicher-voll-Meldung der Bibliothek zurueck, ohne geschrieben zu haben.
+    const bibliothek = mergeProjectLibrary(
+      { customCameras: get().customCameras, customLenses: get().customLenses },
+      project,
+    );
+    let bibliothekVoll = get().libraryStorageFull;
+    if (bibliothek.addedCameras > 0 || bibliothek.addedLenses > 0) {
+      const kamerasOk = bibliothek.addedCameras === 0 || saveCustomCamerasStorage(bibliothek.customCameras);
+      const optikenOk = bibliothek.addedLenses === 0 || saveCustomLensesStorage(bibliothek.customLenses);
+      bibliothekVoll = !(kamerasOk && optikenOk);
+    }
+
     let bgPlan = project.backgroundPlan;
     if (bgPlan && 'scale' in bgPlan && !('scaleX' in bgPlan)) {
       const legacy = bgPlan as BackgroundPlan & { scale?: number };
@@ -1241,6 +1265,13 @@ export const useStore = create<AppState>((set, get) => ({
       lastIdRepair:
         camerasFixed.repaired + personsFixed.repaired +
           wallsFixed.repaired + stagesFixed.repaired || null,
+      customCameras: bibliothek.customCameras,
+      customLenses: bibliothek.customLenses,
+      libraryStorageFull: bibliothekVoll,
+      lastLibraryMerge:
+        bibliothek.conflicts.length > 0 || bibliothek.invalid > 0
+          ? { conflicts: bibliothek.conflicts, invalid: bibliothek.invalid }
+          : null,
     });
 
   },
@@ -1282,6 +1313,8 @@ export const useStore = create<AppState>((set, get) => ({
   personForeign: {},
   lastIdRepair: null,
   dismissIdRepair: () => set({ lastIdRepair: null }),
+  lastLibraryMerge: null,
+  dismissLibraryMerge: () => set({ lastLibraryMerge: null }),
   importAvPlan: (avplan) => {
     const slot = avplan.domains.cameras as AvPlanCamerasSlot | undefined;
     if (slot) {

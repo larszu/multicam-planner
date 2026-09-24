@@ -37,6 +37,11 @@ MultiCam Planner is designed for quick, intuitive camera planning with essential
 - 11+ mounts: B4, EF, E, PL, MFT, RF, FZ, L, M12, integrated, universal
 - Adapter system: automatic adapter detection with T-stop light loss, sensor crop info, Speed Booster support (e.g., EF→MFT)
 - Custom lens support: create and save your own lenses
+- **Custom cameras and lenses travel with the project:** the ones the placed
+  cameras use are written into the `.mcplan` (and the `.avplan` cameras slot)
+  and added to the local library when the project is opened on another
+  machine. An entry that already exists there with the same id but different
+  data is never overwritten — the local one is kept, and a notice names it.
 - Favorites: star cameras and lenses for quick access
 - **Connectors in the Cable Planner:** a camera whose manufacturer and model
   match an entry of the Cable Planner's camera catalog *exactly* (case, spaces

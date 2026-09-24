@@ -15,6 +15,7 @@ import { getLensById } from '../data/lenses';
 import { toCameraList, type CameraListExchange } from '../utils/cameraExport';
 import { toVenueExchange } from '../utils/venueExchange';
 import { makeAvPlan, type AvPlan } from '../utils/avplan';
+import { pickProjectLibrary } from '../utils/projectLibrary';
 
 type Stand = Pick<
   ReturnType<typeof useStore.getState>,
@@ -46,6 +47,7 @@ export function buildAvPlanExport(s: Stand, now: string): AvPlan {
     projectId: s.projectId,
     savedAt: now, venue: s.venue, cameras: s.cameras, persons: s.persons,
     walls: s.walls ?? [], backgroundPlan: s.backgroundPlan,
+    ...pickProjectLibrary(s.cameras, s.customCameras, s.customLenses),
     cameraList: cameraListOf(s, now),
   };
   const venue = toVenueExchange({

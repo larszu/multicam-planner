@@ -912,4 +912,11 @@ export interface ProjectFile {
    * modelliert (Pose, Blickrichtung), je Personen-Id.
    */
   personForeign?: Record<string, import('../utils/venueExchange').ForeignPersonFields>;
+  /**
+   * Eigene Kameras und Optiken, die platzierte Kameras BENUTZEN
+   * (larszu/cable-planner#917) — siehe `utils/projectLibrary.ts`. Beim Laden
+   * in die eigene Bibliothek aufgenommen, soweit sie dort fehlen.
+   */
+  customCameras?: Camera[];
+  customLenses?: Lens[];
 }
