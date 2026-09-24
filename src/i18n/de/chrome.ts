@@ -62,4 +62,5 @@ export const chrome: Record<string, string> = {
   'status.mode.stage': 'Bearbeiten: Bühne',
   'status.mode.objects': 'Bearbeiten: Objekte',
   'status.mode.cameras': 'Bearbeiten: Kameras',
+  'status.autosaveFull': 'Automatische Sicherung fehlgeschlagen — der Speicher ist voll. Das Projekt als Datei speichern.',
 };

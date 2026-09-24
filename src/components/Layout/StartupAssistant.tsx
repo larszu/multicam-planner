@@ -33,11 +33,20 @@ export default function StartupAssistant() {
   const dismiss = useCallback(() => { markSeen(); setPhase('done'); }, [markSeen]);
 
   const startWizard = useCallback(() => {
+    // Seit der automatischen Sicherung (cable-planner#908) steht hier beim
+    // Start das zuletzt bearbeitete Projekt, nicht mehr ein leeres. „Neuer
+    // Plan" muss es deshalb wirklich ersetzen — und fragen, wenn dabei
+    // Arbeit verlorenginge, die in keiner Datei liegt.
+    const s = useStore.getState();
+    const inhalt = s.cameras.length > 0 || s.persons.length > 0 || s.walls.length > 0 || s.backgroundPlan !== null;
+    if (inhalt && s.hasUnsavedChanges()
+      && !window.confirm(t('header.new.confirm', 'New project — the current one is replaced. Continue?'))) return;
+    s.newProject();
     markSeen();
     setStepIndex(0);
     setEditMode(WIZARD_STEPS[0].mode);
     setPhase('wizard');
-  }, [markSeen, setEditMode, WIZARD_STEPS]);
+  }, [markSeen, setEditMode, WIZARD_STEPS, t]);
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

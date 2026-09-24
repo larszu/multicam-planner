@@ -23,6 +23,8 @@ import {
   mergeOwnPersonFields,
 } from '../utils/venueExchange';
 import { pickUnknownDomains, type AvPlan } from '../utils/avplan';
+import type { AvPlanCamerasSlot } from './avplanExport';
+import { newProjectId, isProjectId } from '../utils/projectId';
 import { translate } from '../i18n';
 
 // Injected by Vite from package.json. In a release build that came through
@@ -47,6 +49,7 @@ export function defaultProjectFileName(project: { venue: { name: string }; proje
 
 export function buildProjectFile(s: {
   projectVersion: number;
+  projectId?: string;
   venue: Venue;
   cameras: VenueCamera[];
   persons: ReferencePerson[];
@@ -62,6 +65,7 @@ export function buildProjectFile(s: {
     formatVersion: 1,
     appVersion: APP_VERSION,
     projectVersion: s.projectVersion,
+    ...(s.projectId ? { projectId: s.projectId } : {}),
     savedAt: new Date().toISOString(),
     venue: s.venue,
     cameras: s.cameras,
@@ -270,8 +274,17 @@ interface AppState {
   renameRigTake: (id: string, name: string) => void;
 
   // Project versioning
+  /** Stabile Id des Projekts (cable-planner#908) — siehe `utils/projectId.ts`. */
+  projectId: string;
   projectVersion: number;
   lastSavedVersion: number;
+  /**
+   * Die letzte automatische Sicherung (`store/autosave.ts`) ist an der
+   * localStorage-Quota gescheitert. Nicht fatal — das Projekt steht weiter im
+   * Speicher und laesst sich als Datei sichern —, aber gesagt: wer sich auf
+   * die Sicherung verlaesst, verliert sonst beim Schliessen still den Stand.
+   */
+  autosaveStorageFull: boolean;
   hasUnsavedChanges: () => boolean;
   bumpVersion: () => void;
   /** Ohne Namen: der Vorgabename aus Venue und Projektstand. Mit Namen:
@@ -1054,8 +1067,10 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // ── Project versioning ──
+  projectId: newProjectId(),
   projectVersion: 1,
   lastSavedVersion: 0,
+  autosaveStorageFull: false,
   hasUnsavedChanges: () => {
     const s = get();
     return s.projectVersion !== s.lastSavedVersion;
@@ -1103,6 +1118,7 @@ export const useStore = create<AppState>((set, get) => ({
       formatVersion: 1,
       appVersion: APP_VERSION,
       projectVersion: 0,
+      projectId: newProjectId(),
       savedAt: new Date().toISOString(),
       venue: defaultVenue,
       cameras: [],
@@ -1196,6 +1212,9 @@ export const useStore = create<AppState>((set, get) => ({
       walls: wallsFixed.items,
       projectVersion: project.projectVersion,
       lastSavedVersion: project.projectVersion,
+      // Eine Datei ohne Id (vor cable-planner#908 gespeichert) bekommt hier
+      // ihre — und behaelt sie ab dem naechsten Speichern.
+      projectId: isProjectId(project.projectId) ? project.projectId : newProjectId(),
       // ADR-005 — was die Datei an fremden Domaenen mitbringt, kommt zurueck in
       // den Store, damit der naechste .avplan-Export es wieder mitgibt. Eine
       // Datei ohne sie setzt zurueck: sonst leckten die Domaenen des zuletzt
@@ -1264,8 +1283,15 @@ export const useStore = create<AppState>((set, get) => ({
   lastIdRepair: null,
   dismissIdRepair: () => set({ lastIdRepair: null }),
   importAvPlan: (avplan) => {
-    const cameras = avplan.domains.cameras as ProjectFile | undefined;
-    if (cameras) get().applyProjectFile(cameras);
+    const slot = avplan.domains.cameras as AvPlanCamerasSlot | undefined;
+    if (slot) {
+      // Die Kamera-Liste im Slot ist ABGELEITET und wird bei jedem Export
+      // neu erzeugt. Sie gehoert nicht ins Projekt: mitgeschleppt, stuende
+      // beim naechsten Speichern eine Liste im .mcplan, die schon beim
+      // naechsten Verschieben einer Kamera nicht mehr stimmt.
+      const { cameraList: _abgeleitet, ...projekt } = slot;
+      get().applyProjectFile(projekt);
+    }
     // Geteilten Raum kanonisch aus der .avplan ueberlagern.
     get().importVenueExchange({
       kind: 'venue-exchange', formatVersion: 1, app: avplan.app,

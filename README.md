@@ -85,12 +85,23 @@ MultiCam Planner is designed for quick, intuitive camera planning with essential
 
 ### 💾 Project & Layout
 - Save/load projects as JSON with version tracking and unsaved changes detection
+- **Autosave:** the open project is kept in the browser's local storage one
+  second after the last change (and at once when the page is left) and comes
+  back on the next start — including whether it has unsaved changes. Opening a
+  file or starting a new project replaces it. If the storage is full, the
+  status bar says so; the project stays open and can still be saved as a file.
+- **Stable project id:** every project gets a UUID when it is created (older
+  files get one when they are opened) and keeps it through every save. The
+  Cable Planner uses it to recognise a project it has seen before.
 - **Camera list for the Cable Planner** (`*.cameras.json`, format `camera-list`
   v2): every placed camera with manufacturer, model, device-type GUID, position
   and height, the active mount, the set focal length, an engaged extender and
   the lens (manufacturer, model, zoom range, mount). A field MultiCam does not
   know stays out — no default that would read like a measurement over there.
-  v1 files are still read.
+  v1 files are still read. The `.avplan` export carries the same list inside
+  MultiCam's own slot (`domains.cameras.cameraList`), so the Cable Planner
+  does not need to know MultiCam's project format; it is rebuilt on every
+  export and dropped on import.
 - Dockable panel system (FlexLayout): drag, split, tab, resize
 - Layout modes: Focus (single tab) and Grid (2×2)
 - Customizable layout presets (save/load/delete)
