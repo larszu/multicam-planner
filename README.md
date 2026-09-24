@@ -85,6 +85,12 @@ MultiCam Planner is designed for quick, intuitive camera planning with essential
 
 ### 💾 Project & Layout
 - Save/load projects as JSON with version tracking and unsaved changes detection
+- **Camera list for the Cable Planner** (`*.cameras.json`, format `camera-list`
+  v2): every placed camera with manufacturer, model, device-type GUID, position
+  and height, the active mount, the set focal length, an engaged extender and
+  the lens (manufacturer, model, zoom range, mount). A field MultiCam does not
+  know stays out — no default that would read like a measurement over there.
+  v1 files are still read.
 - Dockable panel system (FlexLayout): drag, split, tab, resize
 - Layout modes: Focus (single tab) and Grid (2×2)
 - Customizable layout presets (save/load/delete)

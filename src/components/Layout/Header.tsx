@@ -3,6 +3,7 @@ import { FiCamera, FiBox, FiSliders, FiSave, FiUpload, FiDownload, FiX, FiCheck,
 import { toVenueExchange, parseVenueExchange } from '../../utils/venueExchange';
 import { toCameraList } from '../../utils/cameraExport';
 import { getCameraById } from '../../data/cameras';
+import { getLensById } from '../../data/lenses';
 import { makeAvPlan, parseAvPlan } from '../../utils/avplan';
 import type { ProjectFile } from '../../types';
 import { useRef, useCallback, useState, useEffect, useMemo } from 'react';
@@ -159,6 +160,7 @@ export default function Header({
       s.cameras,
       (id) => getCameraById(id, s.customCameras),
       { appVersion: APP_VERSION, exportedAt: new Date().toISOString() },
+      (id) => getLensById(id, s.customLenses),
     );
     const blob = new Blob([JSON.stringify(ex, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);

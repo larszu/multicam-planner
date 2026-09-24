@@ -1,5 +1,5 @@
 // ───────────────────────────────────────────────────────────────────────────
-// Drift-Guard fuer das Kamera-Listen-Format `camera-list` v1.
+// Drift-Guard fuer das Kamera-Listen-Format `camera-list` v2 (liest v1).
 //
 // Das Format ist in ZWEI Apps dupliziert: multicam-planner schreibt
 // (src/utils/cameraExport.ts), cable-planner liest (src/renderer/lib/
@@ -32,20 +32,29 @@ import {
   parseCameraList,
   type CameraListEntry,
   type CameraListExchange,
+  type CameraListLens,
 } from '../utils/cameraExport';
-import type { VenueCamera, Camera } from '../types';
+import type { VenueCamera, Camera, Lens } from '../types';
 
 // Eingefrorener Contract — MUSS in beiden Repos identisch sein.
 const CONTRACT = {
   kind: 'camera-list',
-  version: 1,
-  envelopeKeys: ['app', 'appVersion', 'cameras', 'exportedAt', 'formatVersion', 'kind'],
-  entryKeys: ['deviceTypeId', 'id', 'label', 'manufacturer', 'model', 'x', 'y'],
+  version: 2,
+  envelopeKeys: ['app', 'appVersion', 'cameras', 'exportedAt', 'formatVersion', 'kind', 'projectId'],
+  entryKeys: ['deviceTypeId', 'extender', 'focalMm', 'id', 'label', 'lens', 'manufacturer', 'model', 'mount', 'x', 'y', 'z'],
+  lensKeys: ['focalMaxMm', 'focalMinMm', 'manufacturer', 'model', 'mount'],
 } as const;
 
 // Voll besetzter Muster-Eintrag (jedes Feld gesetzt). Er haelt die Laufzeit-
 // Form fest — NICHT die Typ-Vollstaendigkeit: ein neues optionales Feld
 // laesst ihn unveraendert. Dafuer ist der interfaceKeys-Test weiter unten da.
+const lens: CameraListLens = {
+  manufacturer: 'Fujinon',
+  model: 'UA24x7.8',
+  focalMinMm: 7.8,
+  focalMaxMm: 187,
+  mount: 'B4',
+};
 const entry: CameraListEntry = {
   id: 'vc1',
   label: 'Kamera 1',
@@ -54,6 +63,11 @@ const entry: CameraListEntry = {
   deviceTypeId: 'dt-cam-0001',
   x: 3.5,
   y: 7.25,
+  z: 1.8,
+  mount: 'B4',
+  focalMm: 50,
+  extender: 2,
+  lens,
 };
 const exchange: CameraListExchange = {
   kind: CAMERA_LIST_KIND,
@@ -61,6 +75,7 @@ const exchange: CameraListExchange = {
   app: 'multicam-planner',
   appVersion: '1.2.3',
   exportedAt: '2026-01-01T00:00:00.000Z',
+  projectId: '6f1c2a4e-9b0d-4e7a-8c3f-2d5b7a9e1c04',
   cameras: [entry],
 };
 
@@ -80,12 +95,17 @@ describe('camera-list Wire-Contract (Drift-Guard)', () => {
     expect(sortedKeys(entry)).toEqual(CONTRACT.entryKeys);
   });
 
+  it('Feld-Namen des Objektivs sind eingefroren', () => {
+    expect(sortedKeys(lens)).toEqual(CONTRACT.lensKeys);
+  });
+
   it('fängt auch ein neu hinzugefügtes OPTIONALES Feld', () => {
     // Die Muster-Literale oben wuerden das nicht tun. Hier gegen den
     // Interface-Rumpf im Quelltext — dieselbe Pruefung wie im cable-planner,
     // damit der zweiseitige Vertrag auf beiden Seiten gleich scharf ist.
     expect(interfaceKeys(cameraExportSrc, 'CameraListEntry')).toEqual(CONTRACT.entryKeys);
     expect(interfaceKeys(cameraExportSrc, 'CameraListExchange')).toEqual(CONTRACT.envelopeKeys);
+    expect(interfaceKeys(cameraExportSrc, 'CameraListLens')).toEqual(CONTRACT.lensKeys);
   });
 
   it('der ECHTE Exporter schreibt genau den eingefrorenen Envelope', () => {
@@ -93,23 +113,47 @@ describe('camera-list Wire-Contract (Drift-Guard)', () => {
     // selbst laufen — der Guard prueft also nicht nur die Typen, sondern das,
     // was wirklich in der Datei landet.
     const placed = [
-      { id: 'vc1', cameraId: 'cam-a', label: 'Kamera 1', x: 3.5, y: 7.25 },
+      {
+        id: 'vc1', cameraId: 'cam-a', lensId: 'lens-a', label: 'Kamera 1',
+        x: 3.5, y: 7.25, z: 1.8, activeMount: 'B4', focalLength: 50, extenderActive: 2,
+      },
     ] as unknown as VenueCamera[];
     const lib = {
       'cam-a': {
         manufacturer: 'Blackmagic Design',
         model: 'URSA Broadcast G2',
         deviceTypeId: 'dt-cam-0001',
+        mount: 'EF',
       },
     } as unknown as Record<string, Camera>;
+    const optiken = {
+      'lens-a': {
+        manufacturer: 'Fujinon', model: 'UA24x7.8', focalLengthMin: 7.8, focalLengthMax: 187, mount: 'B4',
+      },
+    } as unknown as Record<string, Lens>;
 
     const out = toCameraList(placed, (id) => lib[id], {
       appVersion: '1.2.3',
       exportedAt: '2026-01-01T00:00:00.000Z',
-    });
+      projectId: '6f1c2a4e-9b0d-4e7a-8c3f-2d5b7a9e1c04',
+    }, (id) => optiken[id]);
     expect(sortedKeys(out)).toEqual(CONTRACT.envelopeKeys);
     expect(sortedKeys(out.cameras[0])).toEqual(CONTRACT.entryKeys);
+    expect(sortedKeys(out.cameras[0].lens!)).toEqual(CONTRACT.lensKeys);
     expect(out).toEqual(exchange);
+  });
+
+  it('v1 wird weiter gelesen', () => {
+    // Dateien, die vor v2 geschrieben wurden, liegen auf Platten und in
+    // Mails. Eine v1-Liste ist eine v2-Liste ohne Optik und ohne Projekt-Id.
+    const v1 = {
+      kind: 'camera-list', formatVersion: 1, app: 'multicam-planner', appVersion: '4.3.5',
+      exportedAt: '2026-09-01T00:00:00.000Z',
+      cameras: [{ id: 'vc1', label: 'CAM 1', manufacturer: 'Sony', model: 'PMW-F55', x: 1, y: 2 }],
+    };
+    const back = parseCameraList(JSON.stringify(v1));
+    expect(back.formatVersion).toBe(1);
+    expect(back.cameras[0].model).toBe('PMW-F55');
   });
 
   it('parse lehnt fremdes Format und fremde Version ab', () => {
@@ -209,5 +253,101 @@ describe('camera-list Wire-Contract (Bedeutung, nicht nur Namen)', () => {
     });
     expect(() => parseCameraList(JSON.stringify(out))).not.toThrow();
     expect(parseCameraList(JSON.stringify(out)).cameras).toHaveLength(2);
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// v2 (cable-planner#910): die Optik — nach Bedeutung, nicht nur nach Namen.
+//
+// Drueben wird aus `focalMm` und `lens` eine Zeile am Geraet („24–105 @ 85
+// mm"). Eine Brennweite von 0, ein Objektiv, das ein Array ist, ein Extender
+// „2x" als Text — jede davon ergaebe dort eine Angabe, die nach Datenblatt
+// aussieht und keine ist. Und umgekehrt: was MultiCam NICHT weiss, schreibt
+// der Exporter nicht hin.
+// ───────────────────────────────────────────────────────────────────────────
+describe('camera-list v2 — Optik und Höhe', () => {
+  const mitEintrag = (e: unknown) => JSON.stringify({ ...exchange, cameras: [e] });
+
+  it('z ist eine endliche Zahl, wenn es dasteht — auch 0 und darunter', () => {
+    for (const murks of ['1.5', null, NaN, Infinity]) {
+      expect(() => parseCameraList(mitEintrag({ ...entry, z: murks })), String(murks)).toThrow(/z/);
+    }
+    // Eine Kamera im Graben steht unter dem Buehnenniveau; das ist eine Hoehe.
+    expect(parseCameraList(mitEintrag({ ...entry, z: -0.5 })).cameras[0].z).toBe(-0.5);
+  });
+
+  it('Brennweite und Extender sind endlich und größer als 0', () => {
+    for (const feld of ['focalMm', 'extender'] as const) {
+      for (const murks of [0, -2, NaN, Infinity, '2x', null]) {
+        expect(() => parseCameraList(mitEintrag({ ...entry, [feld]: murks })), `${feld}=${murks}`)
+          .toThrow(new RegExp(feld));
+      }
+    }
+  });
+
+  it('mount ist Text', () => {
+    expect(() => parseCameraList(mitEintrag({ ...entry, mount: 4 }))).toThrow(/mount/);
+  });
+
+  it('lens ist ein Objekt, und seine Felder bedeuten, was sie heißen', () => {
+    for (const murks of [null, [], 'Fujinon', 7]) {
+      expect(() => parseCameraList(mitEintrag({ ...entry, lens: murks })), String(murks)).toThrow(/lens/);
+    }
+    expect(() => parseCameraList(mitEintrag({ ...entry, lens: { ...lens, focalMinMm: 0 } }))).toThrow(/focalMinMm/);
+    expect(() => parseCameraList(mitEintrag({ ...entry, lens: { ...lens, focalMaxMm: 'tele' } }))).toThrow(/focalMaxMm/);
+    expect(() => parseCameraList(mitEintrag({ ...entry, lens: { ...lens, model: 24 } }))).toThrow(/model/);
+    // Ein Objektiv, von dem nur der Name bekannt ist, ist erlaubt.
+    expect(parseCameraList(mitEintrag({ ...entry, lens: { model: 'UA24x7.8' } })).cameras[0].lens)
+      .toEqual({ model: 'UA24x7.8' });
+  });
+
+  it('die Projekt-Id ist Text und nicht leer, wenn sie dasteht', () => {
+    for (const murks of ['', '   ', 42, null]) {
+      expect(() => parseCameraList(JSON.stringify({ ...exchange, projectId: murks })), String(murks))
+        .toThrow(/projectId/);
+    }
+    const { projectId: _ohne, ...ohneId } = exchange;
+    expect(() => parseCameraList(JSON.stringify(ohneId))).not.toThrow();
+  });
+
+  describe('der Exporter schreibt nur, was er weiß', () => {
+    const meta = { appVersion: '1.2.3', exportedAt: '2026-01-01T00:00:00.000Z' };
+    const basis = {
+      id: 'vc1', cameraId: 'cam-a', lensId: 'lens-a', label: 'CAM 1',
+      x: 1, y: 2, z: 1.5, focalLength: 24, extenderActive: 1,
+    };
+    const kamera = { manufacturer: 'Sony', model: 'HDC-3500', mount: 'B4' } as unknown as Camera;
+
+    it('kein Extender bei Faktor 1 und bei einem Wahrheitswert aus alten Dateien', () => {
+      for (const extenderActive of [1, true, false, undefined]) {
+        const out = toCameraList([{ ...basis, extenderActive } as unknown as VenueCamera], () => kamera, meta);
+        expect('extender' in out.cameras[0], String(extenderActive)).toBe(false);
+      }
+    });
+
+    it('der aktive Mount ist ohne Wechsel-Mount der native — ohne Kamera keiner', () => {
+      const out = toCameraList([basis as unknown as VenueCamera], () => kamera, meta);
+      expect(out.cameras[0].mount).toBe('B4');
+      const gewechselt = toCameraList([{ ...basis, activeMount: 'EF' } as unknown as VenueCamera], () => kamera, meta);
+      expect(gewechselt.cameras[0].mount).toBe('EF');
+      const unbekannt = toCameraList([basis as unknown as VenueCamera], () => undefined, meta);
+      expect('mount' in unbekannt.cameras[0]).toBe(false);
+    });
+
+    it('kein Objektiv, wenn es nicht aufzulösen ist — und keine Projekt-Id, wenn keine da ist', () => {
+      const out = toCameraList([basis as unknown as VenueCamera], () => kamera, meta);
+      expect('lens' in out.cameras[0]).toBe(false);
+      expect('projectId' in out).toBe(false);
+    });
+
+    it('keine Höhe und keine Brennweite, die keine Zahl ist', () => {
+      const out = toCameraList(
+        [{ ...basis, z: undefined, focalLength: NaN } as unknown as VenueCamera], () => kamera, meta,
+      );
+      expect('z' in out.cameras[0]).toBe(false);
+      expect('focalMm' in out.cameras[0]).toBe(false);
+      // Und was fehlt, laesst den Parser nicht scheitern: die Rundreise haelt.
+      expect(() => parseCameraList(JSON.stringify(out))).not.toThrow();
+    });
   });
 });
