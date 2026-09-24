@@ -38,6 +38,17 @@ MultiCam Planner is designed for quick, intuitive camera planning with essential
 - Adapter system: automatic adapter detection with T-stop light loss, sensor crop info, Speed Booster support (e.g., EF→MFT)
 - Custom lens support: create and save your own lenses
 - Favorites: star cameras and lenses for quick access
+- **Connectors in the Cable Planner:** a camera whose manufacturer and model
+  match an entry of the Cable Planner's camera catalog *exactly* (case, spaces
+  and dashes aside) carries that entry's device-type GUID, and the Cable
+  Planner resolves it to the real connector panel. Similar names do not count —
+  a wrong GUID would be trusted blindly over there. Today 12 of 377 cameras
+  (the catalog lists 20 devices). A custom camera can pick a catalog device as
+  its **port template**.
+  The catalog identities are a frozen snapshot in
+  `src/data/cableCameraCatalogIds.ts`; `npm run katalog:cable-ids` refreshes it
+  from a `cable-planner` checkout next to this repo, and `npm test` then names
+  every camera whose GUID has to be added or removed.
 
 ### 🗺 2D Venue Planner
 - Top-down drag & drop camera placement with real-time FOV cones
@@ -160,6 +171,7 @@ page. It can also be triggered manually via the Actions tab for testing.
 | npm run preview    | Preview production build                          |
 | npm run lint       | Run ESLint linter                                 |
 | npm run ci:complete| Assert every `*:check` script is actually run by CI |
+| npm run katalog:cable-ids | Refresh the snapshot of the Cable Planner camera catalog (GUIDs) |
 
 ---
 
