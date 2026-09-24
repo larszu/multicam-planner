@@ -37,7 +37,23 @@ MultiCam Planner is designed for quick, intuitive camera planning with essential
 - 11+ mounts: B4, EF, E, PL, MFT, RF, FZ, L, M12, integrated, universal
 - Adapter system: automatic adapter detection with T-stop light loss, sensor crop info, Speed Booster support (e.g., EF→MFT)
 - Custom lens support: create and save your own lenses
+- **Custom cameras and lenses travel with the project:** the ones the placed
+  cameras use are written into the `.mcplan` (and the `.avplan` cameras slot)
+  and added to the local library when the project is opened on another
+  machine. An entry that already exists there with the same id but different
+  data is never overwritten — the local one is kept, and a notice names it.
 - Favorites: star cameras and lenses for quick access
+- **Connectors in the Cable Planner:** a camera whose manufacturer and model
+  match an entry of the Cable Planner's camera catalog *exactly* (case, spaces
+  and dashes aside) carries that entry's device-type GUID, and the Cable
+  Planner resolves it to the real connector panel. Similar names do not count —
+  a wrong GUID would be trusted blindly over there. Today 12 of 377 cameras
+  (the catalog lists 20 devices). A custom camera can pick a catalog device as
+  its **port template**.
+  The catalog identities are a frozen snapshot in
+  `src/data/cableCameraCatalogIds.ts`; `npm run katalog:cable-ids` refreshes it
+  from a `cable-planner` checkout next to this repo, and `npm test` then names
+  every camera whose GUID has to be added or removed.
 
 ### 🗺 2D Venue Planner
 - Top-down drag & drop camera placement with real-time FOV cones
@@ -74,6 +90,26 @@ MultiCam Planner is designed for quick, intuitive camera planning with essential
 
 ### 💾 Project & Layout
 - Save/load projects as JSON with version tracking and unsaved changes detection
+- **Autosave:** the open project is kept in the browser's local storage one
+  second after the last change (and at once when the page is left) and comes
+  back on the next start — including whether it has unsaved changes. The start
+  screen then offers *Continue last project*; opening a file or starting a new
+  project replaces it, and asks first if it has unsaved changes. If the storage is full, the
+  status bar says so; the project stays open and can still be saved as a file.
+- **Stable project id:** every project gets a UUID when it is created and keeps
+  it through every save. An older file without one gets an id derived from the
+  file (save time and venue name), so opening the same file twice gives the
+  same id. The
+  Cable Planner uses it to recognise a project it has seen before.
+- **Camera list for the Cable Planner** (`*.cameras.json`, format `camera-list`
+  v2): every placed camera with manufacturer, model, device-type GUID, position
+  and height, the active mount, the set focal length, an engaged extender and
+  the lens (manufacturer, model, zoom range, mount). A field MultiCam does not
+  know stays out — no default that would read like a measurement over there.
+  v1 files are still read. The `.avplan` export carries the same list inside
+  MultiCam's own slot (`domains.cameras.cameraList`), so the Cable Planner
+  does not need to know MultiCam's project format; it is rebuilt on every
+  export and dropped on import.
 - Dockable panel system (FlexLayout): drag, split, tab, resize
 - Layout modes: Focus (single tab) and Grid (2×2)
 - Customizable layout presets (save/load/delete)
@@ -160,6 +196,7 @@ page. It can also be triggered manually via the Actions tab for testing.
 | npm run preview    | Preview production build                          |
 | npm run lint       | Run ESLint linter                                 |
 | npm run ci:complete| Assert every `*:check` script is actually run by CI |
+| npm run katalog:cable-ids | Refresh the snapshot of the Cable Planner camera catalog (GUIDs) |
 
 ---
 

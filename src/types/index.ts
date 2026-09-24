@@ -861,6 +861,12 @@ export interface ProjectFile {
   appVersion: string;
   projectVersion: number; // auto-incremented on changes
   savedAt: string; // ISO date
+  /**
+   * Stabile Projekt-Id (cable-planner#908), siehe `utils/projectId.ts`.
+   * Optional nur, weil aeltere Dateien sie nicht tragen — beim Laden wird sie
+   * dann einmal vergeben und ab dem naechsten Speichern mitgeschrieben.
+   */
+  projectId?: string;
   venue: Venue;
   cameras: VenueCamera[];
   persons: ReferencePerson[];
@@ -906,4 +912,11 @@ export interface ProjectFile {
    * modelliert (Pose, Blickrichtung), je Personen-Id.
    */
   personForeign?: Record<string, import('../utils/venueExchange').ForeignPersonFields>;
+  /**
+   * Eigene Kameras und Optiken, die platzierte Kameras BENUTZEN
+   * (larszu/cable-planner#917) — siehe `utils/projectLibrary.ts`. Beim Laden
+   * in die eigene Bibliothek aufgenommen, soweit sie dort fehlen.
+   */
+  customCameras?: Camera[];
+  customLenses?: Lens[];
 }
