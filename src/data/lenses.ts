@@ -1,4 +1,5 @@
 import type { Lens } from '../types';
+import { libraryLenses } from '../library/registry';
 
 export const LENSES: Lens[] = [
   // ══════════════════════════════════════════════
@@ -1008,7 +1009,7 @@ export const LENSES: Lens[] = [
 ];
 
 export function getLensById(id: string, customLenses?: Lens[]): Lens | undefined {
-  return LENSES.find((l) => l.id === id) ?? customLenses?.find((l) => l.id === id);
+  return LENSES.find((l) => l.id === id) ?? customLenses?.find((l) => l.id === id) ?? libraryLenses().find((l) => l.id === id);
 }
 
 export function getLensesByMount(mount: string): Lens[] {

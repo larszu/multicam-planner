@@ -55,6 +55,60 @@ MultiCam Planner is designed for quick, intuitive camera planning with essential
   from a `cable-planner` checkout next to this repo, and `npm test` then names
   every camera whose GUID has to be added or removed.
 
+### 🗄 Device library (devices.zumpelars.de)
+- **Settings → Device library**: server address (default
+  `https://devices.zumpelars.de`, changeable, *Reset* returns to it), sign-in
+  with email or username and password, a second step for the two-factor code,
+  sign-out, and links to *Create account* / *Forgot password* on the library's
+  website (registration happens there, not in the planner). Every build talks
+  to the default server unless the address is changed.
+- **Sync**: on start (while signed in) and on *Sync now*. Incremental — only
+  what changed since the last `latestSeq`. Library cameras appear in the camera
+  list under *Device library*, library lenses in the lens list with
+  *· library*; both are read-only (editing creates a local *modified* copy,
+  like a built-in). A device marked `removed` leaves the catalog. Every entry
+  goes through the same check as cameras/lenses carried in a project file; one
+  that fails is skipped and counted in the sync line. The cache lives in local
+  storage and survives sign-out, so placed library cameras keep working
+  offline. Under the selector a library entry shows its status, its number of
+  confirmations and a link to its page.
+  Library entries do **not** travel inside the project file (custom ones do):
+  a project that uses one needs the library, or its cache, on the other
+  machine as well.
+- **Submit**: a custom camera or lens (or a modified built-in) has *Submit to
+  device library…*. A datasheet link is required (pre-filled from the entry's
+  manufacturer URL); the proposal goes into moderation. Not signed in, the
+  dialog leads to the sign-in. A device whose manufacturer and model are
+  already in the library is refused (`exists`); changed community guidelines
+  (`guidelines-outdated`) have to be accepted again on the website — the
+  message links to `<server>/guidelines`.
+- **Facet format** (the `multicam` part of a library device, identical for
+  submit and import):
+  `{ kind: 'camera', version: 1, camera: <Camera without id> }` or
+  `{ kind: 'lens', version: 1, lens: <Lens without id and isCustom> }` — the
+  planner's native catalog entry, including `deviceTypeId` (the device-type
+  GUID the Cable Planner resolves to ports), `manufacturerUrl` and
+  `specSource` (datasheet evidence per field). Nested, because the server
+  strips top-level private keys such as `id` and `notes` from every facet.
+  Imported entries get the id `devlib-<slug>`; the core's `category` is
+  `Camera` or `Lens`. Mapping: `src/library/facet.ts`.
+- **Token storage**: the desktop app keeps the sign-in token in the system
+  keychain (`safeStorage`, via `electron/preload.cjs`); without a keychain it
+  is kept for the session only, never in plain text. The web build uses local
+  storage — a browser offers a page nothing safer; signing out revokes the
+  token on the server. The token is never written to a project file, the
+  autosave or a log.
+- **Another server**: the content security policy (`index.html`,
+  `electron/main.cjs`) allows only `https://devices.zumpelars.de`. A different
+  address must be added there, otherwise every request is blocked and the
+  settings report the server as unreachable. Changing the address signs out
+  at the old server, forgets the token (it must never reach another server)
+  and starts an empty cache. Only `https://` is accepted (`http://` for
+  localhost).
+- Client: `src/utils/deviceLibraryClient.ts`, an unchanged copy of
+  `larszu/av-device-library` `clients/deviceLibraryClient.ts` — changes go
+  there first.
+
 ### 🗺 2D Venue Planner
 - Top-down drag & drop camera placement with real-time FOV cones
 - Zoom, pan, snap-to-grid, background floor plan import (image & PDF)

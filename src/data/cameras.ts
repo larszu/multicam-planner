@@ -1,4 +1,5 @@
 import type { Camera, SensorSize, AdapterInfo, Lens } from '../types';
+import { libraryCameras } from '../library/registry';
 
 // ── Standard sensor sizes ──
 export const SENSORS: Record<string, SensorSize> = {
@@ -585,7 +586,8 @@ export const CAMERAS: Camera[] = [
 export function getCameraById(id: string, customCameras?: Camera[]): Camera | undefined {
   // Custom entries take precedence — when the user edits a built-in we shadow
   // it with a customCameras entry that has the same id, and that should win.
-  return customCameras?.find((c) => c.id === id) ?? CAMERAS.find((c) => c.id === id);
+  // The device library comes last: a read-only source, never a shadow.
+  return customCameras?.find((c) => c.id === id) ?? CAMERAS.find((c) => c.id === id) ?? libraryCameras().find((c) => c.id === id);
 }
 
 export function getCamerasByType(type: Camera['type']): Camera[] {

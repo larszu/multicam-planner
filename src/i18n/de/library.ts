@@ -1,0 +1,87 @@
+/** DE-Overrides: Geraetebibliothek (Einstellungen, Einreichen, Herkunftszeile).
+ *  Keys: library.*, settings.tab.*, sidebar.cam.* der Bibliothek */
+export const library: Record<string, string> = {
+  'settings.tab.general': 'Allgemein',
+  'settings.tab.library': 'Gerätebibliothek',
+
+  'library.intro':
+    'Die gemeinsame Gerätebibliothek ergänzt den Katalog um Kameras und Objektive als schreibgeschützte Quelle und nimmt eigene Einträge als Vorschlag entgegen. Sie braucht ein Konto.',
+  'library.server': 'Server',
+  'library.server.aria': 'Adresse des Gerätebibliothek-Servers',
+  'library.server.apply': 'Übernehmen',
+  'library.server.reset': 'Zurücksetzen',
+  'library.server.invalid': 'Keine brauchbare Adresse. Sie muss mit https:// beginnen (http:// nur für localhost).',
+  'library.server.custom':
+    'Nicht der Standard-Server ({url}). Dieser Build erlaubt in seiner Content-Security-Policy nur den Standard; ein anderer Server muss dort eingetragen werden, sonst wird jede Anfrage blockiert.',
+  'library.server.hint':
+    'Ein Serverwechsel meldet ab und beginnt mit leerem Zwischenspeicher: Konto und Geräte gehören zu einem Server.',
+
+  'library.account': 'Konto',
+  'library.signedInAs': 'Angemeldet als {name} ({email}).',
+  'library.signedInUnchecked': 'Angemeldet — der Server hat die Sitzung noch nicht bestätigt.',
+  'library.token.session': 'Die Anmeldung gilt nur für diese Sitzung: kein sicherer Speicher verfügbar.',
+  'library.token.keychain': 'Die Anmeldung liegt im Schlüsselbund des Systems.',
+  'library.token.browser': 'Die Anmeldung liegt im lokalen Speicher dieses Browsers. Auf einem geteilten Rechner abmelden.',
+  'library.signOut': 'Abmelden',
+  'library.twoFactor.prompt': 'Den sechsstelligen Code aus der Authenticator-App eingeben.',
+  'library.twoFactor.code': 'Code',
+  'library.twoFactor.verify': 'Bestätigen',
+  'library.cancel': 'Abbrechen',
+  'library.close': 'Schließen',
+  'library.login': 'E-Mail oder Benutzername',
+  'library.password': 'Passwort',
+  'library.signIn': 'Anmelden',
+  'library.signingIn': 'Anmelden…',
+  'library.register': 'Konto anlegen',
+  'library.forgot': 'Passwort vergessen',
+
+  'library.error.wrongCredentials': 'E-Mail/Benutzername oder Passwort ist falsch.',
+  'library.error.emailNotVerified':
+    'Die E-Mail-Adresse ist noch nicht bestätigt. Den Link aus der Bestätigungsmail öffnen, dann erneut anmelden.',
+  'library.error.guidelinesOutdated':
+    'Die Community-Richtlinien der Bibliothek haben sich geändert. Auf der Website neu annehmen, dann erneut versuchen.',
+  'library.error.guidelinesOpen': 'Richtlinien öffnen',
+  'library.error.exists':
+    'Hersteller und Modell stehen schon in der Bibliothek. Den Eintrag dort öffnen und bestätigen oder korrigieren, statt ihn erneut einzureichen.',
+  'library.error.wrongCode': 'Der Code ist falsch oder abgelaufen. Den aktuellen Code aus der Authenticator-App eingeben.',
+  'library.error.rateLimited': 'Zu viele Versuche. Eine Minute warten und erneut versuchen.',
+  'library.error.notSignedIn': 'Nicht angemeldet (oder die Sitzung ist abgelaufen). Bitte neu anmelden.',
+  'library.error.offline':
+    'Der Server ist nicht erreichbar. Verbindung prüfen — und bei einem anderen als dem Standard-Server, ob seine Adresse in der Content-Security-Policy dieses Builds steht.',
+  'library.error.server': 'Der Server hat mit einem Fehler geantwortet. Später erneut versuchen.',
+
+  'library.sync': 'Abgleich',
+  'library.sync.count': '{cameras} Kameras und {lenses} Objektive aus der Bibliothek im Katalog.',
+  'library.sync.last':
+    'Letzter Abgleich {at}: {added} neu, {updated} aktualisiert, {removed} entfernt, {invalid} als ungültig übersprungen.',
+  'library.syncNow': 'Jetzt abgleichen',
+  'library.syncing': 'Gleiche ab…',
+  'library.sync.hint':
+    'Die App gleicht beim Start ab, solange eine Anmeldung besteht. Der Zwischenspeicher bleibt beim Abmelden erhalten, damit platzierte Bibliothekskameras offline weiter funktionieren.',
+
+  'library.status.verified': 'geprüft',
+  'library.status.confirmed': 'bestätigt',
+  'library.status.unconfirmed': 'unbestätigt',
+  'library.status.disputed': 'strittig',
+  'library.badge': 'Gerätebibliothek · {status} · {n} Bestätigungen',
+  'library.badge.open': 'Ansehen',
+
+  'library.propose.title': 'An die Gerätebibliothek senden',
+  'library.propose.camera': 'Kamera „{name}“ mit Sensor, Mounts, Adaptern und Belegen.',
+  'library.propose.lens': 'Objektiv „{name}“ mit Brennweitenbereich, Blende, Mount und Bildkreis.',
+  'library.propose.done': 'Eingereicht. Andere sehen den Eintrag, sobald die Moderation ihn freigegeben hat.',
+  'library.propose.open': 'In der Bibliothek öffnen',
+  'library.propose.signInFirst': 'Einreichen braucht ein Konto bei der Gerätebibliothek. Zuerst anmelden.',
+  'library.propose.goSignIn': 'Anmelden…',
+  'library.propose.source': 'Link zum Datenblatt (Pflicht)',
+  'library.propose.sourceInvalid': 'Einen vollständigen Link (https://…) zum Herstellerdatenblatt eingeben.',
+  'library.propose.submit': 'Einreichen',
+  'library.propose.sending': 'Wird eingereicht…',
+
+  'sidebar.cam.libraryGroup': '── Gerätebibliothek ──',
+  'sidebar.cam.tagLibrary': ' · Bibliothek',
+  'sidebar.cam.propose': 'An die Gerätebibliothek senden…',
+  'sidebar.cam.proposeTitle': 'Diese Kamera der gemeinsamen Gerätebibliothek vorschlagen',
+  'sidebar.cam.proposeLens': 'Objektiv an die Gerätebibliothek senden…',
+  'sidebar.cam.proposeLensTitle': 'Dieses Objektiv der gemeinsamen Gerätebibliothek vorschlagen',
+};
