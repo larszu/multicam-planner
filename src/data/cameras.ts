@@ -117,6 +117,13 @@ export const CAMERAS: Camera[] = [
   { id: 'pana-aw-ue150', manufacturerUrl: 'https://pro-av.panasonic.net/en/products/aw-ue150/spec.html', manufacturer: 'Panasonic', model: 'AW-UE150', sensor: SENSORS.ONE_INCH, mount: 'integrated', resolutions: ['4K', 'HD'], type: 'ptz' },
 
   // ── Blackmagic Design ──
+  // Vier GUIDs von Hand, weil der Katalog-Abzug nur woertlich zuordnet und der
+  // cable-planner diese Modelle unter dem Namen mit „Camera"/„4.6K" fuehrt:
+  // „Pocket Cinema 6K G2" (techspecs W-CIN-19) = „Pocket Cinema Camera 6K G2",
+  // „Pocket Cinema 4K" (W-CIN-12) = „Pocket Cinema Camera 4K", „URSA Mini Pro
+  // G2" (W-URSA-34) = „URSA Mini Pro 4.6K G2", „URSA Mini Pro 4.6K" (Vorstellung
+  // 2017) = „URSA Mini Pro". „Studio Camera 4K Plus" bleibt ohne: drueben steht
+  // nur der Nachfolger „4K Plus G2", und dessen Anschluesse sind andere.
   { id: 'bmd-ursa-broadcast-g2', manufacturerUrl: 'https://www.blackmagicdesign.com/products/blackmagicursabroadcast/techspecs', manufacturer: 'Blackmagic', model: 'URSA Broadcast G2', sensor: { name: 'BMD 6K (23.1×12.99)', widthMm: 23.1, heightMm: 12.99, cropFactor: 1.56 }, mount: 'B4', adaptedMounts: ['EF', 'PL'], resolutions: ['6K', '4K', 'HD'], type: 'broadcast', notes: 'B4 native, EF/PL via adapter. Broadcast camera with cinema sensor.', sensorModes: [
     { name: '6K Full (23.1×12.99)', widthMm: 23.1, heightMm: 12.99, cropFactor: 1.56 },
     { name: '4K UHD S16 crop (12.4×6.97)', widthMm: 12.4, heightMm: 6.97, cropFactor: 2.91 },
@@ -133,15 +140,15 @@ export const CAMERAS: Camera[] = [
   ], mountAdapters: {
     EF: { name: 'URSA Mini EF Mount Plate', lightLossStops: 0, notes: 'Mechanical swap of the PL block for the EF block — no optical relay, no light loss. The same full sensor area is available; choose the desired crop via the Sensor Mode dropdown.' },
   } },
-  { id: 'bmd-ursa-g2', manufacturerUrl: 'https://www.blackmagicdesign.com/products/blackmagicursaminipro/techspecs/W-URSA-34', manufacturer: 'Blackmagic', model: 'URSA Mini Pro G2', sensor: SENSORS.S35, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['4.6K', '4K', 'HD'], type: 'cinema', mountAdapters: {
+  { id: 'bmd-ursa-g2', manufacturerUrl: 'https://www.blackmagicdesign.com/products/blackmagicursaminipro/techspecs/W-URSA-34', deviceTypeId: '841e8039-0e83-4734-904f-bf4ffcdb8882', manufacturer: 'Blackmagic', model: 'URSA Mini Pro G2', sensor: SENSORS.S35, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['4.6K', '4K', 'HD'], type: 'cinema', mountAdapters: {
     EF: { name: 'URSA Mini EF Mount Plate', lightLossStops: 0, notes: 'Passive mechanical mount-plate swap. Full Super-35 sensor area available either way.' },
   } },
-  { id: 'bmd-ursa-46k', manufacturerUrl: 'https://www.blackmagicdesign.com/media/release/20170302-01', manufacturer: 'Blackmagic', model: 'URSA Mini Pro 4.6K', sensor: SENSORS.S35, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['4.6K', '4K', 'HD'], type: 'cinema', mountAdapters: {
+  { id: 'bmd-ursa-46k', manufacturerUrl: 'https://www.blackmagicdesign.com/media/release/20170302-01', deviceTypeId: '26557b2a-6df5-449c-bcef-29a24e4a811e', manufacturer: 'Blackmagic', model: 'URSA Mini Pro 4.6K', sensor: SENSORS.S35, mount: 'PL', adaptedMounts: ['EF'], resolutions: ['4.6K', '4K', 'HD'], type: 'cinema', mountAdapters: {
     EF: { name: 'URSA Mini EF Mount Plate', lightLossStops: 0, notes: 'Passive mechanical mount-plate swap. Full Super-35 sensor area available either way.' },
   } },
   { id: 'bmd-pocket6kpro', manufacturerUrl: 'https://www.blackmagicdesign.com/products/blackmagicpocketcinemacamera/techspecs', manufacturer: 'Blackmagic', model: 'Pocket Cinema 6K Pro', sensor: SENSORS.S35, mount: 'EF', resolutions: ['6K', '4K', 'HD'], type: 'cinema' },
-  { id: 'bmd-pocket6k', manufacturerUrl: 'https://www.blackmagicdesign.com/products/blackmagicpocketcinemacamera/techspecs/W-CIN-19', manufacturer: 'Blackmagic', model: 'Pocket Cinema 6K G2', sensor: SENSORS.S35, mount: 'EF', resolutions: ['6K', '4K', 'HD'], type: 'cinema' },
-  { id: 'bmd-pocket4k', manufacturerUrl: 'https://www.blackmagicdesign.com/products/blackmagicpocketcinemacamera/techspecs/W-CIN-12', manufacturer: 'Blackmagic', model: 'Pocket Cinema 4K', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'cinema' },
+  { id: 'bmd-pocket6k', manufacturerUrl: 'https://www.blackmagicdesign.com/products/blackmagicpocketcinemacamera/techspecs/W-CIN-19', deviceTypeId: 'd073d39d-9d61-492c-8022-93676460c668', manufacturer: 'Blackmagic', model: 'Pocket Cinema 6K G2', sensor: SENSORS.S35, mount: 'EF', resolutions: ['6K', '4K', 'HD'], type: 'cinema' },
+  { id: 'bmd-pocket4k', manufacturerUrl: 'https://www.blackmagicdesign.com/products/blackmagicpocketcinemacamera/techspecs/W-CIN-12', deviceTypeId: 'ea3ea3d8-3a1c-4087-ab03-1ce394ec1ea5', manufacturer: 'Blackmagic', model: 'Pocket Cinema 4K', sensor: SENSORS.MFT, mount: 'MFT', resolutions: ['4K', 'HD'], type: 'cinema' },
   { id: 'bmd-cinema-camera-6k', manufacturerUrl: 'https://www.blackmagicdesign.com/products/blackmagiccinemacamera/techspecs', manufacturer: 'Blackmagic', model: 'Cinema Camera 6K', sensor: SENSORS.FF, mount: 'L', adaptedMounts: ['EF', 'PL', 'NF'], resolutions: ['6K', '4K', 'HD'], type: 'cinema', notes: 'Full-frame, L-mount native; EF/PL/Nikon F via adapter', mountAdapters: {
     EF: { name: 'EF → L Adapter', lightLossStops: 0, notes: 'Passive EF-to-L adapter (Sigma MC-21, Novoflex, etc.). Mechanical only — full-frame sensor area available, no light loss.' },
     PL: { name: 'PL → L Adapter', lightLossStops: 0, notes: 'Passive PL-to-L adapter. PL has a longer flange distance than L, so an empty barrel fits between them. No optical penalty.' },
