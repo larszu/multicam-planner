@@ -47,9 +47,11 @@ MultiCam Planner is designed for quick, intuitive camera planning with essential
   match an entry of the Cable Planner's camera catalog *exactly* (case, spaces
   and dashes aside) carries that entry's device-type GUID, and the Cable
   Planner resolves it to the real connector panel. Similar names do not count —
-  a wrong GUID would be trusted blindly over there. Today 12 of 377 cameras
-  (the catalog lists 20 devices). A custom camera can pick a catalog device as
-  its **port template**.
+  a wrong GUID would be trusted blindly over there. Four Blackmagic bodies
+  whose names differ only by wording (*Pocket Cinema 6K G2* / *Pocket Cinema
+  Camera 6K G2* and the like) are assigned by hand, with the reason next to
+  them in `cameras.ts`. Today 16 of 377 cameras (the catalog lists 20
+  devices). A custom camera can pick a catalog device as its **port template**.
   The catalog identities are a frozen snapshot in
   `src/data/cableCameraCatalogIds.ts`; `npm run katalog:cable-ids` refreshes it
   from a `cable-planner` checkout next to this repo, and `npm test` then names

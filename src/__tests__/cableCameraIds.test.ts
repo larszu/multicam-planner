@@ -66,6 +66,17 @@ describe('deviceTypeId in cameras.ts', () => {
     // kein Gleich — wer den Abzug auffrischt, soll hier nicht nachzaehlen.
     expect(CAMERAS.filter((c) => c.deviceTypeId).length).toBeGreaterThanOrEqual(12);
   });
+
+  it('traegt die vier von Hand zugeordneten Blackmagic-Modelle', () => {
+    // Namensvarianten, die der woertliche Abgleich nicht trifft (siehe Kommentar
+    // in cameras.ts). Ohne GUID kaemen sie im cable-planner ohne Anschluesse an.
+    const guid = (id: string) => CAMERAS.find((c) => c.id === id)?.deviceTypeId;
+    expect(guid('bmd-pocket6k')).toBe('d073d39d-9d61-492c-8022-93676460c668');
+    expect(guid('bmd-pocket4k')).toBe('ea3ea3d8-3a1c-4087-ab03-1ce394ec1ea5');
+    expect(guid('bmd-ursa-g2')).toBe('841e8039-0e83-4734-904f-bf4ffcdb8882');
+    expect(guid('bmd-ursa-46k')).toBe('26557b2a-6df5-449c-bcef-29a24e4a811e');
+    expect(guid('bmd-studio4kplus')).toBeUndefined();
+  });
 });
 
 describe('uniqueCatalogMatch — woertlich oder gar nicht', () => {
