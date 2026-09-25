@@ -9,6 +9,7 @@ import { themaAnwenden } from './lib/thema';
 themaAnwenden();
 import { loadZoom, applyZoom } from './utils/uiZoom';
 import { restoreAutosave, startAutosave } from './store/autosave';
+import { useDeviceLibrary } from './library/store';
 
 // Gespeicherten UI-Zoom vor dem ersten Render anwenden (kein Flash).
 applyZoom(loadZoom());
@@ -19,6 +20,10 @@ applyZoom(loadZoom());
 restoreAutosave();
 const autosave = startAutosave();
 window.addEventListener('pagehide', autosave.flush);
+
+// Geraetebibliothek: gespeicherte Anmeldung pruefen und abgleichen. Laeuft
+// neben dem ersten Rendern; der Katalog traegt bis dahin den Cache.
+void useDeviceLibrary.getState().init();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

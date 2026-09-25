@@ -59,13 +59,13 @@ const istObjekt = (v: unknown): v is Record<string, unknown> =>
 const istText = (v: unknown) => typeof v === 'string' && v.trim() !== '';
 const istPositiv = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v > 0;
 
-function istKamera(v: unknown): v is Camera {
+export function istKamera(v: unknown): v is Camera {
   if (!istObjekt(v) || !istText(v.id) || typeof v.manufacturer !== 'string' ||
     typeof v.model !== 'string' || typeof v.mount !== 'string' || !istObjekt(v.sensor)) return false;
   return istPositiv(v.sensor.widthMm) && istPositiv(v.sensor.heightMm) && istPositiv(v.sensor.cropFactor);
 }
 
-function istOptik(v: unknown): v is Lens {
+export function istOptik(v: unknown): v is Lens {
   return istObjekt(v) && istText(v.id) && typeof v.manufacturer === 'string' &&
     typeof v.model === 'string' && typeof v.mount === 'string' &&
     istPositiv(v.focalLengthMin) && istPositiv(v.focalLengthMax) && istPositiv(v.maxApertureWide);

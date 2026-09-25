@@ -23,7 +23,7 @@ import {
   CARD_FINDING_LABEL,
   cardFindings,
 } from '../../utils/cameraCardExtras';
-import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2, FiRotateCcw, FiHome, FiImage, FiColumns, FiUsers, FiVideo, FiTarget } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiCopy, FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiUpload, FiUser, FiMap, FiMaximize2, FiLock, FiUnlock, FiStar, FiEdit2, FiRotateCcw, FiHome, FiImage, FiColumns, FiUsers, FiVideo, FiTarget, FiUploadCloud } from 'react-icons/fi';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { BackgroundPlan, StageObjectType, Camera, CameraMountType, VenueCamera, WallFit, WallPattern } from '../../types';
 
@@ -35,6 +35,10 @@ import { FieldRow, Group, Note, Readout, ValueSlider } from './fields';
 // Derselbe Objektiv-Regler wie im Preview-Tab: logarithmische Bahn, Rastung,
 // direkte Zahleneingabe. Zwei Implementierungen waeren zwei Bedienungen.
 import LensSlider from '../Preview/LensSlider';
+import LibraryBadge from '../Library/LibraryBadge';
+import ProposeDialog from '../Library/ProposeDialog';
+import { useDeviceLibrary } from '../../library/store';
+import { isLibraryId, type LibraryItem } from '../../library/facet';
 import {
   formatAperture,
   formatDistance,
@@ -234,6 +238,11 @@ function CameraCard({
   const [presetSegment, setPresetSegment] = useState('');
 
   const { customCameras, addCustomCamera, libraryStorageFull } = useStore();
+  // Geraetebibliothek: schreibgeschuetzte dritte Quelle neben eingebaut und eigen.
+  const bibEntries = useDeviceLibrary((s) => s.cache.entries);
+  const bibCameras = bibEntries.flatMap((e) => (e.kind === 'camera' ? [e.camera] : []));
+  const bibLenses = bibEntries.flatMap((e) => (e.kind === 'lens' ? [e.lens] : []));
+  const [proposal, setProposal] = useState<LibraryItem | null>(null);
   const camDef = getCameraById(cam.cameraId, customCameras);
   const lensDef = getLensById(cam.lensId) ?? customLenses.find((l) => l.id === cam.lensId);
   const istPtz = camDef?.type === 'ptz';
@@ -310,7 +319,7 @@ function CameraCard({
   const compatLenses = camDef ? getCompatibleLenses(camDef.mount, camDef.adaptedMounts, cam.activeMount) : allLenses;
   const allCompat = [
     ...compatLenses,
-    ...customLenses.filter((l) => !activeMount || l.mount === activeMount || l.mount === 'universal' || l.mount === 'integrated'),
+    ...[...customLenses, ...bibLenses].filter((l) => !activeMount || l.mount === activeMount || l.mount === 'universal' || l.mount === 'integrated'),
   ];
   // Deduplicate by id
   const compatDeduped = [...new Map(allCompat.map((l) => [l.id, l])).values()];
@@ -331,7 +340,10 @@ function CameraCard({
   // Dedupe: when a built-in is shadowed (custom entry with the same id), only the
   // custom version appears in the dropdown — the built-in is hidden behind it.
   const customCameraIds = new Set(customCameras.map((c) => c.id));
-  const builtInCameraIds = new Set(CAMERAS.map((c) => c.id));
+  // Bibliothekseintraege zaehlen wie eingebaute: bearbeiten legt eine eigene
+  // Kopie an („modified"), der Bibliothekseintrag selbst bleibt unberuehrt.
+  const builtInCameraIds = new Set([...CAMERAS, ...bibCameras].map((c) => c.id));
+  const visibleBibCameras = sortFavoritesFirst(bibCameras.filter((c) => !customCameraIds.has(c.id)), favoriteCameraIds);
   const visibleCameras = [...CAMERAS.filter((c) => !customCameraIds.has(c.id)), ...customCameras];
   const sortedCameras = sortFavoritesFirst(visibleCameras, favoriteCameraIds);
   const isCustomEntry = (id: string) => customCameraIds.has(id);
@@ -594,9 +606,29 @@ function CameraCard({
                   <option key={c.id} value={c.id}>{favoriteCameraIds.includes(c.id) ? '* ' : ''}{c.manufacturer} {c.model} [{c.mount}]{tag}</option>
                 );
               })}
+              {visibleBibCameras.length > 0 && (
+                <optgroup label={t('sidebar.cam.libraryGroup', '── Device library ──')}>
+                  {visibleBibCameras.map((c) => (
+                    <option key={c.id} value={c.id}>{favoriteCameraIds.includes(c.id) ? '* ' : ''}{c.manufacturer} {c.model} [{c.mount}]</option>
+                  ))}
+                </optgroup>
+              )}
               <option value="__new_custom__">{t('sidebar.cam.addCustomCamera', '＋ Add custom camera…')}</option>
             </select>
           </label>
+          <LibraryBadge id={camDef?.id} />
+          {camDef && isCustomEntry(camDef.id) && (
+            <button
+              type="button"
+              onClick={() => setProposal({ kind: 'camera', camera: camDef })}
+              className="mt-0.5 flex items-center gap-1 text-[11px] text-bc-dim hover:text-bc-accent"
+              title={t('sidebar.cam.proposeTitle', 'Propose this camera to the shared device library')}
+            >
+              <FiUploadCloud size={12} />
+              {t('sidebar.cam.propose', 'Submit to device library…')}
+            </button>
+          )}
+          {proposal && <ProposeDialog item={proposal} onClose={() => setProposal(null)} />}
 
           {/* Der Speicher ist voll — die eigene Kamera/Optik steht in der Liste,
               aber nicht auf der Platte. Dieselbe Meldung wie bei den
@@ -795,13 +827,25 @@ function CameraCard({
               {Object.entries(grouped).map(([mount, lenses]) => (
                 <optgroup key={mount} label={format(t('sidebar.cam.mountGroup', '── {mount} mount ──'), { mount })}>
                   {lenses.map((l) => (
-                    <option key={l.id} value={l.id}>{favoriteLensIds.includes(l.id) ? '* ' : ''}{l.manufacturer} {l.model}{l.isCustom ? t('sidebar.cam.tagCustom', ' +custom') : ''}</option>
+                    <option key={l.id} value={l.id}>{favoriteLensIds.includes(l.id) ? '* ' : ''}{l.manufacturer} {l.model}{l.isCustom ? t('sidebar.cam.tagCustom', ' +custom') : isLibraryId(l.id) ? t('sidebar.cam.tagLibrary', ' · library') : ''}</option>
                   ))}
                 </optgroup>
               ))}
               <option value="__new__">{t('sidebar.cam.addCustomLens', '＋ Add custom lens…')}</option>
             </select>
           </label>
+          <LibraryBadge id={lensDef?.id} />
+          {lensDef?.isCustom && (
+            <button
+              type="button"
+              onClick={() => setProposal({ kind: 'lens', lens: lensDef })}
+              className="mt-0.5 flex items-center gap-1 text-[11px] text-bc-dim hover:text-bc-accent"
+              title={t('sidebar.cam.proposeLensTitle', 'Propose this lens to the shared device library')}
+            >
+              <FiUploadCloud size={12} />
+              {t('sidebar.cam.proposeLens', 'Submit lens to device library…')}
+            </button>
+          )}
           {/* Custom lens: delete button for active custom lens */}
           {lensDef?.isCustom && (
             <button
