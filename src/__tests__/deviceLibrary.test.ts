@@ -228,6 +228,24 @@ describe('store against a mocked server', () => {
     expect(body.data.planners.multicam).toEqual(JSON.parse(JSON.stringify(cameraToFacet(eigeneKamera))));
   });
 
+  it('409 on proposal is `exists`, guidelines-outdated keeps the sign-in', async () => {
+    fetchMock
+      .mockResolvedValueOnce(json({ user: { id: 'u', email: 'a@b.de', username: 'l' } }, { 'set-auth-token': 'T' }))
+      .mockResolvedValueOnce(json(antwort(0, [])))
+      .mockResolvedValueOnce(json({ error: 'exists' }, {}, 409))
+      .mockResolvedValueOnce(json({ error: 'guidelines-outdated' }, {}, 403));
+    const { useDeviceLibrary } = await import('../library/store');
+    const { libraryErrorText } = await import('../library/messages');
+    const messageText = (c: 'exists' | 'guidelines-outdated') => libraryErrorText((_k, en) => en, c);
+    await useDeviceLibrary.getState().signIn('a@b.de', 'pw');
+    const item = { kind: 'camera' as const, camera: eigeneKamera };
+    await expect(useDeviceLibrary.getState().propose(item, 'https://x.example/a.pdf')).rejects.toMatchObject({ code: 'exists', status: 409 });
+    await expect(useDeviceLibrary.getState().propose(item, 'https://x.example/a.pdf')).rejects.toMatchObject({ code: 'guidelines-outdated' });
+    expect(useDeviceLibrary.getState().signedIn).toBe(true);
+    expect(messageText('exists')).toMatch(/already in the library/);
+    expect(messageText('guidelines-outdated')).toMatch(/guidelines/);
+  });
+
   it('a changed server forgets the token and the cache; bad addresses are refused', async () => {
     const { useDeviceLibrary, normaliseServerUrl } = await import('../library/store');
     expect(normaliseServerUrl('http://devices.example.com')).toBeNull();
@@ -240,5 +258,11 @@ describe('store against a mocked server', () => {
     expect(JSON.parse(speicher['multicam-device-library-server'])).toBe('https://devices.example.com');
     await useDeviceLibrary.getState().setServer('https://devices.zumpelars.de');
     expect(JSON.parse(speicher['multicam-device-library-server'])).toBeNull();
+  });
+
+  it('guidelines link follows the server address', async () => {
+    const { guidelinesUrl } = await import('../library/messages');
+    expect(guidelinesUrl('https://devices.zumpelars.de')).toBe('https://devices.zumpelars.de/guidelines');
+    expect(guidelinesUrl('http://localhost:8080/')).toBe('http://localhost:8080/guidelines');
   });
 });

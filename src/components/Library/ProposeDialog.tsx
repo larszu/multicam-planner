@@ -6,7 +6,7 @@ import { FiX } from 'react-icons/fi';
 import { format, useTranslation } from '../../i18n';
 import { LibraryError, deviceUrl, type LibraryErrorCode } from '../../utils/deviceLibraryClient';
 import { useDeviceLibrary } from '../../library/store';
-import { libraryErrorText } from '../../library/messages';
+import LibraryErrorLine from './LibraryErrorLine';
 import type { LibraryItem } from '../../library/facet';
 import { openSettings } from '../Settings/openSettings';
 
@@ -125,10 +125,7 @@ export default function ProposeDialog({ item, onClose }: { item: LibraryItem; on
           )}
 
           {error && (
-            <p className="mt-2 text-bc-red" role="alert">
-              {libraryErrorText(t, error.code)}
-              {error.detail ? ` (${error.detail})` : ''}
-            </p>
+            <LibraryErrorLine code={error.code} detail={error.detail} />
           )}
         </div>
       </div>

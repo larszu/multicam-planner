@@ -38,6 +38,11 @@ export const library: Record<string, string> = {
   'library.error.wrongCredentials': 'E-Mail/Benutzername oder Passwort ist falsch.',
   'library.error.emailNotVerified':
     'Die E-Mail-Adresse ist noch nicht bestätigt. Den Link aus der Bestätigungsmail öffnen, dann erneut anmelden.',
+  'library.error.guidelinesOutdated':
+    'Die Community-Richtlinien der Bibliothek haben sich geändert. Auf der Website neu annehmen, dann erneut versuchen.',
+  'library.error.guidelinesOpen': 'Richtlinien öffnen',
+  'library.error.exists':
+    'Hersteller und Modell stehen schon in der Bibliothek. Den Eintrag dort öffnen und bestätigen oder korrigieren, statt ihn erneut einzureichen.',
   'library.error.wrongCode': 'Der Code ist falsch oder abgelaufen. Den aktuellen Code aus der Authenticator-App eingeben.',
   'library.error.rateLimited': 'Zu viele Versuche. Eine Minute warten und erneut versuchen.',
   'library.error.notSignedIn': 'Nicht angemeldet (oder die Sitzung ist abgelaufen). Bitte neu anmelden.',

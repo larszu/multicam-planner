@@ -9,7 +9,7 @@ import {
   registerUrl,
 } from '../../utils/deviceLibraryClient';
 import { useDeviceLibrary } from '../../library/store';
-import { libraryErrorText } from '../../library/messages';
+import LibraryErrorLine from '../Library/LibraryErrorLine';
 import { usesKeychain } from '../../library/tokenStore';
 
 const feld = 'block w-full border border-bc-border bg-bc-dark text-xs text-bc-text-bright';
@@ -200,7 +200,7 @@ export default function DeviceLibrarySection() {
           </form>
         )}
 
-        {lib.error && <p className="mt-2 text-xs text-bc-red" role="alert">{libraryErrorText(t, lib.error)}</p>}
+        {lib.error && <LibraryErrorLine code={lib.error} />}
       </section>
 
       <section style={{ marginTop: '24px' }}>

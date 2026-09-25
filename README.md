@@ -78,7 +78,10 @@ MultiCam Planner is designed for quick, intuitive camera planning with essential
 - **Submit**: a custom camera or lens (or a modified built-in) has *Submit to
   device library…*. A datasheet link is required (pre-filled from the entry's
   manufacturer URL); the proposal goes into moderation. Not signed in, the
-  dialog leads to the sign-in.
+  dialog leads to the sign-in. A device whose manufacturer and model are
+  already in the library is refused (`exists`); changed community guidelines
+  (`guidelines-outdated`) have to be accepted again on the website — the
+  message links to `<server>/guidelines`.
 - **Facet format** (the `multicam` part of a library device, identical for
   submit and import):
   `{ kind: 'camera', version: 1, camera: <Camera without id> }` or
